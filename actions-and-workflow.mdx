@@ -1,0 +1,853 @@
+---
+title: Using Actions and Workflows in Mindbricks APIs
+description: >-
+  Mindbricks treats every Business API as a workflow: a fixed chain of lifecycle
+  milestones with optional actions that run after each milestone. Even with zero
+  extra config, an API executes rich default behavior derived from its Data
+  Object and CRUD type. Configurations (clauses/options) shape that behavior;
+  actions let you extend it precisely where needed.
+---
+## 1) Core Concepts
+
+- **Workflow = When** logic runs
+  A CRUD-specific, ordered set of **milestones**. Each milestone may execute an ordered array of action **IDs**.
+
+- **Action = What** logic runs
+  A typed, declarative unit defined in the API’s **`BusinessApiActionStore`**. Actions are referenced from workflow milestones by **ID** (not by name).
+
+- **Action identity**
+
+  - **`id`**: unique, opaque reference used in workflow arrays.
+
+  - **`name`**: human-readable camelCase (also used as the generated method name on the context manager).
+
+  - Milestones list **IDs**; the runtime maps IDs → action definitions.
+
+---
+
+## 2) BusinessWorkflow (Where actions are called)
+
+Only **one** sub-workflow is populated (matching the API’s `crudType`); others remain `null`.
+
+```json
+"workflow": {
+  "create": "CreateBusinessWorkflow",
+  "update": "UpdateBusinessWorkflow",
+  "delete": "DeleteBusinessWorkflow",
+  "get":    "GetBusinessWorkflow",
+  "list":   "ListBusinessWorkflow"
+}
+```
+
+Each workflow contains arrays of **action IDs** under milestone names (e.g., `"afterReadParameters": ["a1-validate"]`).
+Order in the array = execution order at that milestone.
+
+---
+
+## 3) BusinessApiActionStore (Where actions live)
+
+`BusinessApiActionStore` is the **registry** of all actions available to a single Business API.
+**Actions are grouped by their pattern type**, each in its **own array** (strict type separation enables type-safe AI/codegen and clear validation).
+
+Examples of per-type arrays (non-exhaustive):
+
+- **Data access & enrichment**
+  `fetchObjectActions: [FetchObjectAction]`
+  `fetchStatsActions: [FetchStatsAction]`
+  `fetchParentActions: [FetchParentAction]`
+  `collateListsActions: [CollateListsAction]`
+
+- **Compute & transform**
+  `functionCallActions`, `addToContextActions`, `createObjectActions`, `renderDataActions`, `dataToFileActions`, `refineByAiActions`
+
+- **CRUD orchestration**
+  `createCrudActions`, `updateCrudActions`, `deleteCrudActions`
+
+- **Service / API / Integrations**
+  `interserviceCallActions`, `apiCallActions`, `integrationActions`, `checkoutActions`
+
+- **Auth & access**
+  `membershipCheckActions`, `permissionCheckActions`, `objectPermissionActions`, `readJwtTokenActions`, `validationActions`
+
+- **State & events**
+  `readFromRedisActions`, `writeToRedisActions`, `publishEventActions`, `createJWTTokenActions`, `createBucketTokenActions`
+
+- **Response & navigation**
+  `addToResponseActions`, `removeFromResponseActions`, `redirectActions`
+
+- **Control flow**
+  `loopActions`, `parallelActions`
+
+### Base action contract (`BusinessApiAction`)
+
+All concrete action types extend this base and therefore include:
+
+- **`id`** *(String, unique)* → referenced by workflow arrays
+
+- **`name`** *(String, camelCase)* → human-readable & method name on context manager
+
+- **`description`** *(Text, optional)*
+
+- **`condition`** *(MScript, optional)* → run only if `true`
+
+- **`contextPropertyName`** *(String, optional)* → write result to `this.<name>`
+
+- **`writeToResponse`** *(Boolean)* → also copy result into API response
+
+- **`onActionError`** *(enum:&#x20;*``*&#x20;|&#x20;*``*)* → error policy
+
+- **`extendClassName`** *(String)* → concrete type (e.g., `FetchObjectAction`)
+
+### Store ↔ Workflow wiring (minimal example)
+
+```jsonc
+{
+  "actions": {
+    "fetchObjectActions": [
+      {
+        "id": "a1-fetch-customer",
+        "extendClassName": "FetchObjectAction",
+        "name": "fetchCustomer",
+        "description": "Load customer by customerId",
+        "targetObject": "customer",
+        "matchValue": "this.customerId",
+        "localKey": "id",
+        "contextPropertyName": "customer"
+      }
+    ],
+    "validationActions": [
+      {
+        "id": "a2-ensure-active",
+        "extendClassName": "ValidationAction",
+        "name": "ensureActiveCustomer",
+        "validationScript": "this.customer?.isActive === true",
+        "checkType": "liveCheck",
+        "errorStatus": "400"
+      }
+    ]
+  },
+
+  "workflow": {
+    "update": {
+      "afterBuildWhereClause": ["a1-fetch-customer"],
+      "afterFetchInstance":   ["a2-ensure-active"]
+    }
+  }
+}
+```
+
+---
+
+## 4) Milestone Glossary (CRUD-agnostic; listed **once** in execution order)
+
+Use this as your master reference for *where* to place actions.
+
+1. **`afterStartBusinessApi`**
+   Context initialized; request/session available. Seed context, tracing, early guards.
+
+2. **`afterReadParameters`**
+   Parameters (request + Redis) read into context. Early checks, defaults, lightweight lookups.
+
+3. **`afterTransposeParameters`**
+   Transforms/normalizations applied. Compute derived inputs, coerce types, reshape structures.
+
+4. **`afterCheckParameters`**
+   Core parameter validations done. Add domain validations, cross-field rules, fail fast if needed.
+
+5. **`afterCheckBasicAuth`**
+   Session/role/permission checks complete. Add fine-grained access logic (membership/object permissions/audit prep).
+
+6. **`afterBuildWhereClause`** *(get/update/delete/list)*
+   Final WHERE clause ready. Audit/log scope, append dynamic constraints, instrument queries.
+
+7. **`afterFetchInstance`** *(update/delete)*
+   Target instance fetched pre-mutation. Extra checks, invariants, enrichment for update/delete.
+
+8. **`afterCheckInstance`** *(get/update/delete)*
+   Instance-level checks (existence, ownership, lock). Extra guards before proceeding.
+
+9. **`afterBuildDataClause`** *(create/update)*
+   Final DATA payload ready. Inject/override fields, compute server-side values.
+
+10. **`afterMainCreateOperation`** *(create)*
+    Insert done. Emit events, cascade creates, sync projections.
+
+11. **`afterMainUpdateOperation`** *(update)*
+    Update done. Publish events, recompute aggregates, refresh projections.
+
+12. **`afterMainDeleteOperation`** *(delete)*
+    Delete (soft/hard) done. Cleanup relations, clear caches.
+
+13. **`afterMainGetOperation`** *(get)*
+    Single fetch done. Enrich with related data, mark read, compute derived fields.
+
+14. **`afterMainListOperation`** *(list)*
+    Paginated list done. Enrich items, parallel fetches, totals/facets.
+
+15. **`afterBuildOutput`**
+    Response assembled (not sent). Final formatting, masking, inject metadata.
+
+16. **`afterSendResponse`**
+    Response sent. Non-blocking tasks: logs, analytics, slow integrations.
+
+17. **`afterApiEvent`**
+    API-level event dispatched (if enabled). Final post-event hooks, chained notifications.
+
+---
+
+## 5) Workflow Orders by CRUD Type (just milestone array names)
+
+These are the **milestone arrays** you’ll populate with **action IDs**, in **execution order**.
+
+### a) **Create** (`CreateBusinessWorkflow`)
+
+1. `afterStartBusinessApi`
+
+2. `afterReadParameters`
+
+3. `afterTransposeParameters`
+
+4. `afterCheckParameters`
+
+5. `afterCheckBasicAuth`
+
+6. `afterBuildDataClause`
+
+7. `afterMainCreateOperation`
+
+8. `afterBuildOutput`
+
+9. `afterSendResponse`
+
+10. `afterApiEvent`
+
+### b) **Update** (`UpdateBusinessWorkflow`)
+
+1. `afterStartBusinessApi`
+
+2. `afterReadParameters`
+
+3. `afterTransposeParameters`
+
+4. `afterCheckParameters`
+
+5. `afterCheckBasicAuth`
+
+6. `afterBuildWhereClause`
+
+7. `afterFetchInstance`
+
+8. `afterCheckInstance`
+
+9. `afterBuildDataClause`
+
+10. `afterMainUpdateOperation`
+
+11. `afterBuildOutput`
+
+12. `afterSendResponse`
+
+13. `afterApiEvent`
+
+### c) **Delete** (`DeleteBusinessWorkflow`)
+
+1. `afterStartBusinessApi`
+
+2. `afterReadParameters`
+
+3. `afterTransposeParameters`
+
+4. `afterCheckParameters`
+
+5. `afterCheckBasicAuth`
+
+6. `afterBuildWhereClause`
+
+7. `afterFetchInstance`
+
+8. `afterCheckInstance`
+
+9. `afterMainDeleteOperation`
+
+10. `afterBuildOutput`
+
+11. `afterSendResponse`
+
+12. `afterApiEvent`
+
+### d) **Get** (`GetBusinessWorkflow`)
+
+1. `afterStartBusinessApi`
+
+2. `afterReadParameters`
+
+3. `afterTransposeParameters`
+
+4. `afterCheckParameters`
+
+5. `afterCheckBasicAuth`
+
+6. `afterBuildWhereClause`
+
+7. `afterMainGetOperation`
+
+8. `afterCheckInstance`
+
+9. `afterBuildOutput`
+
+10. `afterSendResponse`
+
+11. `afterApiEvent`
+
+### e) **List** (`ListBusinessWorkflow`)
+
+1. `afterStartBusinessApi`
+
+2. `afterReadParameters`
+
+3. `afterTransposeParameters`
+
+4. `afterCheckParameters`
+
+5. `afterCheckBasicAuth`
+
+6. `afterBuildWhereClause`
+
+7. `afterMainListOperation`
+
+8. `afterBuildOutput`
+
+9. `afterSendResponse`
+
+10. `afterApiEvent`
+
+---
+
+## 6) Authoring Guidance (quick rules of thumb)
+
+- **Define actions in the Store** (type-specific arrays). Give each a stable **`id`** and a clear camelCase **`name`**.
+
+- **Reference actions by&#x20;****`id`** in the workflow milestone arrays. Order matters.
+
+- Place **validations & access checks early**; **response shaping late**.
+
+- Use **`condition`** for cheap short-circuits.
+
+- Default **`onActionError: throwError`**; use `completeApi` only for non-critical enrichment.
+
+- Keep **context clean**: choose descriptive `contextPropertyName` keys and avoid collisions.
+
+---
+
+## 7) Action Glossary
+
+### **1. FetchObjectAction**
+
+Fetches one or more records from another Data Object (local or foreign) and writes the result into context.
+Used for enrichment, lookups, or pre-validation based on related entities.
+
+### **2. FetchParentAction**
+
+Loads selected properties from a parent object related to the current context object.
+Commonly used to inherit configuration, tenant, or organization data.
+
+### **3. FetchStatsAction**
+
+Computes quick aggregates (count, sum, min, max) across a Data Object and stores the result.
+Ideal for showing contextual stats or enforcing thresholds.
+
+### **4. CollateListsAction**
+
+Merges data from one list (source) into another (target) by matching keys.
+Example: attaching each user’s address list to its corresponding user object.
+
+### **5. FunctionCallAction**
+
+Runs a reusable function written in MScript or defined in a shared library (e.g., `LIB.utils.calculateTotal`).
+It’s typically used to compute derived values, perform calculations, or call small utility functions.
+
+### **6. AddToContextAction**
+
+Adds one or more computed values to the API runtime context (`this`), making them available to later actions.
+Use it to define temporary or derived variables such as totals, flags, or enriched fields.
+
+### **7. CreateObjectAction**
+
+Creates an in-memory JavaScript object from key–value pairs and writes it to the context.
+It doesn’t persist data — it’s for constructing structured objects to be used later (e.g., for email bodies, API calls, or file rendering).
+
+### **8. RenderDataAction**
+
+Renders structured data into formatted output (e.g., Markdown, HTML, or text) using a predefined template and MScript data.
+Often used for generating dynamic email bodies, PDF content, or previews.
+
+### **9. DataToFileAction**
+
+Converts context data into a downloadable file (CSV, JSON, PDF, etc.).
+Can either send the file to the client or keep it internal for later use (e.g., archive, mail attachment).
+
+### **10. RefineByAiAction**
+
+Refines or transforms text using an AI provider (e.g., OpenAI, Anthropic).
+Commonly used to summarize, rephrase, or tone-adjust text generated during workflow.
+
+### **11. CreateCrudAction**
+
+Creates related (child or dependent) records inside another Data Object as part of the current API execution.
+Used for cascading inserts such as creating audit logs, attachments, or dependent tasks when a parent record is created or updated.
+
+### **12. UpdateCrudAction**
+
+### **13. DeleteCrudAction**
+
+Deletes or soft-deletes related child entities conditionally.
+Used for clean-ups (e.g., remove orphaned records) or enforcing cascading deletions.
+
+### **14. InterserviceCallAction**
+
+Calls another **Business API** defined in a different Mindbricks microservice.
+This enables inter-service orchestration (e.g., create order → update inventory service).
+
+### **15. ApiCallAction**
+
+Makes an **HTTP request** to an external or internal endpoint.
+Used for webhooks, REST integrations, or third-party APIs.
+
+### **16. IntegrationAction**
+
+Triggers a **native integration** provided by Mindbricks (e.g., AWS S3 file upload, Airtable record creation, Stripe charge).
+Integrations are pre-coded, so you only supply parameters.
+
+### **17. CheckoutAction**
+
+Handles a **payment lifecycle** using a native gateway integration (currently Stripe).
+It can start, complete, refresh, or accept webhooks for checkout sessions.
+
+### **18. AiCallAction**
+
+Call an LLM (OpenAI, Anthropic, …) with a structured prompt to get **text** or **JSON**.
+Use it to generate labels, summaries, entity extraction, validation suggestions, or decision scaffolds used by later actions.
+
+### **19. RefineByAiAction**
+
+Refine or transform a single text value (rephrase, correct tone/grammar, summarize).
+This is a **simplified specialization** for quick, deterministic text polish.
+
+### **20. ValidationAction**
+
+**Purpose**
+Perform a **domain-specific** boolean check via MScript (quotas, object states, feature flags, plan limits, etc.).
+
+**When to use it**
+
+- `afterCheckParameters` (input sanity/business rules)
+
+- `afterFetchInstance` / `afterCheckInstance` (state-based rules: locked, archived, protected)
+
+- Anywhere a domain invariant must be upheld
+
+**Key fields**
+
+| Field              | Type           | Notes                                                                                                                             |
+| ------------------ | -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `description`      | Text           | Human explanation of the rule.                                                                                                    |
+| `shouldBeTrue`     | Boolean        | Defaults to `true`. If the script’s result ≠ `shouldBeTrue`, validation fails.                                                    |
+| `checkType`        | `ApiCheckType` | `liveCheck` (throw error immediately) or `storedCheck` (write result to context).                                                 |
+| `validationScript` | MScript        | Returns boolean.                                                                                                                  |
+| `errorMessage`     | String         | Message if `liveCheck` fails.                                                                                                     |
+| `errorStatus`      | ErrorStatus    | **Important**: `401/403` = authorization error (absolute roles bypass); `400` = business rule (absolute roles do **not** bypass). |
+
+**Behavior & absolute roles**
+
+- If `errorStatus` is **401/403**, failures are treated as **authorization**; users with absolute roles bypass.
+
+- If `errorStatus` is **400**, failure is a **business rule**; **no** bypass—even for absolute roles.
+
+- With `storedCheck`, result is put on context (e.g., `this.validation_<name>`), and the flow continues.
+
+**Example — forbid updates to protected items as business logic**
+
+```json
+{
+  "id": "a200-validate-protected",
+  "extendClassName": "ValidationAction",
+  "name": "preventProtectedUpdate",
+  "description": "Protected items cannot be modified.",
+  "validationScript": "this.instance?.isProtected === false",
+  "shouldBeTrue": true,
+  "checkType": "liveCheck",
+  "errorMessage": "This item is protected and cannot be modified.",
+  "errorStatus": "400"
+}
+```
+
+**Example — treat as authorization (allow absolute roles to bypass)**
+
+```json
+{
+  "id": "a201-validate-approval-role",
+  "extendClassName": "ValidationAction",
+  "name": "requireApproverRole",
+  "description": "Only approvers may change this state.",
+  "validationScript": "this.session.roles?.includes('approver')",
+  "shouldBeTrue": true,
+  "checkType": "liveCheck",
+  "errorMessage": "Approver role required.",
+  "errorStatus": "403"
+}
+```
+
+---
+
+### **21. PermissionCheckAction**
+
+**Purpose**
+Check a **global/service-level** permission not tied to a specific object instance (e.g., `canExportData`, `canAccessAdminPanel`).
+
+**When to use it**
+
+- `afterCheckBasicAuth` (right after role/permission bootstrap)
+
+- Before any sensitive branch in the flow
+
+**Key fields**
+
+| Field            | Type           | Notes                                                         |
+| ---------------- | -------------- | ------------------------------------------------------------- |
+| `permissionName` | String         | Permission to require.                                        |
+| `checkType`      | `ApiCheckType` | `liveCheck` throws immediately; `storedCheck` records result. |
+
+**Behavior**
+
+- With `liveCheck`, failing users get an authorization error (bypass applies if they hold an absolute role).
+
+- With `storedCheck`, e.g., write to `this.permission_checks['canExportData']=true/false` for later logic.
+
+**Example**
+
+```json
+{
+  "id": "a210-perm-export",
+  "extendClassName": "PermissionCheckAction",
+  "name": "requireExportPermission",
+  "permissionName": "canExportData",
+  "checkType": "liveCheck"
+}
+```
+
+---
+
+### **22. MembershipCheckAction**
+
+**Purpose**
+Validate whether the current user is a **member** of a related object (organization, team, project) based on that object’s membership rules.
+
+**When to use it**
+
+- `afterBuildWhereClause` (scope checks before fetch)
+
+- `afterFetchInstance` / `afterCheckInstance` (instance-linked membership)
+
+- In list flows, to constrain by membership earlier in the chain
+
+**Key fields**
+
+| Field            | Type           | Notes                                                                         |
+| ---------------- | -------------- | ----------------------------------------------------------------------------- |
+| `dataObjectName` | DataObjectName | Source of membership rules (defaults to main object if omitted).              |
+| `objectKey`      | MScript        | ID of the object to check (e.g., `this.projectId`).                           |
+| `userKey`        | MScript        | User id to test (`this.session.userId`, or delegated).                        |
+| `checkFor`       | MScript        | Optional—role/conditions within membership (e.g., `member.role === 'owner'`). |
+| `checkType`      | `ApiCheckType` | `liveCheck` or `storedCheck`.                                                 |
+| `errorMessage`   | String         | Message if `liveCheck` fails.                                                 |
+
+**Behavior**
+
+- Enforces **relationship-scoped** access; with `liveCheck`, throws 403 (absolute roles bypass).
+
+- With `storedCheck`, writes boolean to context for later conditionals.
+
+**Example**
+
+```json
+{
+  "id": "a220-membership-org",
+  "extendClassName": "MembershipCheckAction",
+  "name": "requireOrgMembership",
+  "dataObjectName": "organization",
+  "objectKey": "this.organizationId",
+  "userKey": "this.session.userId",
+  "checkType": "liveCheck",
+  "errorMessage": "You must belong to this organization."
+}
+```
+
+---
+
+### **23. ObjectPermissionCheckAction**
+
+**Purpose**
+Verify that the user has a **specific permission on a concrete object instance** (object-scoped permission).
+
+**When to use it**
+
+- `afterFetchInstance` or `afterCheckInstance` (instance is known)
+
+- Before update/delete operations that require instance-level rights
+
+**Key fields**
+
+| Field              | Type           | Notes                                    |
+| ------------------ | -------------- | ---------------------------------------- |
+| `permissionName`   | String         | Required instance permission.            |
+| `readObjectIdFrom` | MScript        | Expression resolving to the instance ID. |
+| `checkType`        | `ApiCheckType` | `liveCheck` / `storedCheck`.             |
+
+**Behavior**
+
+- Uses direct object permissions and any inherited/ABAC rules your model defines.
+
+- With `liveCheck`, failure → 403 (absolute roles bypass).
+
+**Example**
+
+```json
+{
+  "id": "a230-object-perm",
+  "extendClassName": "ObjectPermissionCheckAction",
+  "name": "requireEditPermissionOnProject",
+  "permissionName": "project.edit",
+  "readObjectIdFrom": "this.project?.id ?? this.projectId",
+  "checkType": "liveCheck"
+}
+```
+
+---
+
+### **24. ReadJwtTokenAction**
+
+Read and **validate a JWT**, then write its **payload** to context (`contextPropertyName`).
+Used for shared links, limited-access flows, or token-based gating without full login.
+
+### **25. ReadFromRedisAction**
+
+Read a value from Redis (key computed via MScript) and put it into context. Usefull for to keep temporary states and share them between following API calls, use with WriteToRedisAction.
+
+### **26. WriteToRedisAction**
+
+Write a value to a Redis key; value is an MScript expression (object serialized if needed).Usefull for to keep temporary states and share them between following API calls, use with ReadFromRedisAction.
+
+### **27. PublishEventAction**
+
+Publish a domain event to a topic/queue (e.g., Kafka).
+Use for decoupled orchestration beyond the built-in **API events**.
+
+### **28. CreateJWTTokenAction**
+
+Create a signed JWT (HMAC) from a payload; store in context or response.
+
+### **29. CreateBucketTokenAction**
+
+Create a JWT **bucket token** to access Mindbricks Bucket Service with scoped permissions.
+
+### **30. AddToResponseAction**
+
+Copy selected context values into the final response.
+
+### **31. RemoveFromResponseAction**
+
+Strip properties from the response before sending (privacy, cleanup).
+
+### **32. RedirectAction**
+
+Redirect the client to a URL (OAuth flows, post-login navigation, hand-off flows).
+
+### **33. LoopAction**
+
+Iterate over an array computed by MScript; for each item, execute a list of **action IDs**.
+
+### **34. ParallelAction**
+
+Run several **independent actions** concurrently, sharing the same input context.
+
+## 8) Design Patterns & Recipes
+
+These recipes show *where* to place actions and *why*. Each is CRUD-type agnostic unless noted.
+
+### 14.1 Enrich-on-Read (Get/List)
+
+**Goal:** add context (parent, stats, collations) without custom SQL or code.
+
+**Milestones:**
+`afterBuildWhereClause` → `afterMainGet/ListOperation` → `afterBuildOutput`
+
+**Wiring:**
+
+- Fetch parent/config → `FetchParentAction`
+
+- Enrich with aggregates → `FetchStatsAction`
+
+- Collate arrays → `CollateListsAction`
+
+- Expose computed fields → `AddToResponseAction`
+
+```jsonc
+{
+  "workflow": {
+    "get": {
+      "afterBuildWhereClause": ["a10-fetch-parent"],
+      "afterMainGetOperation": ["a20-fetch-stats", "a30-collate"],
+      "afterBuildOutput": ["a40-expose"]
+    }
+  }
+}
+```
+
+**Notes:** Keep enrichment failures non-fatal with `onActionError: "completeApi"`.
+
+---
+
+### 14.2 Safe Updates (Instance Guards + Cascades)
+
+**Goal:** validate instance access & state, then propagate changes safely.
+
+**Milestones:**
+`afterBuildWhereClause` → `afterFetchInstance` → `afterCheckInstance` → `afterBuildDataClause` → `afterMainUpdateOperation`
+
+**Wiring:**
+
+- Scope & membership → `MembershipCheckAction`
+
+- Object permission → `ObjectPermissionCheckAction`
+
+- Domain rule(s) → `ValidationAction`
+
+- Cascade state → `UpdateCrudAction` / `CreateCrudAction`
+
+- Events → `PublishEventAction`
+
+```jsonc
+{
+  "workflow": {
+    "update": {
+      "afterBuildWhereClause": ["a100-check-membership"],
+      "afterFetchInstance": ["a110-object-perm", "a120-validate-state"],
+      "afterMainUpdateOperation": ["a130-cascade", "a140-emit-event"]
+    }
+  }
+}
+```
+
+**Notes:** Use `errorStatus: "400"` for business rules you *don’t* want absolute roles to bypass.
+
+---
+
+### 14.3 Eventful Creates (Domain Events + Interservice Orchestration)
+
+**Goal:** after a successful create, notify systems and kick off async work.
+
+**Milestones:**
+`afterMainCreateOperation` → `afterApiEvent`
+
+**Wiring:**
+
+- Build payload → `CreateObjectAction` / `AddToContextAction`
+
+- Publish domain event(s) → `PublishEventAction`
+
+- Notify other services → `InterserviceCallAction` (optional)
+
+```jsonc
+{
+  "workflow": {
+    "create": {
+      "afterMainCreateOperation": ["a200-build-payload", "a210-publish", "a220-notify-inv"]
+    }
+  }
+}
+```
+
+**Notes:** For idempotency, include a deterministic `eventId` in the message.
+
+---
+
+### 14.4 “Least-Privilege” Lists
+
+**Goal:** show only what the user may see, at scale.
+
+**Milestones:**
+`afterCheckBasicAuth` → `afterBuildWhereClause` → `afterMainListOperation`
+
+**Wiring:**
+
+- Resolve visible IDs (from membership/ABAC) → `MembershipCheckAction` (stored)
+
+- Constrain WHERE → `AddToContextAction` (inject filter)
+
+- Enrich summaries → `FetchStatsAction` (bucketed)
+
+```jsonc
+{
+  "actions": {
+    "validationActions": [
+      {
+        "id": "a300-visible-scope",
+        "extendClassName": "ValidationAction",
+        "name": "computeVisibility",
+        "checkType": "storedCheck",
+        "validationScript": "true"
+      }
+    ],
+    "addToContextActions": [
+      {
+        "id": "a301-apply-where",
+        "extendClassName": "AddToContextAction",
+        "name": "applyVisibilityWhere",
+        "context": [
+          { "contextName": "extraWhere", "contextValue": "{ organizationId: this.session.organizationId }" }
+        ]
+      }
+    ]
+  },
+  "workflow": {
+    "list": {
+      "afterCheckBasicAuth": ["a300-visible-scope"],
+      "afterBuildWhereClause": ["a301-apply-where"]
+    }
+  }
+}
+```
+
+**Notes:** Keep the expensive work out of `afterBuildWhereClause`; precompute earlier if needed.
+
+---
+
+### 14.5 Cleanup & Soft-Delete
+
+**Goal:** avoid orphans and stale caches/logs on deletion.
+
+**Milestones:**
+`afterFetchInstance` → `afterCheckInstance` → `afterMainDeleteOperation` → `afterBuildOutput`
+
+**Wiring:**
+
+- Pre-checks → `ValidationAction`
+
+- Dependent deletes → `DeleteCrudAction` (or soft-delete updates)
+
+- Cache bust → `WriteToRedisAction`
+
+- Event(s) → `PublishEventAction`
+
+```jsonc
+{
+  "workflow": {
+    "delete": {
+      "afterMainDeleteOperation": ["a400-delete-children", "a410-cache-bust", "a420-emit-deleted"]
+    }
+  }
+}
+```
+
+---
+

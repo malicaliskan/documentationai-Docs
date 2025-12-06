@@ -1,0 +1,536 @@
+---
+title: MScript Syntax Guide
+---
+## What is MScript
+
+MScript is a string-type field in Mindbricks patterns used to store JavaScript expressions.
+MScript values allow architects to inject native JavaScript expressions into the generated code in a definitive and controlled manner.
+
+### Scope
+
+Mindbricks is an AI-powered, pattern-based backend microservice code generator.
+This document aims to guide both human and AI architects\* in designing applications on Mindbricks using MScript.
+
+\*Architect refers to either AI agents or human users of Mindbricks, including product managers, business analysts, and software architects. Throughout this document, the term "architect" will be used interchangeably for both without further distinction.
+
+## First Rule
+
+MScript values are injected directly into the generated code after basic JavaScript syntax validation. However, even if a script is syntactically correct in isolation, it may cause syntax errors depending on where it is injected.
+
+A good rule of thumb is to ensure your script would be valid if combined with a simple JavaScript assignment operation, such as:
+
+Your script in the project design:
+
+```javascript
+...doWhen: "this.user.age > 18"
+```
+
+Mindbricks-generated code:
+
+```javascript
+const condition = this.user.age > 18;
+if (!condition) {
+  throw new Error("User should be older than 18");
+}
+```
+
+or:
+
+```javascript
+if (!this.user.age > 18) {
+  throw new Error("User should be older than 18");
+}
+```
+
+You have an additional option for writing MScripts:
+
+- **Using&#x20;****`module.exports`**\
+  You can write any MScript using a `module.exports` statement to reduce mistakes. Mindbricks will inject the exported part into the generated code.
+
+```javascript
+module.exports = (this.user.age > 18)
+```
+
+## Valid MScript Expressions
+
+### Literals
+
+You can use literal expressions in MScript fields, suitable for the context where they are expected.
+
+- **Number**
+
+```javascript
+5
+```
+
+or
+
+```javascript
+0.4
+```
+
+- **String**
+
+```javascript
+"premium"
+```
+
+Example from design JSON:
+
+```javascript
+// snippet from design JSON, not generated code
+userSettings.userType: "'premium'"
+```
+
+- **Boolean**
+
+```javascript
+true
+```
+
+- **Null identifier**
+
+```javascript
+null
+```
+
+### Identifiers
+
+You can use unreserved words as identifiers in JavaScript.
+
+```javascript
+userId
+```
+
+### `this` Expression
+
+By default, MScript expressions are parsed into the methods of a class unless stated otherwise.\
+Using `this` refers to the API context class.
+
+```javascript
+this
+```
+
+### Member Expressions
+
+You can access object properties using member expressions, provided the object is available in the scope.
+
+Example:
+
+```javascript
+user.roleId
+```
+
+Common usage with `this`:
+
+```javascript
+this.projectId
+```
+
+or
+
+```javascript
+this.organization.ownerId
+```
+
+### Binary Expressions
+
+You can use any binary expression that evaluates to a value.
+
+Examples:
+
+```javascript
+this.user.id == this.session.userId
+```
+
+```javascript
+5 - 2
+```
+
+```javascript
+5 + this.userAge
+```
+
+```javascript
+this.userAge ?? 18
+```
+
+```javascript
+// Not allowed
+// this.userAge = 5
+```
+
+### Conditional Expressions
+
+Simple conditional expression:
+
+```javascript
+isActive ? "yes" : "no"
+```
+
+More complex example:
+
+```javascript
+this.user.isPremium ? this.user.paidRights > this.user.usedRights : true
+```
+
+### Array Expressions
+
+Array expressions are valid in MScript.\
+Ensure that the receiving code expects or supports an array.
+
+Example:
+
+```javascript
+["admin", "superAdmin"]
+```
+
+### Call Expressions
+
+You can call functions or methods that are accessible in the given scope.
+
+Example using a method from the context:
+
+```javascript
+this.getUserRole(userId)
+```
+
+Example using an imported function:
+
+```javascript
+getUserAddressFromDb(this.userId)
+```
+
+A trick when you need some calculation logic before giving the expression in MScript, Define an Inline Arrow Function.
+
+```javascript
+(
+()=>{
+  let a = null;
+  // do something
+  // more something
+  // return the expression 
+  return a;
+}
+)()
+```
+
+### Object Expressions
+
+Mindbricks expects object expressions in some MScript fields, such as in "where" clauses.
+
+Simple object:
+
+```javascript
+{
+  admin: 0,
+  user: 1,
+  proUser: 2
+}
+```
+
+Complex object (e.g., a where clause):
+
+```javascript
+{
+  "$or": [
+    {
+      userId: this.session.userId
+    },
+    {
+      isProtected: false
+    }
+  ]
+}
+```
+
+## The Context: `this`
+
+When the pattern-based architecture design in Mindbricks is converted into services,
+all MScript fields within the patterns are transformed into code inside the **API Manager** layer.
+This layer is implemented as a JavaScript class that manages the current API operation.
+
+Thus, when we refer to the **context**, we are talking about the **properties of this class**.
+Since scripts defined in MScript fields are injected into methods of the class,
+you can always access the context within scripts using the `this` identifier.
+
+---
+
+### 📋 The Contents of the Context
+
+#### 🛤 Business API Parameters
+
+You can directly access the Business API parameters as properties of `this`:
+
+```javascript
+this.productId
+```
+
+#### 👤 Session Data
+
+Information about the currently logged-in user is accessible via the `session` object:
+
+```javascript
+this.session.userId
+this.session.roleId
+```
+
+#### 📥 Action Results in Business API
+
+If you have added any `BusinessApiAction` in your Business Logic design like `FetchObjectAction`, `FetchStatsAction`, `CreateCrudAction`, `ApiCallAction`, the result of the action call will be written to the `contextPropertyName` value define din the action settings.
+
+Example for an object fetch has `contextPropertyName` as `userCompany`:
+
+```javascript
+this.userCompany.name
+```
+
+**Note:** `BusinessApiAction` result data becomes available **only after** the action operation is executed.
+
+#### 📦 Main Operation Data
+
+Depending on the crudType of the Business Api, the main resource data becomes available:
+
+- **Create:** Access data **after creation** with the name of the data object like `this.customer`
+
+- **Get:** Access data **after retrieval** with the name of the data object like `this.customer`
+
+- **Delete:** Access data **after fetching** the instance with the name of the data object like `this.customer`
+
+- **Update:** Access data **after fetching** the instance with the name of the data object like `this.customer`
+
+- **List:** Access data list **after retrieval** with the **plural** name of the data object like `this.customers`
+
+Example:
+
+```javascript
+this.customer.countryId
+```
+
+#### 🛠 LIB Functions
+
+Global library functions are accessible via the `LIB` global object. You **do not** need to use `this`.
+
+```javascript
+LIB.getDayOfTheWeek()
+```
+
+#### 🧩 Function Results
+
+If you call a function inside your Business Api using the `FunctionCallAction`, the result will be available in the context
+using the action's `contextPropertyName` **after the function is executed**.
+
+Example:
+
+```javascript
+// assuming the contextPropertyName of a FunctionCallAction is userCount
+this.userCount > 5
+```
+
+---
+
+By consistently accessing the context with `this`, Mindbricks enables powerful, dynamic, and readable script logic inside your services.
+
+## 📄 MScript Query Syntax Guide
+
+Mindbricks provides a **unified object syntax** for writing filter queries that work across:
+
+- **MongoDB**
+
+- **Elasticsearch**
+
+- **Sequelize (PostgreSQL, MySQL, etc.)**
+
+Using Mindbricks' `MScript Query` syntax, you can write one object structure, and Mindbricks services will automatically generate the platform-specific query for data fetching.
+
+---
+
+### ✨ Basic Structure
+
+MScript Queries are JavaScript objects where:
+
+- **Field names** are **keys**.
+
+- **Field conditions** are **values**.
+
+- **Operators** start with a `$` (similar to MongoDB).
+
+Example:
+
+```json
+{
+  "age": { "$gte": 18 },
+  "status": { "$eq": "active" }
+}
+```
+
+This represents:
+
+- `age >= 18`
+
+- `status == "active"`
+
+Multiple fields are combined with an **implicit&#x20;****`$and`** logic.
+
+When a pattern field in Mindbricks service design expects an MScript Query,
+any JavaScript statement that evaluates to an MScript Query object can be used as well as setting an object value in the field.
+You may construct your queries in library functions and return them for use in the MScript Query field.
+
+For example, consider the following function defined in your service functions library:
+
+```javascript
+const getSearchQueryForProduct = (pName) => {
+    return { "name": { "$ilike": `%${pName}%` } };
+};
+
+module.exports = getSearchQueryForProduct;
+```
+
+You can use it where an MScript Query is expected:
+
+```json
+{
+  "searchClause": "getSearchQueryForProduct(this.product.name)"
+}
+```
+
+---
+
+### 📌 Mindbricks MScript Query Cheat Sheet
+
+#### 🧙 Basic Comparison Operators
+
+| Operator | Meaning          | Example                                    |
+| -------- | ---------------- | ------------------------------------------ |
+| `$eq`    | Equals           | `{ "status": { "$eq": "active" } }`        |
+| `$ne`    | Not equals       | `{ "status": { "$ne": "inactive" } }`      |
+| `$gt`    | Greater than     | `{ "age": { "$gt": 18 } }`                 |
+| `$gte`   | Greater or equal | `{ "age": { "$gte": 18 } }`                |
+| `$lt`    | Less than        | `{ "age": { "$lt": 30 } }`                 |
+| `$lte`   | Less or equal    | `{ "age": { "$lte": 30 } }`                |
+| `$in`    | In list          | `{ "role": { "$in": ["admin", "user"] } }` |
+| `$nin`   | Not in list      | `{ "role": { "$nin": ["guest"] } }`        |
+
+---
+
+#### 🔍 Pattern Matching
+
+| Operator  | Meaning                         | Example                                     |
+| --------- | ------------------------------- | ------------------------------------------- |
+| `$like`   | Like pattern (case-sensitive)   | `{ "name": { "$like": "%john%" } }`         |
+| `$ilike`  | Like pattern (case-insensitive) | `{ "name": { "$ilike": "%john%" } }`        |
+| `$nlike`  | Not like pattern                | `{ "name": { "$nlike": "%bot%" } }`         |
+| `$nilike` | Not ilike pattern               | `{ "name": { "$nilike": "%bot%" } }`        |
+| `$match`  | Match regex                     | `{ "description": { "$match": "sale" } }`   |
+| `$nmatch` | Not match regex                 | `{ "description": { "$nmatch": "error" } }` |
+
+---
+
+#### 📏 Range and Null Checks
+
+| Operator    | Meaning             | Example                                   |
+| ----------- | ------------------- | ----------------------------------------- |
+| `$between`  | Value between range | `{ "price": { "$between": [10, 100] } }`  |
+| `$nbetween` | Value not in range  | `{ "price": { "$nbetween": [10, 100] } }` |
+| `$isnull`   | Is null             | `{ "deletedAt": { "$isnull": true } }`    |
+| `$notnull`  | Is not null         | `{ "deletedAt": { "$notnull": true } }`   |
+
+---
+
+#### 🛠 Array and String Operations
+
+| Operator     | Meaning                        | Example                                      |
+| ------------ | ------------------------------ | -------------------------------------------- |
+| `$contains`  | Array contains value           | `{ "tags": { "$contains": "news" } }`        |
+| `$ncontains` | Array does not contain value   | `{ "tags": { "$ncontains": "draft" } }`      |
+| `$overlap`   | Arrays have common elements    | `{ "tags": { "$overlap": ["tech", "ai"] } }` |
+| `$noverlap`  | Arrays have no common elements | `{ "tags": { "$noverlap": ["old"] } }`       |
+| `$starts`    | Starts with string             | `{ "name": { "$starts": "Mr." } }`           |
+| `$nstarts`   | Does not start with string     | `{ "name": { "$nstarts": "Ms." } }`          |
+| `$ends`      | Ends with string               | `{ "email": { "$ends": "@gmail.com" } }`     |
+| `$nends`     | Does not end with string       | `{ "email": { "$nends": "@yahoo.com" } }`    |
+
+---
+
+#### 🔀 Logical Operators
+
+| Operator | Meaning                         | Example                    |
+| -------- | ------------------------------- | -------------------------- |
+| `$and`   | All conditions must be true     | `{ "$and": [ {a}, {b} ] }` |
+| `$or`    | At least one condition is true  | `{ "$or": [ {a}, {b} ] }`  |
+| `$not`   | Negates a condition             | `{ "$not": {a} }`          |
+| `$nor`   | None of the conditions are true | `{ "$nor": [ {a}, {b} ] }` |
+
+---
+
+### ✨ How Mindbricks Converts Your MScript Query
+
+Depending on the target platform:
+
+- For **Elasticsearch**, it generates **Elastic query DSL**.
+
+- For **Sequelize**, it generates **Sequelize ORM conditions**.
+
+- For **MongoDB**, it generates **native MongoDB queries**.
+
+Mindbricks services use their own query language internally.
+However, when your business logic requires custom conditions for data fetching,
+you can design the corresponding `whereClause` or `query` fields using your specific MScript Query conditions.
+
+You can also customize standard CRUD database operations by modifying their queries with MScript Query syntax.
+
+---
+
+### 💡 Pro Tips
+
+- **No&#x20;****`$eq`****&#x20;needed** for simple key-value: `{ "age": 18 }` = `{ "age": { "$eq": 18 } }`
+
+- **Multiple fields** are automatically combined with `$and`.
+
+- **Null checks** (`$isnull`, `$notnull`) are platform aware.
+
+- **Pattern search** in MongoDB/Elastic uses **regex** internally.
+
+- Prefer `$ilike` for **case-insensitive** matches when available.
+
+---
+
+### 🌟 Full Example
+
+```json
+{
+  "$and": [
+    { "status": { "$eq": "published" } },
+    {
+      "$or": [
+        { "views": { "$gte": 1000 } },
+        { "likes": { "$gte": 500 } }
+      ]
+    },
+    { "tags": { "$overlap": ["technology", "science"] } }
+  ]
+}
+```
+
+Meaning:
+
+- Status is `published`
+
+- AND (Views ≥ 1000 OR Likes ≥ 500)
+
+- AND Tags overlap with "technology" or "science"
+
+---
+
+Mindbricks MScript Query lets you:
+
+✅ Write once, let Mindbricks apply it across MongoDB, ElasticSearch, and Sequelize
+
+✅ Build complex queries easily
+
+✅ Stay close to MongoDB-style syntax while being flexible for SQL/NoSQL
+
+✅ Focus on business logic instead of database-specific query languages!
+
+---
+

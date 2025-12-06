@@ -221,7 +221,7 @@ These are defined under the `ApiOptions` pattern and include attributes like `na
 
 ---
 
-### **The&#x20;****`dataObjectName`****&#x20;and&#x20;****`crudType`****&#x20;Attributes**
+### **The&#x20;********`dataObjectName`********&#x20;and&#x20;********`crudType`********&#x20;Attributes**
 
 These two attributes define the *core identity* of a Business API.
 
@@ -236,7 +236,7 @@ Together, these two options tell Mindbricks **what the API does** and **where it
 
 ---
 
-### **Understanding the&#x20;****`name`****&#x20;Attribute**
+### **Understanding the `name` Attribute**
 
 The `name` of a Business API is far more than a label — it acts as a **semantic anchor** that drives automatic generation of REST routes, event names, and internal code identifiers.
 Mindbricks interprets this name intelligently to ensure both readability and consistency across documentation, code, and runtime routing.
@@ -397,7 +397,7 @@ When `get` or `list` APIs are configured to raise events, Mindbricks applies spe
   Example:
   `listCustomers` → `rentworld-customer-service-customers-listed`
 
-These rules apply **only when the action name is exactly&#x20;****`get`****&#x20;or&#x20;****`list`**.
+These rules apply **only when the action name is exactly&#x20;********`get`********&#x20;or \*\*\*\*****`list`**.
 For APIs with other verbs, Mindbricks simply converts the verb into its **passive form**, preserving its semantic meaning.
 Examples:
 
@@ -512,7 +512,7 @@ Here’s your refined version of the new section — keeping every detail intact
 
 ---
 
-## **Automatic Parameter Generation with&#x20;****`autoParams`**
+## **Automatic Parameter Generation with \`autoParams\`**
 
 When **`autoParams`** is set to `true`, Mindbricks automatically builds the parameter set of a Business API based on the **Data Object** definition and the **CRUD type**.
 This eliminates the need for manual parameter configuration in most cases, allowing the API to adapt dynamically to changes in its underlying data structure.
@@ -581,7 +581,7 @@ Because their values are internally managed, no automatic API parameters are gen
 
 #### **Client-Defined IDs in Create APIs**
 
-Although Mindbricks automatically generates record IDs (e.g., UUID for PostgreSQL, ObjectId for MongoDB), each create API also has a **built-in, optional&#x20;****`id`****&#x20;parameter** named according to the Data Object (e.g., `customerId`, `productId`).
+Although Mindbricks automatically generates record IDs (e.g., UUID for PostgreSQL, ObjectId for MongoDB), each create API also has a **built-in, optional&#x20;********`id`********&#x20;parameter** named according to the Data Object (e.g., `customerId`, `productId`).
 This parameter is hidden by default and not required, but if the client includes a valid `id` value in the request body, Mindbricks will **use that value instead of generating a new one** when inserting the record.
 
 ---
@@ -667,7 +667,7 @@ In these routes:
 A **get** or **delete** API always targets **exactly one record** of the main Data Object.
 Bulk deletions or multi-record retrievals can still be achieved for **child or related objects** through the API’s **business logic actions**, but at the **main object level**, Mindbricks enforces strict single-record targeting.
 
-This single-record constraint is guaranteed by the **primary&#x20;****`whereClause`**, which Mindbricks automatically limits to one record  using:
+This single-record constraint is guaranteed by the **primary \*\*\*\*****`whereClause`**, which Mindbricks automatically limits to one record  using:
 
 - the **auto-generated ID parameter** (e.g., `productId`, `customerId`),
 
@@ -702,8 +702,8 @@ Here’s your clarified version of that single sentence:
 - **Automatic generation:**
   Select parameters are automatically created based on the `selectBy` configuration.
 
-- **Independence from&#x20;****`autoParams`****:**
-  They are generated **even if&#x20;****`autoParams`****&#x20;is disabled**, ensuring that the API always has the parameters it needs to resolve the `whereClause`.
+- **Independence from&#x20;********`autoParams`********:**
+  They are generated **even if&#x20;********`autoParams`********&#x20;is disabled**, ensuring that the API always has the parameters it needs to resolve the `whereClause`.
 
 - **Typical usage:**
   In most cases, the default `selectBy` includes only the ID parameter.
@@ -1175,9 +1175,9 @@ rentworld-catalog-service-vehicle-created
 
 Two types of events are published automatically:
 
-- **API Events (****`apiEvents`****)** — emitted after API execution (e.g., `user-created`, `product-deleted`).
+- **API Events (********`apiEvents`********)** — emitted after API execution (e.g., `user-created`, `product-deleted`).
 
-- **Database Events (****`dbEvents`****)** — emitted for every database operation performed during API execution (e.g., `profile-updated`, `orderitem-inserted`).
+- **Database Events (********`dbEvents`********)** — emitted for every database operation performed during API execution (e.g., `profile-updated`, `orderitem-inserted`).
 
 While these are generated automatically, you can also **subscribe to or trigger APIs from external Kafka topics** — for example, when another microservice in your system publishes events to the same Kafka cluster.
 To do this, simply ensure that:
@@ -1603,7 +1603,7 @@ It defines how Mindbricks locates and secures records during execution — wheth
 
 ### **Get Options**
 
-The **Get Options** section defines configuration options specific to **`get`****-type Business APIs**, allowing architects to customize what happens when a single record is fetched.
+The **Get Options** section defines configuration options specific to **`get`****\*\*\*\*-type Business APIs**, allowing architects to customize what happens when a single record is fetched.
 These options extend the default behavior of `get` APIs — which normally only retrieve a record — by allowing additional post-fetch logic such as marking records as read or viewed.
 
 ```json
@@ -1664,8 +1664,8 @@ This configuration helps build **user-aware APIs** that not only fetch informati
 
 ### **Delete Options**
 
-The **Delete Options** section defines how a **`delete`****-type Business API** behaves when removing records.
-Mindbricks implements soft delete at the **application level** by using a single boolean field: **`isActive`**. There are **no automatic&#x20;****`deletedAt`****&#x20;or&#x20;****`isDeleted`****&#x20;fields**.
+The **Delete Options** section defines how a **`delete`****\*\*\*\*-type Business API** behaves when removing records.
+Mindbricks implements soft delete at the **application level** by using a single boolean field: **`isActive`**. There are **no automatic&#x20;********`deletedAt`********&#x20;or&#x20;********`isDeleted`********&#x20;fields**.
 
 ```json
 "DeleteOptions": {
@@ -1693,7 +1693,7 @@ Soft-delete behavior can be determined at three layers, with the **API layer ove
 
 #### **Runtime Behavior**
 
-- **Soft delete (****`useSoftDelete: true`****)**
+- **Soft delete (********`useSoftDelete: true`********)**
 
   - Updates the record with **`isActive = false`**.
 
@@ -1703,7 +1703,7 @@ Soft-delete behavior can be determined at three layers, with the **API layer ove
 
   - The record remains queryable if your `whereClause` allows inactive rows.
 
-- **Hard delete (****`useSoftDelete: false`****)**
+- **Hard delete (********`useSoftDelete: false`********)**
 
   - Physically removes the record.
 
@@ -1729,9 +1729,9 @@ This approach keeps soft delete **simple and uniform**—a single, well-understo
 
 ---
 
-#### **Notes on&#x20;****`isActive`****&#x20;Scoping**
+#### **Notes on&#x20;********`isActive`********&#x20;Scoping**
 
-- **Auto-scoping:** Mindbricks-generated code **automatically injects&#x20;****`isActive: true`** into queries (and designs indexes accordingly) so soft-deleted records are omitted by default.
+- **Auto-scoping:** Mindbricks-generated code **automatically injects \*\*\*\*****`isActive: true`** into queries (and designs indexes accordingly) so soft-deleted records are omitted by default.
 
 - **Explicit override:** If you **explicitly** add `isActive: false` to a query (e.g., in `fullWhereClause` or an `additionalClause`), the scope switches to **only deleted** records.
 
