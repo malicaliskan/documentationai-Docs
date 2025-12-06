@@ -1,0 +1,159 @@
+---
+title: Ontology Engine
+description: Understand how the Ontology Engine manages data relationships and schemas
+---
+
+## Ontology Engine Overview
+
+The Ontology Engine is Mindbricks' intelligent data management system that creates and maintains complex data relationships, schemas, and ontologies. It uses advanced graph theory and semantic analysis to understand your domain model.
+
+<Columns cols={3}>
+  <Card title="Schema Generation" icon="database" href="#schema" cta="Generate">
+    Automatically create database schemas from natural language.
+  </Card>
+  <Card title="Relationship Mapping" icon="network" href="#relationships" cta="Map">
+    Define and manage complex data relationships.
+  </Card>
+  <Card title="Migration Management" icon="refresh-cw" href="#migrations" cta="Manage">
+    Handle database schema evolution safely.
+  </Card>
+</Columns>
+
+## Core Functionality
+
+The Ontology Engine provides several key capabilities:
+
+<Tabs>
+  <Tab title="Data Modeling" icon="layers">
+    Create comprehensive data models that capture your business domain accurately.
+    
+    <CodeGroup tabs="SQL,GraphQL">
+      ```sql
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE posts (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  title VARCHAR(500) NOT NULL,
+  content TEXT,
+  published_at TIMESTAMP
+);
+```
+      ```graphql
+type User {
+  id: ID!
+  email: String!
+  posts: [Post!]!
+  createdAt: DateTime!
+}
+
+type Post {
+  id: ID!
+  title: String!
+  content: String
+  author: User!
+  publishedAt: DateTime
+}
+```
+    </CodeGroup>
+  </Tab>
+  <Tab title="Relationship Management" icon="link">
+    Define and maintain complex relationships between entities.
+  </Tab>
+  <Tab title="Schema Evolution" icon="git-branch">
+    Safely evolve your data schema as requirements change.
+  </Tab>
+</Tabs>
+
+<Callout kind="info">The Ontology Engine supports PostgreSQL, MySQL, MongoDB, and other popular databases.</Callout>
+
+## Ontology Types
+
+The engine can handle various ontology patterns:
+
+<Steps>
+  <Step title="Entity-Relationship" icon="users">
+    Traditional relational models with entities and relationships.
+  </Step>
+  <Step title="Graph-Based" icon="share-2">
+    Complex graph structures for interconnected data.
+  </Step>
+  <Step title="Document-Oriented" icon="file-text">
+    Flexible document schemas for varying data structures.
+  </Step>
+</Steps>
+
+## Schema Generation Process
+
+The Ontology Engine follows a systematic approach:
+
+1. **Analysis**: Parse input descriptions to identify entities and relationships
+2. **Modeling**: Create initial ontology graph
+3. **Optimization**: Apply normalization and performance optimizations
+4. **Generation**: Produce database schema and migration scripts
+5. **Validation**: Ensure schema integrity and consistency
+
+<Expandable title="Advanced Ontology Features" default-open="false">
+  For complex domains, the Ontology Engine can handle inheritance hierarchies, polymorphic relationships, and multi-tenant architectures.
+</Expandable>
+
+## Migration Management
+
+Safe schema evolution is critical for production applications:
+
+- Automatic migration script generation
+- Rollback capabilities for failed migrations
+- Data transformation during schema changes
+- Zero-downtime migration support
+
+<Callout kind="tip">Always test migrations on staging environments before applying to production.</Callout>
+
+## Integration with AI Architect
+
+The Ontology Engine works seamlessly with the AI Architect:
+
+| Feature | Description |
+|---------|-------------|
+| Automatic Schema | Generate schemas from AI Architect specifications |
+| Relationship Inference | Understand implied relationships in requirements |
+| Schema Refinement | Iteratively improve schemas based on feedback |
+| Consistency Checking | Ensure schema matches API expectations |
+
+## Performance Optimization
+
+The Ontology Engine optimizes schemas for:
+
+- Query performance with appropriate indexing
+- Data normalization and denormalization strategies
+- Caching layer integration
+- Read/write optimization based on access patterns
+
+## Best Practices
+
+To maximize Ontology Engine effectiveness:
+
+1. Provide comprehensive domain descriptions
+2. Include relationship cardinalities and constraints
+3. Specify performance requirements upfront
+4. Review generated schemas for business logic accuracy
+5. Plan for future schema evolution
+
+## Common Patterns
+
+<ExpandableGroup>
+  <Expandable title="User Management Schema" default-open="false">
+    Standard user authentication and profile management with roles and permissions.
+  </Expandable>
+  <Expandable title="E-commerce Data Model" default-open="false">
+    Products, orders, inventory, and customer relationship management.
+  </Expandable>
+  <Expandable title="Content Management" default-open="false">
+    Articles, categories, tags, and content relationships.
+  </Expandable>
+</ExpandableGroup>
+
+The Ontology Engine continuously learns from successful implementations to improve future schema generations.

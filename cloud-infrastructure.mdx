@@ -1,0 +1,170 @@
+---
+title: Cloud Infrastructure
+description: Deploy Mindbricks-generated backends to scalable cloud environments
+---
+
+## Cloud Infrastructure Overview
+
+Mindbricks' Cloud Infrastructure component provides seamless deployment and management of generated backends across major cloud platforms. It handles scaling, monitoring, and security automatically.
+
+<Columns cols={3}>
+  <Card title="Auto-Scaling" icon="trending-up" href="#scaling" cta="Scale">
+    Automatically scale resources based on demand.
+  </Card>
+  <Card title="Monitoring" icon="activity" href="#monitoring" cta="Monitor">
+    Built-in performance and health monitoring.
+  </Card>
+  <Card title="Security" icon="shield" href="#security" cta="Secure">
+    Enterprise-grade security and compliance.
+  </Card>
+</Columns>
+
+## Supported Platforms
+
+Deploy to any major cloud provider:
+
+<Tabs>
+  <Tab title="AWS" icon="cloud">
+    Amazon Web Services with EC2, Lambda, and RDS support.
+    
+    <CodeGroup tabs="Terraform,CloudFormation">
+      ```hcl
+resource "aws_instance" "backend" {
+  ami           = "ami-12345"
+  instance_type = "t2.micro"
+  
+  tags = {
+    Name = "mindbricks-backend"
+  }
+}
+```
+      ```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  BackendInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-12345
+      InstanceType: t2.micro
+```
+    </CodeGroup>
+  </Tab>
+  <Tab title="Google Cloud" icon="cloud">
+    Google Cloud Platform with App Engine and Cloud SQL.
+  </Tab>
+  <Tab title="Azure" icon="cloud">
+    Microsoft Azure with App Service and Cosmos DB.
+  </Tab>
+</Tabs>
+
+<Callout kind="info">Mindbricks handles all cloud-specific configurations and optimizations automatically.</Callout>
+
+## Deployment Process
+
+Deploying a backend takes just a few steps:
+
+<Steps>
+  <Step title="Connect Account" icon="link">
+    Link your cloud provider account to Mindbricks.
+    
+    ```bash
+mindbricks cloud connect aws --profile default
+```
+  </Step>
+  <Step title="Configure Environment" icon="settings">
+    Set environment variables and configuration.
+  </Step>
+  <Step title="Deploy" icon="rocket">
+    Click deploy and watch your backend go live.
+  </Step>
+</Steps>
+
+## Auto-Scaling Features
+
+Mindbricks automatically scales your infrastructure:
+
+- Horizontal scaling based on CPU and memory usage
+- Vertical scaling for increased resource allocation
+- Geographic scaling across multiple regions
+- Predictive scaling using AI algorithms
+
+<Expandable title="Scaling Configuration" default-open="false">
+  Customize scaling parameters including minimum/maximum instances, scaling thresholds, and cooldown periods.
+</Expandable>
+
+## Monitoring and Observability
+
+Comprehensive monitoring out of the box:
+
+- Real-time performance metrics
+- Error tracking and alerting
+- Log aggregation and analysis
+- Distributed tracing
+- Health checks and uptime monitoring
+
+<Callout kind="tip">All monitoring data is accessible through the Mindbricks dashboard and can be integrated with external tools.</Callout>
+
+## Security Features
+
+Enterprise-grade security included:
+
+| Feature | Description |
+|---------|-------------|
+| Encryption | Data encryption at rest and in transit |
+| Access Control | Role-based access and authentication |
+| Compliance | SOC2, GDPR, and HIPAA compliance options |
+| Firewalls | Automatic firewall configuration |
+| SSL/TLS | Automatic SSL certificate management |
+
+## Cost Optimization
+
+Mindbricks optimizes cloud costs:
+
+- Right-sizing instances based on usage patterns
+- Reserved instance recommendations
+- Spot instance utilization where appropriate
+- Cost monitoring and alerts
+
+## Backup and Recovery
+
+Automated backup and disaster recovery:
+
+- Daily automated backups
+- Point-in-time recovery
+- Cross-region replication
+- Automated failover
+
+## Integration Capabilities
+
+The Cloud Infrastructure integrates with:
+
+- CI/CD pipelines for automated deployments
+- Monitoring tools like Datadog and New Relic
+- Logging platforms such as ELK stack
+- Security scanning tools
+
+## Best Practices
+
+For optimal cloud deployments:
+
+1. Start with development environments
+2. Use infrastructure as code for reproducibility
+3. Implement proper monitoring from day one
+4. Plan for multi-region deployment early
+5. Regularly review and optimize costs
+
+## Troubleshooting
+
+<ExpandableGroup>
+  <Expandable title="Deployment Failures" default-open="false">
+    Check cloud provider permissions and quota limits. Ensure all required ports are open.
+  </Expandable>
+  <Expandable title="Performance Issues" default-open="false">
+    Review scaling configuration and database query performance. Consider upgrading instance types.
+  </Expandable>
+  <Expandable title="Cost Spikes" default-open="false">
+    Monitor resource usage and adjust scaling policies. Review unused resources regularly.
+  </Expandable>
+</ExpandableGroup>
+
+The Cloud Infrastructure component ensures your Mindbricks-generated backends run reliably and efficiently in production environments.
