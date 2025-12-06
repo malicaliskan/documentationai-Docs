@@ -1,0 +1,646 @@
+---
+title: User Management
+description: >-
+  This document includes a sample frontend guide for user management of a 
+  specific application designed, built and deployed in Mindbricks. The
+  application name is TickatMe, and please note that any information referencing
+  to tickatme should be considered as an example for your own project.
+---
+## Admin Page
+
+User management will be one of the main parts of the administrative managemnts, so there will be a minimal but fancy `users` page in the admin dashboard.
+
+### User Roles
+
+- `superadmin` : The first creator of the backend, the owner of the application, root user, has got an absolute authroization on all actions. It can not be assgined any other user. It can't be unassigned. Super admin user can not be deleted in any way.
+
+- `saasAdmin` : The role that can be assigned to any user by the super admin. This role includes most permissions that super admin have, but admins can't assign admin roles, can't unassign an admin role, can't delete other users who have admin role. In addition to these limitations, some critical actions in the business services may also be open to only super admin.
+
+- `tenantOwner` : The first creator of the store tenant. This user is automatically gets this role when they first created the tenant. They have all authroization in the scope of their store tenant. This role can't be assigned or unassgined. Tenant owner user can not be deleted unless the tenant is deleted.
+
+- `tenantAdmin` : The role that can be assigned to any user by the tenant owner. This role includes most permissions that tenant owner have, but tenant admins can't assign tenant admin roles, can't unassign tenant admin roles, can't delete other users who have tenant admin role.
+
+- `tenantUser` : The standard role that is assgined to every user when first created or registered. This role doesnt have any privilages and can access to their own data or public data.
+
+The roles object is a hardcoded object in the generated code, and it contains the following roles:
+
+```json
+{
+  "superAdmin": "'superAdmin'",
+  "saasAdmin": "'saasAdmin'",
+  "tenantOwner": "'tenantOwner'",
+  "tenantAdmin": "'tenantAdmin'",
+  "tenantUser": "'tenantUser'"
+}
+```
+
+Each user may have only one role, and it is given in `/login` , `/currentuser` or `/users/:userId` response as follows
+
+```json
+{
+  // ...
+  "roleId": "superAdmin"
+  // ...
+}
+```
+
+## Listing Users
+
+You can list users using the `listUsers` api.
+
+### `List Users` API
+
+**Rest Route**
+
+The `listUsers` API REST controller can be triggered via the following route:
+
+`/v1/users`
+
+**Rest Request Parameters**
+The `listUsers` api has got no request parameters.
+
+**REST Request**
+To access the api you can use the **REST** controller with the path **GET /v1/users**
+
+```js
+axios({
+  method: "GET",
+  url: "/v1/users",
+  data: {},
+  params: {},
+});
+```
+
+**REST Response**
+
+```json
+{
+  "status": "OK",
+  "statusCode": "200",
+  "elapsedMs": 126,
+  "ssoTime": 120,
+  "source": "db",
+  "cacheKey": "hexCode",
+  "userId": "ID",
+  "sessionId": "ID",
+  "requestId": "ID",
+  "dataName": "users",
+  "method": "GET",
+  "action": "list",
+  "appVersion": "Version",
+  "rowCount": "\"Number\"",
+  "users": [
+    {
+      "id": "ID",
+      "email": "String",
+      "password": "String",
+      "fullname": "String",
+      "avatar": "String",
+      "roleId": "String",
+      "mobile": "String",
+      "mobileVerified": "Boolean",
+      "emailVerified": "Boolean",
+      "storeId": "ID",
+      "isActive": true,
+      "recordVersion": "Integer",
+      "createdAt": "Date",
+      "updatedAt": "Date",
+      "_owner": "ID"
+    },
+    {},
+    {}
+  ],
+  "paging": {
+    "pageNumber": "Number",
+    "pageRowCount": "NUmber",
+    "totalRowCount": "Number",
+    "pageCount": "Number"
+  },
+  "filters": [],
+  "uiPermissions": []
+}
+```
+
+## Searching Users
+
+You may search users with their full names and emails. The search is done in elasticsearch index of the user table so a fast response is provided by the backend. You can send search request on each character update in the search box but start searching after 3 chars.
+The keyword parameter that is used in the business logic of the api, is read from the keyword query parameter.
+
+eg: `GET /v1/searchusers?keyword=Joe`
+
+When the user deletes the search keyword, use the `listUsers` api to get the full list again.
+
+### `Search Users` API
+
+**Rest Route**
+
+The `searchUsers` API REST controller can be triggered via the following route:
+
+`/v1/searchusers`
+
+**Rest Request Parameters**
+
+The `searchUsers` api has got 1 request parameter
+
+| Parameter | Type   | Required | Population             |
+| --------- | ------ | -------- | ---------------------- |
+| keyword   | String | true     | request.query?.keyword |
+
+**keyword** :
+
+**REST Request**
+To access the api you can use the **REST** controller with the path **GET /v1/searchusers**
+
+```js
+axios({
+  method: "GET",
+  url: "/v1/searchusers",
+  data: {},
+  params: {
+    keyword: '"String"',
+  },
+});
+```
+
+**REST Response**
+
+```json
+{
+  "status": "OK",
+  "statusCode": "200",
+  "elapsedMs": 126,
+  "ssoTime": 120,
+  "source": "db",
+  "cacheKey": "hexCode",
+  "userId": "ID",
+  "sessionId": "ID",
+  "requestId": "ID",
+  "dataName": "users",
+  "method": "GET",
+  "action": "list",
+  "appVersion": "Version",
+  "rowCount": "\"Number\"",
+  "users": [
+    {
+      "id": "ID",
+      "email": "String",
+      "password": "String",
+      "fullname": "String",
+      "avatar": "String",
+      "roleId": "String",
+      "mobile": "String",
+      "mobileVerified": "Boolean",
+      "emailVerified": "Boolean",
+      "storeId": "ID",
+      "isActive": true,
+      "recordVersion": "Integer",
+      "createdAt": "Date",
+      "updatedAt": "Date",
+      "_owner": "ID"
+    },
+    {},
+    {}
+  ],
+  "paging": {
+    "pageNumber": "Number",
+    "pageRowCount": "NUmber",
+    "totalRowCount": "Number",
+    "pageCount": "Number"
+  },
+  "filters": [],
+  "uiPermissions": []
+}
+```
+
+#### Pagination
+
+When you list the users please use pagination. To be able to use pagination you should provide a `pageNumber` paramater in the query. The default row count for one page is 25, add an option for user to change it to 50 or 100. You can provide this value to the api through the `pageRowCount` parameter;
+
+`GET /users?pageNumber=1&pageRowCount=50`
+
+## Creatng Users
+
+The user management console in the admin dashboard should provide UX components for user creating by admins. When creating users, it should also be possible to upload user avatar. Note that when creating, updating users , admins can not set emailVerified (or mobileVerified if exists) as true, since it is a logical mechanism and should be verified only through verification processes.
+
+### `Create User` API
+
+This api is used by admin roles to create a new user manually from admin panels
+
+**Rest Route**
+
+The `createUser` API REST controller can be triggered via the following route:
+
+`/v1/users`
+
+**Rest Request Parameters**
+
+The `createUser` api has got 5 request parameters
+
+| Parameter | Type   | Required | Population             |
+| --------- | ------ | -------- | ---------------------- |
+| avatar    | String | false    | request.body?.avatar   |
+| email     | String | true     | request.body?.email    |
+| password  | String | true     | request.body?.password |
+| fullname  | String | true     | request.body?.fullname |
+| mobile    | String | true     | request.body?.mobile   |
+
+**avatar** : The avatar url of the user. If not sent, a default random one will be generated.
+**email** : A string value to represent the user's email.
+**password** : A string value to represent the user's password. It will be stored as hashed.
+**fullname** : A string value to represent the fullname of the user
+**mobile** : A string value to represent the user's mobile number.
+
+**REST Request**
+To access the api you can use the **REST** controller with the path **POST /v1/users**
+
+```js
+axios({
+  method: "POST",
+  url: "/v1/users",
+  data: {
+    avatar: "String",
+    email: "String",
+    password: "String",
+    fullname: "String",
+    mobile: "String",
+  },
+  params: {},
+});
+```
+
+**REST Response**
+
+```json
+{
+  "status": "OK",
+  "statusCode": "201",
+  "elapsedMs": 126,
+  "ssoTime": 120,
+  "source": "db",
+  "cacheKey": "hexCode",
+  "userId": "ID",
+  "sessionId": "ID",
+  "requestId": "ID",
+  "dataName": "user",
+  "method": "POST",
+  "action": "create",
+  "appVersion": "Version",
+  "rowCount": 1,
+  "user": {
+    "id": "ID",
+    "email": "String",
+    "password": "String",
+    "fullname": "String",
+    "avatar": "String",
+    "roleId": "String",
+    "mobile": "String",
+    "mobileVerified": "Boolean",
+    "emailVerified": "Boolean",
+    "storeId": "ID",
+    "isActive": true,
+    "recordVersion": "Integer",
+    "createdAt": "Date",
+    "updatedAt": "Date",
+    "_owner": "ID"
+  }
+}
+```
+
+### Avatar Upload
+
+Normally when user registers by his own, the avatar is uploaded to the logged in user's public bucket, however in this user admin panel, if any avatar upload is needed, it should be uploaded to the application public bucket. To access this application bucket, the `applicationBucketToken` should be used in the bearer header, and the bucketId in the payload should be given as
+`"tickatme-public-common-bucket"` .
+
+Before the avatar upload, a specific componenet from `react-easy-crop` lib should be used for zoom, pan and crop. This component also requested in the PART 1 prompt for profile page, so ensure taht you reuse the previous code if exists.
+
+## Updating Users
+
+User update is possible by `updateUser`api. However since this update api is also called by teh user themselves it is lmited with name and avatar change (or any other user related property).
+For roleId and password updates seperate apis are used. So arrange the user update UI as to update the user info, as to set roleId and as to update password.
+
+### `Update User` API
+
+This route is used by admins to update user profiles.
+
+**Rest Route**
+
+The `updateUser` API REST controller can be triggered via the following route:
+
+`/v1/users/:userId`
+
+**Rest Request Parameters**
+
+The `updateUser` api has got 4 request parameters
+
+| Parameter | Type   | Required | Population             |
+| --------- | ------ | -------- | ---------------------- |
+| userId    | ID     | true     | request.params?.userId |
+| fullname  | String | false    | request.body?.fullname |
+| avatar    | String | false    | request.body?.avatar   |
+| mobile    | String | false    | request.body?.mobile   |
+
+**userId** : This id paremeter is used to select the required data object that will be updated
+**fullname** : A string value to represent the fullname of the user
+**avatar** : The avatar url of the user. A random avatar will be generated if not provided
+**mobile** : A string value to represent the user's mobile number.
+
+**REST Request**
+To access the api you can use the **REST** controller with the path **PATCH /v1/users/:userId**
+
+```js
+axios({
+  method: "PATCH",
+  url: `/v1/users/${userId}`,
+  data: {
+    fullname: "String",
+    avatar: "String",
+    mobile: "String",
+  },
+  params: {},
+});
+```
+
+**REST Response**
+
+```json
+{
+  "status": "OK",
+  "statusCode": "200",
+  "elapsedMs": 126,
+  "ssoTime": 120,
+  "source": "db",
+  "cacheKey": "hexCode",
+  "userId": "ID",
+  "sessionId": "ID",
+  "requestId": "ID",
+  "dataName": "user",
+  "method": "PATCH",
+  "action": "update",
+  "appVersion": "Version",
+  "rowCount": 1,
+  "user": {
+    "id": "ID",
+    "email": "String",
+    "password": "String",
+    "fullname": "String",
+    "avatar": "String",
+    "roleId": "String",
+    "mobile": "String",
+    "mobileVerified": "Boolean",
+    "emailVerified": "Boolean",
+    "storeId": "ID",
+    "isActive": true,
+    "recordVersion": "Integer",
+    "createdAt": "Date",
+    "updatedAt": "Date",
+    "_owner": "ID"
+  }
+}
+```
+
+For role updates there are some rules.
+
+1. Superadmin role can not be unassigned even by superadmin.
+
+2. Admin roles can be assgined or unassgined only by superadmin.
+
+3. All other roles can be assigned and unassgined by admins and superadmin.
+
+For password updates there are some rules.
+
+1. Superadmin and admin passwords can be updated only by superadmin.
+
+2. Admins can update only non-admin passwords.
+
+### `Update Userrole` API
+
+This route is used by admin roles to update the user role.The default role is tenantUser when a tenant user is registered. A tenant user's role can be updated by tenantAdmin / tenantOwner, while saas user's role is updated by superAdmin or saasAdmin
+
+**Rest Route**
+
+The `updateUserRole` API REST controller can be triggered via the following route:
+
+`/v1/userrole/:userId`
+
+**Rest Request Parameters**
+
+The `updateUserRole` api has got 2 request parameters
+
+| Parameter | Type   | Required | Population             |
+| --------- | ------ | -------- | ---------------------- |
+| userId    | ID     | true     | request.params?.userId |
+| roleId    | String | true     | request.body?.roleId   |
+
+**userId** : This id paremeter is used to select the required data object that will be updated
+**roleId** : The new roleId of the user to be updated
+
+**REST Request**
+To access the api you can use the **REST** controller with the path **PATCH /v1/userrole/:userId**
+
+```js
+axios({
+  method: "PATCH",
+  url: `/v1/userrole/${userId}`,
+  data: {
+    roleId: "String",
+  },
+  params: {},
+});
+```
+
+**REST Response**
+
+```json
+{
+  "status": "OK",
+  "statusCode": "200",
+  "elapsedMs": 126,
+  "ssoTime": 120,
+  "source": "db",
+  "cacheKey": "hexCode",
+  "userId": "ID",
+  "sessionId": "ID",
+  "requestId": "ID",
+  "dataName": "user",
+  "method": "PATCH",
+  "action": "update",
+  "appVersion": "Version",
+  "rowCount": 1,
+  "user": {
+    "id": "ID",
+    "email": "String",
+    "password": "String",
+    "fullname": "String",
+    "avatar": "String",
+    "roleId": "String",
+    "mobile": "String",
+    "mobileVerified": "Boolean",
+    "emailVerified": "Boolean",
+    "storeId": "ID",
+    "isActive": true,
+    "recordVersion": "Integer",
+    "createdAt": "Date",
+    "updatedAt": "Date",
+    "_owner": "ID"
+  }
+}
+```
+
+### `Update Userpasswordbyadmin` API
+
+This route is used to change any user password by admins only. Superadmin can chnage all passwords, admins can change only nonadmin passwords
+
+**Rest Route**
+
+The `updateUserPasswordByAdmin` API REST controller can be triggered via the following route:
+
+`/v1/userpasswordbyadmin/:userId`
+
+**Rest Request Parameters**
+
+The `updateUserPasswordByAdmin` api has got 2 request parameters
+
+| Parameter | Type   | Required | Population             |
+| --------- | ------ | -------- | ---------------------- |
+| userId    | ID     | true     | request.params?.userId |
+| password  | String | true     | request.body?.password |
+
+**userId** : This id paremeter is used to select the required data object that will be updated
+**password** : The new password of the user to be updated
+
+**REST Request**
+To access the api you can use the **REST** controller with the path **PATCH /v1/userpasswordbyadmin/:userId**
+
+```js
+axios({
+  method: "PATCH",
+  url: `/v1/userpasswordbyadmin/${userId}`,
+  data: {
+    password: "String",
+  },
+  params: {},
+});
+```
+
+**REST Response**
+
+```json
+{
+  "status": "OK",
+  "statusCode": "200",
+  "elapsedMs": 126,
+  "ssoTime": 120,
+  "source": "db",
+  "cacheKey": "hexCode",
+  "userId": "ID",
+  "sessionId": "ID",
+  "requestId": "ID",
+  "dataName": "user",
+  "method": "PATCH",
+  "action": "update",
+  "appVersion": "Version",
+  "rowCount": 1,
+  "user": {
+    "id": "ID",
+    "email": "String",
+    "password": "String",
+    "fullname": "String",
+    "avatar": "String",
+    "roleId": "String",
+    "mobile": "String",
+    "mobileVerified": "Boolean",
+    "emailVerified": "Boolean",
+    "storeId": "ID",
+    "isActive": true,
+    "recordVersion": "Integer",
+    "createdAt": "Date",
+    "updatedAt": "Date",
+    "_owner": "ID"
+  }
+}
+```
+
+### Deleting Users
+
+Deleting users is possible in certain conditions.
+
+1. SuperAdmin can not be deleted.
+
+2. Admins can be deleted by only superadmin.
+
+3. Users can be deleted by admins or superadmin.
+
+### `Delete User` API
+
+This api is used by admins to delete user profiles.
+
+**Rest Route**
+
+The `deleteUser` API REST controller can be triggered via the following route:
+
+`/v1/users/:userId`
+
+**Rest Request Parameters**
+
+The `deleteUser` api has got 1 request parameter
+
+| Parameter | Type | Required | Population             |
+| --------- | ---- | -------- | ---------------------- |
+| userId    | ID   | true     | request.params?.userId |
+
+**userId** : This id paremeter is used to select the required data object that will be deleted
+
+**REST Request**
+To access the api you can use the **REST** controller with the path **DELETE /v1/users/:userId**
+
+```js
+axios({
+  method: "DELETE",
+  url: `/v1/users/${userId}`,
+  data: {},
+  params: {},
+});
+```
+
+**REST Response**
+
+```json
+{
+  "status": "OK",
+  "statusCode": "200",
+  "elapsedMs": 126,
+  "ssoTime": 120,
+  "source": "db",
+  "cacheKey": "hexCode",
+  "userId": "ID",
+  "sessionId": "ID",
+  "requestId": "ID",
+  "dataName": "user",
+  "method": "DELETE",
+  "action": "delete",
+  "appVersion": "Version",
+  "rowCount": 1,
+  "user": {
+    "id": "ID",
+    "email": "String",
+    "password": "String",
+    "fullname": "String",
+    "avatar": "String",
+    "roleId": "String",
+    "mobile": "String",
+    "mobileVerified": "Boolean",
+    "emailVerified": "Boolean",
+    "storeId": "ID",
+    "isActive": false,
+    "recordVersion": "Integer",
+    "createdAt": "Date",
+    "updatedAt": "Date",
+    "_owner": "ID"
+  }
+}
+```
+
+---
+
+When you list user group members, a `user` object will also be inserted in each userGroupMember object, with fullname, avatar and email.
+

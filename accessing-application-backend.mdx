@@ -1,0 +1,111 @@
+---
+title: Consuming Your Backend
+description: >-
+  This document includes a sample frontend guide prepared for a specific
+  application designed, built and deployed in Mindbricks. The application name
+  is TickatMe, and please note that any information referencing to tickatme
+  should be considered as an example for your own project.
+---
+## API Structure
+
+### Object Structure of a Successful Response
+
+When the service processes requests successfully, it wraps the requested resource(s) within a JSON envelope. This envelope includes the data and essential metadata such as configuration details and pagination information, providing context to the client.
+
+**HTTP Status Codes:**
+
+- **200 OK**: Returned for successful GET, LIST, UPDATE, or DELETE operations, indicating that the request was processed successfully.
+
+- **201 Created**: Returned for CREATE operations, indicating that the resource was created successfully.
+
+**Success Response Format:**
+
+For successful operations, the response includes a `"status": "OK"` property, signaling that the request executed successfully. The structure of a successful response is outlined below:
+
+```json
+{
+  "status": "OK",
+  "statusCode": 200,
+  "elapsedMs": 126,
+  "ssoTime": 120,
+  "source": "db",
+  "cacheKey": "hexCode",
+  "userId": "ID",
+  "sessionId": "ID",
+  "requestId": "ID",
+  "dataName": "products",
+  "method": "GET",
+  "action": "list",
+  "appVersion": "Version",
+  "rowCount": 3,
+  "products": [{}, {}, {}],
+  "paging": {
+    "pageNumber": 1,
+    "pageRowCount": 25,
+    "totalRowCount": 3,
+    "pageCount": 1
+  },
+  "filters": [],
+  "uiPermissions": []
+}
+```
+
+- **`products`**: In this example, this key contains the actual response content, which may be a single object or an array of objects depending on the operation.
+
+### Additional Data
+
+Each API may include additional data besides the main data object, depending on the business logic of the API. These will be provided in each API’s response signature.
+
+### Error Response
+
+If a request encounters an issue—whether due to a logical fault or a technical problem—the service responds with a standardized JSON error structure. The HTTP status code indicates the nature of the error, using commonly recognized codes for clarity:
+
+- **400 Bad Request**: The request was improperly formatted or contained invalid parameters.
+
+- **401 Unauthorized**: The request lacked a valid authentication token; login is required.
+
+- **403 Forbidden**: The current token does not grant access to the requested resource.
+
+- **404 Not Found**: The requested resource was not found on the server.
+
+- **500 Internal Server Error**: The server encountered an unexpected condition.
+
+Each error response is structured to provide meaningful insight into the problem, assisting in efficient diagnosis and resolution.
+
+```js
+{
+  "result": "ERR",
+  "status": 400,
+  "message": "errMsg_organizationIdisNotAValidID",
+  "errCode": 400,
+  "date": "2024-03-19T12:13:54.124Z",
+  "detail": "String"
+}
+```
+
+## Accessing the backend
+
+Services may be deployed to the preview server, staging server, or production server. Therefore, each service has 3 access URLs.
+The frontend application must support all deployment environments during development, and the user should be able to select the target API server on the home page.
+
+The base URL of the application in each environment is as follows:
+
+- **Preview:** `https://tickatme.prw.mindbricks.com`
+
+- **Staging:** `https://tickatme-stage.mindbricks.co`
+
+- **Production:** `https://tickatme.mindbricks.co`
+
+For the auth service, the base URLs are:
+
+- **Preview:** `https://tickatme.prw.mindbricks.com/auth-api`
+
+- **Staging:** `https://tickatme-stage.mindbricks.co/auth-api`
+
+- **Production:** `https://tickatme.mindbricks.co/auth-api`
+
+For each other service, the service base URL will be given in the service sections.
+
+Any request that requires login must include a valid token in the Bearer authorization header.
+
+Please note that for each service in the project (which will be introduced in following pages) will use a different address so it is a good practice to define a separate client for each service in the frontend application lib source. Not only the different base urls, some services even may need different access rules when shaping the request.

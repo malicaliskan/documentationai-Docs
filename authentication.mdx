@@ -1,0 +1,564 @@
+---
+title: Authentication Management
+description: >-
+  This document includes a sample frontend guide for authetication management of
+  a  specific application designed, built and deployed in Mindbricks. The
+  application name is TickatMe, and please note that any information referencing
+  to **tickatme** should be considered as an example for your own project.
+---
+## Considering Multi-Tenancy&#x20;
+
+**THIS APPLICATION IS MULTI-TENANT**
+
+This application is mult-tanant, it means; as a SaaS application, it isolates each tenant-data from each other. The tenants are called `store` and a data object with the same name exist to store and manage the tenant information. The `store` data instances are referenced from other data objects or entities as `storeId`. Any data object which is in tenant level (some data objects may still stay in SaaS level) has a `storeId` property which attaches it to a `store` tenant. But this value is added to the data object instance in the time of creation by the system according to the current `store` user is navigating.
+
+For the human readability each `store` has also got a `storeCodename` which is a unique form of its name. Any api call to the application should claim its target `store` tenant, so it should provide `storeCodename` parameter at one of the following request locations.
+
+```javascript
+// In header with special header name
+headers["mbx-store-codename"] = "babil",
+
+// or in query with ( _store ) parameter
+
+const url = `${serviceUrl}/v1/users/${userId}?_store=babil`
+
+// or in post body with ( _store ) parameter
+const body = {
+  //...
+  _store: "babil",
+  //...
+}
+```
+
+When no `storeCodename` is given in the related parameters, application will assume that the access targets the root target, the Saas level. The `storeCodename` of SaaS level is always `root`. When no `storeCodename` is specified, `root` is assumed as the current `storeCodename`.
+
+Note that, logins and registrations are all tenant scoped. If any a tenant-lvel api is login-required then it will check for a `store` specific token according to the target `store` defined in a related parameter with its codename. The application creates the cookies with `storeCodename` prefixes but it is recommended for the frontend application to populate the bearer header with the user's `store` related token.
+
+Not that all `store` tenants are managed in the same backend services, however a `store` tanant frontend should be specific to one `store`. Frontend should have a technical way to understand which `store` is targeted by the user, for production frontend application this should be managed by the subdomains that represents the codename of the store like,
+
+```
+https://babil.storeCreator.com
+```
+
+Using the subdomain, frontend will distinguish that the codename is `babil` and will atatch it to all tenant-level api calls.
+
+The url may also be used for the SaaS directly with a more general wording like,
+
+```
+https://www.storeCreator.com
+```
+
+However, this subdomain management may not be handled easily in the AI frontend builders that they use their own preview urls, an other url structure should be handled to simulate the subdomain behaviour for tenant forwarding.
+
+It may be like,
+
+```
+https://{somePreviewUrlOfABuilderPlatform}/babil/login
+```
+
+In some way, frontend should provide a simple and practical way to the user to target a specific tenant.
+
+### Sample Store Tenant
+
+The applcation backend also includes a sample tenant created with a sample tenant owner, who has the same email and password of the superadmin. This sample is created in the backend to be able to test the multi-tenant behaviour of the frontend at the beginning.
+
+The sample store has a codename `babil` and can be targetd by attaching this codename to the API calls. So whwn the front end home page is built, homepages both for the SaaS and tenant shoul be created and ready to be tested.
+
+## Home Page Tips
+
+Note that this page should include a deployment (environment) selection option to set the base URL. Set the default to `production`.
+
+After user logs in, page header should show the current login state as in modern web pages, logged in user fullname, avatar, email and with a logout link, make a fancy current user component. The home page may have different views before and after login.
+
+Since this application is a multi-tenant application, the SaaS homepage and `Store` homepages will be different.
+The SaaS home page will include a saas login link for the saas admins and users to login, and a **create store** link that tenant owners can register themselves with their `store` tenant data.
+
+This tenant home page will also include the current user component in its header after login.
+
+Most importantly in the development phase, the SaasHome page will also serve as a gateway to the tenant homepages. For this there is a public api which can be called before login to get a list of the `store` tenants with brief information.
+
+Use the following `listBriefStores` api, and show the list of these tenants in the homepage and arrange their links to go to the `store` tenant homepage. The `store` tenant homepage will serve as the store front of the tenant, and it will include links to login or register to the `store` tenant. Once navigation have been transferred to a tenant, the frontend code should always obey the rule of sending the `store codename` in the related header when making a call to the backend.
+
+### `List Briefstores` API
+
+Get a list of stores, this route can be called by public, no login required
+
+**Rest Route**
+
+The `listBriefStores` API REST controller can be triggered via the following route:
+
+`/v1/briefstores`
+
+**Rest Request Parameters**
+The `listBriefStores` api has got no request parameters.
+
+**REST Request**
+To access the api you can use the **REST** controller with the path **GET /v1/briefstores**
+
+```javascript
+axios({
+  method: "GET",
+  url: "/v1/briefstores",
+  data: {},
+  params: {},
+});
+```
+
+**REST Response**
+
+This route's response is constrained to a select list of properties, and therefore does not encompass all attributes of the resource.
+
+```json
+{
+  "status": "OK",
+  "statusCode": "200",
+  "elapsedMs": 126,
+  "ssoTime": 120,
+  "source": "db",
+  "cacheKey": "hexCode",
+  "userId": "ID",
+  "sessionId": "ID",
+  "requestId": "ID",
+  "dataName": "stores",
+  "method": "GET",
+  "action": "list",
+  "appVersion": "Version",
+  "rowCount": "\"Number\"",
+  "stores": [
+    {
+      "name": "String",
+      "codename": "String",
+      "fullname": "String",
+      "avatar": "String",
+      "isActive": true
+    },
+    {},
+    {}
+  ],
+  "paging": {
+    "pageNumber": "Number",
+    "pageRowCount": "NUmber",
+    "totalRowCount": "Number",
+    "pageCount": "Number"
+  },
+  "filters": [],
+  "uiPermissions": []
+}
+```
+
+## Registration Management
+
+Since the application is multi-tenant, there will be two registration process. First one is the `store` register and the other one is `user` registration.
+
+Users are either in SaaS level, like administrators, or in `store` tenant level like `store` owners, admins and users.
+
+### SaaS Level User Registration
+
+SaaS user registration is not public in the application, SaaS users can only be created through `createUser` api which can be called by the `superAdmin` or `saasAdmin` of the SaaS level. Creating a new SaaS user is handled through admin panel which will be described in the next prompt.
+
+SaaS users will belong to the `root` tenant and they will be able to see and manage root level data that all tenants use in common. SaaS users should login to the application with claiming their tenant codenames as `root` or none.
+
+### Tenant -`store`- Registration
+
+Tenant registraration, creating a new store, is always handled together with tenant owner registration.
+
+Both tenant and tenant owner registration are public in the application, so there will be a store registration page in the frontend, that any user can provide their user and store information together. This page will use the `registerStoreOwner` api as describe below.
+
+Using the `registerstoreOwner` route of the auth API, send the required fields from your registration page. Please create a simple and polished registration page that includes only the necessary fields of the registration API.
+
+The `registerStoreOwner` API in the `auth` service is described with the request and response structure below.
+
+Note that since the `registerStoreOwner` API is a business API, it is versioned; call it with the given version like `/v1/registerstoreOwner`.
+
+Registering a `store` and its owner is indeed a user registration which also creates a `store` and assigns its ownership to the created user. The created user instance will have got the `id` of the `store` in its \`storeId property automatically.
+
+The provided api body should also include a nested object for the store data object instance to be created.
+
+```json
+{
+  //..
+  "email": "joe.doe@example.com",
+  "fullname": "Joe Doe",
+  "avatar": "...",
+  //..
+  "store": {
+    //..
+    "name": "Babil",
+    "fullname": "Babil Online BookStore Ltd.",
+    "avatar": "..."
+  }
+}
+```
+
+### `Register Storeowner` API
+
+This api is used by public users to register themselves as tenant owners to create both a user account and a store account they own.
+
+**Rest Route**
+
+The `registerStoreOwner` API REST controller can be triggered via the following route:
+
+`/v1/registerstoreowner`
+
+**Rest Request Parameters**
+
+The `registerStoreOwner` api has got 7 request parameters
+
+| Parameter  | Type   | Required | Population               |
+| ---------- | ------ | -------- | ------------------------ |
+| avatar     | String | false    | request.body?.avatar     |
+| socialCode | String | false    | request.body?.socialCode |
+| password   | String | true     | request.body?.password   |
+| email      | String | true     | request.body?.email      |
+| store      | Object | true     | request.body?.store      |
+| fullname   | String | true     | request.body?.fullname   |
+| mobile     | String | false    | request.body?.mobile     |
+
+**avatar** : The avatar url of the user. If not sent, a default random one will be generated.
+**socialCode** : Send this social code if it is sent to you after a social login authetication of an unregistred user. The users profile data will be complemented from the autheticated social profile using this code. If you provide the social code there is no need to give full profile data of the user, just give the ones that are not included in social profiles.
+**password** : The password defined by the the user that is being registered.
+**email** : The email defined by the the user that is being registered.
+**store** : The store informatiion for the tenant that the created user will own.
+**fullname** : The full name defined by the the user that is being registered.
+**mobile** : The mobile number defined by the the user that is being registered.
+
+**REST Request**
+To access the api you can use the **REST** controller with the path **POST /v1/registerstoreowner**
+
+```js
+axios({
+  method: "POST",
+  url: "/v1/registerstoreowner",
+  data: {
+    avatar: "String",
+    socialCode: "String",
+    password: "String",
+    email: "String",
+    store: "Object",
+    fullname: "String",
+    mobile: "String",
+  },
+  params: {},
+});
+```
+
+**REST Response**
+
+```json
+{
+  "status": "OK",
+  "statusCode": "201",
+  "elapsedMs": 126,
+  "ssoTime": 120,
+  "source": "db",
+  "cacheKey": "hexCode",
+  "userId": "ID",
+  "sessionId": "ID",
+  "requestId": "ID",
+  "dataName": "user",
+  "method": "POST",
+  "action": "create",
+  "appVersion": "Version",
+  "rowCount": 1,
+  "user": {
+    "id": "ID",
+    "email": "String",
+    "password": "String",
+    "fullname": "String",
+    "avatar": "String",
+    "roleId": "String",
+    "mobile": "String",
+    "mobileVerified": "Boolean",
+    "emailVerified": "Boolean",
+    "storeId": "ID",
+    "isActive": true,
+    "recordVersion": "Integer",
+    "createdAt": "Date",
+    "updatedAt": "Date",
+    "_owner": "ID"
+  },
+  "store": "Object"
+}
+```
+
+After a successful registration, the frontend code should handle any verification requirements. The registration response will include a `user` object in the root envelope; this object contains user information with an `id` field.
+
+### Tenant -`store`- User Registration
+
+User registration for store tenants is public in the application, ensure that the register and login pages include a deployment server selection option so that you can set the base URL for all services. Start with a home page and set up the registration , verification, and login flow.
+
+Using the `registerstoreuser` route of the auth API, send the required fields from your registration page. Please create a simple and polished registration page that includes only the necessary fields of the registration API.
+
+The `registerStoreUser` API in the `auth` service is described with the request and response structure below.
+
+This api should be called as targeting an existing `store`, so don't forget to attach the `store` codename to one of the `store` parameter of the related http request locations.
+
+Note that since the `registerStoreUser` API is a business API, it is versioned; call it with the given version like `/v1/registerstoreuser`.
+
+### `Register Storeuser` API
+
+This route is used by public users to register themselves to tenants that are created by tenant owners.
+
+**Rest Route**
+
+The `registerStoreUser` API REST controller can be triggered via the following route:
+
+`/v1/registerstoreuser`
+
+**Rest Request Parameters**
+
+The `registerStoreUser` api has got 6 request parameters
+
+| Parameter  | Type   | Required | Population               |
+| ---------- | ------ | -------- | ------------------------ |
+| socialCode | String | false    | request.body?.socialCode |
+| password   | String | true     | request.body?.password   |
+| email      | String | true     | request.body?.email      |
+| fullname   | String | true     | request.body?.fullname   |
+| mobile     | String | false    | request.body?.mobile     |
+| avatar     | String | false    | request.body?.avatar     |
+
+**socialCode** : Send this social code if it is sent to you after a social login authetication of an unregistred user. The users profile data will be complemented from the autheticated social profile using this code. If you provide the social code there is no need to give full profile data of the user, just give the ones that are not included in social profiles.
+**password** : The password defined by the the user that is being registered.
+**email** : The email defined by the the user that is being registered.
+**fullname** : The full name defined by the the user that is being registered.
+**mobile** : The mobile number defined by the the user that is being registered.
+**avatar** : The avatar url of the user. A random avatar will be generated if not provided
+
+**REST Request**
+To access the api you can use the **REST** controller with the path **POST /v1/registerstoreuser**
+
+```js
+axios({
+  method: "POST",
+  url: "/v1/registerstoreuser",
+  data: {
+    socialCode: "String",
+    password: "String",
+    email: "String",
+    fullname: "String",
+    mobile: "String",
+    avatar: "String",
+  },
+  params: {},
+});
+```
+
+**REST Response**
+
+```json
+{
+  "status": "OK",
+  "statusCode": "201",
+  "elapsedMs": 126,
+  "ssoTime": 120,
+  "source": "db",
+  "cacheKey": "hexCode",
+  "userId": "ID",
+  "sessionId": "ID",
+  "requestId": "ID",
+  "dataName": "user",
+  "method": "POST",
+  "action": "create",
+  "appVersion": "Version",
+  "rowCount": 1,
+  "user": {
+    "id": "ID",
+    "email": "String",
+    "password": "String",
+    "fullname": "String",
+    "avatar": "String",
+    "roleId": "String",
+    "mobile": "String",
+    "mobileVerified": "Boolean",
+    "emailVerified": "Boolean",
+    "storeId": "ID",
+    "isActive": true,
+    "recordVersion": "Integer",
+    "createdAt": "Date",
+    "updatedAt": "Date",
+    "_owner": "ID"
+  }
+}
+```
+
+After a successful registration, the frontend code should handle any verification requirements. Verification Management will be given in teh next prompt. The registration response will include a `user` object in the root envelope; this object contains user information with an `id` field.
+
+## Login Management
+
+After successful registration and completing any required verifications, the user can log in. Please create a minimal, polished login page where the user can enter email and password. Note that this page should respect the deployment (environment) selection option made in the home page to set the base URL. If the user reaches this page directly skipping home page, the default `production`deployment will be used.
+
+The login API returns a created session. This session can be retrieved later with the access token using the `/currentuser` system route.
+
+Any request that requires login must include a valid token. When a user logs in successfully, the response JSON includes a JWT access token in the `accessToken` field. Under normal conditions, this token is also set as a cookie and consumed automatically. However, since AI coding agents’ preview options may fail to use cookies, ensure that each request includes the access token in the Bearer authorization header.
+
+If the login fails due to verification requirements, the response JSON includes an `errCode`. If it is `EmailVerificationNeeded`, start the email verification flow; if it is `MobileVerificationNeeded`, start the mobile verification flow.
+
+After a successful login, you can access session (user) information at any time with the `/currentuser` API. On inner pages, show brief profile information (avatar, name, etc.) using the session information from this API.
+
+Note that the `currentuser` API returns a session object, so there is no `id` property; instead, the values for the user and session are exposed as `userId` and `sessionId`. The response combines user and session information.
+
+The login, logout, and currentuser APIs are as follows. They are system routes and are not versioned.
+
+### `POST /login` — User Login
+
+**Purpose:**
+Verifies user credentials and creates an authenticated session with a JWT access token.
+
+**Access Routes:**
+
+#### Request Parameters
+
+| Parameter  | Type   | Required | Source                  |
+| ---------- | ------ | -------- | ----------------------- |
+| `username` | String | Yes      | `request.body.username` |
+| `password` | String | Yes      | `request.body.password` |
+
+#### Behavior
+
+- Authenticates credentials and returns a session object.
+
+- Sets cookie: `projectname-access-token[-tenantCodename]`
+
+- Adds the same token in response headers.
+
+- Accepts either `username` or `email` fields (if both exist, `username` is prioritized).
+
+#### Example
+
+```js
+axios.post("/login", {
+  username: "user@example.com",
+  password: "securePassword",
+});
+```
+
+#### Success Response
+
+```json
+{
+  "sessionId": "e81c7d2b-4e95-9b1e-842e-3fb9c8c1df38",
+  "userId": "d92b9d4c-9b1e-4e95-842e-3fb9c8c1df38",
+  "email": "user@example.com",
+  "fullname": "John Doe",
+  //...
+  "accessToken": "ey7....",
+  "userBucketToken": "e56d...."
+}
+```
+
+### Error Responses
+
+- `401 Unauthorized`: Invalid credentials
+
+- `403 Forbidden`: Email/mobile verification or 2FA pending
+
+- `400 Bad Request`: Missing parameters
+
+---
+
+### `POST /logout` — User Logout
+
+**Purpose:**
+Terminates the current session and clears associated authentication tokens.
+
+#### Behavior
+
+- Invalidates the session (if it exists).
+
+- Clears cookie `projectname-access-token[-tenantCodename]`.
+
+- Returns a confirmation response (always `200 OK`).
+
+#### Example
+
+```js
+axios.post(
+  "/logout",
+  {},
+  {
+    headers: { Authorization: "Bearer your-jwt-token" },
+  },
+);
+```
+
+#### Notes
+
+- Can be called without a session (idempotent behavior).
+
+- Works for both cookie-based and token-based sessions.
+
+#### Success Response
+
+```json
+{ "status": "OK", "message": "User logged out successfully" }
+```
+
+### `GET /currentuser` — Current Session
+
+**Purpose**
+Returns the currently authenticated user’s session.
+
+**Route Type**
+`sessionInfo`
+
+**Authentication**
+Requires a valid access token (header or cookie).
+
+#### Request
+
+*No parameters.*
+
+#### Example
+
+```js
+axios.get("/currentuser", {
+  headers: { Authorization: "Bearer <jwt>" },
+});
+```
+
+#### Success (200)
+
+Returns the session object (identity, tenancy, token metadata):
+
+```json
+{
+  "sessionId": "9cf23fa8-07d4-4e7c-80a6-ec6d6ac96bb9",
+  "userId": "d92b9d4c-9b1e-4e95-842e-3fb9c8c1df38",
+  "email": "user@example.com",
+  "fullname": "John Doe",
+  "roleId": "user",
+  "tenantId": "abc123",
+  "accessToken": "jwt-token-string",
+  "...": "..."
+}
+```
+
+Note that the `currentuser` API returns a session object, so there is no `id` property, instead, the values for the user and session are exposed as `userId` and `sessionId`. The response is a mix of user and session information.
+
+#### Errors
+
+- **401 Unauthorized** — No active session/token
+
+  ```json
+  { "status": "ERR", "message": "No login found" }
+  ```
+
+**Notes**
+
+- Commonly called by web/mobile clients after login to hydrate session state.
+
+- Includes key identity/tenant fields and a token reference (if applicable).
+
+- Ensure a valid token is supplied to receive a 200 response.
+
+After you complete this first step, please ensure you have not made the following common mistakes:
+
+1. When the application starts, please ensure that the `baseUrl` is set to the production server URL, and that the environment selector dropdown has the **Production** option selected by default.
+
+2. Note that any api call to the application backend is based on a service base url, in this propmpt all auth apis should be called by `/auth-api` prefix after application's base url.
+
+3. The `/currentuser` API returns a mix of session and user data. There is no `id` property —use `userId` and `sessionId`.
+
+4. Please note that, the deployemnt environment selector will only be used in the home page. If any page is called directly bypassign home page, the page will use the stored or default environment.
+
