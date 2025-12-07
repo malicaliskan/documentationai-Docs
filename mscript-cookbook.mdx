@@ -1,0 +1,616 @@
+---
+title: MScript Cookbook
+---
+
+
+## 1. Scope & Mental Model
+
+MScript is how you “sneak logic into patterns” without breaking Mindbricks’ declarative nature. It’s used in:
+
+- **Where clauses** (filters, conditions)
+
+- **Formulas** for derived fields
+
+- **Business API workflows** (conditions, validations, actions)
+
+- **Integration parameters**, **payload builders**, **templates**
+
+- Many config fields across Authentication, AccessControl, StripeOrder, ShoppingCart, etc.
+
+Most MScript is evaluated in the context of an API Manager class; you write expressions against the `this` context, plus the `LIB` global for service library functions.
+
+### 1.1 Golden Rules (Quick Reminder)
+
+1. **Your script must be a valid JavaScript expression**
+   Pretend it’s on the right side of a `const value = ...`.
+
+2. **No assignments** (`=`) inside MScript (to avoid side effects).
+
+3. If you’re unsure, you can wrap it in:
+
+   ```js
+   module.exports = (/* your expression here */)
+   ```
+
+4. Remember **double quoting** in JSON:
+
+   - MScript itself is a string in the design JSON.
+
+   - String literals inside MScript must be wrapped in quotes *inside* that string.
+
+Example:
+
+```json
+{
+  "condition": "this.userType === 'premium'"
+}
+```
+
+Behind the scenes, code becomes something like:
+
+```js
+if (!(this.userType === 'premium')) {
+  // ...
+}
+```
+
+---
+
+## 2. The Context Cheat Sheet
+
+When you write `this`, you are usually inside a **BusinessApi context**.
+
+You can typically access:
+
+- **Parameters** – `this.productId`, `this.searchKeyword`
+
+- **Session** – `this.session.userId`, `this.session.roleId`, `this.session.tenantId`
+
+- **Main object(s)** – `this.order`, `this.customer`, `this.orders` (for list)
+
+- **Action results** – `this.userCompany`, `this.stats`, etc. (when `contextPropertyName` is set on a `BusinessApiAction`)
+
+- **Library functions** – `LIB.someModule.someFn(...)` or `LIB.common.md5(...)`
+
+---
+
+## 3. Cookbook: Conditions & Access Checks
+
+### 3.1 Ownership Check (Simple)
+
+Use in `ValidationAction.validationScript`, `ExtendedClause.doWhen`, or `BusinessApiAction.condition`:
+
+```json
+{
+  "validationScript": "this.customer.userId === this.session.userId"
+}
+```
+
+Meaning:
+
+### 3.2 Ownership OR Admin Role
+
+```json
+{
+  "validationScript": "(this.customer.userId === this.session.userId) || (this.session.roleId === 'admin')"
+}
+```
+
+If your project uses multi-role arrays:
+
+```json
+{
+  "validationScript": "(this.customer.userId === this.session.userId) || (Array.isArray(this.session.roleId) && this.session.roleId.includes('admin'))"
+}
+```
+
+### 3.3 Tenant-Scoped Access
+
+Allow operation only when the object’s tenant matches the session:
+
+```json
+{
+  "validationScript": "this.project.clientId === this.session.tenantId"
+}
+```
+
+Or as an `ExtendedClause.doWhen` to conditionally add filters:
+
+```json
+{
+  "doWhen": "!!this.session.tenantId",
+  "whereClause": "({ clientId: { \"$eq\": this.session.tenantId } })"
+}
+```
+
+### 3.4 Ensuring Required Feature Flag
+
+Assume you have a `subscriptionLevel` property in the tenant object and it’s loaded into context as `this.tenant`:
+
+```json
+{
+  "validationScript": "['Pro', 'Enterprise'].includes(this.tenant.subscriptionLevel)"
+}
+```
+
+Use in `ValidationAction` with `checkType: "liveCheck"` to hard-fail the API for non-eligible tenants.
+
+---
+
+## 4. Cookbook: MScript Queries (Where Clauses)
+
+`WhereClauseSettings.fullWhereClause`, `ExtendedClause.whereClause`, `ListJointFilter.whereClause`, and `ListSearchFilter` all use **MScript Query** syntax.
+
+### 4.1 Basic Equality Filter
+
+List orders belonging to current user:
+
+```json
+{
+  "fullWhereClause": "({ userId: { \"$eq\": this.session.userId } })"
+}
+```
+
+Equivalent shorthand:
+
+```json
+{
+  "fullWhereClause": "({ userId: this.session.userId })"
+}
+```
+
+### 4.2 Filtering by Status & Tenant
+
+```json
+{
+  "fullWhereClause": "({ \"$and\": [ { status: { \"$eq\": 'published' } }, { clientId: { \"$eq\": this.session.tenantId } } ] })"
+}
+```
+
+### 4.3 Case-Insensitive Search (Name)
+
+```json
+{
+  "fullWhereClause": "({ name: { \"$ilike\": `%${this.searchKeyword}%` } })"
+}
+```
+
+### 4.4 Range Filter (Dates)
+
+Orders in a given date range:
+
+```json
+{
+  "fullWhereClause": "({ createdAt: { \"$between\": [this.startDate, this.endDate] } })"
+}
+```
+
+### 4.5 Combining Multiple Conditions
+
+Published & not soft-deleted:
+
+```json
+{
+  "fullWhereClause": "({ \"$and\": [ { status: { \"$eq\": 'published' } }, { isActive: { \"$eq\": true } } ] })"
+}
+```
+
+### 4.6 Using a Library Function to Build Query
+
+First define the JS in `functions`:
+
+```js
+// moduleName: buildProductSearchQuery
+module.exports = function buildProductSearchQuery(searchKeyword, tenantId) {
+  return {
+    "$and": [
+      {
+        name: { "$ilike": `%${searchKeyword}%` }
+      },
+      {
+        clientId: { "$eq": tenantId }
+      }
+    ]
+  };
+};
+```
+
+Then in the BusinessApi:
+
+```json
+{
+  "fullWhereClause": "LIB.buildProductSearchQuery(this.searchKeyword, this.session.tenantId)"
+}
+```
+
+This keeps complex query logic in **real JS**, while the API pattern stays clean.
+
+---
+
+## 5. Cookbook: Formulas & Derived Fields
+
+Pattern: `PropertyFormulaSettings` and `PropertyFormulaSettingsConfig.formula`
+
+### 5.1 Simple Derived Field
+
+`lineTotal = unitPrice * quantity`:
+
+```json
+{
+  "formulaSettings": {
+    "isCalculated": true,
+    "configuration": {
+      "formula": "this.unitPrice * this.quantity"
+    }
+  }
+}
+```
+
+### 5.2 Net Amount with Floor at Zero
+
+```json
+{
+  "formulaSettings": {
+    "isCalculated": true,
+    "configuration": {
+      "formula": "(() => { const net = this.grossAmount - this.discountAmount; return Math.max(net, 0); })()"
+    }
+  }
+}
+```
+
+This uses your inline arrow function trick for multi-step logic.
+
+### 5.3 Tax Calculation with Shared Helper (Library)
+
+Library function:
+
+```js
+// moduleName: calcVat
+module.exports = function calcVat(netAmount, vatRate) {
+  return Math.round(netAmount * vatRate * 100) / 100;
+};
+```
+
+Property formula:
+
+```json
+{
+  "formulaSettings": {
+    "isCalculated": true,
+    "configuration": {
+      "formula": "LIB.calcVat(this.netAmount, this.vatRate)"
+    }
+  }
+}
+```
+
+### 5.4 One Formula for Create and Separate Update Formula
+
+For `totalPoints` property:
+
+```json
+{
+  "formulaSettings": {
+    "isCalculated": true,
+    "configuration": {
+      "formula": "this.purchasePoints + (this.bonusPoints || 0)",
+      "updateFormula": "this.purchasePoints + (this.bonusPoints || 0) + (this.extraPoints || 0)",
+      "calculateWhenInputHas": ["purchasePoints", "bonusPoints", "extraPoints"]
+    }
+  }
+}
+```
+
+- `formula` used on create.
+
+- `updateFormula` used on update.
+
+- `calculateWhenInputHas` tells Mindbricks when to re-evaluate.
+
+---
+
+## 6. Cookbook: List & Data Transformations
+
+### 6.1 Basic List Mapping (ListMapAction)
+
+Pattern: `ListMapAction` (“ListMapActions” in action store)
+
+Imagine you have `this.orders` and you want a lightweight DTO list:
+
+```json
+{
+  "extendClassName": "ListMapAction",
+  "name": "mapOrdersToSummary",
+  "sourceList": "this.orders",
+  "itemName": "order",
+  "mapScript": "({ id: order.id, total: order.totalAmount, createdAt: order.createdAt })",
+  "contextPropertyName": "orderSummaries",
+  "writeToResponse": true
+}
+```
+
+Now `response.orderSummaries` contains the simplified list.
+
+### 6.2 Filter + Map in One Expression
+
+You can filter inside `mapScript` using an IIFE:
+
+```json
+{
+  "mapScript": "(() => { if (!order.isActive) return null; return { id: order.id, total: order.totalAmount }; })()"
+}
+```
+
+Then follow up with a `AddToContextAction` or another `ListMapAction` to strip `null` items if needed.
+
+### 6.3 Collating Lists (CollateListsAction)
+
+Pattern: `CollateListsAction`
+
+Example: attach addresses to users:
+
+- `sourceList` – list of addresses
+
+- `targetList` – list of users
+
+- key matching `user.id` ↔ `address.userId`
+
+```json
+{
+  "extendClassName": "CollateListsAction",
+  "name": "attachAddressesToUsers",
+  "sourceList": "this.addresses",
+  "targetList": "this.users",
+  "sourceKey": "userId",
+  "targetKey": "id",
+  "nameInTarget": "addresses",
+  "targetIsArray": true
+}
+```
+
+After this:
+
+```js
+// In later actions or MScript:
+this.users[0].addresses // array of address objects
+```
+
+---
+
+## 7. Cookbook: Using Action Results
+
+Any `BusinessApiAction` with a `contextPropertyName` writes its result into `this.[contextPropertyName]`.
+
+### 7.1 Fetch and Use
+
+`FetchObjectAction` named `fetchCompany`, `contextPropertyName: "company"`:
+
+```json
+{
+  "condition": "this.company && this.company.isActive"
+}
+```
+
+### 7.2 Stats-Based Validation
+
+`FetchStatsAction` with `contextPropertyName: "orderStats"` returns something like:
+
+```js
+this.orderStats = {
+  count: 42,
+  sumOfAmount: 12345,
+  // etc…
+};
+```
+
+Validation:
+
+```json
+{
+  "validationScript": "this.orderStats.count < 5"
+}
+```
+
+Use to prevent adding more than 5 orders per user per day, etc.
+
+---
+
+## 8. Cookbook: Integration Payloads & External APIs
+
+Patterns: `IntegrationAction`, `IntegrationParameter`, `ApiCallAction`, `HTTPRequest`, `HTTPRequestParameters`
+
+### 8.1 Building an Integration Payload
+
+For a generic IntegrationAction:
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "uploadFileToS3",
+  "provider": "amazonS3",
+  "action": "uploadFile",
+  "parameters": [
+    {
+      "parameterName": "bucket",
+      "parameterValue": "'my-bucket-name'"
+    },
+    {
+      "parameterName": "key",
+      "parameterValue": "`invoices/${this.order.id}.pdf`"
+    },
+    {
+      "parameterName": "body",
+      "parameterValue": "this.invoicePdf"
+    }
+  ],
+  "contextPropertyName": "s3Result",
+  "writeToResponse": false
+}
+```
+
+### 8.2 HTTP API Call with Dynamic Headers
+
+Using `ApiCallAction` and `HTTPRequest`:
+
+```json
+{
+  "extendClassName": "ApiCallAction",
+  "name": "callCrm",
+  "apiFetchProperty": null,
+  "contextPropertyName": "crmResponse",
+  "apiCallRequest": {
+    "httpRequestUrl": "https://crm.example.com/api/customers",
+    "httpRequestMethod": "POST",
+    "httpRequestParameters": {
+      "httpRequestHeaders": [
+        {
+          "name": "X-Tenant-Id",
+          "value": "this.session.tenantId"
+        },
+        {
+          "name": "Authorization",
+          "value": "`Bearer ${this.session.crmAccessToken}`"
+        }
+      ],
+      "httpRequestBody": [
+        {
+          "name": "email",
+          "value": "this.customer.email"
+        },
+        {
+          "name": "name",
+          "value": "this.customer.fullname"
+        }
+      ]
+    }
+  }
+}
+```
+
+Later:
+
+```json
+{
+  "validationScript": "this.crmResponse && this.crmResponse.status === 'OK'"
+}
+```
+
+---
+
+## 9. Cookbook: Verification & Flows
+
+You often use MScript to drive **verification flows**, 2FA behavior, or conditional events.
+
+### 9.1 Conditional Verification Start
+
+In a custom Business API for “sensitive action”, you may want:
+
+- If user is premium and has 2FA → require 2FA
+
+- Otherwise, allow directly
+
+```json
+{
+  "condition": "this.session.isPremium && this.session.sessionNeedsEmail2FA"
+}
+```
+
+Use this condition in a `RedirectAction` or `ValidationAction` to decide whether to:
+
+- Return `EmailTwoFactorNeeded`
+
+- Or proceed with the action
+
+### 9.2 Multi-Step Access: “Soft Enforcement”
+
+You might want to allow an operation but log a warning when a user is missing a recommended verification:
+
+```json
+{
+  "description": "Warn if user has not verified email.",
+  "shouldBeTrue": true,
+  "checkType": "storedCheck",
+  "validationScript": "this.session.emailVerified === true",
+  "errorMessage": "User email not verified.",
+  "errorStatus": "400"
+}
+```
+
+Because `checkType` is `storedCheck`, the API doesn’t fail, but you can:
+
+- write result to context (via contextPropertyName),
+
+- or use it in later actions to log / alter behavior.
+
+---
+
+## 10. Cookbook: Date & Time Helpers
+
+You might have a small date helper in `functions`:
+
+```js
+// moduleName: dateUtils
+module.exports = {
+  isToday(dateIso) {
+    const d = new Date(dateIso);
+    const today = new Date();
+    return d.toISOString().slice(0, 10) === today.toISOString().slice(0, 10);
+  },
+  daysBetween(aIso, bIso) {
+    const a = new Date(aIso);
+    const b = new Date(bIso);
+    return Math.round((b - a) / (1000 * 60 * 60 * 24));
+  }
+};
+```
+
+Usage in MScript:
+
+```json
+{
+  "validationScript": "LIB.dateUtils.daysBetween(this.order.createdAt, new Date().toISOString()) <= 30"
+}
+```
+
+Used to:
+
+- Limit modifications to orders to within 30 days.
+
+- Decide whether a password reset token is “too old” (if you want an extra business rule beside `expireTimeWindow`).
+
+---
+
+## 11. Final Pattern: How to Think in MScript
+
+When writing MScript, try this mental pipeline:
+
+1. **What is my context?**
+
+   - Which object(s) do I have on `this`?
+
+   - Which actions ran before me?
+
+2. **What is the minimal expression that describes the rule?**
+
+   - If it’s small → write directly in MScript.
+
+   - If it becomes big or reused → move it into the service library.
+
+3. **Is this about selecting data?**
+
+   - Use MScript Query syntax (`$eq`, `$gte`, `$in`, `$ilike`, `$and`, `$or`, etc.).
+
+   - Consider building the query via a library function.
+
+4. **Is this about shaping data?**
+
+   - Use `ListMapAction`, `CollateListsAction`, formulas, `CreateObjectAction`, etc.
+
+   - Use MScript only where necessary.
+
+5. **Is this about deciding yes/no?**
+
+   - Use `ValidationAction`, `PermissionCheckAction`, `MembershipCheckAction`, `ExtendedClause`, or conditions on actions.
+
+Once you get comfortable with these patterns, MScript stops feeling like “random snippets” and starts feeling like a small, expressive **logic language** embedded in your architecture.

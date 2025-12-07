@@ -1,367 +1,680 @@
 ---
-title: Designing A Service In Mindbricks
+title: Building a Service in Mindbricks
+description: >-
+  Mindbricks is an AI-powered, pattern-driven platform for generating and
+  deploying microservice-based backends. This document serves as a practical
+  guide for both human architects and AI agents in designing robust
+  microservices using the Mindbricks Service pattern.
 ---
-## Scope
+Each service in Mindbricks is a fully encapsulated unit that manages its own data, logic, APIs, and integrations. This guide walks you through configuring a service’s key components—**data models**, **API routes**, **business logic**, **custom code**, and **edge controllers**—using the modular, composable structure of the Mindbricks Pattern Ontology.
 
-Mindbricks is an AI-powered, pattern-driven platform for generating and deploying microservice-based backends.
-This document serves as a practical guide for both **human architects** and **AI agents** in designing robust microservices using the **Mindbricks Service pattern**.
+It is recommended to read this guide together with:
 
-Each service in Mindbricks is a fully encapsulated unit that manages its own data, logic, APIs, and integrations. This guide walks you through configuring a service’s key components—**data models**, **API routes**, **business logic**, **fetch strategies**, **hooks**, and **internal rules**—using the modular, composable structure of the Mindbricks Pattern Ontology (MPO).
+- The **Mindbricks Pattern Reference** (especially `Service`, `DataObject`, `BusinessApi`, `ServiceLibrary`, `EdgeController`)
 
-It is recommended to read this document alongside the \[Mindbricks Pattern Reference Guide] for precise definitions of each subpattern. This guide focuses on designing services within that overall application architecture.
+- The **Authentication & Authorization Guide**, since many service-level concerns depend on global auth configuration.
 
-## Understanding Pattern Configuration in Services
+```plaintext
+Terminology:
+The term "architect" refers to both human users (software engineers, product owners, business analysts)
+and AI agents working within Mindbricks.
+```
 
-Mindbricks service design is centered around pattern configuration—each pattern representing a semantic unit of microservice functionality. Services in Mindbricks are defined as an **array** (`services[]`), allowing multiple modular units to be designed independently but orchestrated as a whole.
+---
 
-This guide uses **JavaScript-style path notation** to illustrate how to configure these patterns, including array-based indexing to reference specific services or subcomponents.
+## 1. Services Inside a Mindbricks Project
+
+At the top level, your project is represented by `MindbricksProject`, which contains (among other things) a list of services:
+
+```json
+{
+  "MindbricksProject": {
+    "projectSettings": { ... },
+    "authentication": { ... },
+    "bffService": { ... },
+    "notificationService": { ... },
+    "services": [
+      { /* Service #0 */ },
+      { /* Service #1 */ }
+    ]
+  }
+}
+```
+
+Each item in `services[]` is a `Service` object representing a distinct microservice. The `Service` pattern itself is defined as:
+
+```json
+{
+  "Service": {
+    "serviceSettings": "ServiceSettings",
+    "dataObjects": ["DataObject"],
+    "businessLogic": ["BusinessApi"],
+    "library": "ServiceLibrary",
+    "edgeControllers": ["EdgeController"]
+  }
+}
+```
+
+Conceptually, a **Service** is:
+
+- A **domain boundary** in your architecture (e.g., `orders`, `inventory`, `eventCatalog`).
+
+- A unit that owns:
+
+  - Its **data model** (`dataObjects`)
+
+  - Its **business APIs** (`businessLogic`)
+
+  - Its **custom code and assets** (`library`)
+
+  - Its **custom edge endpoints** (`edgeControllers`)
+
+- A microservice that can be deployed and scaled independently.
+
+You do **not** manually create system services like `auth`, BFF, or Notifications; those are generated from project-level patterns (we’ll return to that later).
+
+---
+
+## 2. Configuration Notation
+
+To keep documentation consistent across guides, we use **JSON fragments** to illustrate configuration.
 
 For example:
 
-```javascript
-services[0].serviceSettings.serviceOptions.httpPort = 3000;
+```json
+{
+  "services": [
+    {
+      "serviceSettings": {
+        "serviceBasics": {
+          "name": "orders",
+          "description": "Handles customer orders and related workflows"
+        },
+        "serviceOptions": {
+          "httpPort": 3000,
+          "serviceRequiresLogin": true
+        }
+      }
+    }
+  ]
+}
 ```
 
-This sets the HTTP port for the first service in your project (i.e., `services[0]`) to port `3000`.
+### How to Read This
 
-### Interpreting the Notation
+**For human architects (UI view):**
 
-- **For Human Architects**:
-  Treat this as a visual guide through the Mindbricks UI.
+**For AI agents:**
 
-- **For AI Agents**:
-  This path instructs the agent to modify the `httpPort` property within the `serviceOptions` object, which is nested inside `serviceSettings` of the first item in the `services` array.
-
-## The `Service` Pattern
-
-In Mindbricks, every functional domain of your application is encapsulated within a **Service**. The `Service` pattern defines the structure, logic, and behavior of an individual microservice—serving as the primary unit of modular design in your backend architecture.
-
-Each service manages its own data, business rules, and APIs, while also supporting powerful extensibility features such as custom libraries, edge routes, and lifecycle hooks. Whether you’re creating a simple data-driven module or a highly orchestrated business domain, the `Service` pattern provides the tools to define and evolve it in a structured, scalable way.
-
-A service is more than just a container for data objects—it is a fully autonomous backend unit that:
-
-- Defines and enforces **domain-specific data models** using `dataObjects`.
-
-- Allows customized behavior through the **library** (custom logic, hooks, and edge functions).
-
-- Supports complex, multi-step business flows through **edgeControllers**.
-
-- Enables full integration with authentication, access control, and event-driven logic.
-
-- Compiles into a standalone microservice, deployable and scalable independently.
-
-Each item within the `services[]` array represents a distinct service in your project. Mindbricks generates all necessary backend code and APIs for these services, handling everything from database schemas to deployment scripts automatically.
-
-### Modules of a Service
-
-The following sub-patterns form the foundation of each service:
-
-- `serviceSettings`: General configuration like name, access control, and runtime behavior.
-  Certainly! Here's a revised version of the sentence with clarity and future-facing intent:
-
-- `dataModel`: Defines general data modeling behaviors for the service. While its current use is focused on foundational rules, this section is designed to expand in future versions to support advanced modeling strategies and cross-service data coordination.
-
-- `dataObjects[]`: The core of your business schema—each data object maps to a table or collection and governs its own fields, rules, and logic.
-
-- `library`: Includes reusable business functions, hook logic, and edge route handlers.
-
-- `edgeControllers[]`: Custom REST endpoints that go beyond generated CRUDs for advanced workflows or integrations.
-
-Absolutely — here’s the corrected and refined version to reflect that only `name` and `description` are required when creating a service:
+This document will use **JSON** consistently, but you can still conceptually map it to path-style access or UI navigation when needed.
 
 ---
 
-## Creating a Service
+## 3. The `Service` Pattern: Conceptual View
 
-In Mindbricks, each service defines a distinct domain in your application's backend architecture. Whether you're working as a human architect through the UI or guiding an AI agent via JSON, creating a new service is the first step in modeling that domain.
+A Mindbricks **Service** is more than a collection of tables:
 
-### 📦 For JSON / AI-Based Initialization
+- It defines and enforces **domain-specific data models** via `dataObjects`.
 
-To define a new service programmatically, simply insert a new `Service` object into the `services` array within your root `MindbricksApplication` definition:
+- It owns **Business APIs** (`businessLogic`) that encode business processes as declarative workflows.
 
-```javascript
-application.services.push({
-  serviceSettings: {
-    serviceBasics: {
-      name: "orders",
-      description: "Handles customer orders and related workflows"
+- It provides **custom extension points** via `library` (functions, templates, assets).
+
+- It exposes **custom routes** via `edgeControllers` when you need full flexibility beyond generated CRUD and Business APIs.
+
+- It integrates with global **authentication, authorization, caching, events, payments** (via patterns like `AccessControl`, `RedisEntityCacheSettings`, `StripeOrder`, `ShoppingCart`, etc., attached to DataObjects and Business APIs).
+
+Each service is compiled into a standalone Node.js-based microservice (by default) with its own dependencies, configuration, and deployment assets.
+
+---
+
+## 4. Creating a Service
+
+### 4.1 JSON / AI-Based Initialization
+
+To define a new service programmatically, you add a `Service` object into the `services` array of `MindbricksProject`:
+
+```json
+{
+  "services": [
+    {
+      "serviceSettings": {
+        "serviceBasics": {
+          "name": "orders",
+          "description": "Handles customer orders and related workflows"
+        },
+        "serviceOptions": {
+          "serviceRequiresLogin": true
+        }
+      },
+      "dataObjects": [],
+      "businessLogic": [],
+      "library": {},
+      "edgeControllers": []
     }
-  }
-});
+  ]
+}
 ```
 
-This creates a minimal, valid service definition. You can then enrich it by adding data objects, logic modules, or edge routes.
+This is a **minimal valid skeleton**:
 
-### 🖱️ For UI-Based Creation
+- Only `serviceBasics.name` and `serviceBasics.description` are strictly needed to start.
 
-If you're using the Mindbricks visual interface:
+- You can later add data objects, Business APIs, library code, and edge controllers.
+
+### 4.2 UI-Based Creation
+
+If you're using the Mindbricks Studio:
 
 1. Navigate to the **Project** menu.
 
-2. Open the **Services** module.
+2. Open the **Services** module. You will see a list of existing services.
 
-3. On the module's home page, you’ll see a list of existing services and a button labeled **Create a New Service**.
+3. Click **Create a New Service** (button text defined in patterns as `"Create a New Service"`).
 
-4. Click this button to open the creation dialog.
+4. Provide:
 
-5. Provide the **Service Name** and an optional **Description**.
+   - **Service Name** (e.g., `orders`)
 
-6. Confirm to create your service. It will then appear in the service list and be ready for further configuration.
+   - **Description** (optional, but highly recommended)
 
-## ⚠️ Do Not Manually Design System-Generated Services
+5. Click **Save**. The service now appears in the list and is ready for detailed configuration.
 
-Mindbricks automatically provisions several foundational services that are deeply integrated into the platform's architecture. These are not just conveniences—they are core components with tightly coupled logic, routing behavior, and internal integrations that cannot be reliably replicated through manual design.
-
-To ensure the integrity of your backend system:
-
-### ❌ **Do Not Create a User Service**
-
-Mindbricks automatically generates an `auth` service responsible for user authentication, session management, login behavior, token issuance, and more.
-**Why not?**
-This service is wired into role and permission resolution, session parsing, verification systems, and more. Attempting to build your own user service would bypass critical infrastructure and likely break authentication flow.
-
-### ❌ **Do Not Create a BFF Service**
-
-Mindbricks generates a specialized **BFF (Backend-for-Frontend)** service using the `bffService` module. You define `dataView` patterns in the application layer, and Mindbricks generates optimized BFF routes accordingly.
-**Why not?**
-BFF is not just another microservice. It coordinates between services, fetches multiple sources, and flattens data views for UI needs—all via internal orchestration logic that can’t be re-implemented manually.
-
-### ❌ **Do Not Create a Notification Service**
-
-Notifications (email, SMS, push, in-app) are defined declaratively under `notificationSettings` at the project level. Based on these settings, Mindbricks automatically creates a fully functional notification service.
-**Why not?**
-This service listens to Kafka events, processes templates, and invokes appropriate channels with minimal configuration. Building it yourself would mean rebuilding a lot of infrastructure.
-
-### ❌ **Do Not Create a Payment Service**
-
-Mindbricks automatically integrates Stripe payment flows into your backend when an `order` data object is defined. All required data objects, routes, and validations are generated automatically.
-**Why not?**
-Custom payment services may conflict with the automatic routing and Stripe integration. If you're handling orders, simply name your service appropriately (e.g. `"payment"`), but **do not attempt to create payment logic manually.**
-
----
-
-Certainly. Here is a refined documentation section for configuring the `ServiceSettings` of a service in Mindbricks, integrating practical guidance for both human and AI architects, while appropriately deferring deeper `ShareToken` configuration to a dedicated document:
-
----
-
-## Configuring `serviceSettings`
-
-The `serviceSettings` pattern defines the foundational behavior and identity of your service. It’s typically the first step after creating a new service and should be configured **before** designing data models or routes.
-
-```javascript
-service[0].serviceSettings = {
-  serviceBasics: { ... },
-  serviceOptions: { ... }
-};
+```text
+Tip:
+Choose a service name that clearly reflects its business domain:
+- `eventCatalog`
+- `inventory`
+- `ticketing`
+- `notifications` (only if it's your own domain service – see system services below)
 ```
 
 ---
 
-### 📌 `serviceBasics`
+## 5. System-Generated Services: What You Should NOT Manually Build
 
-This section defines your service’s name, description, and any custom environment variables.
+Mindbricks automatically provisions several **system-level services** based on project-level patterns. These are not simply examples—they are deeply integrated into the platform’s architecture.
 
-```javascript
-service[0].serviceSettings.serviceBasics = {
-  name: "orders",
-  description: "Handles customer orders and related workflows",
-  customVariables: [
-    { name: "region", value: "'eu-west-1'" },
-    { name: "invoicePrefix", value: "'ORD'" }
+To preserve system integrity:
+
+### 5.1 Do Not Manually Design an Auth Service
+
+The `auth` service is created and configured from the **`ProjectAuthentication`** pattern. It handles:
+
+- User data model
+
+- Login, logout, and session handling
+
+- JWT issuance and validation
+
+- Verification flows (password reset, email/mobile verification, 2FA)
+
+- Role and permission resolution
+
+- Multi-tenant identity logic
+
+Trying to create your own generic “user service” with similar responsibilities (e.g., manually modeling a `user` data object in a separate service) will conflict with the system’s understanding of identity. You may certainly build **user-profile** or **domain-specific profile** services linked to the `user` object (e.g., `userProfile` service referencing `auth:user`), but **do not attempt to replace the auth service**.
+
+### 5.2 Do Not Manually Design a BFF Service
+
+Mindbricks includes a dedicated **BFF service** controlled by the `BFFService` pattern at the project level.
+
+- You configure `dataViews` (static/dynamic) under `bffService`.
+
+- Mindbricks generates a specialized BFF microservice named `bff`.
+
+- It aggregates data from underlying services, optionally via Elasticsearch.
+
+You should **not** create an ad-hoc service named `bff` and try to implement cross-service data views manually. Instead, define `DataView` patterns, and let Mindbricks generate the BFF code.
+
+### 5.3 Do Not Manually Design a Notification Service
+
+Similarly, the **Notification service** is governed by the `NotificationService` and `NotificationServiceSettings` patterns.
+
+- It configures providers (SMTP, Twilio, NetGSM, OneSignal, etc.).
+
+- It listens to Kafka topics and triggers `EventNotification` patterns.
+
+- It routes messages via email/SMS/push/in-app with templating.
+
+You should not create your own service to replicate that generic notification behavior. You **may** create additional domain-specific services that emit events or call Notification APIs, but the baseline notification infra should be left to the system service.
+
+### 5.4 Do Not Manually Design a “Payment Service” for Stripe Orders
+
+Stripe integration in Mindbricks is handled declaratively via `StripeSettings` at project level and `StripeOrder` / `ShoppingCart` configuration at data-object level.
+
+- When you mark a DataObject as an order object (via `stripeOrder.objectIsAnOrderObject`), Mindbricks generates the necessary flows and microservice logic to handle payment intents, webhooks, mapping payment results to order statuses, etc.
+
+- Similarly, shopping cart logic is enabled via `ShoppingCart` configuration.
+
+You can of course have an `orders` or `billing` service that models your domain, but you should **not** try to "recreate Stripe integration manually" as a separate generic payment service; that risks diverging from the canonical payment flow.
+
+```text
+Mindbricks is declarative-first:
+Let the platform generate infrastructure and boilerplate (auth, BFF, notifications, payment flows).
+Focus your own services on your domain-specific logic.
+```
+
+---
+
+## 6. `serviceSettings`: The Foundation of a Service
+
+`serviceSettings` defines the **identity and global behavior** of the service. According to the ontology:
+
+```json
+{
+  "ServiceSettings": {
+    "serviceBasics": "ServiceBasics",
+    "serviceOptions": "ServiceOptions"
+  }
+}
+```
+
+### 6.1 `serviceBasics`
+
+`ServiceBasics` provides core identifiers and metadata:
+
+- `name` – service name (used in files, folders, routes).
+
+- `description` – long-form description.
+
+- `frontendDocument` – UX/behavioral description for frontend agents.
+
+- `customVariables` – `DataMapSimpleItem[]` (name/value pairs as strings).
+
+- `nodejsPackages` – `NodeJsPackageItem[]` to extend the service’s dependencies.
+
+**Example:**
+
+```json
+{
+  "serviceSettings": {
+    "serviceBasics": {
+      "name": "eventCatalog",
+      "description": "Holds event, venue, session and ticketing information.",
+      "frontendDocument": "# Event Catalog UX\nDefine how events are searched, filtered, and browsed...",
+      "customVariables": [
+        {
+          "name": "DEFAULT_TIMEZONE",
+          "value": "Europe/Istanbul"
+        }
+      ],
+      "nodejsPackages": [
+        {
+          "packageName": "@googlemaps/google-maps-services-js",
+          "version": "^3.3.0",
+          "defaultImportConst": "GoogleMapsClient"
+        }
+      ]
+    }
+  }
+}
+```
+
+**UI Navigation:**
+Service → **Service Settings** → **Basic Settings**
+
+- Human architects read and edit these fields in forms.
+
+- AI agents populate `customVariables` and `nodejsPackages` when extra runtime configuration or libraries are required.
+
+### 6.2 `serviceOptions`
+
+`ServiceOptions` defines fundamental runtime options: HTTP port, login requirements, and persistence details.
+
+Fields include:
+
+- `serviceRequiresLogin` (Boolean, default `true`)
+
+- `serviceAllowsUserToLogin` (Boolean, default `false`)
+
+- `httpPort` (Integer, default `3000`)
+
+- `routerSuffix` (String, optional)
+
+- `dataModelName` (String, default `"main"`)
+
+- `dbType` (Enum: `"postgresql"` or `"mongodb"`)
+
+- `useSoftDelete` (Boolean, default `true`)
+
+**Example:**
+
+```json
+{
+  "serviceSettings": {
+    "serviceOptions": {
+      "serviceRequiresLogin": true,
+      "serviceAllowsUserToLogin": false,
+      "httpPort": 3002,
+      "routerSuffix": null,
+      "dataModelName": "main",
+      "dbType": "postgresql",
+      "useSoftDelete": true
+    }
+  }
+}
+```
+
+**Notes:**
+
+- `serviceRequiresLogin`:
+  If `true`, all APIs require authentication unless explicitly configured otherwise (e.g., a specific Business API or edge route may be public).
+
+- `serviceAllowsUserToLogin`:
+  This should almost always remain `false`.
+  You already have the `auth` system service for login. Turning this on is for very advanced/exceptional cases (e.g., a custom external identity service).
+
+- `httpPort`:
+  Use distinct ports per service (e.g., 3001, 3002, 3003…) to simplify local development and debugging.
+
+- `useSoftDelete`:
+  Controls default delete behavior for DataObjects in this service. Individual DataObjects can override this via their `ObjectBasicSettings.useSoftDelete`.
+
+**UI Navigation:**
+Service → **Service Settings** → **Service Options**
+
+---
+
+## 7. `dataObjects`: Domain Data Model
+
+Although this guide is service-focused, we must highlight how `dataObjects` fit in:
+
+```json
+{
+  "dataObjects": [
+    {
+      "objectSettings": { ... },
+      "properties": [ ... ]
+    }
   ]
-};
+}
 ```
 
-**UI Navigation**:
-Go to the **Services** module → Open your service → **Service Settings** chapter → **Basic Settings** section.
+Each `DataObject`:
 
-- `name`: A short, unique identifier used in routing and file structure.
+- Represents a **logical entity** (e.g., `event`, `ticket`, `warehouse`, `cart`).
 
-- `description`: A clear, human-readable explanation.
+- Owns its **fields** (`properties` as `DataProperty` objects).
 
-- `customVariables`: Optional reusable key-value pairs available in MScript logic throughout the service.
+- Can define:
+
+  - Authorization (`ObjectAuthorization`, including tenant scoping and DataObjectAccess)
+
+  - Composite indexes (`CompositeIndex`)
+
+  - Caching (`RedisEntityCacheSettings`)
+
+  - Stripe order integration (`StripeOrder`)
+
+  - Shopping-cart configuration (`ShoppingCart`)
+
+  - Membership-based access (`MembershipSettings`)
+
+You typically:
+
+1. Create a service.
+
+2. Add one or more `dataObjects` that represent domain entities.
+
+3. Attach Business APIs (`businessLogic`) to those DataObjects.
 
 ---
 
-### 🌐 `serviceOptions`
+## 8. `businessLogic`: Business APIs (High-Level Overview)
 
-Specifies the basic optionsof a service for http, authentication and data model.
+The `businessLogic` array in a service holds `BusinessApi` definitions. Each `BusinessApi` describes a high-level operation (create/get/list/update/delete) on a `LocalDataObjectName`, plus workflow, parameters, auth options, etc.
 
-httpPort Setting:  The service will listen http requests from the given port.
+At the service level:
 
-```javascript
-service[0].serviceSettings.serviceOptions = {
-  httpPort: 3000
-};
+```json
+{
+  "businessLogic": [
+    {
+      "apiOptions": { ... },
+      "authOptions": { ... },
+      "restSettings": { ... },
+      "whereClause": { ... },
+      "dataClause": { ... },
+      "actions": { ... },
+      "workflow": { ... }
+    }
+  ]
+}
 ```
 
-**💡 Tip**: Use ports between 3000–3099 for consistency across services in the project.
+This document doesn’t detail every Business API setting (see your Business API / Workflow guide), but it is important to understand:
 
-**UI Navigation**:
-Service Settings → **Service Options** section.
+- Business APIs are the **primary way** you expose CRUD and more complex workflows.
 
-Configures authentication and access control logic specific to this service.
-
-```javascript
-service[0].serviceSettings.serviceOptions = {
-  serviceRequiresLogin: true,
-  serviceAllowsUserToLogin: false
-};
-```
-
-**Key Options**:
-
-- `serviceRequiresLogin` (default: `true`):
-  All routes require authentication unless explicitly marked as public.
-
-- `serviceAllowsUserToLogin` (default: `false`) ⚠️
-  **Do not set this to true** unless you are creating a highly specialized authentication service.
-  Mindbricks already includes a powerful auto-generated `auth` service which provides login, token management, session handling, and identity resolution. Redefining this behavior in another service is not recommended and may cause system conflicts.
+- When combined with `serviceOptions`, `ObjectSettings`, and access control, they define the runtime behavior of the service.
 
 ---
 
-### 🔗 Share Token Configurations (Advanced)
+## 9. `library`: Custom Code, Templates, Assets, Public Files
 
-Mindbricks supports secure sharing of specific data records with unauthenticated or external users via **Share Tokens**. This allows you to define logic like:
+`ServiceLibrary` is the **code & asset hub** of your service. It is defined as:
 
-Example (simplified):
-
-```javascript
-shareTokenConfigurations: [
-  {
-    configName: "publicInvoiceView",
-    sharedObject: "invoice",
-    peopleOptions: ["anyoneWithLink"],
-    shareableRoles: ["view"]
+```json
+{
+  "library": {
+    "functions": [ "LibModule" ],
+    "edgeFunctions": [ "LibModule" ],
+    "templates": [ "LibModule" ],
+    "assets": [ "LibModule" ],
+    "public": [ "LibModule" ]
   }
-]
+}
 ```
 
-These configurations define:
+Each `LibModule` has:
 
-- Which object is being shared
+- `moduleName` – unique name used for reference.
 
-- Who can use the token (`peopleOptions`)
+- `moduleExtension` – file extension: `js`, `ejs`, `txt`, `svg`, `pdf`, etc.
 
-- What roles are assigned to recipients (`shareableRoles`)
+- `moduleBody` – text content (code, markup, etc.).
 
-- Optional validations (e.g., token expiry, region, object ownership)
+### 9.1 `functions`: Reusable JS Modules
 
-**UI Navigation**:
-Service Settings → **Authentication** section → Add a Share Token Configuration.
+These are general-purpose helper functions used in:
 
----
+- MScript logic
 
-## Extending Behavior: `library` and `edgeControllers`
+- Business API actions
 
-A powerful part of Mindbricks service architecture lies in its extensibility—allowing you to write **custom logic, utilities, templates, and APIs** beyond what's defined by patterns and generated routes.
+- Validations, enrichment, etc.
 
-Two key tools for this are:
+**Example:**
 
----
-
-### 🧠 `library`: Writing Custom Code
-
-Every service in Mindbricks includes a `library` section—a modular code container that supports:
-
-- **Reusable JavaScript functions** used in scripts, conditions, validations
-
-- **Hook functions** attached to lifecycle points like "before save" or "after query"
-
-- **Edge functions** that power fully custom APIs (via edge controllers)
-
-- **HTML/email templates** for rendering dynamic content
-
-- **Static assets** like credentials, tokens, PDFs, or reference files
-
-- **Public files** directly accessible by frontend clients
-
-```javascript
-service[0].library.functions = [
-  {
-    moduleName: "capitalizeFirstLetter",
-    moduleExtension: "js",
-    moduleBody: "module.exports = str => str.charAt(0).toUpperCase() + str.slice(1);"
+```json
+{
+  "library": {
+    "functions": [
+      {
+        "moduleName": "capitalizeFirstLetter",
+        "moduleExtension": "js",
+        "moduleBody": "module.exports = function (str) { return str.charAt(0).toUpperCase() + str.slice(1); };"
+      }
+    ]
   }
-];
+}
 ```
 
-📘 To learn how to structure and register these functions, see
-👉 [**Writing Your Own Code in Mindbricks**](#)
+### 9.2 `edgeFunctions`: Functions for Edge Controllers
 
----
+These are special functions invoked via `edgeControllers`. They must export an async function with a `request` parameter and return an object (or throw):
 
-### 🔗 `edgeControllers`: Custom APIs at the Edge
-
-Sometimes, CRUD is not enough. You may need a special-purpose API to:
-
-- Trigger external services
-
-- Generate documents
-
-- Send an email
-
-- Perform custom DB operations
-
-That’s what **Edge Controllers** are for.
-
-Each `edgeController` is a REST endpoint bound to an **edge function** in your service’s library:
-
-```javascript
-service[0].edgeControllers.push({
-  edgeControllerOptions: {
-    functionName: "sendMail",
-    loginRequired: true
-  },
-  edgeRestSettings: {
-    path: "/sendmail",
-    method: "POST"
+```json
+{
+  "library": {
+    "edgeFunctions": [
+      {
+        "moduleName": "helloWorld",
+        "moduleExtension": "js",
+        "moduleBody": "module.exports = async (request) => { return { status: 200, message: 'Hello from the edge function', date: new Date().toISOString() }; };"
+      }
+    ]
   }
-});
+}
 ```
 
-The function `sendMail` will be called when a POST is made to `/sendmail`, and the request must include a valid login token.
+### 9.3 `templates`: EJS or other templates
+
+Used with `RenderDataAction` or other rendering logic:
+
+```json
+{
+  "library": {
+    "templates": [
+      {
+        "moduleName": "welcomeMail",
+        "moduleExtension": "ejs",
+        "moduleBody": "<html><body><h1>Welcome <%= user.name %></h1></body></html>"
+      }
+    ]
+  }
+}
+```
+
+### 9.4 `assets`: Internal Files
+
+Static files accessible from backend logic (e.g., credentials, static JSON, logos for PDF generation).
+
+### 9.5 `public`: Public Files
+
+Files exposed via a static URL (e.g., favicon, static PDFs).
+
+```text
+Rule of thumb:
+- Use `functions` for reusable business logic.
+- Use `edgeFunctions` for full custom API handlers.
+- Use `templates` for HTML/markdown/file rendering.
+- Use `assets` for internal-only files.
+- Use `public` for files served directly to the client.
+```
 
 ---
 
-### 🧩 When to Use
+## 10. `edgeControllers`: Custom Edge Routes
 
-Use `library` and `edgeControllers` when:
+While Business APIs cover most use cases, you sometimes need a **custom route** that:
 
-- You need logic not expressible by pattern configurations
+- Calls an edge function directly.
 
-- You want fine-grained control over request handling
+- Does multiple non-standard operations.
 
-- You need to inject utility logic into routes or hook points
+- Integrates with external providers in a bespoke way.
 
-## 🧩 Wrapping Up: Designing Robust Services in Mindbricks
+`EdgeController` is defined as:
 
-Designing a service in Mindbricks is more than defining data—it's about shaping a complete microservice unit with behavior, rules, APIs, and extensibility baked in.
+```json
+{
+  "edgeControllers": [
+    {
+      "edgeControllerOptions": {
+        "functionName": "sendMail",
+        "loginRequired": true
+      },
+      "edgeRestSettings": {
+        "path": "/sendmail",
+        "method": "POST"
+      }
+    }
+  ]
+}
+```
 
-In this guide, you've learned how to:
+- `edgeControllerOptions.functionName` – must match a moduleName in `library.edgeFunctions`.
 
-- Create a new service and configure its foundational settings
+- `edgeControllerOptions.loginRequired` – whether a valid session is required.
 
-- Use the `ServiceSettings` to control authentication, HTTP, and metadata
+- `edgeRestSettings.path` – route path relative to the service base URL.
 
-- Understand how `DataModel` and `DataObjects` form the data backbone of the service
+- `edgeRestSettings.method` – HTTP method (from `HTTPRequestMethods` enum: `GET`, `POST`, etc.).
 
-- Extend functionality through the `library` and define custom APIs with `edgeControllers`
+**How it works:**
 
-- Avoid common mistakes like redefining system services (auth, bff, notifications, payment)
+1. Request hits `POST /sendmail`.
 
-Each service you define becomes a well-isolated, well-documented domain module—ready for deployment, collaboration, and scaling.
+2. Mindbricks auth middleware validates login if `loginRequired = true`.
+
+3. The `sendMail` edge function from `edgeFunctions` is executed with a `request` object.
+
+4. The function returns an object that Mindbricks sends as HTTP response.
+
+```text
+Use edge controllers when:
+- You need a completely custom flow not modeled as a BusinessApi.
+- You must integrate with external APIs in a very specific way.
+- You want full control of request/response handling.
+```
 
 ---
 
-### 📚 What's Next
+## 11. (Optional) Share Token Configurations – Conceptual Extension
 
-To deepen your Mindbricks service design capabilities, continue with the following focused guides:
+Your older guide mentioned **Share Tokens** as a way to share specific data records with external or unauthenticated users. That concept is not explicitly defined in the current `patterns.json` you shared, but it is conceptually consistent with Mindbricks’ authorization model.
 
-- 🧱 [**Building Your DataModel**](#)
+**Typical idea:**
 
-- 🔁 [**Building Your API in Mindbricks**](#)
+A hypothetical configuration might look like:
 
-- ✍️ [**Writing Your Own Code in Mindbricks**](#)
+```json
+{
+  "serviceSettings": {
+    "serviceOptions": {
+      "serviceRequiresLogin": true
+    },
+    "serviceAuthentication": {
+      "shareTokenConfigurations": [
+        {
+          "configName": "publicInvoiceView",
+          "sharedObject": "invoice",
+          "peopleOptions": ["anyoneWithLink"],
+          "shareableRoles": ["view"]
+        }
+      ]
+    }
+  }
+}
+```
 
-You're now ready to take your service blueprint from concept to production-ready reality—with the confidence and clarity Mindbricks was built to deliver.
+Even though this exact pattern is **not present** in the shared ontology, you can treat Share Tokens as:
+
+- An advanced pattern for **signed, limited access** (similar to bucket tokens).
+
+- Conceptually aligned with `ReadJwtTokenAction` and `CreateJWTTokenAction` (which do exist in the Business API action store).
+
+```text
+If/when Share Tokens are added to the official ontology, they would likely
+appear as a pattern under Auth or Service authentication options.
+For now, you can regard them as a project-specific extension or design pattern.
+```
+
+---
+
+## 12. Putting It All Together
+
+Designing a Service in Mindbricks involves:
+
+1. **Defining the Service** in `MindbricksProject.services[]` with `serviceBasics` and `serviceOptions`.
+
+2. **Modeling Data** in `dataObjects` (DataObject/Property patterns).
+
+3. **Exposing Operations** via `businessLogic` (BusinessApi patterns).
+
+4. **Extending Behavior** with `library` functions, templates, assets.
+
+5. **Defining Custom Routes** using `edgeControllers` pointing to `edgeFunctions`.
+
+6. **Respecting System Services** (auth, BFF, notification, payment flows) instead of re-building them manually.
+
+Every service you define becomes a **self-contained domain module**:
+
+- Deployable as an independent microservice.
+
+- Backed by declarative patterns, not ad-hoc code.
+
+- Collaborating with other services through BFF, events, and shared auth rules.
+

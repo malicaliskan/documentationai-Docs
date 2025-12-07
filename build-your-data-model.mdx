@@ -1,17 +1,20 @@
 ---
 title: Designing Your Data Model In Mindbricks
+description: >-
+  Data modeling is the foundation of every successful application in Mindbricks.
+  At its core, a data model represents your business domain as structured,
+  semantic entities that flow through your entire architecture. In Mindbricks,
+  data models aren't just database schemas—they're intelligent patterns that
+  define how information is stored, validated, accessed, and transformed across
+  your microservices.
 ---
-## Introduction
-
-Data modeling is the foundation of every successful application in Mindbricks. At its core, a data model represents your business domain as structured, semantic entities that flow through your entire architecture. In Mindbricks, data models aren't just database schemas—they're intelligent patterns that define how information is stored, validated, accessed, and transformed across your microservices.
-
-### What is a Data Model in Mindbricks
+## What is a Data Model in Mindbricks
 
 In the Mindbricks ecosystem, a data model is defined through `DataObject` patterns within your service definition. Each `DataObject` represents a distinct entity in your business domain—whether that's a User, Product, Order, or any other concept central to your application. These objects are defined semantically in your service JSON, following the Mindbricks Pattern Ontology (MPO). Human architects can create and modify these data models through the visual design interface, while AI agents can work directly with the JSON representation—both approaches produce the same structured outcome.
 
 Unlike traditional database schemas, Mindbricks data models carry rich semantic meaning. They don't just define fields and types; they encapsulate business rules, relationships, validation logic, and access patterns. This semantic richness allows both human architects and AI agents to understand the intent and purpose behind each data entity.
 
-### The role of MPO in data modeling
+## The role of MPO in data modeling
 
 The Mindbricks Pattern Ontology (MPO) provides a structured framework for defining data models that are both human-readable and machine-processable. Within the MPO, `DataObject` patterns follow specific conventions that ensure consistency, maintainability, and scalability.
 
@@ -333,7 +336,7 @@ When users self-register via a public route:
 
 - Because `alwaysCreateWithDeafultValue = true`, even if a user tries to inject `"admin"` as their role, **it will be overridden** with the default value.
 
-- Since `allowAutoUpdate = false`, they also **cannot modify&#x20;****`roleId`** through the default update route.
+- Since `allowAutoUpdate = false`, they also **cannot modify \*\*\*\*****`roleId`** through the default update route.
 
 Now let’s assume you want only administrators to promote or demote users.
 
@@ -470,61 +473,6 @@ To configure index settings for a property:
 4. Expand the **Index Settings** accordion/tab.
 
 5. Use the checkboxes to enable or disable options
-
----
-
-### 🧩 Enum Settings
-
-Enum settings allow you to define a finite set of named values for a property when its type is set to `Enum`. This makes your data model more expressive and your APIs more readable—providing both the stored integer and the corresponding label in responses.
-
-```json
-"basicSettings": {
-  "name": "status",
-  "type": "Enum"
-},
-"enumSettings": {
-  "hasEnumOptions": true,
-  "enumOptions": ["pending", "approved", "rejected"]
-}
-```
-
-In this example, the enum values are stored in the database as `0`, `1`, or `2`, but API responses will return both:
-
-```json
-"status": {
-  "value": 1,
-  "label": "approved"
-}
-```
-
-#### Key Fields
-
-| Field            | Description                                                                                                                   |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `hasEnumOptions` | Enables enum interpretation for `Enum`-type fields. If `true`, the `enumOptions` will be used to label stored integer values. |
-| `enumOptions`    | An **ordered list** of string labels for the enum values. Index position maps directly to the stored integer.                 |
-
-#### 🧭 UI Navigation Hint
-
-To define enums for a property:
-
-- Go to the **Properties** tab of your DataObject
-
-- Select or create a property of type `Enum`
-
-- Expand the **Enum Settings** section
-
-- Enable **Has Enum Options**
-
-- Enter your list of named enum values (e.g., `["pending", "approved", "rejected"]`)
-
-#### 💡 Best Practices
-
-- Keep enum names lowercase or camelCase to avoid conflicts in frontend usage.
-
-- Always define `enumOptions` in the intended order of usage, as reordering them after deployment may break existing data.
-
----
 
 ### 🧩 Enum Settings
 
@@ -1272,22 +1220,3 @@ In Mindbricks, defining a robust **DataObject** is much more than just modeling 
 Each DataObject becomes the **center of gravity** for its service—governing how data flows, how users interact with it, and how the system scales.
 
 But defining the data model is just the beginning.
-
----
-
-## 🧩 What Comes Next: Connecting with Business API's
-
-Every DataObject is meant to be interacted with. In Mindbricks, those interactions are defined through **BusinesApi** patterns—high-level, declarative route definitions that generate fully functional REST APIs, complete with access control, validation, side effects, and response shaping.
-
-In the next guide, [**Building Your API in Mindbricks**](), you’ll learn:
-
-- How to define api's like `create`, `update`, `get`, `delete`, and `getList`
-
-- How to attach validation, ownership checks, hooks, and filters
-
-- How to extend behavior with fetches, aggregations, and calculated responses
-
-By combining powerful **DataObjects** with intelligent **BusinessApi** definitions, you create services that are secure, testable, scalable—and entirely defined through pattern logic.
-
-👉 Ready to turn your models into a working API? Continue with:
-📘 [**Building Your API in Mindbricks**]()

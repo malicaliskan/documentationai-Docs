@@ -1,0 +1,725 @@
+---
+title: Writing Your Own Code in Mindbricks
+description: >-
+  Most of your backend is defined through patterns (DataObject, BusinessApi,
+  Service, ProjectAuthentication, etc.) and generated automatically.
+
+  However, real-world systems always have edge cases—business rules,
+  transformations, integrations, or performance hacks that can’t (and shouldn’t)
+  be fully captured by declarative patterns alone.
+---
+Mindbricks is **declarative-first**, but it is not a closed box.
+
+This document explains how to extend Mindbricks with **custom code** in three main ways:
+
+1. **MScript** – Inline JavaScript expressions embedded in pattern fields.
+
+2. **Service Library** – Reusable JS modules, templates, and assets inside `ServiceLibrary`.
+
+3. **Edge Controllers** – Fully custom HTTP endpoints backed by edge functions.
+
+The goal is to help both **human architects** and **AI agents** confidently answer the question:
+
+The answer is: **Yes. Always.** You just choose the right level of extension.
+
+---
+
+## 1. Three Layers of Custom Code
+
+Before diving into details, it’s helpful to see the three main extension layers side by side.
+
+```plaintext
+1. MScript         – Lightweight, inline expressions & queries inside patterns.
+2. Service Library – Reusable functions, templates, assets, public files per service.
+3. Edge Controllers– Full-control routes mapped to custom JS handlers.
+```
+
+### When to Use Which?
+
+- **MScript**
+  Use when you can express the logic as an expression, a query, or a small function call:
+
+  - where clauses
+
+  - access checks
+
+  - formulas & derived fields
+
+  - building queries or payloads
+
+  - mapping and filtering lists
+
+- **Service Library**
+  Use when logic is a bit larger or shared:
+
+  - utility functions for price, tax, scoring, etc.
+
+  - building complex MScript Query objects
+
+  - calling external APIs with shared logic
+
+  - complex string building (logs, messages)
+
+  - implementing a small rules engine
+
+- **Edge Controllers**
+  Use when you need full control:
+
+  - very custom HTTP endpoints
+
+  - multi-step integrations that don’t map nicely to a BusinessApi
+
+  - admin/maintenance tools
+
+  - specialized export/import endpoints
+
+  - very custom workflows where you want to write “plain” Node.js logic
+
+All three are **compatible** with the declarative patterns. You don’t leave Mindbricks—you extend it from inside.
+
+---
+
+## 2. MScript – Inline, Context-Aware Expressions
+
+### 2.1 What Is MScript?
+
+In the Mindbricks ontology, `MScript` is a special **string-based type** that stores JavaScript expressions.
+
+```json
+{
+  "MScript": {
+    "__isStringType": true
+  }
+}
+```
+
+MScript is used across many patterns:
+
+- `DataMapItem.value`
+
+- `PropertyFormulaSettingsConfig.formula` & `updateFormula`
+
+- `WhereClauseSettings.fullWhereClause`
+
+- `ExtendedClause.doWhen`, `excludeWhen`, `whereClause`
+
+- `VerificationConfig.verificationTemplate` (rendering context)
+
+- `StripeOrderConfig.amount`, `description`
+
+- `BusinessApiAction.condition`
+
+- Actions like `FunctionCallAction.callScript`, `FetchObjectAction.matchValue`, `ListMapAction.mapScript`, `IntegrationParameter.parameterValue`, `ValidationAction.validationScript`, and many more.
+
+MScript lets you “drop” logic into the generated code, while Mindbricks manages structure, lifecycle, and context.
+
+### 2.2 First Rule
+
+MScript values are injected directly into generated code after syntax validation. A good rule of thumb:
+
+Example in design:
+
+```json
+{
+  "condition": "this.user.age > 18"
+}
+```
+
+Mindbricks might generate code like:
+
+```js
+const condition = this.user.age > 18;
+if (!condition) {
+  throw new Error("User should be older than 18");
+}
+```
+
+If you’re unsure, you can always wrap your expression with `module.exports`:
+
+```js
+module.exports = (this.user.age > 18)
+```
+
+Mindbricks will extract the exported expression.
+
+### 2.3 The Context: `this`
+
+Most MScript runs inside a **Business API manager class**. In that scope, `this` is the runtime context.
+
+Common things you can access:
+
+- **Business API parameters**
+
+  ```javascript
+  this.productId
+  this.searchKeyword
+  ```
+
+- **Session data**
+
+  ```javascript
+  this.session.userId
+  this.session.roleId
+  this.session.tenantId
+  ```
+
+- **Main data object instance(s)**
+  Depending on crudType:
+
+  - `create` / `get` / `update` / `delete`: `this.customer`, `this.order`, etc.
+
+  - `list`: `this.customers`, `this.orders` (plural list).
+
+- **Action outputs** (from `BusinessApiAction` with `contextPropertyName`)
+
+  ```js
+  // Example: FetchObjectAction with contextPropertyName = "userCompany"
+  this.userCompany.name
+  ```
+
+- **Library functions** via `LIB`
+
+  ```javascript
+  LIB.common.md5(this.email ?? "nullValue")
+  LIB.getSearchQueryForProduct(this.keyword)
+  ```
+
+- **Other context fields** added by `AddToContextAction` or `CreateObjectAction`.
+
+Keeping this mental model makes MScript much more intuitive.
+
+### 2.4 MScript Examples by Use Case
+
+#### 2.4.1 Conditional Checks
+
+You want to ensure the current user owns the resource:
+
+```json
+{
+  "condition": "this.customer.userId === this.session.userId"
+}
+```
+
+Used in:
+
+- `ValidationAction.validationScript`
+
+- `ExtendedClause.doWhen`
+
+- `MembershipCheckAction.checkFor`
+
+#### 2.4.2 Dynamic Formula
+
+A `totalPrice` property as `unitPrice * quantity`:
+
+```json
+{
+  "formulaSettings": {
+    "isCalculated": true,
+    "configuration": {
+      "formula": "this.unitPrice * this.quantity"
+    }
+  }
+}
+```
+
+This is placed under a `DataProperty`’s `formulaSettings` for that field.
+
+#### 2.4.3 Inline Arrow Function for Complex Logic
+
+Sometimes you need a few steps:
+
+```json
+{
+  "formula": "(() => { const net = this.grossAmount - this.discountAmount; return Math.max(net, 0); })()"
+}
+```
+
+#### 2.4.4 MScript Query (Where Clause)
+
+Filtering orders for the current user:
+
+```json
+{
+  "fullWhereClause": "({ userId: { \"$eq\": this.session.userId } })"
+}
+```
+
+Using the MScript Query syntax, you can also do more complex filters:
+
+```json
+{
+  "fullWhereClause": "({ \"$and\": [ { status: { \"$eq\": 'published' } }, { tenantId: { \"$eq\": this.session.tenantId } } ] })"
+}
+```
+
+Mindbricks converts this unified syntax into SQL/Sequelize, MongoDB, or Elasticsearch queries depending on deployment.
+
+#### 2.4.5 Building Queries via Library Functions
+
+```js
+// In service library functions
+const getSearchQueryForProduct = (pName) => {
+  return { name: { "$ilike": `%${pName}%` } };
+};
+
+module.exports = getSearchQueryForProduct;
+```
+
+Used in a BusinessApi where clause:
+
+```json
+{
+  "fullWhereClause": "LIB.getSearchQueryForProduct(this.productName)"
+}
+```
+
+This is a perfect example of **MScript + Library** working together.
+
+---
+
+## 3. Service Library – Your Private Utility Toolbox
+
+Patterns: `ServiceLibrary`, `LibModule`
+
+Every service has a `library` field:
+
+```json
+{
+  "library": {
+    "functions": [ /* LibModule */ ],
+    "edgeFunctions": [ /* LibModule */ ],
+    "templates": [ /* LibModule */ ],
+    "assets": [ /* LibModule */ ],
+    "public": [ /* LibModule */ ]
+  }
+}
+```
+
+Each `LibModule` has:
+
+- `moduleName` – unique name within the library
+
+- `moduleExtension` – e.g. `js`, `ejs`, `txt`, `svg`, `pdf`
+
+- `moduleBody` – the source code/content (string)
+
+This is where you write **real code**:
+
+- shared validation functions
+
+- calculators (price, tax, commissions)
+
+- query builders
+
+- AI prompt builders
+
+- integration wrappers
+
+- document templates and static assets
+
+### 3.1 Functions – Reusable Business Logic
+
+**Use case examples:**
+
+- Normalize product names.
+
+- Calculate totals and discounts.
+
+- Generate a standard search query.
+
+- Validate country-specific ID numbers.
+
+- Map external statuses to internal ones.
+
+**Example: version sorter**
+
+```json
+{
+  "library": {
+    "functions": [
+      {
+        "moduleName": "sortVersions",
+        "moduleExtension": "js",
+        "moduleBody": "module.exports = function sortVersions(versions) {\n  return versions.sort((a, b) => {\n    const partsA = a.split('.').map(Number);\n    const partsB = b.split('.').map(Number);\n    const maxLength = Math.max(partsA.length, partsB.length);\n    for (let i = 0; i < maxLength; i++) {\n      const numA = partsA[i] || 0;\n      const numB = partsB[i] || 0;\n      if (numA > numB) return 1;\n      if (numA < numB) return -1;\n    }\n    return 0;\n  });\n}"
+      }
+    ]
+  }
+}
+```
+
+Use it in MScript:
+
+```json
+{
+  "callScript": "LIB.sortVersions(this.versionList)"
+}
+```
+
+Or use it to compute derived data in a `FunctionCallAction` or `AddToContextAction`.
+
+#### Real-Life Case: Shipping Fee Calculation
+
+```json
+{
+  "library": {
+    "functions": [
+      {
+        "moduleName": "calculateShippingFee",
+        "moduleExtension": "js",
+        "moduleBody": "module.exports = function calculateShippingFee(order) {\n  const base = 5;\n  const weight = order.totalWeight || 0;\n  const distanceFactor = order.distanceKm || 0;\n  return base + weight * 0.5 + distanceFactor * 0.1;\n}"
+      }
+    ]
+  }
+}
+```
+
+Then in a `DataProperty` formula for `shippingFee`:
+
+```json
+{
+  "formulaSettings": {
+    "isCalculated": true,
+    "configuration": {
+      "formula": "LIB.calculateShippingFee(this.order)"
+    }
+  }
+}
+```
+
+Best of both worlds: pattern-driven property + custom calculation logic.
+
+### 3.2 Edge Functions – Custom Route Handlers
+
+`edgeFunctions` are used by `EdgeController` and must export an async function:
+
+```json
+{
+  "library": {
+    "edgeFunctions": [
+      {
+        "moduleName": "helloWorld",
+        "moduleExtension": "js",
+        "moduleBody": "module.exports = async (request) => {\n  return { status: 200, message: 'Hello from the edge function', now: new Date().toISOString() };\n};"
+      }
+    ]
+  }
+}
+```
+
+We’ll dive into edge controllers in the next section, but keep in mind: **this is where their logic lives**.
+
+### 3.3 Templates – Dynamic Content
+
+Use `templates` with `RenderDataAction` or other rendering logic.
+
+**Use case examples:**
+
+- Welcome email
+
+- Payment receipt
+
+- Multi-language document
+
+- HTML snippet for PDF export
+
+```json
+{
+  "library": {
+    "templates": [
+      {
+        "moduleName": "orderInvoiceHtml",
+        "moduleExtension": "ejs",
+        "moduleBody": "<html><body><h1>Invoice #<%= order.id %></h1><p>Total: <%= order.totalAmount %> <%= order.currency %></p></body></html>"
+      }
+    ]
+  }
+}
+```
+
+Then:
+
+```json
+{
+  "actions": {
+    "renderDataActions": [
+      {
+        "extendClassName": "RenderDataAction",
+        "name": "renderInvoice",
+        "template": "orderInvoiceHtml",
+        "inputData": "{ order: this.order }",
+        "contextPropertyName": "invoiceHtml",
+        "writeToResponse": false
+      }
+    ],
+    "dataToFileActions": [
+      {
+        "extendClassName": "DataToFileAction",
+        "name": "exportInvoicePdf",
+        "inputData": "this.invoiceHtml",
+        "outputFormat": "pdf",
+        "sendToClient": true
+      }
+    ]
+  }
+}
+```
+
+### 3.4 Assets and Public Files
+
+- `assets`: internal text/binary data (stored as text in `moduleBody`)
+
+- `public`: static assets exposed via HTTP (logos, favicons, PDFs, static docs)
+
+Examples:
+
+```json
+{
+  "library": {
+    "assets": [
+      {
+        "moduleName": "awsCredentials",
+        "moduleExtension": "txt",
+        "moduleBody": "AWS_ACCESS_KEY_ID=...\nAWS_SECRET_ACCESS_KEY=..."
+      }
+    ],
+    "public": [
+      {
+        "moduleName": "favicon",
+        "moduleExtension": "png",
+        "moduleBody": "<base64-image-data>"
+      }
+    ]
+  }
+}
+```
+
+Then, internal code can read `awsCredentials` via special asset loader, while `favicon` is served via a static route.
+
+---
+
+## 4. Edge Controllers – “There Is Always a Route”
+
+Patterns: `EdgeController`, `EdgeControllerOptions`, `EdgeRestSettings`, `ServiceLibrary.edgeFunctions`
+
+Sometimes you need to go beyond BusinessApi workflows and auto-generated routes:
+
+- A **maintenance endpoint** to trigger a re-indexing job.
+
+- A **special integration** that aggregates multiple external APIs and returns a custom response.
+
+- A **migration tool** exposed temporarily for controlled admin use.
+
+- A **custom webhook handler** not yet covered by native integrations.
+
+- A **debug endpoint** for introspecting specific state in controlled environments.
+
+This is where **Edge Controllers** shine.
+
+### 4.1 How Edge Controllers Work
+
+An `EdgeController` ties a URL + HTTP method to an edge function:
+
+```json
+{
+  "edgeControllers": [
+    {
+      "edgeControllerOptions": {
+        "functionName": "sendMail",
+        "loginRequired": true
+      },
+      "edgeRestSettings": {
+        "path": "/sendmail",
+        "method": "POST"
+      }
+    }
+  ]
+}
+```
+
+- `edgeControllerOptions.functionName` → `library.edgeFunctions[].moduleName`
+
+- `edgeControllerOptions.loginRequired` → whether to enforce session/auth
+
+- `edgeRestSettings.path` → exposed REST path
+
+- `edgeRestSettings.method` → HTTP method (from `HTTPRequestMethods`)
+
+Edge function example:
+
+```json
+{
+  "library": {
+    "edgeFunctions": [
+      {
+        "moduleName": "sendMail",
+        "moduleExtension": "js",
+        "moduleBody": "const { sendSmtpEmail } = require('common');\n\nmodule.exports = async (request) => {\n  const { to, subject, text } = request.body;\n  const emailFrom = request.session?.email ?? 'noreply@myapp.com';\n\n  await sendSmtpEmail({ emailFrom, to, subject, text });\n\n  return {\n    status: 201,\n    message: 'Email sent',\n    date: new Date().toISOString()\n  };\n};"
+      }
+    ]
+  }
+}
+```
+
+From the client’s perspective, this looks like any other endpoint:
+
+```text
+POST /sendmail
+Content-Type: application/json
+
+{
+  "to": "user@example.com",
+  "subject": "Hello",
+  "text": "Welcome to our service!"
+}
+```
+
+### 4.2 Real-Life Edge Controller Scenarios
+
+#### 4.2.1 Custom Reporting Endpoint
+
+You want a `/admin/export-users` endpoint that:
+
+1. Fetches users with specific filters
+
+2. Generates a CSV
+
+3. Returns it as a downloadable file
+
+You might choose an Edge Controller because:
+
+- You want full flexibility over the CSV format.
+
+- You may need to call multiple services.
+
+- You might use Node streams or large-memory operations.
+
+Edge function:
+
+```js
+// moduleName: exportUsersCsv
+module.exports = async (request) => {
+  const { role, since } = request.query;
+  const users = await request.services.auth.getUsers({ role, since });
+
+  const header = "id,email,role\n";
+  const rows = users.map(u => `${u.id},${u.email},${u.roleId}`).join("\n");
+  const csv = header + rows + "\n";
+
+  return {
+    status: 200,
+    headers: {
+      "Content-Type": "text/csv",
+      "Content-Disposition": "attachment; filename=\"users.csv\""
+    },
+    body: csv
+  };
+};
+```
+
+Edge controller:
+
+```json
+{
+  "edgeControllers": [
+    {
+      "edgeControllerOptions": {
+        "functionName": "exportUsersCsv",
+        "loginRequired": true
+      },
+      "edgeRestSettings": {
+        "path": "/admin/export-users",
+        "method": "GET"
+      }
+    }
+  ]
+}
+```
+
+#### 4.2.2 External System Sync
+
+You need to call a legacy SOAP API, combine it with local DB data, and return a derived result:
+
+- Patterns handle 95% of your CRUD.
+
+- For this one special case, you create an Edge Controller.
+
+The edge function can:
+
+- Read query/body
+
+- Use `request.services` to call internal Business APIs
+
+- Use any Node.js library you added via `nodejsPackages`
+
+- Perform a custom algorithm
+
+- Return the response you want
+
+This gives you **escape hatches** without breaking the Mindbricks structure.
+
+---
+
+## 5. Pattern + Code: Always a Solution
+
+It’s easy to fall into two extremes:
+
+- “Everything must be declarative; no code.”
+
+- “Everything must be code; patterns get in the way.”
+
+Mindbricks is designed to sit **between** these: patterns for structure, **code where it matters**.
+
+### 5.1 A Typical Design Journey
+
+1. **Start with patterns**
+   Model your domain via `DataObject`, `BusinessApi`, `AccessControl`, etc.
+
+2. **Use MScript liberally**
+   Add MScript conditions, formulas, where clauses, map functions, and function calls.
+
+3. **Factor out complexity into the Service Library**
+   When an MScript expression becomes too complex or is reused in multiple places:
+
+   - Move the heavy logic into a `functions` module.
+
+   - Call it via `LIB.someFunction(...)` in MScript.
+
+4. **Use Edge Controllers for truly custom flows**
+   When a whole route’s behavior does not fit a BusinessApi pattern:
+
+   - Create a small `edgeFunctions` module.
+
+   - Expose it via an `EdgeController` path and method.
+
+   - Keep using patterns elsewhere.
+
+### 5.2 Decision Hints
+
+- **Can it be expressed as a pure expression or query?** → MScript.
+
+- **Is the logic reused in several places or growing in size?** → Service Library function.
+
+- **Does it require full control over request/response or multi-service orchestration?** → Edge Controller.
+
+### 5.3 Philosophical Note
+
+The combination of:
+
+- strong **ontology** (patterns),
+
+- flexible **expressions** (MScript),
+
+- and precise **code anchors** (Service Library & Edge Controllers),
+
+makes Mindbricks less like a rigid code generator and more like a **language for backend architecture**—where you can always “drop down” one level to express what you need, without losing the benefits of structure, documentation, and automation.
+
+There is always a route:
+
+- If it’s small → MScript.
+
+- If it’s shared → Library.
+
+- If it’s a one-off but important endpoint → Edge Controller.
+
+You stay *inside* Mindbricks, but you are never trapped by it.

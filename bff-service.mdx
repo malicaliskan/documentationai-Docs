@@ -1,0 +1,902 @@
+---
+title: BFF Service & DataViews in Mindbricks
+description: >-
+  The BFF Service in Mindbricks is a specialized microservice that exists to
+  answer a very specific question: Instead of forcing your UI to call many
+  backend services and stitch results together, Mindbricks lets you define
+  DataViews.
+---
+## 1. Scope
+
+The **BFF Service** in Mindbricks is a specialized microservice that exists to answer a very specific question:
+
+Instead of forcing your UI to call many backend services and stitch results together, Mindbricks lets you define **DataViews**:
+
+- Structured, reusable **read models** built on top of your microservices’ data.
+
+- Optionally **stored in Elasticsearch** for fast querying and filtering.
+
+- Enriched at runtime via joins, lookups, and stats across services.
+
+This document explains:
+
+- The **`BFFService`****&#x20;pattern**
+
+- The **`DataView`****&#x20;family** (`ViewBasics`, `ViewAggregate`, `ViewLookup`, `ViewStat`, `AggregateItem`)
+
+- How these relate to **Elasticsearch** and **CQRS**
+
+- How they compare with **`FetchFromElasticAction`**
+
+- Several **real-life DataView examples**
+
+All pattern references are taken from your Mindbricks ontology.
+
+---
+
+## 2. What Is the BFF Service?
+
+### 2.1 Conceptual Role
+
+In a microservice architecture, data for a single screen is often spread across many services:
+
+- `auth` – user and session
+
+- `orders` – orders, payments
+
+- `inventory` – products, stock
+
+- `eventCatalog` – events, venues, tickets
+
+- etc.
+
+Letting a frontend call these services individually leads to:
+
+- More latency
+
+- More coupling
+
+- Repeated aggregation logic in the UI
+
+The **BFF (Backend-for-Frontend)** service solves this by:
+
+- Providing a **single API endpoint** per **DataView**
+
+- Aggregating data from **many services**
+
+- Optionally materializing and searching views in **Elasticsearch**
+
+- Returning exactly the shape the frontend wants
+
+From your ontology:
+
+```json
+{
+  "BFFService": {
+    "dataViews": ["DataView"]
+  }
+}
+```
+
+### 2.2 CQRS & Elasticsearch
+
+Mindbricks uses a **CQRS-like approach**:
+
+- **Write side**: normal microservices write to PostgreSQL / MongoDB.
+
+- **Read side**: data is replicated into **Elasticsearch** and aggregated via **DataViews**.
+
+Each **stored DataView** (`isStored = true`) is an **Elasticsearch index or sub-index** that:
+
+- Is built based on `viewBasics`, `aggregates`, `lookups`, `stats`.
+
+- Can be queried efficiently for list/get operations.
+
+- Serves as the data source for BFF API calls.
+
+Dynamic views (`isStored = false`) are built at request time without storing their results as an index.
+
+---
+
+## 3. Pattern Reference
+
+Here are the core patterns involved. (Simplified for reading.)
+
+### 3.1 BFFService
+
+```json
+{
+  "BFFService": {
+    "dataViews": ["DataView"]
+  }
+}
+```
+
+### 3.2 DataView
+
+```json
+{
+  "DataView": {
+    "viewBasics": "ViewBasics",
+    "aggregates": ["ViewAggregate"],
+    "lookups": ["ViewLookup"],
+    "stats": ["ViewStat"],
+  }
+}
+```
+
+### 3.3 ViewBasics
+
+```json
+{
+  "ViewBasics": {
+    "name": "String",
+    "isStored": "Boolean",
+    "mainObject": "DataObjectName",
+    "properties": ["PropRefer"]
+  }
+}
+```
+
+- `mainObject` is a **DataObjectName**, which can be `"objectName"` or `"serviceName:objectName"`.
+
+- `properties` is the list of fields from `mainObject` to expose.
+
+### 3.4 ViewAggregate (joins)
+
+```json
+{
+  "ViewAggregate": {
+    "name": "String",
+    "childObject": "DataObjectName",
+    "parentKey": "PropRefer",
+    "childKey": "PropRefer",
+    "oneToMany": "Boolean",
+    "condition": "MScript",
+    "properties": ["PropRefer"],
+    "checkIn": "MScript"
+  }
+}
+```
+
+### 3.5 ViewLookup (dictionary / label joins)
+
+```json
+{
+  "ViewLookup": {
+    "name": "String",
+    "lookupDict": "String",
+    "multiLang": "Boolean",
+    "lookupKey": "String",
+    "lookupValue": "String"
+  }
+}
+```
+
+### 3.6 ViewStat & AggregateItem (stats = ES aggregations)
+
+```json
+{
+  "ViewStat": {
+    "name": "String",
+    "childObject": "DataObjectName",
+    "parentKey": "PropRefer",
+    "childKey": "PropRefer",
+    "select": "MScript",
+    "aggList": ["AggregateItem"]
+  }
+}
+```
+
+```json
+{
+  "AggregateItem": {
+    "name": "String",
+    "aggType": "String",
+    "aggField": "PropRefer",
+    "dataType": "DataTypes",
+    "filterValue": "MScript"
+  }
+}
+```
+
+---
+
+## 4. Designing a DataView
+
+### 4.1 ViewBasics – The Root of the View
+
+`viewBasics` defines **what the view is “about”**.
+
+```json
+{
+  "viewBasics": {
+    "name": "UserOrdersView",
+    "isStored": true,
+    "mainObject": "orders:order",
+    "properties": [
+      "id",
+      "userId",
+      "totalAmount",
+      "currency",
+      "status",
+      "createdAt"
+    ]
+  }
+}
+```
+
+- `name`: unique name for the view. Avoid clashing with DataObject names.
+
+- `isStored`:
+
+  - `true` → View is materialized in Elasticsearch.
+
+  - `false` → Dynamic view built on the fly.
+
+- `mainObject`:
+
+  - `"order"` → local to the BFF’s logical context.
+
+  - `"orders:order"` → `order` data object from `orders` service.
+
+- `properties`: list of `PropRefer` from `mainObject` to expose.
+
+### 4.2 Aggregates – Joining Related Data (Joins)
+
+`aggregates` describe **joins** from `mainObject` to child objects.
+
+Example: attach `orderItems` from `orders:orderItem` to each `order`.
+
+```json
+{
+  "aggregates": [
+    {
+      "name": "items",
+      "childObject": "orders:orderItem",
+      "parentKey": "id",
+      "childKey": "orderId",
+      "oneToMany": true,
+      "condition": null,
+      "checkIn": null,
+      "properties": [
+        "id",
+        "productId",
+        "quantity",
+        "unitPrice",
+        "lineTotal"
+      ]
+    }
+  ]
+}
+```
+
+Meaning:
+
+- For each `order` in the view:
+
+  - Find `orderItem` records where `orderItem.orderId = order.id`.
+
+  - Collect them under `items` as an array (since `oneToMany = true`).
+
+  - Only include the specified properties from `orderItem`.
+
+`condition` and `checkIn` are **MScript**:
+
+- `condition` – whether to perform the join for the current parent (order).
+
+- `checkIn` – additional child-level filter on each record.
+
+Example: only join items for “completed” orders:
+
+```json
+{
+  "condition": "this.status === 'completed'"
+}
+```
+
+### 4.3 Lookups – Human-Friendly Labels, Multi-Language
+
+`lookups` are like light-weight dictionary joins.
+
+Example: attach `categoryName` to products using a dictionary index:
+
+```json
+{
+  "lookups": [
+    {
+      "name": "categoryName",
+      "lookupDict": "productCategoryIndex",
+      "multiLang": true,
+      "lookupKey": "categoryId",
+      "lookupValue": "name"
+    }
+  ]
+}
+```
+
+- `lookupKey`: field on the DataView (or aggregates) that maps to dictionary `id`.
+
+- `lookupValue`: which dictionary field to read (`name`, `label`, etc.).
+
+- `multiLang`:
+
+  - `true` → BFF manages multi-language variants and exposes only the appropriate one.
+
+  - `false` → single language.
+
+Use cases:
+
+- Category labels
+
+- Status labels
+
+- Country / city names
+
+- Role names, dictionary-driven enums
+
+### 4.4 Stats – ES Aggregations on Related Data
+
+`stats` define **statistical aggregations** on child objects (conceptually: **ES aggregations**).
+
+Example: for each `user`, compute the total number and sum of their orders.
+
+```json
+{
+  "stats": [
+    {
+      "name": "orderStats",
+      "childObject": "orders:order",
+      "parentKey": "id",      // user.id
+      "childKey": "userId",   // order.userId
+      "select": null,
+      "aggList": [
+        {
+          "name": "orderCount",
+          "aggType": "value_count",
+          "aggField": "id",
+          "dataType": "Integer",
+          "filterValue": null
+        },
+        {
+          "name": "totalOrderAmount",
+          "aggType": "sum",
+          "aggField": "totalAmount",
+          "dataType": "Double",
+          "filterValue": null
+        }
+      ]
+    }
+  ]
+}
+```
+
+The result in each view row might look like:
+
+```json
+{
+  "id": "user-123",
+  "email": "user@example.com",
+  "orderStats": {
+    "orderCount": 12,
+    "totalOrderAmount": 5320.75
+  }
+}
+```
+
+You can use `filterValue` (MScript) to define filtered stats:
+
+```json
+{
+  "name": "completedOrderCount",
+  "aggType": "value_count",
+  "aggField": "id",
+  "dataType": "Integer",
+  "filterValue": "{ status: { \"$eq\": 'completed' } }"
+}
+```
+
+---
+
+## 5. Stored vs Dynamic DataViews
+
+### 5.1 Stored (`isStored = true`)
+
+Stored DataViews:
+
+- Are materialized in Elasticsearch.
+
+- Support **fast** filtering, pagination, sorting.
+
+- Are ideal for:
+
+  - Dashboards
+
+  - Search-heavy UI screens
+
+  - Large lists and reporting views
+
+### 5.2 Dynamic (`isStored = false`)
+
+Dynamic DataViews:
+
+- Are built at **request time** by pulling from services and joining in memory.
+
+- Do not create or maintain a dedicated ES index for the view.
+
+- Are ideal for:
+
+  - Lightweight, user-specific views
+
+  - Highly dynamic views where storing doesn’t add much benefit
+
+  - Cases where the data volume is small
+
+You can think of dynamic views as **“powerful aggregating queries”**, and stored views as **“read models with their own index”**.
+
+---
+
+## 6. FetchFromElasticAction vs DataView
+
+Pattern: `FetchFromElasticAction`
+
+```json
+{
+  "FetchFromElasticAction": {
+    "targetObject": "DataObjectName",
+    "body": "MScript"
+  }
+}
+```
+
+- `body` is an MScript expression that yields a **raw Elasticsearch query body**.
+
+- You can use it **inside Business APIs** to perform one-off raw ES queries.
+
+- The result is normalized as:
+
+  - `items`: array of hits with `_source` normalized
+
+  - `aggregations`: as returned by ES (with some simplification)
+
+**Use cases:**
+
+- Very custom queries that DataViews can’t (or shouldn’t) express.
+
+- Low-level debugging or specialized admin operations.
+
+- Temporary or experimental queries.
+
+**Difference from DataViews:**
+
+| Aspect                 | DataView / BFFService                                      | FetchFromElasticAction                        |
+| ---------------------- | ---------------------------------------------------------- | --------------------------------------------- |
+| Location               | BFFService module                                          | BusinessApi in regular services               |
+| Definition             | Declarative patterns (`ViewBasics`, `ViewAggregate`, etc.) | Raw ES `body` in MScript                      |
+| Storage                | Can define stored views / indexes                          | No new index, just queries existing ones      |
+| Cross-service joins    | Built-in via `aggregates`/`stats`                          | You handle logic yourself via raw query/logic |
+| Reuse across endpoints | Yes (BFF endpoints)                                        | Usually one-off or limited to one BusinessApi |
+
+**Mental model:**
+
+- **FetchFromElasticAction** = “I want to use Elasticsearch as-is from a Business API.”
+
+- **DataView** = “I want a reusable, structured, possibly stored read model for the BFF service.”
+
+---
+
+## 7. Real-Life DataView Examples
+
+Now, let’s make it concrete with three realistic examples.
+
+### 7.1 E-Commerce: ProductDetailsView
+
+**Goal:** One call from the frontend to get:
+
+- Product core data
+
+- Images
+
+- Reviews
+
+- Aggregated rating stats
+
+- Category label
+
+#### 7.1.1 ViewBasics
+
+```json
+{
+  "viewBasics": {
+    "name": "ProductDetailsView",
+    "isStored": true,
+    "mainObject": "catalog:product",
+    "properties": [
+      "id",
+      "name",
+      "slug",
+      "categoryId",
+      "price",
+      "currency",
+      "stockStatus",
+      "createdAt"
+    ]
+  }
+}
+```
+
+#### 7.1.2 Aggregates
+
+1. Product images (`oneToMany`)
+
+```json
+{
+  "name": "images",
+  "childObject": "catalog:productImage",
+  "parentKey": "id",
+  "childKey": "productId",
+  "oneToMany": true,
+  "condition": null,
+  "checkIn": "{ isActive: { \"$eq\": true } }",
+  "properties": [
+    "id",
+    "url",
+    "altText",
+    "orderIndex"
+  ]
+}
+```
+
+1. Reviews (`oneToMany`)
+
+```json
+{
+  "name": "reviews",
+  "childObject": "reviews:productReview",
+  "parentKey": "id",
+  "childKey": "productId",
+  "oneToMany": true,
+  "condition": null,
+  "checkIn": "{ isApproved: { \"$eq\": true } }",
+  "properties": [
+    "id",
+    "userId",
+    "rating",
+    "comment",
+    "createdAt"
+  ]
+}
+```
+
+#### 7.1.3 Lookups
+
+Category label lookup via dictionary:
+
+```json
+{
+  "name": "categoryName",
+  "lookupDict": "productCategoryIndex",
+  "multiLang": true,
+  "lookupKey": "categoryId",
+  "lookupValue": "name"
+}
+```
+
+#### 7.1.4 Stats
+
+Average rating and rating counts:
+
+```json
+{
+  "name": "ratingStats",
+  "childObject": "reviews:productReview",
+  "parentKey": "id",
+  "childKey": "productId",
+  "select": "{ isApproved: { \"$eq\": true } }",
+  "aggList": [
+    {
+      "name": "reviewCount",
+      "aggType": "value_count",
+      "aggField": "id",
+      "dataType": "Integer",
+      "filterValue": null
+    },
+    {
+      "name": "averageRating",
+      "aggType": "avg",
+      "aggField": "rating",
+      "dataType": "Double",
+      "filterValue": null
+    }
+  ]
+}
+```
+
+**Result DTO (conceptual):**
+
+```json
+{
+  "id": "prod-123",
+  "name": "Wireless Headphones",
+  "categoryId": "cat-01",
+  "categoryName": "Electronics",
+  "price": 199.99,
+  "currency": "USD",
+  "stockStatus": "inStock",
+  "images": [ ... ],
+  "reviews": [ ... ],
+  "ratingStats": {
+    "reviewCount": 27,
+    "averageRating": 4.4
+  }
+}
+```
+
+One call from the FE, many services behind the scenes.
+
+---
+
+### 7.2 SaaS: UserDashboardView
+
+**Goal:** A dashboard summarizing:
+
+- User basic data (from `auth:user`).
+
+- Their active subscriptions (from `billing:subscription`).
+
+- Organization memberships (from `org:organizationMember`).
+
+- Stats: seat usage, open tickets, etc.
+
+#### 7.2.1 ViewBasics
+
+```json
+{
+  "viewBasics": {
+    "name": "UserDashboardView",
+    "isStored": false,
+    "mainObject": "auth:user",
+    "properties": [
+      "id",
+      "email",
+      "fullname",
+      "roleId",
+      "createdAt"
+    ]
+  }
+}
+```
+
+Dynamic view: built at runtime (per-user).
+
+#### 7.2.2 Aggregates
+
+1. Subscriptions assigned to this user
+
+```json
+{
+  "name": "subscriptions",
+  "childObject": "billing:subscription",
+  "parentKey": "id",
+  "childKey": "userId",
+  "oneToMany": true,
+  "condition": null,
+  "checkIn": "{ isActive: { \"$eq\": true } }",
+  "properties": [
+    "id",
+    "planName",
+    "status",
+    "startedAt",
+    "endsAt"
+  ]
+}
+```
+
+1. Organization memberships
+
+```json
+{
+  "name": "organizations",
+  "childObject": "org:organizationMember",
+  "parentKey": "id",
+  "childKey": "userId",
+  "oneToMany": true,
+  "properties": [
+    "organizationId",
+    "organizationName",
+    "role"
+  ]
+}
+```
+
+#### 7.2.3 Stats
+
+For each user, total open tickets:
+
+```json
+{
+  "name": "supportStats",
+  "childObject": "support:ticket",
+  "parentKey": "id",
+  "childKey": "userId",
+  "select": null,
+  "aggList": [
+    {
+      "name": "openTicketCount",
+      "aggType": "value_count",
+      "aggField": "id",
+      "dataType": "Integer",
+      "filterValue": "{ status: { \"$eq\": 'open' } }"
+    }
+  ]
+}
+```
+
+**Result DTO (conceptual):**
+
+```json
+{
+  "id": "user-42",
+  "email": "user@example.com",
+  "fullname": "Jane Doe",
+  "roleId": "tenantAdmin",
+  "subscriptions": [ ... ],
+  "organizations": [ ... ],
+  "supportStats": {
+    "openTicketCount": 3
+  }
+}
+```
+
+---
+
+### 7.3 Events Platform: EventOverviewView
+
+**Goal:** Show event info + venue + ticket stats in one call.
+
+#### 7.3.1 ViewBasics
+
+```json
+{
+  "viewBasics": {
+    "name": "EventOverviewView",
+    "isStored": true,
+    "mainObject": "eventCatalog:event",
+    "properties": [
+      "id",
+      "title",
+      "slug",
+      "startDate",
+      "endDate",
+      "venueId",
+      "status"
+    ]
+  }
+}
+```
+
+#### 7.3.2 Aggregates
+
+1. Venue info
+
+```json
+{
+  "name": "venue",
+  "childObject": "eventCatalog:venue",
+  "parentKey": "venueId",
+  "childKey": "id",
+  "oneToMany": false,
+  "properties": [
+    "id",
+    "name",
+    "city",
+    "country",
+    "address"
+  ]
+}
+```
+
+1. Ticket types
+
+```json
+{
+  "name": "ticketTypes",
+  "childObject": "eventCatalog:ticketType",
+  "parentKey": "id",
+  "childKey": "eventId",
+  "oneToMany": true,
+  "properties": [
+    "id",
+    "name",
+    "price",
+    "currency"
+  ]
+}
+```
+
+#### 7.3.3 Stats
+
+Ticket stats from `eventCatalog:ticket` data object.
+
+```json
+{
+  "name": "ticketStats",
+  "childObject": "eventCatalog:ticket",
+  "parentKey": "id",
+  "childKey": "eventId",
+  "select": null,
+  "aggList": [
+    {
+      "name": "totalTickets",
+      "aggType": "value_count",
+      "aggField": "id",
+      "dataType": "Integer",
+      "filterValue": null
+    },
+    {
+      "name": "soldTickets",
+      "aggType": "value_count",
+      "aggField": "id",
+      "dataType": "Integer",
+      "filterValue": "{ status: { \"$eq\": 'sold' } }"
+    },
+    {
+      "name": "cancelledTickets",
+      "aggType": "value_count",
+      "aggField": "id",
+      "dataType": "Integer",
+      "filterValue": "{ status: { \"$eq\": 'cancelled' } }"
+    }
+  ]
+}
+```
+
+**Result DTO (conceptual):**
+
+```json
+{
+  "id": "event-777",
+  "title": "Jazz Night",
+  "startDate": "2025-03-01T20:00:00Z",
+  "endDate": "2025-03-01T23:00:00Z",
+  "status": "published",
+  "venue": {
+    "id": "venue-12",
+    "name": "City Hall",
+    "city": "Istanbul",
+    "country": "TR",
+    "address": "..."
+  },
+  "ticketTypes": [ ... ],
+  "ticketStats": {
+    "totalTickets": 500,
+    "soldTickets": 420,
+    "cancelledTickets": 10
+  }
+}
+```
+
+The frontend can now:
+
+- Call BFF for events list (with filters/aggregation)
+
+- Render rich dashboards without manually joining 4–5 services.
+
+---
+
+## 8. Closing Thoughts
+
+The **BFF Service** and **DataViews** are where Mindbricks’ ontology, CQRS design, and Elasticsearch integration all meet:
+
+- **Aggregates** are your **joins**.
+
+- **Lookups** are your **dictionary/label joins**.
+
+- **Stats** are your **ES aggregations**.
+
+- **Stored views** give you **indexed read models**.
+
+- **Dynamic views** give you **on-the-fly multi-service composition**.
+
+- **FetchFromElasticAction** gives you a **low-level escape hatch** from any BusinessApi.
+
