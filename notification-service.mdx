@@ -1,0 +1,612 @@
+---
+title: Mindbricks Notification Service
+description: >-
+  The Notification Service in Mindbricks is a system-generated microservice
+  responsible for all email, SMS, push, WhatsApp, and in-app notification
+  delivery across a Mindbricks application.
+---
+## 1. Scope
+
+The **Notification Service** in Mindbricks is a system-generated microservice responsible for all email, SMS, push, WhatsApp, and in-app notification delivery across a Mindbricks application.
+
+Unlike normal application services, the Notification Service is not manually designed.
+It is generated automatically based on the **Notification Service settings** inside your project-level Mindbricks configuration.
+
+This document covers:
+
+- The **NotificationService** pattern (from the ontology)
+
+- How notifications flow through the system
+
+- How templates work
+
+- How Business APIs trigger notifications
+
+- How events from other services reach the Notification Service
+
+- How to configure multiple channels (email, SMS, push, WhatsApp, etc.)
+
+- Practical, real-life notification examples
+
+- Best practices for scalable, robust messaging
+
+---
+
+## 2. The NotificationService Pattern
+
+From the ontology:
+
+```json
+{
+  "NotificationService": {
+    "notificationSettings": "NotificationServiceSettings"
+  }
+}
+```
+
+This is a **project-level** configuration item, not a normal service entry.
+As soon as you define `notificationSettings`, Mindbricks will auto-generate:
+
+- A `notification` microservice
+
+- REST endpoints for *in-app reading*
+
+- Background workers for email/SMS/push
+
+- Kafka consumers for event-triggered notifications
+
+- Template rendering pipeline
+
+- Channel router (decides which provider to use for each message)
+
+The Notification Service is therefore a **platform service**, similar to `auth` and `bff`, and should never be created manually in `services[]`.
+
+---
+
+## 3. Notification Service Settings
+
+The Notification Service is configured entirely through:
+
+```json
+"notificationService": {
+  "notificationSettings": {
+    "providers": [ ... ],
+    "channels": [ ... ],
+    "templates": [ ... ],
+    "events": [ ... ]
+  }
+}
+```
+
+Let's unpack each section.
+
+---
+
+# 4. Providers
+
+### Where messages actually get sent
+
+Notification providers are external services used to send messages.
+
+Examples:
+
+- SMTP (email)
+
+- SendGrid (email)
+
+- Twilio (SMS)
+
+- NetGSM (SMS)
+
+- Firebase/OneSignal (push notifications)
+
+- WhatsApp Business API
+
+- Custom webhook providers
+
+A provider configuration might look like this:
+
+```json
+{
+  "providerName": "smtpProvider",
+  "providerType": "smtp",
+  "providerSettings": {
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "authUser": "`process.env.SMTP_USER`",
+    "authPassword": "`process.env.SMTP_PASSWORD`"
+  }
+}
+```
+
+### Supported Provider Types
+
+Each provider type carries its own configuration schema. For example:
+
+#### SMS via Twilio
+
+```json
+{
+  "providerName": "twilioSms",
+  "providerType": "twilio",
+  "providerSettings": {
+    "accountSid": "`process.env.TWILIO_SID`",
+    "authToken": "`process.env.TWILIO_AUTH`",
+    "senderNumber": "+18335550000"
+  }
+}
+```
+
+#### Push via OneSignal
+
+```json
+{
+  "providerName": "pushOneSignal",
+  "providerType": "onesignal",
+  "providerSettings": {
+    "appId": "`process.env.ONESIGNAL_APP_ID`",
+    "apiKey": "`process.env.ONESIGNAL_KEY`"
+  }
+}
+```
+
+Architects may define multiple providers for the same channel:
+
+- One provider for production
+
+- One for testing
+
+- One failover provider for reliability
+
+---
+
+# 5. Channels
+
+### Logical messaging layers separated from providers
+
+Channels define **how** the notification is delivered:
+
+- `"email"`
+
+- `"sms"`
+
+- `"push"`
+
+- `"whatsapp"`
+
+- `"inApp"` (Mindbricks provides this automatically)
+
+Each channel selects which provider(s) to use.
+
+Example configuration:
+
+```json
+{
+  "channelName": "email",
+  "providers": ["smtpProvider"], 
+  "fallbackProviders": []
+}
+```
+
+Another example with fallback:
+
+```json
+{
+  "channelName": "sms",
+  "providers": ["twilioSms"],
+  "fallbackProviders": ["netGsmProvider"]
+}
+```
+
+If the main provider fails, the Notification Service automatically retries with the fallback provider(s).
+
+---
+
+# 6. Templates
+
+### The heart of message content generation
+
+Templates define the **structure and content** of messages.
+
+Mindbricks uses a unified template engine that can generate:
+
+- Plain text
+
+- HTML
+
+- SMS-friendly text
+
+- Push payloads
+
+- Multi-language variants
+
+- Multi-channel variants
+
+A template example:
+
+```json
+{
+  "templateName": "passwordResetEmail",
+  "channel": "email",
+  "language": "en",
+  "subject": "Reset Your Password",
+  "body": "<h1>Hello <%= user.fullname %></h1><p>Click below to reset password:</p><a href='<%= resetLink %>'>Reset Password</a>"
+}
+```
+
+### Template Context Variables
+
+The Notification Service injects variables automatically:
+
+- Standard context (session, user, environment)
+
+- Event payload (event-based notifications)
+
+- BusinessAPI payload (API-based notifications)
+
+Example variables:
+
+```ejs
+<%= user.fullname %>
+<%= order.id %>
+<%= verification.code %>
+<%= resetLink %>
+```
+
+### Multi-Language Templates
+
+```json
+{
+  "templateName": "welcomeEmail",
+  "channel": "email",
+  "language": "tr",
+  "subject": "Hoşgeldiniz <%= user.fullname %>",
+  "body": "<p>Hesabınız başarıyla oluşturuldu.</p>"
+}
+```
+
+Mindbricks automatically picks the correct language template based on:
+
+- User preference
+
+- Tenant preference
+
+- Request header (`Accept-Language`)
+
+---
+
+# 7. Notification Triggers
+
+Notifications may be sent in two ways:
+
+---
+
+## 7.1 Trigger Type 1 – Business API Driven (Immediate)
+
+Any Business API can send a notification at the end of its workflow.
+
+Pattern used:
+`CreateNotificationAction` or `QueueNotificationAction` (depending on implementation).
+
+Example action:
+
+```json
+{
+  "extendClassName": "CreateNotificationAction",
+  "name": "sendResetEmail",
+  "channel": "email",
+  "template": "passwordResetEmail",
+  "recipient": "this.user.email",
+  "contextVars": "{ user: this.user, resetLink: this.resetLink }"
+}
+```
+
+This is often used in:
+
+- Registration flows
+
+- Password reset flows
+
+- Order confirmation
+
+- Event invitations
+
+- Onboarding sequences
+
+---
+
+## 7.2 Trigger Type 2 – Event Driven (Kafka)
+
+This is the actually powerful part of Mindbricks:
+
+Example event pattern:
+
+```json
+{
+  "eventName": "order.created",
+  "template": "orderConfirmationEmail",
+  "channel": "email",
+  "recipient": "event.userEmail",
+  "contextVars": "{ order: event.order }"
+}
+```
+
+Meaning:
+
+- When the `orders` service publishes `order.created`,
+
+- The Notification Service consumes that event
+
+- Loads the template
+
+- Sends the message
+
+- Passes the event payload into the template context
+
+This allows completely decoupled notification flows.
+
+Architects love this because:
+
+- Services don’t know about providers or channels
+
+- Services don’t know how many channels exist
+
+- Adding a new channel requires **zero code changes**
+
+---
+
+# 8. Combining Dynamic Templates with Business Logic
+
+One powerful pattern is using **MScript** directly in the message context.
+
+For example, computing a discounted price:
+
+```json
+"contextVars": "{ finalPrice: this.order.amount - this.order.discount }"
+```
+
+Or dynamically building a link:
+
+```json
+"contextVars": "{ viewUrl: `https://app.myproduct.com/orders/${this.order.id}` }"
+```
+
+Or doing a conditional:
+
+```json
+"contextVars": "{ greeting: this.session.roleId === 'admin' ? 'Dear Admin' : 'Hello'}"
+```
+
+---
+
+# 9. In-App Notifications
+
+Unlike email/SMS/push, **in-app notifications** are stored in the database and readable through Notification Service endpoints.
+
+Use cases:
+
+- “Your order is ready for pickup”
+
+- “A new comment was added to your ticket”
+
+- “Your subscription is about to expire”
+
+Business API example:
+
+```json
+{
+  "extendClassName": "CreateNotificationAction",
+  "name": "sendInAppNotification",
+  "channel": "inApp",
+  "template": "newTicketMessage",
+  "recipient": "this.assigneeId",
+  "contextVars": "{ ticket: this.ticket }"
+}
+```
+
+The frontend can fetch notifications with:
+
+```
+GET /notifications
+GET /notifications/unread
+POST /notifications/:id/read
+```
+
+---
+
+# 10. Real-Life Notification Scenarios
+
+Here are some **complete examples**.
+
+---
+
+## 10.1 Example: Order Confirmation Email (with event trigger)
+
+### Event Emitted by Orders Service
+
+```json
+{
+  "eventName": "order.created",
+  "payload": "{ order: this.order, userEmail: this.order.email }"
+}
+```
+
+### Notification Rule
+
+```json
+{
+  "eventName": "order.created",
+  "channel": "email",
+  "template": "orderConfirmationEmail",
+  "recipient": "event.userEmail",
+  "contextVars": "{ order: event.order }"
+}
+```
+
+### Template
+
+```html
+<h1>Order #<%= order.id %> Confirmed</h1>
+<p>Your total is <%= order.totalAmount %> <%= order.currency %></p>
+```
+
+---
+
+## 10.2 Example: Password Reset SMS (Business API Trigger)
+
+### Business API Action
+
+```json
+{
+  "extendClassName": "CreateNotificationAction",
+  "name": "sendPasswordResetSms",
+  "channel": "sms",
+  "template": "passwordResetSms",
+  "recipient": "this.user.mobile",
+  "contextVars": "{ code: this.verification.code }"
+}
+```
+
+### Template Body
+
+```
+Your reset code is <%= code %>. This code expires in 10 minutes.
+```
+
+---
+
+## 10.3 Example: Multi-Language Welcome Email
+
+### Templates
+
+**English:**
+
+```json
+{
+  "templateName": "welcomeEmail",
+  "channel": "email",
+  "language": "en",
+  "subject": "Welcome, <%= user.fullname %>",
+  "body": "<p>Your account is ready!</p>"
+}
+```
+
+**Turkish:**
+
+```json
+{
+  "templateName": "welcomeEmail",
+  "channel": "email",
+  "language": "tr",
+  "subject": "Hoşgeldiniz, <%= user.fullname %>",
+  "body": "<p>Hesabınız hazır!</p>"
+}
+```
+
+### Business API Trigger
+
+```json
+{
+  "extendClassName": "CreateNotificationAction",
+  "channel": "email",
+  "template": "welcomeEmail",
+  "recipient": "this.user.email",
+  "contextVars": "{ user: this.user }"
+}
+```
+
+Language is automatically resolved.
+
+---
+
+## 10.4 Example: User Mention in Comments (Push Notification)
+
+```json
+{
+  "extendClassName": "CreateNotificationAction",
+  "channel": "push",
+  "template": "mentionPush",
+  "recipient": "this.mentionedUserId",
+  "contextVars": "{ actor: this.session.fullname, commentId: this.comment.id }"
+}
+```
+
+### Template
+
+```json
+{
+  "title": "You were mentioned",
+  "body": "<%= actor %> mentioned you in a comment",
+  "data": { "commentId": "<%= commentId %>" }
+}
+```
+
+This becomes a push payload for OneSignal/Firebase.
+
+---
+
+# 11. Notification Best Practices
+
+### 11.1 Keep Templates in the Notification Service
+
+Avoid duplicating email HTML inside Business APIs. Templates should live centrally.
+
+### 11.2 Use Event-Driven Notifications Whenever Possible
+
+This decouples services cleanly:
+
+- Orders service emits `order.created`
+
+- Notification rules decide *what messages to send*
+
+If you later add an SMS notification: no changes in the orders service.
+
+### 11.3 Prefer Multi-Language Templates Over Conditional Logic
+
+Avoid:
+
+```json
+"body": "<%= lang === 'tr' ? 'Merhaba' : 'Hello' %>"
+```
+
+Prefer actual multi-language templates.
+
+### 11.4 Use `contextVars` Sparingly but Powerfully
+
+Inject only the data needed by templates:
+
+Good:
+
+```json
+"contextVars": "{ code: this.verification.code }"
+```
+
+Bad:
+
+```json
+"contextVars": "{ ...this }"
+```
+
+---
+
+# 12. Summary
+
+The Notification Service is Mindbricks’ dedicated messaging engine.
+
+It provides:
+
+- Multi-channel delivery (email, SMS, push, WhatsApp, in-app)
+
+- Provider routing & fallback
+
+- Template rendering (HTML, text, multi-language)
+
+- Business API triggers
+
+- Event-driven triggers via Kafka
+
+- Secure, scalable delivery
+
+- Integration with MScript and the rest of the Mindbricks patterns
+
+This allows architects to build sophisticated messaging flows without a single line of infrastructure code.
