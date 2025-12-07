@@ -2,16 +2,16 @@
 title: AI Architect
 description: Learn how the AI Architect component generates complete backend architectures
 ---
-
 ## AI Architect Overview
 
 The AI Architect is Mindbricks' core component that transforms natural language descriptions into complete, functional backend architectures. It uses advanced machine learning algorithms to understand requirements and generate optimized code structures.
 
-<Columns cols={2}>
-  <Card title="Natural Language Processing" icon="message-square" href="#nlp" cta="Explore">
+<Columns cols="2">
+  <Card title="Natural Language Processing" href="#nlp" icon="message-square" cta="Explore" horizontal="false">
     Convert plain English requirements into technical specifications.
   </Card>
-  <Card title="Architecture Generation" icon="layers" href="#generation" cta="See Examples">
+
+  <Card title="Architecture Generation" href="#generation" icon="layers" cta="See Examples" horizontal="false">
     Automatically create APIs, databases, and business logic.
   </Card>
 </Columns>
@@ -23,59 +23,64 @@ The AI Architect processes your input through several stages:
 <Tabs>
   <Tab title="Input Processing" icon="file-text">
     Parse natural language descriptions to extract entities, relationships, and requirements.
-    
-    <CodeGroup tabs="JSON,YAML">
+
+    <CodeGroup show-lines="true" tabs={[]}>
       ```json
-{
-  "description": "Build a blog platform with user authentication, posts, and comments",
-  "features": ["auth", "posts", "comments", "categories"],
-  "database": "postgresql"
-}
-```
+      {
+      "description": "Build a blog platform with user authentication, posts, and comments",
+      "features": ["auth", "posts", "comments", "categories"],
+      "database": "postgresql"
+      }
+      ```
+
       ```yaml
-description: "E-commerce platform with products, orders, and payments"
-features:
-  - products
-  - orders
-  - payments
-  - inventory
-database: postgresql
-```
+      description: "E-commerce platform with products, orders, and payments"
+      features:
+      - products
+      - orders
+      - payments
+      - inventory
+      database: postgresql
+      ```
     </CodeGroup>
   </Tab>
+
   <Tab title="Architecture Design" icon="layout">
     Generate optimized architecture patterns based on requirements and best practices.
   </Tab>
+
   <Tab title="Code Generation" icon="code">
     Produce ready-to-deploy code in your preferred language and framework.
   </Tab>
 </Tabs>
 
-<Callout kind="info">The AI Architect supports multiple programming languages including Python, Node.js, Go, and Java.</Callout>
+The AI Architect supports multiple programming languages including Python, Node.js, Go, and Java.
 
 ## Supported Patterns
 
 The AI Architect can generate various backend patterns:
 
+Generate RESTful APIs with CRUD operations, validation, and error handling.
+
 <Steps>
-  <Step title="REST API" icon="globe">
-    Generate RESTful APIs with CRUD operations, validation, and error handling.
-    
+  <Step title="REST API" icon="globe" title-type="p">
     ```python
-from flask import Flask, jsonify
+    from flask import Flask, jsonify
 
-app = Flask(__name__)
+    app = Flask(__name__)
 
-@app.route('/users', methods=['GET'])
-def get_users():
+    @app.route('/users', methods=['GET'])
+    def get_users():
     users = User.query.all()
     return jsonify([user.to_dict() for user in users])
-```
+    ```
   </Step>
-  <Step title="GraphQL API" icon="network">
+
+  <Step title="GraphQL API" icon="network" title-type="p">
     Create GraphQL schemas and resolvers for flexible data querying.
   </Step>
-  <Step title="Microservices" icon="grid">
+
+  <Step title="Microservices" icon="grid" title-type="p">
     Design microservice architectures with service discovery and communication.
   </Step>
 </Steps>
@@ -85,9 +90,13 @@ def get_users():
 While the AI Architect generates complete backends, you can customize various aspects:
 
 - Database schema modifications
+
 - API endpoint adjustments
+
 - Authentication method selection
+
 - Middleware integration
+
 - Performance optimizations
 
 <Expandable title="Advanced Customization" default-open="false">
@@ -99,32 +108,40 @@ While the AI Architect generates complete backends, you can customize various as
 The AI Architect optimizes generated code for:
 
 - Response times under 100ms for typical operations
+
 - Scalability to handle thousands of concurrent users
+
 - Database query efficiency with proper indexing
+
 - Memory usage optimization
+
 - Caching strategies for improved performance
 
-<Callout kind="tip">Generated backends include performance monitoring and can be optimized further based on real usage patterns.</Callout>
+Generated backends include performance monitoring and can be optimized further based on real usage patterns.
 
 ## Integration Capabilities
 
 The AI Architect seamlessly integrates with:
 
-| Component | Description |
-|-----------|-------------|
-| Ontology Engine | Automatic schema generation |
-| Cloud Infrastructure | One-click deployment |
-| Monitoring Tools | Built-in performance tracking |
-| Authentication Systems | JWT, OAuth2, SAML support |
+| Component              | Description                   |
+| ---------------------- | ----------------------------- |
+| Ontology Engine        | Automatic schema generation   |
+| Cloud Infrastructure   | One-click deployment          |
+| Monitoring Tools       | Built-in performance tracking |
+| Authentication Systems | JWT, OAuth2, SAML support     |
 
 ## Best Practices
 
 To get the best results from the AI Architect:
 
 1. Provide detailed, specific requirements
+
 2. Include examples of desired functionality
+
 3. Specify performance and scalability needs
+
 4. Mention integration requirements
+
 5. Review and test generated code thoroughly
 
 ## Troubleshooting
@@ -133,6 +150,7 @@ To get the best results from the AI Architect:
   <Expandable title="Generation takes too long" default-open="false">
     Complex requirements may take longer to process. Try breaking down large projects into smaller components.
   </Expandable>
+
   <Expandable title="Generated code has errors" default-open="false">
     Review your input requirements for clarity. The AI may need more specific details to generate accurate code.
   </Expandable>

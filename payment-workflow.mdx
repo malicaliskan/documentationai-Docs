@@ -9,11 +9,11 @@ In its roadmap, Mindbricks have strict plant to include automatic integrations f
 
 In this document, all aspects of payment logic will be explained. This document is a guide for
 
-- Mindbricks architects por AI agents that devolopes payment based applications in Mindbricks
+- Mindbricks architects or AI agents that develop payment based applications in Mindbricks
 
-- Software architects that develope their own services that will interact with Mindbricks services
+- Software architects that develop their own services that will interact with Mindbricks services
 
-- Frontend/mobile application developers or AI agents that build frontend for the Mindbricks built payment application.
+- Frontend/mobile application developers or AI agents that build frontend for the Mindbricks-built payment application.
 
 ## Single task for having a payment feature in your application
 
@@ -23,38 +23,40 @@ To be able to integrate Stripe payment to your application, there is only one si
 
 A payment in an application is done for a reason, user purchased some items or some services. This purchase also debits the user and the payment is done for this debit. So Mindbricks needs only this data object to start and manage the Stripe payment flow.
 
-There may be more than one data objects that represent user debit in the application, for example in an online store application, user may buy add some items to the basket and checkout them, but also in the same application user may have another oppurtunity to buy a prime subscription for extra favors. So these two trades may have different nature and the architect may build seperate busnes logic for them. So in the application tehre may be to order type data objects, one mayhave a name like `order`while the other may have a name `userSubscription`. Both data objects will represent some amount of money to charge user. But in practice most applications have one business logic for user payment, if you think that you need more than one payment logics, first try to combine them in one data object is possible.
+There may be more than one data objects that represent user debit in the application, for example in an online store application, user may add some items to the basket and checkout them, but also in the same application user may have another opportunity to buy a prime subscription for extra favors. So these two trades may have different nature and the architect may build separate business logic for them. So in the application there may be two order type data objects, one may have a name like `order `while the other may have a name like `userSubscription`. Both data objects will represent some amount of money to charge user. But in practice most applications have one business logic for user payment, if you think that you need more than one payment logics, first try to combine them in one data object if possible.
 
 Airbnb like applications may have a `reservation` data object,
 Uber like applications may have a `ride` data object,
 Amazon like applications may have a `order` data object,
 Ticketmaster like applications may have a `ticket`data object
 
-All these data objects may be considered as an order type data object nad can be joined to Stripe in Mindbricks.
+All these data objects may be considered as an order type data object and can be joined to Stripe in Mindbricks.
 
 An order data object mostly sourced by another data object, like a `property` sources a `reservation`, like a `car` sources a ride, like a `product` sources an `order`, like an `event` sources a `ticket`.
 
-So make your design smart to create an order data object instance that has its values aligned with its source data object instance.
+So make your design smart to create an order data object instance that has its values aligned with its source data object (product) instance.
 
 An order type data object in Mindbricks should have following properties,
 
 - a property to represent the id of the order in the payment flow, it may be data object's ID property or you may want to use an extra unique property for a more human readable string ID.
 
-- a property to reprsent the user who is debited,
+- a property to represent the user who is debited
 
 - a property to represent the amount / or a relation logic to collect the amount
 
-- a property to represent the currency, or a hardcoded settin may overcome it
+- a property to represent the currency / or a hardcoded setting may overcome it
 
 - a property to represent the status of the order, may have any enum values, Mindbricks will update it just for the payment business logic
 
 - a property to represent the date of the status change
 
-## Understandign StripeOrder pattern
+## Understanding StripeOrder pattern
 
-Once you designed your order type data object, now you can configure its `Stripe Order` settings in the `Object Settings`chapter of the Data Object.
+Once you designed your order type data object, now you can configure its `Stripe Order` settings in the `Object Settings `chapter of the Data Object.
 
-The `StripeOrder` pattern defines the settings for integrating this data object with Stripe to handle e-commerce orders and payments. When enabled, Mindbricks automatically generates the required logic and auxiliary objects for managing payment workflows. *Ensure Stripe credentials are set at the project level to activate this integration.*
+The `StripeOrder` pattern defines the settings for integrating this data object with Stripe to handle e-commerce orders and payments. When enabled, Mindbricks automatically generates the required logic and auxiliary objects for managing payment workflows.&#x20;
+
+*Ensure Stripe credentials are set at the project level to activate this integration.*
 
 ```json
 
@@ -93,21 +95,29 @@ The `StripeOrder` pattern defines the settings for integrating this data object 
   },
 ```
 
-To configure the `stripeOrder` pattern in the `objectSettings` consider following points.
+To configure the `stripeOrder` pattern in the `objectSettings` consider following issues.
 
-`orderName`: The name of the order as it will appear in Stripe and internal records. It may be `"XBooksOrder"`, `"PBikesRide"` or `"ParisConcertsTicket`.
+`orderName`: The name of the order as it will appear in Stripe and internal records. It may be `"XBooksOrder"`, `"PBikesRide"` or `"ParisConcertsTicket"`.
 
-Following pattern properties are MScript values that will be eveluated in the context. In these MScripts you can reach your order object like , `this.order`or `this.reservation`etc.
+Following pattern properties are MScript values that will be evaluated in the context. In these MScripts you can reach your order object like , `this.order`or `this.reservation `etc.
 
 `orderId`: MScript expression to extract the order's unique identifier. Typically the ID field like , `this.reservation.id`.
+
+
 `amount`:MScript expression to determine the order amount for payment. Typically the amount field like , `this.reservation.amount` or may be a calculation like `this.reservation.rentPrice + this.reservation.taxAmount`.
+
+
 `currency`: MScript expression to determine the currency for the order. Typically an hardcoded string like `"USD"` or an expression like `this.order.currency`.
+
+
 `description`: MScript expression for the order description, shown in Stripe and receipts. Typically a template string like ``javascript `Reservation fee for PublicHouse application, your card is charged for ${this.reservation.amount} USD`. ``
 
-Following pattern properties should be directly the related proeprty names of your order data object.
+Following pattern properties should be directly the related property names of your order data object.
 
 `orderStatusProperty`: The field name in the data object that holds the current order status. This will be automatically updated based on payment results.
+
 `orderStatusUpdateDateProperty`: The field name that records the timestamp of the last order status update. This is auto-managed during payment events.
+
 `orderOwnerIdProperty`: The field that holds the ID of the user who owns the order. This is used to ensure correct access control in payment flows.
 
 Following pattern properties are used to map literal payment status values to your own status values of your order life cycle logic.
@@ -117,7 +127,7 @@ paymentResultCanceled: `"paymentError"`,
 paymentResultFailed: `"paymentError"`,
 paymentResultSuccess: `"paid"`
 
-In addtion to the `orderStatusProperty`of your own logic, Mindbricks automatically adds a system field to your order data object that manages the status of the payment in with system wording. You can always read this property from your data object instance once the instance is created.
+In addition to the `orderStatusProperty `of your own logic, Mindbricks automatically adds a system field to your order data object that manages the status of the payment with system wording. You can always read this property from your data object instance once the instance is created.
 
 `_paymentConfirmation`: An enum property to represent the current payment status that is reported from Stripe.
 It can have values of `["pending", "processing", "paid", "canceled"]`.
@@ -126,7 +136,7 @@ It can have values of `["pending", "processing", "paid", "canceled"]`.
 
 There are three system data objects created to manage the payment business logic of your application. These data objects are created in the same service that your stripe order data object is created.
 
-Please note that, you dont have to create any data objects for the payment specific logic, you just create your order data object and configure its StripeOrder pattern. All other data objects and apis will be created automatically by Mindbricks.
+Please note that, you don't have to create any data objects for the payment specific logic, you just create your order data object and configure its StripeOrder pattern. All other data objects and apis will be created automatically by Mindbricks.
 
 ### The Payment Data Object
 
@@ -157,7 +167,7 @@ The payment customer data object will have following properties.
 
 ### The Payment Method Object
 
-The payemtn method object is used to store the credit card information of the users. It's name is always `sys_PaymentMethod` and it is only created once in the service though you will have more than one payment flows. Note that this data object doesnt store any secure information of the credit card. It is used to reference the selected payment method on Stripe side.
+The paymetn method object is used to store the credit card information of the users. It's name is always `sys_PaymentMethod` and it is only created once in the service though you will have more than one payment flows. Note that this data object doesnt store any secure information of the credit card. It is used to reference the selected payment method on Stripe side.
 
 The payment method data object will have following properties.
 
@@ -185,10 +195,7 @@ The `cardInfo` in stripe platform is as follows. Note that Mindbricks doesnt kno
 
 ### System Business API For Stripe Order Pattern
 
-There are some API's that are created automatically as business API arround system payment objects and your order object.
-The most important one is start payment API, named like `startTicketPayment`.
-You also have business API, to manage the system data objects, like listing payments. These API's are all detailed in the documentation of your application.
-You will see the usage and purpose of these API's in the flow descriptions below.
+There are some API's that are created automatically as business API around system payment objects and your order object. The most important one is start payment API, named like `startTicketPayment`. You also have business API, to manage the system data objects, like listing payments. These API's are all detailed in the documentation of your application. You will see the usage and purpose of these API's in the flow descriptions below.
 
 ### System Helper API For Stripe Order Pattern
 
@@ -767,7 +774,7 @@ Defines the criteria used to locate the target record(s) for the main operation.
 A list of fields that must be matched exactly as part of the WHERE clause. This is not a filter — it is a required selection rule. In single-record APIs (`get`, `update`, `delete`), it defines how a unique record is located. In `list` APIs, it scopes the results to only entries matching the given values.
 Note that `selectBy` fields will be ignored if `fullWhereClause` is set.
 
-*The business api configuration has no&#x20;*``*&#x20;setting.*
+*The business api configuration has no&#x20;*\`\`*&#x20;setting.*
 
 **Full Where Clause**
 An MScript query expression that overrides all default WHERE clause logic. Use this for fully customized queries.

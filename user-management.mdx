@@ -218,7 +218,7 @@ When you list the users please use pagination. To be able to use pagination you 
 
 `GET /users?pageNumber=1&pageRowCount=50`
 
-## Creatng Users
+## Creating Users
 
 The user management console in the admin dashboard should provide UX components for user creating by admins. When creating users, it should also be possible to upload user avatar. Note that when creating, updating users , admins can not set emailVerified (or mobileVerified if exists) as true, since it is a logical mechanism and should be verified only through verification processes.
 
@@ -431,8 +431,7 @@ The `updateUserRole` api has got 2 request parameters
 | userId    | ID     | true     | request.params?.userId |
 | roleId    | String | true     | request.body?.roleId   |
 
-**userId** : This id paremeter is used to select the required data object that will be updated
-**roleId** : The new roleId of the user to be updated
+**userId** : This id parameter is used to select the required data object that will be updated **roleId** : The new roleId of the user to be updated
 
 **REST Request**
 To access the api you can use the **REST** controller with the path **PATCH /v1/userrole/:userId**
@@ -643,4 +642,3 @@ axios({
 ---
 
 When you list user group members, a `user` object will also be inserted in each userGroupMember object, with fullname, avatar and email.
-
