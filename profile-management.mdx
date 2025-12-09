@@ -6,95 +6,6 @@ description: >-
   application name is TickatMe, and please note that any information referencing
   to tickatme should be considered as an example for your own project.
 ---
-## Bucket Management
-
-This application has a bucket service used to store user files and other object-related files. The bucket service is login-agnostic, so for write operations or private reads, include a bucket token (provided by services) in the request’s Authorization header as a Bearer token.
-
-Please note that all other business services require the access token in the Bearer header, while the bucket service expects a bucket token because it is login-agnostic. Ensure you manage the required token injection properly; any auth interceptor should not replace the bucket token with the access token.
-
-To access the bucket service in each environement use the bucket service api urls below:
-
-- **Preview:** `https://tickatme.prw.mindbricks.com/bucket`
-
-- **Staging:** `https://tickatme-stage.mindbricks.co/bucket`
-
-- **Production:** `https://tickatme.mindbricks.co/bucket`
-
-**User Bucket**
-This bucket stores public user files for each user.
-
-When a user logs in—or in the `/currentuser` response—there is a `userBucketToken` to use when sending user-related public files to the bucket service.
-
-```json
-{
-  //...
-  "userBucketToken": "e56d...."
-}
-```
-
-To upload a file
-
-`POST {bucketServiceUrl}/upload`
-
-The request body is form-data which includes the `bucketId` and the file binary in the `files` field.
-
-```js
-{
-    bucketId: "{userId}-public-user-bucket",
-    files: {binary}
-}
-```
-
-Response status is 200 on success, e.g., body:
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "fileId": "9da03f6d-0409-41ad-bb06-225a244ae408",
-      "originalName": "test (10).png",
-      "mimeType": "image/png",
-      "size": 604063,
-      "status": "uploaded",
-      "bucketName": "f7103b85-fcda-4dec-92c6-c336f71fd3a2-public-user-bucket",
-      "isPublic": true,
-      "downloadUrl": "https://babilcom.mindbricks.co/bucket/download/9da03f6d-0409-41ad-bb06-225a244ae408"
-    }
-  ]
-}
-```
-
-To download a file from the bucket, you need its `fileId`. If you upload an avatar or other asset, ensure the download URL or the `fileId` is stored in the backend.
-
-Buckets are mostly used in object creations that require an additional file, such as a product image or user avatar. After uploading your image to the bucket, insert the returned download URL into the related property of the target object record.
-
-**Application Bucket**
-
-This Tickatme application also includes a common public bucket that anyone can read, but only users with the `superAdmin`, `admin`, or `saasAdmin` roles can write (upload) to it.
-
-When a user with one of these admin roles is logged in, the `/login` response or the `/currentuser` response also returns an `applicationBucketToken` field, which is used when uploading any file to the application bucket.
-
-```json
-{
-  //...
-  "applicationBucketToken": "e23fd...."
-}
-```
-
-The common public application bucket ID is
-
-`"tickatme-public-common-bucket"`
-
-In certain admin areas—such as product management pages—since the user already has the application bucket token, they will be able to upload related object images.
-
-Please configure your UI to upload files to the application bucket using this bucket token whenever needed.
-
-**Object Buckets**
-Some objects may also return a bucket token for uploading or accessing files related to that object. For example, in a project management application, when you fetch a project’s data, a public or private bucket token may be provided to upload or download project-related files.
-
-These buckets will be used as described in the relevant object definitions.
-
 ## Profile Page
 
 Design a profile page to manage (view and edit) user information. The profile page should also be able to upload the user avatar to the user’s public bucket. For bucket information, see the Bucket Management section above.
@@ -107,7 +18,7 @@ The avatar upload component should include an image-cropping component with zoom
 
 Do not implement your own cropping component; instead, use the library component `react-easy-crop` by installing it.
 
-**Note that the user cannot change/update their&#x20;********`email`********&#x20;or&#x20;********`roleId`********.**
+**Note that the user cannot change/update their&#x20;********`email`********\*\*\*\* or&#x20;********`roleId`********\*\*\*\*.**
 
 For password update you should make a separate block in the UI, so that user can enter old password, new password and confirm new password before calling the `updateUserPassword`.
 

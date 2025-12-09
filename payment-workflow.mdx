@@ -1,9 +1,15 @@
 ---
 title: Add Payment Workflows To Your Application
+description: >-
+  Mindbricks can handle payment flows as ordinary business logic using the
+  business api actions with the payment gateway provider integrations, however
+  since payment is a complicated flow which should be executed in a seamless
+  cooperation of backend and frontend, Mindbricks provides native automatic
+  integration with Stripe payment gateway.
 ---
 ## **Overview**
 
-Mindbricks can handle payment flows as ordinary business logic using the business api actions with the payment gateway provider integrations, however since payment is a compplicated flow which should be executed in a seamless cooperation of backend and frontend, Mindbricks provides native automatic integration with Stripe payment gateway.
+Mindbricks can handle payment flows as ordinary business logic using the business api actions with the payment gateway provider integrations, however since payment is a complicated flow which should be executed in a seamless cooperation of backend and frontend, Mindbricks provides native automatic integration with Stripe payment gateway.
 
 In its roadmap, Mindbricks have strict plant to include automatic integrations for other common gateways, this feature is restricted with Stripe at the moment.
 
@@ -103,12 +109,9 @@ Following pattern properties are MScript values that will be evaluated in the co
 
 `orderId`: MScript expression to extract the order's unique identifier. Typically the ID field like , `this.reservation.id`.
 
-
 `amount`:MScript expression to determine the order amount for payment. Typically the amount field like , `this.reservation.amount` or may be a calculation like `this.reservation.rentPrice + this.reservation.taxAmount`.
 
-
 `currency`: MScript expression to determine the currency for the order. Typically an hardcoded string like `"USD"` or an expression like `this.order.currency`.
-
 
 `description`: MScript expression for the order description, shown in Stripe and receipts. Typically a template string like ``javascript `Reservation fee for PublicHouse application, your card is charged for ${this.reservation.amount} USD`. ``
 

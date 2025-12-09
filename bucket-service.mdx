@@ -1,0 +1,188 @@
+---
+title: Bucket Service
+description: >-
+  Each mindbricks generated application  has a bucket service used to store user
+  files and other object-related files.
+---
+# Bucket Management
+
+Each application generated in Mindbricks will have a bucket service used to store user files and other object-related files. The bucket service is login-agnostic, so for write operations or private reads, include a bucket token (provided by services) in the request’s Authorization header as a Bearer token.
+
+Please note that all other business services require the access token in the Bearer header, while the bucket service expects a bucket token because it is login-agnostic. Ensure you manage the required token injection properly; any auth interceptor should not replace the bucket token with the access token.
+
+To access the bucket service in each environment use the bucket service api urls below:
+
+Assuming the codename of the project is `tickatme` :
+
+- **Preview:** `https://mindbrix.prw.mindbricks.com/bucket`
+
+- **Staging:** `https://mindbrix-stage.mindbricks.co/bucket`
+
+- **Production:** `https://mindbrix.mindbricks.co/bucket`
+
+## User Bucket
+This bucket stores public user files for each user.
+
+When a user logs in—or in the `/currentuser` response—there is a `userBucketToken` to use when sending user-related public files to the bucket service.
+
+```json
+{
+  //...
+  "userBucketToken": "e56d...."
+}
+```
+
+To upload a file
+
+`POST {bucketServiceUrl}/upload`
+
+The request body is form-data which includes the `bucketId` and the file binary in the `files` field.
+
+```javascript
+{
+    bucketId: "{userId}-public-user-bucket",
+    files: {binary}
+}
+```
+
+Response status is 200 on success, e.g., body:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "fileId": "9da03f6d-0409-41ad-bb06-225a244ae408",
+      "originalName": "test (10).png",
+      "mimeType": "image/png",
+      "size": 604063,
+      "status": "uploaded",
+      "bucketName": "f7103b85-fcda-4dec-92c6-c336f71fd3a2-public-user-bucket",
+      "isPublic": true,
+      "downloadUrl": "https://babilcom.mindbricks.co/bucket/download/9da03f6d-0409-41ad-bb06-225a244ae408"
+    }
+  ]
+}
+```
+
+To download a file from the bucket, you need its `fileId`. If you upload an avatar or other asset, ensure the download URL or the `fileId` is stored in the backend.
+
+Buckets are mostly used in object creations that require an additional file, such as a product image or user avatar. After uploading your image to the bucket, insert the returned download URL into the related property of the target object record.
+
+## Application Bucket
+
+The generated application also includes a common public bucket that anyone can read, but only users with the `superAdmin`, `admin`, or `saasAdmin` roles can write (upload) to it.
+
+When a user with one of these admin roles is logged in, the `/login` response or the `/currentuser` response also returns an `applicationBucketToken` field, which is used when uploading any file to the application bucket.
+
+```json
+{
+  //...
+  "applicationBucketToken": "e23fd...."
+}
+```
+
+The common public application bucket ID is
+
+`"tickatme-public-common-bucket"`
+
+In certain admin areas—such as product management pages—since the user already has the application bucket token, they will be able to upload related object images.
+
+Please configure your UI to upload files to the application bucket using this bucket token whenever needed.
+
+## Object Buckets
+
+Some objects may also return a bucket token for uploading or accessing files related to that object. For example, in a project management application, when you fetch a project’s data, a public or private bucket token may be provided to upload or download project-related files.
+
+These buckets will be used as described in the relevant object definitions.
+
+# Bucket Service API
+
+REST API for bucket-based file storage supporting AWS S3, MinIO, and local filesystem backends. Authentication uses Bearer tokens carrying bucket permissions.
+
+## Authentication
+- Header: `Authorization: Bearer <PROJECT_TOKEN>`
+- Superadmin token: `buckets: "*"` grants full access to all buckets.
+- Regular token: `buckets: [{ bucketId, bucketName, action: ["read"|"write"|"delete"], isPublic }]`
+- Public downloads: token optional if the file is marked `isPublic`.
+
+### Validate Token
+- `POST /validate-token`
+- Body: `{ "token": "<jwt>" }`
+- Response: `isValid`, `isSuperadmin`, `buckets[]`, `bucketCount`, `issuedAt` (ISO) or JWT error info.
+
+## Health
+- `GET /up`
+- Checks storage connectivity:
+  - `local`: verifies uploads directory.
+  - `aws`/`minio`: uses `ListBuckets` to confirm S3 connectivity.
+- Response: `status` (`ok`/`fail`), `bucketType`, and diagnostic message.
+
+## Buckets
+- `GET /buckets`
+  - When `isSuperadmin=true` (query) and token is superadmin: returns all active buckets with file stats.
+  - Otherwise: returns only buckets from the token, enriched with permissions and file counts when readable.
+- `GET /buckets/:bucketId`
+  - Returns bucket details, permissions, and file statistics when requester has read/write access.
+
+## Files — Upload
+Behavior depends on `BUCKET_TYPE` (`local` vs `aws`/`minio`).
+- `POST /upload` (multipart)
+  - Form fields: `files` (array), `bucketId` (or legacy `bucketName`).
+  - Falls back to the first writable bucket from the token when no `bucketId` is provided.
+  - Requires bucket `action` includes `write`.
+  - Local: saves to `uploads/<bucketId>` and records `FileStore`; returns `downloadUrl`.
+  - AWS/MinIO: uploads to object storage, records metadata; returns `downloadUrl`.
+- `POST /upload/complete`
+  - Body: `{ "fileIds": ["uuid", ...] }`
+  - Marks pending uploads as `uploaded` (aws/minio flow).
+
+## Files — Download
+- Access rules:
+  - Public if `isPublic=true` on the file.
+  - Otherwise requires token bucket with `read` or `write`.
+- `GET /download/:fileId`
+  - AWS/MinIO: validates access, generates signed URL, responds with 302 redirect.
+  - Local: validates access and streams the file with appropriate headers.
+
+## Files — Listing
+- `GET /files`
+  - Query: `page` (default 1), `limit` (default 50), `search`, optional `bucketId`.
+  - Returns per-bucket grouped files, permissions (`canViewContents`, `canUpload`, `canDelete`), pagination, and summary.
+  - Buckets without read/write become visible-only and return `noReadPermission`.
+- `GET /buckets/:bucketId/files`
+  - Lists files in a specific bucket (legacy/compat).
+  - Requires `read` or `write` on that bucket.
+
+## Files — Deletion
+- `DELETE /delete/:fileId`
+  - Requires `write` on the file’s bucket.
+  - Deletes from storage (aws/minio/local) and soft-deletes DB row (`status=deleted`, `isActive=false`).
+- `DELETE /files/:fileId`
+  - Defined in upload routes.
+  - Same permission rule; removes from storage and soft-deletes.
+
+## Error Model
+Errors are normalized as:
+```json
+{
+  "error": true,
+  "statusCode": 400 | 401 | 404 | 500,
+  "message": "errorKeyOrMessage"
+}
+```
+
+## Environment Highlights
+- Storage: `BUCKET_TYPE`, `ACCESS_KEY`, `SECRET_ACCESS_KEY`, `REGION`, `MINIO_URI`, `MINIO_USER`, `MINIO_PASS`, `MINIO_PORT`, `MINIO_BUCKET`, `BUCKET_NAME`, `LOCAL_BUCKET`
+- Service: `HTTP_PORT`, `BASE_URL`, `SERVICE_URL`, `SERVICE_SHORT_NAME`, `SERVICE_VERSION`
+- Auth: `PROJECT_TOKEN_KEY`
+- Limits: `FILE_SIZE_LIMIT` (MB), default 10 MB per file.
+
+## Typical Flow
+1. Validate token → pick a writable bucket from `buckets`.
+2. Upload via multipart `files[]` + `bucketId` (or fallback).
+3. Store returned `fileId`/`downloadUrl`.
+4. Download via `/download/{fileId}` (public or authorized).
+5. List via `/files` or `/buckets/{bucketId}/files`.
+6. Delete via `/delete/{fileId}` when needed.
+

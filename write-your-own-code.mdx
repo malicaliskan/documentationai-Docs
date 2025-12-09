@@ -660,7 +660,185 @@ This gives you **escape hatches** without breaking the Mindbricks structure.
 
 ---
 
-## 5. Pattern + Code: Always a Solution
+## 5. Importing Internal Mindbricks Libraries (`common`, `serviceCommon`, `dbUtils`, `models`)
+
+When writing custom logic inside your **service library**, **edge controllers**, or **MScript-powered functions**, you are not limited to raw JavaScript. Every Mindbricks service includes a set of **internal libraries**—automatically generated or shared—that encapsulate common infrastructure, data access, and service behaviors.
+
+These libraries are globally available in every service at runtime and can be imported directly:
+
+```js
+const COMMON = require("common");
+const SERVICE_COMMON = require("serviceCommon");
+const DB = require("dbUtils");
+const MODELS = require("models");
+```
+
+No relative paths are required—Mindbricks injects these libraries into the service environment in a standardized manner.
+
+---
+
+### **1.&#x20;****`common`****&#x20;— Shared Infrastructure Utilities (Project-Wide)**
+
+The **`common`** library is identical across all services in the project. It contains production-ready, low-level utilities that would otherwise require thousands of lines of handwritten infrastructure code.
+
+Common categories include:
+
+#### **🔐 Crypto & Token Utilities**
+
+- `createJWT`, `validateJWT`
+
+- RSA variants: `createJWT_RSA`, `validateJWT_RSA`
+
+- Token encoding/decoding: `encodeToken`, `decodeToken`
+
+- Hashing utilities: `hashString`, `hashCompare`, `md5`, `intHash`
+
+- OTP generator: `randomCode`
+
+
+
+**🗄  Redis Cache**
+
+- &#x20;`redisClient`
+
+- `getRedisData`, `setRedisData`
+
+
+
+#### **🦄 Elasticsearch / CQRS**
+
+- `ElasticIndexer`
+
+- &#x20;`elasticClient`
+
+
+
+#### **📨 Messaging & Events (Kafka)**
+
+- `sendMessageToKafka`
+
+
+
+#### **🌐 External HTTP / File Retrieval**
+
+- `getRestData`, `sendRestRequest`, `downloadFile`
+
+####
+
+
+
+#### **🛠 Utility Helpers**
+
+- UUID/ObjectID helpers: `newUUID`, `shortUUID`, `newObjectId`, `isValidUUID`
+
+- Array utilities: `concatListResults`, `mapArrayItems`
+
+- Query builders: `buildSequelizeClause`, `buildMongooseClause, buildElasticClause`
+
+- Logging: `hexaLogger`, `HexaLogTypes`
+
+---
+
+### **2.&#x20;****`serviceCommon`****&#x20;— Helpers Specific to the Current Service**
+
+Unlike `common`, which is universal, **`serviceCommon`** is generated specifically for the current service. It contains service-level helpers that adapt to the service’s domain.
+
+
+
+#### **📡 ServicePublisher**
+
+Used to publish events from this service to Kafka. The difference of this service publisher from the common `sendMessageToKafka` is that, this one can attach current users session to the message, so any login required route that has a kafka controller listening to the topic will be able to use the publisher user's session.
+
+```js
+const { ServicePublisher } = require("serviceCommon");
+
+await ServicePublisher.publish("order.created", {
+  orderId: order.id,
+  userId: order.userId
+});
+```
+
+
+
+#### **📊 ElasticIndexer**
+
+
+
+#### Manages Elasticsearch indexes to index data, search data, update data etc.
+
+```javascript
+const { ElasticIndexer } = require("serviceCommon");
+const indexer = new ElasticIndexer("order");
+await indexer.indexData({...});
+```
+
+### **3.&#x20;****`dbUtils`****&#x20;— Generated DB Layer Functions Based on Your DataObjects**
+
+Every service has a generated **data-access layer** (`dbUtils`), which provides formally defined CRUD, query, and aggregation helpers derived from your `DataObject` patterns.
+
+Example import:
+
+```js
+const DB = require("dbUtils");
+```
+
+Depending on the service, this may include functions like:
+
+- `createUser`, `getUserById`, `getUserListByQuery`
+
+- `updateUserById`, `deleteUserById`
+
+- `getUserStatsByQuery`
+
+These functions offer a **safe, typed, generated repository layer** that:
+
+- Respects your schema and constraints
+
+- Applies built-in access control (soft deletes, multitenancy)
+
+- Normalizes results
+
+- Minimizes the need for raw ORM access
+
+### **4.&#x20;****`models`****&#x20;— Raw ORM Models (Advanced Only)**
+
+Finally, the **`models`** library gives you direct access to Sequelize or Mongoose models for the service:
+
+```js
+const MODELS = require("models");
+
+// Example:
+const { User, UserGroup } = MODELS;
+```
+
+This gives you **full control**, but also full responsibility:
+
+```js
+const admins = await MODELS.User.findAll({
+  where: { roleId: "admin" },
+  limit: 50
+});
+```
+
+This is powerful for:
+
+- Custom aggregation queries
+
+- Service-level patches or migrations
+
+- Temporary or emergency tooling
+
+But note:
+
+- It bypasses BusinessApi validations
+
+- It bypasses access control layers
+
+- It may break invariants if misused
+
+**Please check common libraries reference document to get complete information for  all importable function and class.**
+
+## 6. Pattern + Code: Always a Solution
 
 It’s easy to fall into two extremes:
 
@@ -670,7 +848,7 @@ It’s easy to fall into two extremes:
 
 Mindbricks is designed to sit **between** these: patterns for structure, **code where it matters**.
 
-### 5.1 A Typical Design Journey
+### 6.1 A Typical Design Journey
 
 1. **Start with patterns**
    Model your domain via `DataObject`, `BusinessApi`, `AccessControl`, etc.
@@ -694,7 +872,7 @@ Mindbricks is designed to sit **between** these: patterns for structure, **code 
 
    - Keep using patterns elsewhere.
 
-### 5.2 Decision Hints
+### 6.2 Decision Hints
 
 - **Can it be expressed as a pure expression or query?** → MScript.
 
@@ -702,7 +880,7 @@ Mindbricks is designed to sit **between** these: patterns for structure, **code 
 
 - **Does it require full control over request/response or multi-service orchestration?** → Edge Controller.
 
-### 5.3 Philosophical Note
+### 6.3 Philosophical Note
 
 The combination of:
 

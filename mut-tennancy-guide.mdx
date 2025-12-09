@@ -1,0 +1,477 @@
+---
+title: Multi-Tenancy in Mindbricks
+description: >-
+  Mindbricks includes first-class, pattern-level support for multi-tenant
+  architectures.
+
+  Multi-tenancy enables a single deployed backend to securely serve multiple
+  organizations, workspaces, clients, or accounts—called tenants—while
+  maintaining strict isolation of data, authentication, access control, and
+  workflows between them.
+---
+# **1. Overview**
+
+Mindbricks includes **first-class, pattern-level support** for multi-tenant architectures.
+Multi-tenancy enables a single deployed backend to securely serve **multiple organizations, workspaces, clients, or accounts**—called **tenants**—while maintaining **strict isolation of data, authentication, access control, and workflows** between them.
+
+Multi-tenancy is activated at the project level using the `LoginDefTenantSettings` pattern:
+
+```json
+{
+  "tenantSettings": {
+    "useMultiTenantFeature": true,
+    "configuration": {
+      "tenantName": "tenant"
+    }
+  }
+}
+```
+
+Once enabled, multi-tenancy affects:
+
+- Authentication & login behavior
+
+- Generated data models
+
+- Business APIs and queries
+
+- BFF DataViews & Elasticsearch indexes
+
+- Permissions / session handling
+
+- Token scoping
+
+- Frontend routing rules
+
+This guide explains the conceptual model, pattern structure, runtime behavior, and frontend responsibilities of multi-tenant Mindbricks applications.
+
+---
+
+# **2. Tenant Concept Model**
+
+When multi-tenant mode is enabled, Mindbricks creates a **tenant data object**, based on the configured `tenantName`.
+Example names:
+
+- `"client"` → tenant is called *client*
+
+- `"store"` → tenant is called *store*
+
+- `"workspace"` → tenant is called *workspace*
+
+### **2.1 Tenant Data Object (Auto-Generated)**
+
+The platform automatically generates a DataObject whose name equals the tenant name.
+
+Each tenant object includes:
+
+| Field             | Purpose                                   |
+| ----------------- | ----------------------------------------- |
+| `id`              | Unique tenant ID                          |
+| `name`            | Human-friendly name                       |
+| `codename`        | Unique machine-friendly identifier        |
+| `fullname`        | Full display name                         |
+| `avatar`          | Public image URL; can be auto-generated   |
+| `ownerId`         | The ID of the user who created the tenant |
+| Custom properties | Defined under `tenantProperties`          |
+
+This structure is defined by the `LoginDefTenantSettings` and `TenantProperties` patterns.
+
+### **2.2 Custom Fields for Tenants**
+
+Architects may define custom tenant fields:
+
+```json
+{
+  "tenantProperties": [
+    { "basicSettings": { "name": "subscriptionLevel", "type": "Enum" } }
+  ]
+}
+```
+
+These fields become available in:
+
+- Registration flows
+
+- BFF DataViews
+
+- Access control
+
+- Business API logic
+
+- Billing scenarios
+
+---
+
+# **3. Tenant Naming: Human Name vs Codename**
+
+Each tenant has:
+
+- `name`: human-readable
+
+- `codename`: lowercase slug used for routing and API isolation
+
+The **tenant codename is the canonical identifier** used by:
+
+- HTTP headers
+
+- Query/body parameters
+
+- Token generation
+
+- Cookies
+
+- Access control
+
+- Elastic & DB filters
+
+- Frontend routing
+
+---
+
+# **4. How Tenant Context Is Determined in a Request**
+
+Mindbricks resolves the current tenant from the request in this order:
+
+1. **Header:**
+
+   ```
+   mbx-{tenantName}-codename
+   ```
+
+   Example when tenant name is `workspace`:
+
+   ```
+   mbx-workspace-codename: acme
+   ```
+
+2. **Query parameter:**
+
+   ```
+   ?_{tenantName}=acme
+   ```
+
+3. **Request body:**
+
+   ```json
+   { "_workspace": "acme" }
+   ```
+
+4. **Fallback:** **`root`** (the SaaS-level tenant)
+
+### Why the `root` tenant exists
+
+The `root` tenant represents the **platform owner**, providing:
+
+- SaaS administration
+
+- Billing & subscription management
+
+- Creating or managing tenants
+
+- Viewing global data (if allowed)
+
+This behavior is dictated by Mindbricks' multi-tenant auth model.
+
+---
+
+# **5. Tenant-Scoped Authentication**
+
+Multi-tenant login and session handling follow these rules:
+
+### **5.1 Login is Tenant-Specific**
+
+When a user logs in, the session is created within a **tenant context**.
+
+- Logging into tenant **A** does not grant access to tenant **B**
+
+- Each tenant receives its own **access token** and **cookie**
+
+### **5.2 Token Naming**
+
+Tokens and cookies include the tenant codename:
+
+```
+{projectName}-access-token-{tenantCodename}
+```
+
+Examples:
+
+```
+myApp-access-token-root
+myApp-access-token-acme
+myApp-access-token-bluecorp
+```
+
+### **5.3 Tenant-Level Session Separation**
+
+A user may simultaneously be:
+
+- A **superAdmin** at SaaS-level (`root`)
+
+- An **admin** inside one tenant
+
+- A **user** in another tenant
+
+Mindbricks handles all token isolation automatically.
+
+### **5.4 Registration is Tenant-Specific**
+
+Creating a user via:
+
+```
+POST /register?_workspace=acme
+```
+
+creates a user **inside** the tenant `acme`, not in `root`.
+
+---
+
+# **6. Tenant-Aware Data Modeling (****`tenantId`****&#x20;Injection)**
+
+Any DataObject can be:
+
+- **Tenant-level** (isolated per tenant)
+
+- **SaaS-level** (global across tenants)
+
+### **6.1 Tenant-Level Objects**
+
+Mindbricks automatically:
+
+- Injects a field named `{tenantName}Id` (e.g., `storeId`, `clientId`, `workspaceId`)
+
+- Fills it automatically during object creation
+
+- Prevents modifications to the tenant pointer
+
+- Filters queries by tenant context
+
+This rule is enforced by `ObjectSettings.belongsToTenant`.
+
+Example:
+
+```json
+{
+  "objectSettings": {
+    "belongsToTenant": true
+  }
+}
+```
+
+Generated runtime instance:
+
+```json
+{
+  "title": "My Project",
+  "workspaceId": "uuid-of-current-tenant"
+}
+```
+
+### **6.2 SaaS-Level Objects**
+
+```json
+{
+  "objectSettings": {
+    "belongsToTenant": false
+  }
+}
+```
+
+These objects:
+
+- Are not auto-filtered
+
+- Are accessible according to SaaS-level permissions
+
+- Are generally used for shared catalogs, configuration, subscription tiers, etc.
+
+---
+
+# **7. Multi-Tenant Access Control**
+
+Mindbricks defines built-in roles when multi-tenant mode is active:
+
+### **SaaS-Level Roles:**
+
+- `superAdmin`
+
+- `saasAdmin`
+
+- `saasUser`
+
+### **Tenant-Level Roles:**
+
+- `tenantOwner`
+
+- `tenantAdmin`
+
+- `tenantUser`
+
+These align with the access control patterns: `AccessControl`, `RoleSettings`, `PermissionBaslcs`, `TenantBasedPermissions`.
+
+### **Key Rules:**
+
+1. Users can have **different roles per tenant**.
+
+2. Authorization checks use the **current tenant context**.
+
+3. SaaS-level users cannot access tenant-private data unless granted explicit permission.
+
+4. Business APIs inherit the tenant context automatically via session tokens.
+
+---
+
+# **8. Business APIs in Multi-Tenant Mode**
+
+When a Business API operates on a tenant-level object:
+
+- `whereClause` filters automatically include `{tenantName}Id = currentTenantId`
+
+- `CRUD` operations automatically attach the tenant ID
+
+- `Validations`, `MembershipCheckAction`, `ObjectAuthorization` all respect tenant boundaries
+
+MScript context exposes:
+
+```js
+this.session.tenantId
+this.session.tenantCodename
+```
+
+---
+
+# **9. BFF Service and DataViews in Multi-Tenant Mode**
+
+All stored DataViews (`isStored = true`) are automatically **partitioned per tenant**.
+
+This means:
+
+- Elasticsearch indexes hold tenant-specific documents
+
+- Cross-tenant visibility is prevented
+
+- Aggregations (`ViewStats`, `AggregateItem`) reflect only the current tenant’s data
+
+- Multi-tenant dashboards become trivial to build
+
+When querying:
+
+```
+GET /bff/dataView/products?_{tenantName}=acme
+```
+
+the BFF retrieves only documents belonging to that tenant.
+
+---
+
+# **10. Frontend Responsibilities in Multi-Tenant Applications**
+
+Although Mindbricks handles all backend logic, the **frontend must explicitly select the tenant** for every tenant-level API call.
+
+### **The frontend may supply the tenant codename via:**
+
+#### **10.1 Header (recommended for programmatic clients)**
+
+```js
+headers["mbx-{tenantName}-codename"] = currentTenantCodename;
+```
+
+#### **10.2 Query parameter**
+
+```
+?_workspace=acme
+```
+
+#### **10.3 Body parameter**
+
+```json
+{ "_workspace": "acme" }
+```
+
+### **If no tenant is supplied →&#x20;****`root`****&#x20;is assumed.**
+
+---
+
+## **10.4 Selecting Tenant Based on URL**
+
+In typical SaaS deployments:
+
+```
+https://acme.myproduct.com
+```
+
+→ tenant codename = `acme`
+
+```
+https://www.myproduct.com
+```
+
+→ tenant codename = `root`
+
+If the frontend builder platform does not support custom subdomains, the app may use a path-based indicator:
+
+```
+https://preview-url/myproduct/tenant/acme/login
+```
+
+The frontend must extract the codename and attach it to every API call.
+
+---
+
+# **11. Multi-Tenant Tokens & Cookies**
+
+### **11.1 Tokens Are Tenant-Specific**
+
+The recommended method for frontend:
+
+```js
+Authorization: Bearer <tenantSpecificToken>
+```
+
+Mindbricks issues cookies with pattern:
+
+```
+{projectName}-access-token-{tenantCodename}
+```
+
+But frontends should prefer **bearer tokens** for clarity and portability.
+
+---
+
+# **12. SaaS-Level Operations**
+
+The `root` tenant allows:
+
+- Managing other tenants
+
+- Viewing global analytics
+
+- Creating administrators
+
+- Configuring subscription/payment models
+
+- Handling license renewal or user quotas
+
+Architecture:
+
+- SaaS Business APIs use RBAC/PBAC rules tied to SaaS roles
+
+- SaaS BFF DataViews pull SaaS-level data only
+
+---
+
+# **13. Summary**
+
+Multi-tenancy in Mindbricks is a **deeply integrated architectural capability**.
+It ensures that:
+
+✔ Tenants are strongly isolated
+✔ Authentication and roles are tenant-aware
+✔ DataObjects automatically respect tenant boundaries
+✔ BFF DataViews and Elasticsearch views remain tenant-scoped
+✔ Frontends gain flexibility through multiple tenant routing mechanisms
+✔ SaaS and tenant roles co-exist cleanly
+✔ MScript, Business APIs, Access Control, Tokens, and Sessions all honor the tenant context
+
+With this foundation, architects can declaratively generate large-scale multi-tenant SaaS platforms without writing a single line of infrastructure code.
+
