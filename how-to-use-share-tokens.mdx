@@ -1,0 +1,755 @@
+---
+title: Membership Pattern in Mindbricks
+description: >-
+  Object-Level Membership & Membership Checks in Business APIs. The Membership
+  pattern in Mindbricks is designed for domains where access to a resource is
+  controlled by a membership relationship.
+---
+## 1. Scope
+
+The **Membership** pattern in Mindbricks is designed for domains where access to a resource is controlled by a **membership relationship**.
+
+Typical examples:
+
+- Users belonging to a **project** (`projectMember`)
+
+- Users belonging to an **organization** (`organizationMember`)
+
+- Users belonging to a **team**, **workspace**, **channel**, or **group**
+
+Membership is modeled at two levels:
+
+1. **Object-level membership definition** – via `MembershipSettings` on a DataObject.
+
+2. **Business API membership checks** – via `MembershipCheckAction` and `ListMembershipFilter` in Business APIs.
+
+Additionally, the generated code exposes helper methods such as:
+
+- `getMembershipOf<DataObjectName>(userId, objectId)`
+
+- `collectMembershipOf<DataObjectName>(userId)`
+
+These allow complex, custom membership logic when needed.
+
+This guide explains:
+
+- How to define membership for an object (project, organization, etc.)
+
+- How membership objects are used to control access
+
+- How to configure membership checks in Business APIs
+
+- How to use the generated membership helper functions
+
+- How to combine multiple membership contexts in a single Business API
+
+---
+
+## 2. Conceptual Overview
+
+### 2.1 Resource vs Membership Object
+
+In Mindbricks, **the resource** (protected object) and **the membership record** are two different DataObjects:
+
+- **Resource object** (e.g., `project`, `organization`)
+
+- **Membership object** (e.g., `projectMember`, `organizationMember`)
+
+The membership object is a link that answers:
+
+It can carry additional fields like:
+
+- membership role (`owner`, `editor`, `viewer`)
+
+- membership status (`active`, `pending`, `blocked`)
+
+- invite timestamps, expiry, etc.
+
+### 2.2 Why a Dedicated Membership Pattern?
+
+The Membership pattern provides:
+
+- A consistent way to define *which object controls access* for another object.
+
+- A declarative way to configure membership checks in Business APIs.
+
+- Automatic helper functions and actions that can be reused across the platform.
+
+- Integration with both RBAC & PBAC (roles, permissions) without hardcoding business logic each time.
+
+---
+
+## 3. Object-Level Membership: `MembershipSettings`
+
+At the DataObject level, membership is configured using `MembershipSettings` and `MembershipSettingsConfig`.
+
+From the ontology:
+
+```json
+"MembershipSettings": {
+  "__hasMembership.doc": "Indicates whether this data object uses an external membership object to manage access rights...",
+  "__configuration.doc": "The configuration object for membership settings...",
+  "__activation": "hasMembership",
+  "hasMembership": "Boolean",
+  "configuration": "MembershipSettingsConfig",
+  "__nullables": ["configuration"]
+}
+```
+
+```json
+"MembershipSettingsConfig": {
+  "__membershipObjectName.doc": "Specifies the name of the external data object used to manage membership...",
+  "__membershipObjectIdProperty.doc": "The field name in the membership object that refers back to this data object...",
+  "__membershipUserIdProperty.doc": "The field name in the membership object that refers to the user...",
+  "__membershipStatusCheck.doc": "Optional MScript condition to determine if a membership entry is valid...",
+  "membershipObjectName": "DataObjectName",
+  "membershipObjectIdProperty": "PropRefer",
+  "membershipUserIdProperty": "PropRefer",
+  "membershipStatusCheck": "MScript",
+  "__membershipObjectIdProperty.loadfrom": "membershipObjectName",
+  "__membershipUserIdProperty.loadfrom": "membershipObjectName",
+  "__nullables": ["membershipStatusCheck"]
+}
+```
+
+### 3.1 Enabling Membership for a Resource
+
+Example: `project` object uses `projectMember` as its membership object.
+
+```json
+{
+  "objectSettings": {
+    "basicSettings": { "name": "project" },
+    "membershipSettings": {
+      "hasMembership": true,
+      "configuration": {
+        "membershipObjectName": "projectMember",
+        "membershipObjectIdProperty": "projectId",
+        "membershipUserIdProperty": "userId",
+        "membershipStatusCheck": "{ status: { \"$eq\": 'active' } }"
+      }
+    }
+  }
+}
+```
+
+Meaning:
+
+- `projectMember` is the membership object
+
+- `projectMember.projectId` links to `project.id`
+
+- `projectMember.userId` links to `user.id`
+
+- Only membership records with `status = 'active'` are considered valid
+
+### 3.2 Membership Object Design
+
+The membership object (`projectMember` in the example) is a normal `DataObject` that architect designs:
+
+Typical fields:
+
+- `id` – membership ID
+
+- `projectId` – foreign key to `project`
+
+- `userId` – foreign key to `user`
+
+- `role` – membership role (`owner`, `editor`, `viewer`, etc.)
+
+- `status` – membership status (`active`, `pending`, `blocked`)
+
+- `createdAt`, `updatedAt` (auto)
+
+You can also define:
+
+- Object-level authorization (e.g., tenant-scoped)
+
+- Indexes for fast membership lookups
+
+- Additional fields like `invitedBy`, `expiresAt`, etc.
+
+---
+
+## 4. Membership Checks in Business APIs
+
+At Business API level, membership is enforced through:
+
+1. `MembershipCheckAction` – for **single-object checks** (does user have a valid membership on this object?).
+
+2. `ListMembershipFilter` – for **list endpoints** (filter out objects where user has no membership).
+
+### 4.1 `MembershipCheckAction`
+
+From the ontology:
+
+```json
+"MembershipCheckAction": {
+  "__extends": "BusinessApiAction",
+  "dataObjectName": "DataObjectName",
+  "objectKey": "MScript",
+  "userKey": "MScript",
+  "checkFor": "MScript",
+  "checkType": "ApiCheckType",
+  "errorMessage": "String"
+}
+```
+
+Key fields:
+
+- `dataObjectName`
+
+  - The resource whose membership rules to use.
+
+  - If omitted, defaults to the main DataObject of the Business API (when relevant).
+
+- `objectKey` (MScript)
+
+  - Expression returning the object ID the membership refers to.
+
+  - Example: `"this.projectId"` or `"this.project.id"`.
+
+- `userKey` (MScript)
+
+  - Expression returning the **user ID** to check.
+
+  - Usually `"this.session.userId"`.
+
+- `checkFor` (MScript, optional)
+
+  - Extra rules about membership role / status.
+
+  - Example: `"this.membership.role === 'editor' || this.membership.role === 'owner'"`.
+
+- `checkType` (`"liveCheck"` or `"storedCheck"`)
+
+  - `liveCheck` → throws error if membership fails.
+
+  - `storedCheck` → result is stored in context without blocking the API immediately.
+
+- `errorMessage`
+
+  - Message for the client if check fails and `checkType` is `liveCheck`.
+
+**Typical usage pattern (live check):**
+
+```json
+{
+  "extendClassName": "MembershipCheckAction",
+  "name": "checkProjectMembership",
+  "dataObjectName": "project",
+  "objectKey": "this.projectId",
+  "userKey": "this.session.userId",
+  "checkFor": "true", 
+  "checkType": "liveCheck",
+  "errorMessage": "You are not a member of this project."
+}
+```
+
+This will block the API if no valid membership exists.
+
+### 4.2 `ListMembershipFilter` for List APIs
+
+When listing resources, you often want:
+
+From the ontology:
+
+```json
+"ListMembershipFilter": {
+  "name": "String",
+  "dataObjectName": "DataObjectName",
+  "objectKeyIdField": "PropRefer",
+  "userKey": "MScript",
+  "checkFor": "MScript",
+  "condition": "MScript"
+}
+```
+
+Configured inside a `ListOptions`:
+
+```json
+{
+  "listOptions": {
+    "membershipFilters": [
+      {
+        "name": "filterByProjectMembership",
+        "dataObjectName": "project",
+        "objectKeyIdField": "id",
+        "userKey": "this.session.userId",
+        "checkFor": "true",
+        "condition": "true"
+      }
+    ]
+  }
+}
+```
+
+Meaning:
+
+- When listing `project` objects, filter results so only those projects where the current user has valid membership are returned.
+
+- If `condition` is something like `"this.session.roleId !== 'superAdmin'"`, you can *skip* membership filtering for super admins.
+
+---
+
+## 5. Generated Membership Helper Functions
+
+In addition to pattern-level checks, Mindbricks generates helper methods in the Business API context:
+
+- `getMembershipOf<DataObjectName>(userId, objectId)`
+
+- `collectMembershipOf<DataObjectName>(userId)`
+
+For example:
+
+- `getMembershipOfProject(userId, projectId)`
+
+- `collectMembershipOfProject(userId)`
+
+- `getMembershipOfOrganization(userId, organizationId)`
+
+- `collectMembershipOfOrganization(userId)`
+
+These functions:
+
+- Use Elasticsearch / DB indexers under the hood.
+
+- Are cached on the API context instance for performance.
+
+- Are designed for **complex custom logic** where pattern-level membership actions are not enough.
+
+### 5.1 `getMembershipOf<Resource>`
+
+Conceptually:
+
+```js
+getMembershipOfProject = async (userId, projectId) => {
+  // 1. Build a query like { userId, projectId }
+  // 2. Check cache
+  // 3. Convert query to ES query via convertUserQueryToElasticQuery
+  // 4. Use ElasticIndexer("projectmember") to fetch one record
+  // 5. Cache & return membership
+};
+```
+
+Your sample implementation (simplified):
+
+```js
+getMembershipOfProject = async (userId, projectId) => {
+  const { md5, convertUserQueryToElasticQuery } = require("common");
+  const { ElasticIndexer } = require("serviceCommon");
+  const elasticIndexer = new ElasticIndexer("projectmember");
+
+  const query = { userId, projectId };
+  const cacheKey = md5(JSON.stringify(query));
+  const cachedResult = this.membershipCache.get(cacheKey);
+  if (cachedResult) return cachedResult;
+
+  const elasticQuery = convertUserQueryToElasticQuery(query);
+  const membership = await elasticIndexer.getOne(elasticQuery);
+  this.membershipCache.set(cacheKey, membership);
+  return membership;
+};
+```
+
+Where:
+
+- `membership` is the membership record or `null`.
+
+- `this.membershipCache` belongs to the API manager context.
+
+### 5.2 `collectMembershipOf<Resource>`
+
+Conceptually:
+
+```js
+collectMembershipOfProject = async (userId) => {
+  // 1. Query membership index by userId
+  // 2. Return list of memberships
+};
+```
+
+```js
+collectMembershipOfProject = async (userId) => {
+  const { convertUserQueryToElasticQuery } = require("common");
+  const { ElasticIndexer } = require("serviceCommon");
+  const elasticIndexer = new ElasticIndexer("projectmember");
+
+  const query = { userId };
+  const elasticQuery = convertUserQueryToElasticQuery(query);
+  const membershipList = await elasticIndexer.getDataByPage(0, 500, elasticQuery);
+  return membershipList;
+};
+```
+
+Use cases:
+
+- Build advanced dashboards (show all projects user is a member of).
+
+- Compute aggregated permissions across many resources.
+
+- Implement cascading access via parent objects.
+
+### 5.3 When to Use Actions vs Helpers?
+
+- Use **`MembershipCheckAction`** and **`ListMembershipFilter`** for most authorization needs.
+
+  - Simple yes/no membership checks.
+
+  - Standard list filtering.
+
+- Use **`getMembershipOf*`****&#x20;/&#x20;****`collectMembershipOf*`** when:
+
+  - You need **richer membership information** (roles, quotas, attributes).
+
+  - You need to combine multiple memberships (e.g., project + organization).
+
+  - You need to implement nuanced cross-object logic.
+
+---
+
+## 6. Multiple Membership Contexts in a Single API
+
+A Business API can have **more than one membership context at the same time**.
+Typical scenario:
+
+You might have:
+
+- `project` object with membership settings pointing to `projectMember`.
+
+- `organization` object with membership settings pointing to `organizationMember`.
+
+In your Business API, you can:
+
+1. Run two `MembershipCheckAction`s (one for project, one for organization).
+
+2. Or use `getMembershipOfProject` & `getMembershipOfOrganization` for more advanced logic.
+
+**Example using actions (simpler):**
+
+```json
+{
+  "actions": {
+    "membershipCheckActions": [
+      {
+        "extendClassName": "MembershipCheckAction",
+        "name": "checkProjectMembership",
+        "dataObjectName": "project",
+        "objectKey": "this.projectId",
+        "userKey": "this.session.userId",
+        "checkType": "liveCheck",
+        "errorMessage": "You are not a member of this project."
+      },
+      {
+        "extendClassName": "MembershipCheckAction",
+        "name": "checkOrganizationMembership",
+        "dataObjectName": "organization",
+        "objectKey": "this.organizationId",
+        "userKey": "this.session.userId",
+        "checkType": "liveCheck",
+        "errorMessage": "You are not a member of this organization."
+      }
+    ]
+  }
+}
+```
+
+**Example using helpers (for more complex logic):**
+
+In a service library function or MScript:
+
+```js
+const projectMembership = await this.getMembershipOfProject(this.session.userId, this.projectId);
+const orgMembership = await this.getMembershipOfOrganization(this.session.userId, this.organizationId);
+
+if (!projectMembership || !orgMembership) {
+  throw new Error("Membership requirements are not met.");
+}
+
+// Example: require a certain role combination
+if (projectMembership.role !== "editor" && orgMembership.role !== "owner") {
+  throw new Error("Insufficient membership privileges.");
+}
+```
+
+You could call such logic via `FunctionCallAction` if you want to keep it in the pattern layer.
+
+---
+
+## 7. Membership + RBAC + PBAC
+
+Membership fits together with other access control patterns:
+
+- **RBAC (****`RoleSettings`****)** – global roles (e.g., `admin`, `user`)
+
+- **PBAC & OBAC (****`PermissionBasics`****,&#x20;****`OBACPermission`****)** – permission groups and object-based privileges
+
+- **ABAC (****`AbacPermission`****)** – attribute-based rules
+
+Membership typically expresses **object-level binding**, while roles & permissions express **capabilities**.
+
+Typical design:
+
+- Use **RBAC** for global roles (e.g., `superAdmin`, `supportAgent`).
+
+- Use **membership** for per-object rights (e.g., this user belongs to this project as an `editor`).
+
+- Optionally combine with **PBAC** (permissions such as `projectManagement.updateProject`) and **ABAC** for attribute-level refinements.
+
+---
+
+## 8. Practical Design Tips
+
+1. **One Membership Object per Resource Type**
+
+   - `project` → `projectMember`
+
+   - `organization` → `organizationMember`
+
+   - `workspace` → `workspaceMember`
+
+2. **Include Role & Status in Membership Object**
+
+   - `role`:&#x20;
+
+   - `status`:&#x20;
+
+   - Add indexes for `(userId, projectId)` for fast checks.
+
+3. **Use&#x20;****`membershipStatusCheck`****&#x20;for common validity rules**
+
+   - e.g., `status == 'active'`
+
+   - This is applied centrally and reused by all membership mechanisms.
+
+4. **Start With&#x20;****`MembershipCheckAction`****&#x20;and&#x20;****`ListMembershipFilter`**
+
+   - They are simpler, more declarative, and easier to read.
+
+   - Only drop to helper functions when required.
+
+5. **Cache Membership Inside Context for Performance**
+
+   - The generated `getMembershipOf*` functions already use a membership cache (e.g., `this.membershipCache`).
+
+   - Avoid re-querying membership in every step.
+
+6. **Combining Memberships**
+
+   - Use multiple membership definitions & checks when your domain is layered (e.g., `organization` + `project` + `folder`).
+
+---
+
+Absolutely — here is the **refactored final portion** of the Membership documentation, with:
+
+- **Section 9** → Using membership objects with general data-access actions
+
+- **Section 10** → A clean, polished final summary section
+
+You can drop these in directly.
+
+---
+
+## **9. Using Membership Objects with General Data Access Actions**
+
+While Mindbricks provides specialized membership actions and helper functions, membership objects themselves are **ordinary DataObjects**. This means architects retain full power to manipulate membership data using **any standard BusinessApiAction**, including CRUD, fetch, stats, integration, or AI-based actions.
+
+This flexibility is crucial for real-world systems where membership controls are more nuanced than simple “member vs non-member” checks.
+
+### **9.1 Treat Membership Objects Like Any Other DataObject**
+
+Membership objects (e.g., `projectMember`, `organizationMember`, `workspaceMember`) can be used in:
+
+- `FetchObjectAction`
+
+- `FetchStatsAction`
+
+- `CreateCrudAction`
+
+- `UpdateCrudAction`
+
+- `DeleteCrudAction`
+
+- `ListMapAction` / `CollateListsAction`
+
+- `ApiCallAction`
+
+- `IntegrationAction`
+
+- `AiCallAction`
+
+There is no restriction—membership objects behave exactly like regular objects in the action store.
+
+### **9.2 Example: Using&#x20;****`FetchObjectAction`****&#x20;for Fine-Grained Logic**
+
+```json
+{
+  "extendClassName": "FetchObjectAction",
+  "name": "fetchProjectMembership",
+  "targetObject": "projectMember",
+  "matchValue": "this.session.userId",
+  "localKey": "userId",
+  "properties": ["id", "projectId", "role", "status"],
+  "contextPropertyName": "projectMembership",
+  "writeToResponse": false
+}
+```
+
+Later, your workflow can evaluate:
+
+```js
+this.projectMembership.role
+this.projectMembership.status
+```
+
+to make business decisions.
+
+This is extremely useful for:
+
+- Conditional access rules
+
+- Workflow branching
+
+- Analytics or audit logic
+
+- Notifications & automation
+
+### **9.3 Example: Using&#x20;****`FetchStatsAction`****&#x20;for Membership-Based Limits**
+
+```json
+{
+  "extendClassName": "FetchStatsAction",
+  "name": "fetchOwnerCount",
+  "targetObject": "projectMember",
+  "localKey": "projectId",
+  "matchValue": "this.projectId",
+  "stats": ["value_count(id)"],
+  "contextPropertyName": "ownerStats",
+  "writeToResponse": false
+}
+```
+
+Followed by a validation:
+
+```json
+{
+  "extendClassName": "ValidationAction",
+  "description": "Prevent archive if more than one active owner exists.",
+  "shouldBeTrue": true,
+  "checkType": "liveCheck",
+  "validationScript": "this.ownerStats.count <= 1",
+  "errorMessage": "Project cannot be archived while multiple owners are active.",
+  "errorStatus": "400"
+}
+```
+
+This is impossible to express with a simple membership check alone—yet trivial with standard actions.
+
+### **9.4 Example: Updating Membership Records**
+
+```json
+{
+  "extendClassName": "UpdateCrudAction",
+  "targetObject": "projectMember",
+  "localKey": "projectId",
+  "matchValue": "this.projectId",
+  "data": "{ role: 'editor' }"
+}
+```
+
+### **9.5 Example: External Integrations Based on Membership**
+
+Notify Slack when a user joins a team:
+
+```json
+{
+  "extendClassName": "ApiCallAction",
+  "name": "notifySlack",
+  "apiCallRequest": {
+    "httpRequestUrl": "https://slack.com/api/chat.postMessage",
+    "httpRequestMethod": "POST",
+    "httpRequestParameters": {
+      "httpRequestHeaders": [
+        { "name": "Authorization", "value": "`Bearer ${process.env.SLACK_TOKEN}`" }
+      ],
+      "httpRequestBody": [
+        { "name": "text", "value": "`New member: ${this.member.userId}`" }
+      ]
+    }
+  }
+}
+```
+
+### **9.6 Why This Matters**
+
+Even though membership has its own declarative tools (`MembershipCheckAction`, `ListMembershipFilter`, generated helper methods), these tools are designed for **common** membership scenarios.
+
+Real business requirements often involve:
+
+- Conditional membership transitions
+
+- Membership-driven workflows
+
+- Multi-stage approvals
+
+- Automatic promotions/demotions
+
+- Cross-object membership correlations
+
+- Advanced analytics
+
+The ability to use membership objects with the entire action store means **no membership scenario is out of reach**.
+
+---
+
+## **10. Summary**
+
+The Membership system in Mindbricks provides a powerful, flexible, and architect-friendly way to express access relationships between users and resources.
+
+Mindbricks supports membership at **three synergistic layers**:
+
+### **10.1 Object-Level Membership Definition**
+
+- Using `MembershipSettings` and `MembershipSettingsConfig`, any DataObject can declare it is membership-protected.
+
+- Architects define which membership object manages access and how membership validity (role, status) is determined.
+
+### **10.2 Business API Membership Enforcement**
+
+- `MembershipCheckAction` enforces membership requirements for a single resource.
+
+- `ListMembershipFilter` filters list APIs to only return objects where the user has valid membership.
+
+- Membership integrates seamlessly with RBAC, PBAC, ABAC, and multi-tenancy.
+
+### **10.3 Generated Helper Functions for Advanced Use**
+
+- `getMembershipOf<Resource>(userId, objectId)`
+
+- `collectMembershipOf<Resource>(userId)`
+  These enable complex custom logic, multi-context membership checks, and cross-object relationships.
+
+### **10.4 Full Access Through Standard Actions**
+
+Membership objects are **first-class DataObjects**, meaning that any data access action—fetching, stats, CRUD, integration, AI—can be used to power *extremely nuanced* business logic.
+
+### **10.5 Multi-Membership API Contexts**
+
+A single Business API can include *multiple* membership contexts simultaneously
+(e.g., organization membership + project membership + folder membership).
+
+---
+
+### **In Short**
+
+Membership in Mindbricks is:
+
+- **Declarative**, via patterns
+
+- **Enforceable**, via BusinessApi actions
+
+- **Programmable**, via helper functions
+
+- **Extensible**, via full action-store access
+
+This gives architects both structure and freedom: clear modeling for common cases, and unlimited flexibility for advanced authorization and workflow scenarios.
