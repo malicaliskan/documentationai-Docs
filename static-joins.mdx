@@ -1,0 +1,426 @@
+---
+title: Static Join on Properties
+description: 'Materialized Joins for Denormalized, Read-Optimized Data. (PropertyStaticJoin)'
+---
+## 1. Scope
+
+`PropertyStaticJoin` (often referred to as **static join**) is a pattern on **DataProperty** that lets you:
+
+This is effectively a **materialized join**:
+
+- It **reads** a field from a related DataObject (possibly in another service).
+
+- It **writes** that value into a property of the current object.
+
+- It does this **automatically** during create/update flows.
+
+- The value is **stored** in the current object and can be queried directly (DB or Elasticsearch) without additional joins.
+
+Static joins are ideal when:
+
+- The joined data is not expected to change frequently, or the cost of being slightly stale is acceptable.
+
+- You want to avoid complex runtime joins in Business APIs or BFF DataViews.
+
+- You want a field (e.g. `clientId`, `statusName`, `categoryName`) to be directly searchable or filterable in Elasticsearch or DB.
+
+---
+
+## 2. Conceptual Overview
+
+### 2.1 Why Static Join?
+
+Consider this typical pattern:
+
+- You have an object **Order** with `userId`.
+
+- You also need the user’s `clientId` (tenant) inside each order to:
+
+  - Filter orders by client without joining to `user`.
+
+  - Apply client-level analytics and reporting.
+
+With static join:
+
+- You configure `Order.clientId` to be **static-joined** from `User.clientId`.
+
+- When an order is created or updated:
+
+  - Mindbricks reads the relevant `User` record.
+
+  - It copies `clientId` from `User` to `Order.clientId`.
+
+- Now **Order** has `clientId` as a direct field, and no additional join is needed at read time.
+
+Static join is also useful for:
+
+- Storing parent’s tenant ID to children (e.g., `projectId` → `project.clientId`).
+
+- Denormalizing frequently used labels (e.g. `countryName`, `categoryName`).
+
+- Pre-populating derived routing data (e.g. `organizationRegion`).
+
+### 2.2 Static vs Dynamic Joins
+
+- **Static join**:
+
+  - Value is materialized and stored on the source object at write time.
+
+  - Great for performance and filterability.
+
+  - Needs explicit update logic when source changes (if you care about strict consistency).
+
+- **Dynamic join (e.g., BFF&#x20;****`ViewAggregate`****)**:
+
+  - Join happens at read time.
+
+  - Always up-to-date but more expensive and requires join context.
+
+In Mindbricks, you often use:
+
+- Static join for **core denormalized fields** that are referenced everywhere.
+
+- BFF/DataViews for **rich, multi-object read models**.
+
+---
+
+## 3. Pattern Structure
+
+From the ontology:
+
+```json
+"PropertyStaticJoin": {
+  "__isStaticJoin.doc": "...",
+  "__configuration.doc": "The configuration object that defines the static join settings...",
+  "__isStaticJoin.default": false,
+  "__activation": "isStaticJoin",
+  "isStaticJoin": "Boolean",
+  "configuration": "PropertyStaticJoinConfig",
+  "__nullables": ["configuration"]
+}
+```
+
+```json
+"PropertyStaticJoinConfig": {
+  "__jointSource.doc": "The name and optionally the service of the source object...",
+  "__jointRead.doc": "The name of the property in the source object whose value will be copied...",
+  "__jointSourceKey.doc": "The key in the source object used to identify the matching record...",
+  "__jointForeignKey.doc": "The property in the current object used as a reference to the source object...",
+  "jointSource": "DataObjectName",
+  "jointRead": "PropRefer",
+  "jointSourceKey": "PropRefer",
+  "jointForeignKey": "PropRefer",
+  "__jointRead.loadfrom": "jointSource",
+  "__jointSourceKey.loadfrom": "jointSource",
+  "__jointForeignKey.loadfrom": "currentDataObject"
+}
+```
+
+### 3.1 Fields Explained
+
+- **`isStaticJoin`** (Boolean)
+
+  - Enables/disables static join for this property.
+
+  - When `true`, the `configuration` must be provided.
+
+- **`configuration.jointSource`** (`DataObjectName`)
+
+  - The source object to join from.
+
+  - Can be local or remote, e.g. `"user"`, `"auth:user"`, `"billing:customer"`.
+
+- **`configuration.jointRead`** (`PropRefer`)
+
+  - The property in the source object whose value you want to copy.
+
+  - For example, `"clientId"`, `"tenantId"`, `"statusName"`.
+
+  - If not specified, it defaults to using the **same property name as the target property** (via UI `loadfrom` hints).
+
+- **`configuration.jointSourceKey`** (`PropRefer`)
+
+  - The key in the source object used to locate the record.
+
+  - Typically `"id"` or any other unique key.
+
+  - Usually `id` is the primary field of the source object.
+
+- **`configuration.jointForeignKey`** (`PropRefer`)
+
+  - The field in the current object that refers to `jointSourceKey`.
+
+  - For example, if the current object has `userId` referencing `user.id`, then:
+
+    - `jointForeignKey = "userId"`
+
+    - `jointSourceKey  = "id"`
+
+These fields tell Mindbricks *how to navigate from the current record to the source object* and *which value to copy*.
+
+---
+
+## 4. Execution Lifecycle & Formula Integration
+
+The docs specify an important detail:
+
+### 4.1 Order of Operations in a Create/Update API
+
+For a given property:
+
+1. **Static join runs first** (if `isStaticJoin = true`).
+
+   - Mindbricks:
+
+     - Reads `jointForeignKey` (e.g. `userId`).
+
+     - Uses `jointSource` & `jointSourceKey` to fetch the related record.
+
+     - Extracts `jointRead` value (e.g. `clientId`).
+
+     - Writes that value into the property’s field (or into the context under a join name).
+
+2. **Formula-based calculations (****`PropertyFormulaSettings`****) run afterwards.**
+
+   - These formulas can access:
+
+     - The property itself (now filled with static join value).
+
+     - Any context objects created by the static join.
+
+This layered design lets you chain logic:
+
+- Use static join to fetch `clientId` from user.
+
+- Use formula to compute something else using that `clientId`.
+
+---
+
+## 5. Configuration Examples
+
+### 5.1 Example 1 – Propagating Tenant/Client ID
+
+**Goal:** When creating a new `Order`, automatically copy the `clientId` from the `User` so each order has a `clientId` field.
+
+- **Resource object:** `order` (current DataObject)
+
+- **Source object:** `auth:user`
+
+- **Foreign key in&#x20;****`order`****:** `userId` → `user.id`
+
+- **Property to populate in&#x20;****`order`****:** `clientId`
+
+#### DataProperty snippet for `clientId`:
+
+```json
+{
+  "basicSettings": {
+    "name": "clientId",
+    "type": "ID",
+    "isRequired": true,
+    "allowUpdate": false
+  },
+  "relationSettings": {
+    "hasRelation": false
+  },
+  "staticJoin": {
+    "isStaticJoin": true,
+    "configuration": {
+      "jointSource": "auth:user",
+      "jointRead": "clientId",
+      "jointSourceKey": "id",
+      "jointForeignKey": "userId"
+    }
+  }
+}
+```
+
+Result:
+
+- When `order` is created/updated:
+
+  - Mindbricks fetches `auth:user` where `id = order.userId`.
+
+  - Reads `user.clientId`.
+
+  - Stores it in `order.clientId`.
+
+Now you can:
+
+- Filter orders by `clientId` directly, in DB or Elasticsearch.
+
+- Use BFF DataViews that group orders by `clientId` without joining users.
+
+### 5.2 Example 2 – Denormalizing Category Name
+
+**Goal:** Store the category name on the product for direct search/sort.
+
+- **Current object:** `product`
+
+- **Property:** `categoryName`
+
+- **Source:** `productCategory`
+
+- **Foreign key:** `product.categoryId` → `productCategory.id`
+
+```json
+{
+  "basicSettings": {
+    "name": "categoryName",
+    "type": "String"
+  },
+  "staticJoin": {
+    "isStaticJoin": true,
+    "configuration": {
+      "jointSource": "productCategory",
+      "jointRead": "name",
+      "jointSourceKey": "id",
+      "jointForeignKey": "categoryId"
+    }
+  }
+}
+```
+
+Now:
+
+- Full-text search or filters on `categoryName` do **not** require a join.
+
+- BFF or Business APIs can return the name directly from the product document.
+
+### 5.3 Example 3 – Membership-Related Data
+
+Static join also works with membership objects. Suppose `projectMember` has a `membershipType` that you want to store directly on some user-specific resource.
+
+- **Current object:** `userTask`
+
+- **Foreign key:** `userTask.projectId` → `project.id`; plus `userTask.userId`
+
+- **Source:** `projectMember`
+
+- **key pair:** `projectMember.projectId` & `projectMember.userId`
+
+Here static join can be used only if the membership object can be uniquely identified by the foreign keys (you might need a composite index and a helper API).
+
+For more complex cases, you might prefer a BusinessApi `FetchObjectAction` instead of static join, but the pattern still gives you a denormalization option if you design membership keys appropriately.
+
+---
+
+## 6. UI & Pattern Editing Perspective
+
+### 6.1 For Human Architects (UI)
+
+In the **Data Property** editor:
+
+1. Create or select the property you want to use as the target of the static join.
+
+2. Open the **Static Join** section.
+
+3. Enable **“This property is a static join”** (`isStaticJoin = true`).
+
+4. Select:
+
+   - **Source object** (`jointSource`)
+
+   - **Source key** (`jointSourceKey` – often `id`)
+
+   - **Foreign key in current object** (`jointForeignKey` – e.g. `userId`)
+
+   - **Source property to read** (`jointRead`)
+
+Hints from `__jointRead.loadfrom` and `__jointForeignKey.loadfrom` make this easier by offering available properties from the referenced objects.
+
+### 6.2 For AI Architects (JSON)
+
+Ensure you set:
+
+- `staticJoin.isStaticJoin = true`
+
+- `staticJoin.configuration` with valid `jointSource`, `jointSourceKey`, `jointForeignKey`, and `jointRead` (or let some defaults apply).
+
+---
+
+## 7. Best Practices & Pitfalls
+
+### 7.1 Good Use Cases
+
+- **Tenant/Client ID propagation** to multiple entities.
+
+- **Storing user’s main organization or region** on child records.
+
+- **Storing stable dictionary names** (like category, country) for easier search and reporting.
+
+- **Precomputing simplified routing values** (e.g., a resolved region code).
+
+### 7.2 Avoid Overusing Static Joins
+
+- If the joined value changes frequently and must always be real-time correct, static join may lead to stale data unless you design an update strategy.
+
+- For highly dynamic attributes, prefer dynamic joins in BFF DataViews or Business APIs.
+
+### 7.3 Keep Source Data Stable
+
+Static join works best when `jointRead` fields:
+
+- Change infrequently (e.g., `clientId` is stable; `categoryName` changes rarely).
+
+- Or where slight staleness is acceptable.
+
+If required, you can create background tasks or Business APIs to resync static-joined fields when source objects change.
+
+### 7.4 Watch Out for Circular Dependencies
+
+Do not create a static join that:
+
+- Depends on an object that also depends on the current object in a conflicting manner.
+
+- For example, `Order` static-joining from an object that is itself static-joining from `Order` in a mutually recursive way.
+
+---
+
+## 8. Static Join vs Other Join Mechanisms in Mindbricks
+
+| Mechanism                  | Where it lives        | When it executes        | Good for                                  |
+| -------------------------- | --------------------- | ----------------------- | ----------------------------------------- |
+| `PropertyStaticJoin`       | DataProperty          | Create/Update time      | Denormalization & materialized fields     |
+| `ViewAggregate` (DataView) | BFF Service           | Read time (BFF queries) | Rich read models across many services     |
+| `FetchObjectAction`        | Business API workflow | Per API call, as needed | Custom, imperative joins inside workflows |
+
+Static join **complements** these options:
+
+- Use it for **fundamental fields** that should exist directly on the object.
+
+- Use BFF & Business API actions for **projection-level or one-off joins**.
+
+---
+
+## 9. Summary
+
+`PropertyStaticJoin` lets you define **materialized joins** at the property level:
+
+- You configure once:
+
+  - which source object to join (`jointSource`)
+
+  - which key fields to link (`jointSourceKey`, `jointForeignKey`)
+
+  - which value to copy (`jointRead`)
+
+- Mindbricks:
+
+  - Automatically fetches the joined value during create/update.
+
+  - Writes the joined value directly to the property.
+
+  - Ensures static joins run **before** property formulas, so formulas can use the joined data.
+
+This pattern is:
+
+- Simple to configure
+
+- Powerful for performance and reporting
+
+- Great for multi-tenant propagation, dictionary labels, and read-optimized schemas
+
+- Fully integrated with existing Mindbricks patterns and BFF/DataView architecture
+
+Used thoughtfully, static joins dramatically reduce the need for runtime joins while keeping your patterns clean, declarative, and easy to maintain.

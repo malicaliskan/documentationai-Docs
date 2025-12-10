@@ -1,0 +1,498 @@
+---
+title: List Filters in ListOptions
+description: >-
+  Permission, Membership, Search & Joint Filters Without Joins. ListOptions in 
+  In addition to sorting, grouping, caching, and post-processing, ListOptions
+  offer powerful filter features that let you filter the query with prefetched
+  id lists.
+---
+## 1. Scope
+
+`ListOptions` in Mindbricks define the behavior of **list-type Business APIs** (`crudType = "list"`). In addition to sorting, grouping, caching, and post-processing, `ListOptions` offer powerful **filter features** that let you:
+
+Internally, Mindbricks does this by:
+
+- Running **prefetch queries** (to permissions, membership, Elasticsearch, or joined objects),
+
+- Producing **ID lists** of allowed (or disallowed) objects, and
+
+- Automatically merging these lists into the final DB query for the main object.
+
+This pattern lets architects express complex access patterns and filters in a **declarative, pattern-driven way**, while Mindbricks takes care of generating efficient queries.
+
+From the ontology, `ListOptions` are defined as:
+
+```json
+"ListOptions": {
+  "listSortBy": ["SortByItem"],
+  "listGroupBy": ["PropRefer"],
+  "queryCache": "Boolean",
+  "setAsRead": ["DataMapItem"],
+  "permissionFilters": ["ListPermissionFilter"],
+  "membershipFilters": ["ListMembershipFilter"],
+  "searchFilter": "ListSearchFilter",
+  "jointFilters": "ListJointFilterSettings",
+  "__nullables": [
+    "listSortBy",
+    "listGroupBy",
+    "setAsRead",
+    "permissionFilter",
+    "membershipFilters",
+    "searchFilter",
+    "jointFilters"
+  ]
+}
+```
+
+This document focuses on the **four filter-related features**:
+
+1. `permissionFilters` – object-based permission filters
+
+2. `membershipFilters` – membership-based filters
+
+3. `searchFilter` – full-text search using Elasticsearch
+
+4. `jointFilters` – join-like filters using secondary objects
+
+---
+
+## 2. Execution Flow: How List Filters Work
+
+At a high level, when a list Business API runs, Mindbricks:
+
+1. Reads parameters & builds the base `whereClause` (from `WhereClauseSettings`).
+
+2. Applies **permission filters**, if any.
+
+3. Applies **membership filters**, if any.
+
+4. Applies **search filters**, if any.
+
+5. Applies **joint filters**, if any.
+
+6. Merges these into a final **ID-based filter** (usually `id IN [...]` or intersections/unions of ID sets).
+
+7. Executes the main DB query for the primary DataObject.
+
+This means:
+
+- Filters are expressed at a **semantic level** (permissions, memberships, search, joins).
+
+- The generated code performs the heavy lifting: prefetching ID lists, combining them logically, and enforcing them in the final query.
+
+---
+
+## 3. Permission Filters – `permissionFilters`
+
+Pattern: `ListPermissionFilter`
+
+```json
+"ListPermissionFilter": {
+  "name": "String",
+  "condition": "MScript",
+  "permission": "String"
+}
+```
+
+### 3.1 Concept
+
+`permissionFilters` are used to enforce **object-based permissions** (`OBAC`) or global permission logic at the list level. Instead of returning all objects matching the base query, Mindbricks:
+
+1. Resolves which objects the current user is allowed to see based on a named permission (e.g., `"projectManagement.viewProject"`).
+
+2. Builds an ID list of allowed objects.
+
+3. Intersects that ID list with the main query.
+
+Multiple permission filters can be defined. If more than one is present, **all** their constraints are applied (logical AND).
+
+### 3.2 Fields
+
+- `name` – descriptive, code-safe name of the filter.
+
+- `permission` – the permission string that must be satisfied.
+
+- `condition` – an optional MScript boolean. If it evaluates to `false`, this permission filter is **skipped**.
+
+### 3.3 Example
+
+List projects where the user has `"projectManagement.viewProject"`:
+
+```json
+"listOptions": {
+  "permissionFilters": [
+    {
+      "name": "filterByProjectViewPermission",
+      "permission": "projectManagement.viewProject",
+      "condition": "true"
+    }
+  ]
+}
+```
+
+Super admins can bypass this filter:
+
+```json
+"condition": "this.session.roleId !== 'superAdmin'"
+```
+
+---
+
+## 4. Membership Filters – `membershipFilters`
+
+Pattern: `ListMembershipFilter`
+
+```json
+"ListMembershipFilter": {
+  "name": "String",
+  "dataObjectName": "DataObjectName",
+  "objectKeyIdField": "PropRefer",
+  "userKey": "MScript",
+  "checkFor": "MScript",
+  "condition": "MScript"
+}
+```
+
+### 4.1 Concept
+
+`membershipFilters` are used when access to a list of objects depends on **membership** in some membership object (e.g., `projectMember`, `organizationMember`).
+
+The filter answers:
+
+Internal behavior:
+
+1. Prefetch membership records from the membership object.
+
+2. Extract IDs of the target main objects.
+
+3. Filter main list to those IDs.
+
+4. If multiple membership filters exist, being valid in **any** of them is usually enough (logical OR at membership layer).
+
+### 4.2 Fields
+
+- `name` – descriptive name for the filter.
+
+- `dataObjectName` – the resource whose membership settings apply (e.g., `"project"`).
+
+- `objectKeyIdField` – which property of the list item holds the object ID (often `"id"`).
+
+- `userKey` – MScript returning user ID, typically `"this.session.userId"`.
+
+- `checkFor` – optional MScript, for extra membership logic (role, status, etc.).
+
+- `condition` – optional MScript that decides whether to **apply** this membership filter.
+
+### 4.3 Example
+
+List projects where the user is a member:
+
+```json
+"listOptions": {
+  "membershipFilters": [
+    {
+      "name": "filterByProjectMembership",
+      "dataObjectName": "project",
+      "objectKeyIdField": "id",
+      "userKey": "this.session.userId",
+      "checkFor": "true",
+      "condition": "true"
+    }
+  ]
+}
+```
+
+Skip membership filter for SaaS-level admin:
+
+```json
+"condition": "this.session.roleId !== 'superAdmin'"
+```
+
+---
+
+## 5. Search Filter – `searchFilter`
+
+Pattern: `ListSearchFilter`
+
+```json
+"ListSearchFilter": {
+  "hasSearchFilter": "Boolean",
+  "condition": "MScript",
+  "keyword": "MScript",
+  "searchProperties": ["PropRefer"]
+}
+```
+
+### 5.1 Concept
+
+The `searchFilter` feature integrates **full-text search** by:
+
+1. Performing a pre-search in Elasticsearch on the **main object’s index** using the given keyword and searchProperties.
+
+2. Collecting the IDs of matching documents.
+
+3. Limiting the main DB query to those IDs.
+
+This mimics a full-text search + DB intersection, but:
+
+- **Without** writing raw ES queries.
+
+- **Without** altering your DataObject design (as long as ES indexing is enabled).
+
+### 5.2 Fields
+
+- `hasSearchFilter` – turns the search filter on.
+
+- `condition` – optional MScript; if false, skip the search filter.
+
+- `keyword` – MScript that returns the search keyword (e.g., `this.keyword`).
+
+- `searchProperties` – list of fields on the main object to search against.
+
+### 5.3 Example
+
+Search users by name or email:
+
+```json
+"listOptions": {
+  "searchFilter": {
+    "hasSearchFilter": true,
+    "condition": "!!this.keyword",
+    "keyword": "this.keyword",
+    "searchProperties": ["fullname", "email"]
+  }
+}
+```
+
+This will:
+
+- Use the `users` ES index.
+
+- Perform a search across `fullname` and `email`.
+
+- Get matching IDs.
+
+- Filter the SQL/Mongo query to those IDs.
+
+---
+
+## 6. Joint Filters – `jointFilters` (ListJointFilterSettings & ListJointFilter)
+
+Patterns: `ListJointFilterSettings`, `FilterOperator`, `ListJointFilter`
+
+```json
+"ListJointFilterSettings": {
+  "operator": "FilterOperator",
+  "filters": ["ListJointFilter"]
+}
+```
+
+```json
+"FilterOperator": ["AND", "OR"]
+```
+
+```json
+"ListJointFilter": {
+  "name": "String",
+  "condition": "MScript",
+  "joinedDataObject": "DataObjectName",
+  "whereClause": "MScript"
+}
+```
+
+### 6.1 Concept
+
+`jointFilters` are like **lightweight, prefetch-based joins**:
+
+Instead of defining a relational join directly, Mindbricks:
+
+1. Runs a separate query on the `joinedDataObject` using an MScript whereClause.
+
+2. Produces an ID list (IDs of the main object associated with matched joined objects).
+
+3. Applies that ID list as a filter on the main list.
+
+Multiple joint filters can be combined with:
+
+- `"AND"` – main objects must satisfy **all** joint filters.
+
+- `"OR"` – main objects must satisfy **at least one** joint filter.
+
+### 6.2 Fields
+
+- `ListJointFilterSettings.operator` – `"AND"` or `"OR"`; how to combine multiple joint filters.
+
+- `ListJointFilter.name` – descriptive name.
+
+- `joinedDataObject` – the secondary object you join with (e.g., `invoice`, `subscription`, `projectMember` where parent is another object).
+
+- `whereClause` – MScript Query that selects the matching joined objects.
+
+- `condition` – optional MScript to decide whether to apply a specific joint filter.
+
+The relationship between the main object and `joinedDataObject` must be defined via relations (`PropertyRelation`) so Mindbricks knows how to map IDs.
+
+### 6.3 Example: Filter Users by Active Subscription
+
+Imagine:
+
+- Main object: `user`
+
+- Joined object: `subscription` with `subscription.userId` referencing `user.id`
+
+- You want to list only users with **active** subscriptions.
+
+```json
+"listOptions": {
+  "jointFilters": {
+    "operator": "AND",
+    "filters": [
+      {
+        "name": "hasActiveSubscription",
+        "joinedDataObject": "subscription",
+        "whereClause": "{ status: { \"$eq\": 'active' } }",
+        "condition": "true"
+      }
+    ]
+  }
+}
+```
+
+Mindbricks will:
+
+1. Query `subscription` for rows where `status = 'active'`.
+
+2. Collect distinct `userId`.
+
+3. Filter the `user` list to `id IN [those userIds]`.
+
+### 6.4 Example: Combine Multiple Joint Filters with OR
+
+List users who **either**:
+
+- Have an active subscription **OR**
+
+- Have at least one open support ticket.
+
+```json
+"listOptions": {
+  "jointFilters": {
+    "operator": "OR",
+    "filters": [
+      {
+        "name": "hasActiveSubscription",
+        "joinedDataObject": "subscription",
+        "whereClause": "{ status: { \"$eq\": 'active' } }"
+      },
+      {
+        "name": "hasOpenTicket",
+        "joinedDataObject": "supportTicket",
+        "whereClause": "{ status: { \"$eq\": 'open' } }"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## 7. Combining Filters: Permission + Membership + Search + Joint
+
+All four filter families can coexist in a single `ListOptions`:
+
+```json
+"listOptions": {
+  "permissionFilters": [ ... ],
+  "membershipFilters": [ ... ],
+  "searchFilter": { ... },
+  "jointFilters": { ... }
+}
+```
+
+The overall logic (simplified) looks like:
+
+```text
+BaseWhereClause
+  AND objectId IN PermissionFilterIds (if any)
+  AND objectId IN MembershipFilterIds (if any)
+  AND objectId IN SearchFilterIds (if any)
+  AND (JointFilterIds1 AND/OR JointFilterIds2 ...)
+```
+
+This gives you:
+
+- Permission-aware lists
+
+- Membership-aware lists
+
+- Searchable lists
+
+- Join-like behavior based on secondary objects
+
+…all without writing:
+
+- Raw SQL joins
+
+- Raw ES queries (except in advanced scenarios)
+
+- Custom repository methods
+
+Mindbricks composes these filters into optimized queries for the underlying database and Elasticsearch.
+
+---
+
+## 8. Best Practices
+
+1. **Start Simple**
+
+   - Use `searchFilter` for text search.
+
+   - Use `membershipFilters` for resource membership.
+
+   - Use `permissionFilters` for object-level PBAC.
+
+2. **Use&#x20;****`jointFilters`****&#x20;When You Need Join-Like Filtering**
+
+   - E.g., “users with at least one active subscription”, “projects with open tasks”, “orders with unpaid invoices”.
+
+3. **Keep Conditions Explicit**
+
+   - Use `condition` fields to skip filters for admins, support, or specific scenarios.
+
+4. **Leverage MScript Query Syntax**
+
+   - All `whereClause` fields use the MScript Query syntax you already use in `WhereClauseSettings`.
+
+   - Reuse library functions for complex queries.
+
+5. **Measure & Adjust**
+
+   - For large datasets, joint filters and search filters may be expensive.
+
+   - Consider using BFF DataViews & stored ES views for heavy read scenarios.
+
+---
+
+## 9. Summary
+
+The filter features in `ListOptions` turn list APIs into **powerful, declarative query engines**:
+
+- **`permissionFilters`** – enforce object-level permissions.
+
+- **`membershipFilters`** – filter by membership across resource objects.
+
+- **`searchFilter`** – integrate full-text search into list APIs.
+
+- **`jointFilters`** – emulate joins via prefetch ID lists and MScript queries.
+
+All of this is done:
+
+- Without manual joins
+
+- Without custom repository functions
+
+- With full pattern-based control
+
+As an architect, you describe *what* you want semantically (permissions, membership, search, joint conditions), and Mindbricks generates the *how*—efficient queries with automatic ID-list prefetching and merging.
+
+This is one of the key features that makes Mindbricks list APIs expressive, secure, and scalable, while keeping your designs clear, maintainable, and AI-friendly.
