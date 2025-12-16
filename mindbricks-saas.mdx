@@ -1,2 +1,1106 @@
+---
+title: Mindbricks Saas Guide
+description: >-
+  A Human-Readable Guide to the Mindbricks Platform UI with SaaS-Focused
+  Explanations.
+---
+# **1. Authentication**
 
+The Authentication section covers all account access and security-related screens in Mindbricks.
+These pages handle user identity and access control before entering any workspace or project.
+
+---
+
+## **Authentication → Login**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765803866107-5bxrl427dh-pasted-image-1765803861465.png?q=85&fm=auto&auto=compress%2Cformat" width="1917" height="975" alt="" />
+
+**What this screen is for**
+
+The Login screen allows existing users to access their Mindbricks account and continue working on their workspaces and projects.
+
+**How to use**
+
+- Enter your **email address**
+
+- Enter your **password**
+
+- Click **Sign In with Email**
+
+- (Optional) Use **Sign in with GitLab** if your account is connected
+
+**Notes**
+
+- Password must be **at least 6 characters long**
+
+- Email verification is required before login
+
+- Invalid credentials will display an error
+
+- Successful login redirects to the **Workspace area**
+
+---
+
+## **Authentication → Create Account**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765804415508-uwv9b78gfcm-pasted-image-1765804413462.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="981" alt="" />
+
+**What this screen is for**
+
+The Create Account screen is used to register a new user on the Mindbricks platform.
+
+Creating an account establishes your user identity but does not create any workspace or project yet.
+
+**How to use**
+
+- Enter your **full name**
+
+- Enter a valid **email address**
+
+- Create a **password**
+
+- Accept the **Terms and Privacy Policy**
+
+- Click **Sign Up**
+
+**What happens next**
+
+- A verification email is sent to your inbox
+
+- The account remains inactive until email verification is completed
+
+---
+
+## **Authentication → Verify Email**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765804522907-wdg0599xtwg-pasted-image-1765804521036.png?q=85&fm=auto&auto=compress%2Cformat" width="1918" height="980" alt="" />
+
+**What this screen is for**
+
+The Verify Email screen informs the user that email confirmation is required to activate the account.
+
+**How it works**
+
+- A verification link is sent to the registered email address
+
+- Click the link in the email to activate your account
+
+- Once verified, you can log in to Mindbricks
+
+**Notes**
+
+- Login is blocked until verification is completed
+
+- Verification links may expire for security reasons
+
+---
+
+## **Authentication → Forgot Password**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765804686068-jub7roe0nkk-pasted-image-1765804683569.png?q=85&fm=auto&auto=compress%2Cformat" width="1917" height="982" alt="" />
+
+**What this screen is for**
+
+The Forgot Password screen allows users to recover access if they forget their password.
+
+**How to use**
+
+- Enter your registered **email address**
+
+- Click **Send Reset Link**
+
+- Follow the instructions sent to your email
+
+**Security behavior**
+
+- Reset links are time-limited
+
+- After resetting your password, you can log in with the new credentials
+
+---
+
+# **2. Workspace Management**
+
+The Workspace area allows you to manage **projects**, **team members**, and **organization-level settings**.
+These screens focus on collaboration, access control, and integrations rather than system design.
+
+---
+
+## **Workspace → Projects**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765890321629-dvgf5j95d9l-pasted-image-1765890319664.png?q=85&fm=auto&auto=compress%2Cformat" width="1917" height="981" alt="" />
+
+The Projects page lists all projects inside the current workspace.
+
+### **What you can do on this page**
+
+- View all projects in the workspace
+
+- Filter between **All Projects** and **Your Projects**
+
+- Search projects by name
+
+- See project metadata:
+
+  - Project name
+
+  - Creation date
+
+  - Owner
+
+  - Member count
+
+  - Your role (Owner, Member, etc.)
+
+### **Available actions**
+
+- **New Project** – create a new project
+
+- **Edit** – update project information
+
+- **Delete** – permanently remove a project (if you have permission)
+
+- Click a project row to open the **Project Home**
+
+This page is the main entry point for working with projects.
+
+---
+
+## **Workspace → Members**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765890376841-1pjsottdt6-pasted-image-1765890375369.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="983" alt="" />
+
+The Members page lets you manage **who has access** to the workspace.
+
+### **What you see**
+
+- List of workspace members
+
+- Member name and avatar
+
+- Join date
+
+- Assigned role (e.g. Owner)
+
+- Member count
+
+### **What you can do**
+
+- Invite new members to the workspace
+
+- Assign or update member roles
+
+- Remove members (depending on permissions)
+
+Workspace roles control **access level**, not service behavior.
+
+---
+
+## **Workspace → Settings**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765890435105-ych2idbmfyr-pasted-image-1765890433637.png?q=85&fm=auto&auto=compress%2Cformat" width="1918" height="986" alt="" />
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765890462225-0ybi5xsyxrba-pasted-image-1765890460770.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="982" alt="" />
+
+The Workspace Settings page is used to configure **organization-wide integrations** and defaults.
+
+Changes made here apply to **all projects** in the workspace.
+
+---
+
+### **GitLab Settings**
+
+Configure GitLab to publish Mindbricks-generated code automatically.
+
+**Settings include**
+
+- GitLab URL
+
+- GitLab access token
+
+- Optional main GitLab group for organization projects
+
+Tokens are stored securely and never exposed in generated code.
+
+---
+
+### **GitHub Settings**
+
+Configure GitHub as an alternative code publishing destination.
+
+**Settings include**
+
+- GitHub username
+
+- GitHub access token
+
+This allows Mindbricks to sync generated repositories directly to GitHub.
+
+---
+
+## **How Workspace Settings Are Used**
+
+- Repository settings affect **all projects**
+
+- Deployment repositories use these credentials
+
+- You can change integrations at any time
+
+- Existing projects are not deleted when settings change
+
+---
+
+# **3. Projects & AI-Driven Design Flow**
+
+This section explains how projects are created and designed in Mindbricks using **AI assistance (Agent Ada)**, and how the system automatically generates project artifacts and services.
+
+> ℹ️ **Note**\
+> Workspace Settings, Members, and Projects management — along with their detailed behavior and pattern-level explanations — are fully covered in the **Mindbricks Project Guide**.\
+> This section focuses on the **user experience and flow** inside the project workspace.
+
+---
+
+## **Project Overview**
+
+When you open a project, you are taken to the **Project Home** screen.
+
+This page provides:
+
+- A high-level project summary
+
+- Access to generated documents
+
+- Visibility into defined and designed services
+
+- A live AI assistant (Agent Ada) on the right side
+
+---
+
+## **Answering AI Questions (Agent Ada)**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765883930760-7wmgel5dhn7-pasted-image-1765883929050.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="982" alt="" />
+
+After creating a project, **Agent Ada** starts by asking a series of questions to better understand your system.
+
+These questions typically cover:
+
+- Project type and domain
+
+- Core business focus
+
+- Functional requirements (e.g. checkout, inventory, users)
+
+- Design preferences and assumptions
+
+You answer these questions directly in the chat panel.
+
+---
+
+## **Automatic Project Artifacts Generation**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765884021264-7h0wmivzbik-pasted-image-1765884019865.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="984" alt="" />
+
+Once the initial questions are answered, Mindbricks **automatically generates** the following artifacts:
+
+- **Project Report**
+
+- **Core Configurations**
+
+- **User Stories**
+
+- **Use Cases**
+
+- **Product Requirements Document (PRD)**
+
+- **Defined Microservices**
+
+These documents are continuously refined as the project evolves.
+
+No manual setup is required at this stage.
+
+---
+
+## **Time Estimation & Design Readiness**
+
+After defining the microservices, Agent Ada provides:
+
+- The **number of microservices** to be designed
+
+- An **estimated time** to complete the design
+
+- A clear **Start Design** button
+
+This gives you transparency before the design phase begins.
+
+---
+
+## **Starting the Design Process**
+
+When you click **Start Design**:
+
+- Mindbricks begins designing all defined microservices
+
+- Each service is designed **one by one**
+
+- Progress and completion messages appear in the AI panel
+
+The design process is fully automated but remains transparent.
+
+---
+
+## **Service Design Completion**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765884274953-yfuc7p6fmt-pasted-image-1765884273240.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="986" alt="" />
+
+As each microservice is designed successfully:
+
+- It appears in the **Services** section
+
+- A **Preview** button becomes available
+
+- The service version and design timestamp are shown
+
+This allows you to follow progress service by service.
+
+---
+
+## **Previewing Services & API Testing**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765884381429-z5x2f2kx7ub-pasted-image-1765884380256.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="986" alt="" />
+
+Clicking **Preview** on a service opens a live **API interface** where you can:
+
+- Explore generated endpoints
+
+- Test API requests and responses
+
+- Validate service behavior
+
+### **Preview Session Duration**
+
+- Each preview session is valid for **30 minutes**
+
+- After expiration, you can start a new preview session
+
+- This ensures efficient and secure preview usage
+
+---
+
+## **Service Screens, Manual Editing & AI-Generated Content**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765884562903-xsn6naqd7h-pasted-image-1765884559304.png?q=85&fm=auto&auto=compress%2Cformat" width="1917" height="985" alt="" />
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765884600153-4ycys0tb43m-pasted-image-1765884596161.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="981" alt="" />
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765884988492-7yv2jem33wy-pasted-image-1765884987888.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="982" alt="" />
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765885024982-dn7gr6a4fw5-pasted-image-1765885023889.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="978" alt="" />
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765885084892-mt27d52964a-pasted-image-1765885083568.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="979" alt="" />
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765885110803-iph5p0ay24h-pasted-image-1765885109826.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="978" alt="" />
+
+You can edit both **Project Settings** and each **microservice** inside Mindbricks.
+
+Mindbricks is designed to be **AI-assisted, not AI-locked**.\
+You always remain in full control of the generated output.
+
+> ℹ️ **Detailed Note**\
+> All fields, sections, configuration options, and editing behaviors shown in Project Settings and service screens are explained **step-by-step** in the dedicated **Mindbricks Project Guide**.
+
+This section focuses on **how services are created, reviewed, and edited**, while deeper explanations live in the project-level documentation.
+
+# **4. Deployments**
+
+The Deployments section allows you to **deploy your project to the cloud**, manage environments, monitor deployments, and access the generated repository.
+
+This is where your designed services become **running applications**.
+
+---
+
+## **Deployments → Overview**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765886591790-is8d745v9o-pasted-image-1765886590630.png?q=85&fm=auto&auto=compress%2Cformat" width="1917" height="985" alt="" />
+
+The main Deployment page shows the available **deployment environments** for your project.
+
+By default, Mindbricks provides:
+
+- **Staging** – for testing and validation
+
+- **Production** – for live traffic
+
+Each environment displays:
+
+- Current version
+
+- Status (e.g. Passive)
+
+- Public URL (if configured)
+
+- **Deploy** action
+
+You can deploy independently to each environment.
+
+---
+
+## **Deployments → Deploy to an Environment**
+
+When you select an environment (e.g. **Stage**), you are taken to the environment-specific deployment screen.
+
+### **Selecting an Instance**
+
+Before deploying, you must select a **cloud server instance** where the project will run.
+
+- Choose an instance from the dropdown
+
+- This instance must already exist in **Cloud Servers**
+
+---
+
+### **Deploying Services**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765886643774-311tdn32acq-pasted-image-1765886642840.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="989" alt="" />
+
+Once an instance is selected, all project services are listed.
+
+For each service, you can:
+
+- See the service name
+
+- Click **Deploy** to deploy it to the selected environment
+
+Services are deployed individually, giving you full control over rollout order.
+
+---
+
+## **Deployments → Deploy History**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765886680656-sp9q15m7kum-pasted-image-1765886679646.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="983" alt="" />
+
+The **Deploy History** page shows past deployment activity.
+
+Here you can:
+
+- Select an environment (Stage or Production)
+
+- View previous deployment attempts
+
+- Track whether deployments were executed or not
+
+If no deployments have occurred yet, the page shows an empty state.
+
+---
+
+## **Deployments → Observability**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765886707133-lw5fwxg79tn-pasted-image-1765886706293.png?q=85&fm=auto&auto=compress%2Cformat" width="1917" height="988" alt="" />
+
+The **Observability** page provides runtime visibility into deployed environments.
+
+It displays container-level metrics for:
+
+- Preview environment
+
+- Stage environment
+
+- Production environment
+
+Typical metrics include:
+
+- CPU usage
+
+- Memory usage
+
+- Resource availability
+
+If no deployments are running, metrics may not be available yet.
+
+---
+
+## **Deployments → Repository**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765886803676-ucxl38fdck-pasted-image-1765886802755.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="977" alt="" />
+
+The Repository page provides access to the **generated project source code**.
+
+### **What you see**
+
+- A versioned repository (e.g. `v1.0.x`)
+
+- One folder per microservice
+
+- Each folder contains production-ready code
+
+### **Available Actions**
+
+- **Update Repository** – sync latest design changes into the repository
+
+- **Takeout Git** – export the full repository to your own GitHub or GitLab account
+
+This allows you to:
+
+- Continue development outside Mindbricks
+
+- Use your own CI/CD pipelines
+
+- Deploy independently if needed
+
+---
+
+# **5. Subscription Plan**
+
+Comming soon when new updates get merged to prod
+
+---
+
+# **6. Cloud Servers**
+
+The Cloud Servers section allows you to create and manage **compute infrastructure** for your workspace.\
+These servers are used to run deployments, services, and runtime workloads created in Mindbricks.
+
+Cloud servers are **workspace-level resources** and are **billed separately** from subscription plans.
+
+---
+
+## **Cloud Servers → Instances**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765808031385-6zsk4i659nn-pasted-image-1765808028700.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="977" alt="" />
+
+The Instances page shows available **server worker groups** that you can purchase and deploy.
+
+Each worker group represents a predefined server configuration.
+
+---
+
+## **Cloud Servers → Buy Instance**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765807795555-xt3l0xf5aj-pasted-image-1765807793522.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="976" alt="" />
+
+This page lists available **worker group types** with their specifications and pricing.
+
+### **Worker Group Details**
+
+Each worker group displays:
+
+- **Price** (hourly billing)
+
+- **CPU** cores
+
+- **Memory (RAM)**
+
+- **Storage**
+
+- **Buy Instance** action
+
+Example (Small Node Group):
+
+- **Price:** $0.25 / hour
+
+- **CPU:** 2 cores
+
+- **Memory:** 8 GB
+
+- **Storage:** 30 GB
+
+Use this page to choose the server capacity that fits your workload.
+
+---
+
+## **Cloud Servers → Create Cloud Server**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765807959929-6zl3q679q2n-pasted-image-1765807957535.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="985" alt="" />
+
+After clicking **Buy Instance**, a configuration modal opens where you define how the server will run.
+
+### **Configuration Fields**
+
+**Server Name**\
+A unique name to identify this cloud server inside the workspace.
+
+**Min Instance Count**\
+The minimum number of instances that must always be running.
+
+**Max Instance Count**\
+The maximum number of instances allowed to scale up to.
+
+**Desired Instance Count**\
+The initial number of instances to start.\
+Must be between the minimum and maximum values.
+
+### **Example**
+
+- Min Instances: `2`
+
+- Max Instances: `10`
+
+- Desired Instances: `2`
+
+This setup ensures baseline availability while allowing future scaling.
+
+---
+
+## **Cloud Servers → Payment & Setup**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765808135112-pbv6ecvih1-pasted-image-1765808133294.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="928" alt="" />
+
+When creating a new cloud server for the first time, a **one-time server setup fee** is required.
+
+### **Server Setup Fee**
+
+- Covers **initial server provisioning and configuration**
+
+- Charged **once per server**
+
+- Shown clearly before payment confirmation
+
+### **Payment Options**
+
+- Secure card payment
+
+- Payment link (if supported)
+
+After successful payment, the server creation process begins automatically.
+
+---
+
+## **Cloud Servers → Payment Successful**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765808170024-vmjrnostngq-pasted-image-1765808168448.png?q=85&fm=auto&auto=compress%2Cformat" width="1917" height="937" alt="" />
+
+Once the payment is completed, a confirmation modal is shown.
+
+**What this means**
+
+- Your cloud server has been successfully created
+
+- The server enters an initial **Pending** state
+
+- Provisioning and setup start in the background
+
+The confirmation view displays:
+
+- Server name
+
+- Instance type (worker group)
+
+- Hourly price
+
+- Min / Max instance counts
+
+- Current status
+
+---
+
+## **Cloud Servers → Instance Details**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765808238266-jxvq4bqefvq-pasted-image-1765808236540.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="921" alt="" />
+
+After creation, each cloud server has its own **instance detail page**.
+
+This page allows you to **monitor, scale, and manage** the server.
+
+### **Instance Information**
+
+- Server name and status (Pending / Active)
+
+- Worker group type
+
+- Hourly price
+
+- CPU
+
+- Memory
+
+- Storage
+
+---
+
+## **Scaling the Worker Group**
+
+The **Scale Worker Group** section allows you to control how many instances are running.
+
+**Controls**
+
+- **Min** – minimum number of instances that must always stay active
+
+- **Desired** – currently running instance count
+
+- **Max** – maximum number of instances allowed
+
+You can adjust scaling using the slider within the allowed range.
+
+Changes take effect dynamically and respect the configured limits.
+
+---
+
+## **Budget & Usage Alerts**
+
+The **Worker Group Budget Alert** section helps you control monthly costs.
+
+**You can configure**
+
+- Monthly usage alert thresholds
+
+- Budget limit warnings
+
+- Visual indicators as usage approaches limits
+
+These alerts help prevent unexpected costs.
+
+---
+
+## **Instance Metrics & Monitoring**
+
+Each cloud server provides **real-time metrics** for performance and usage monitoring.
+
+Available metrics include:
+
+- **CPU usage (%)**
+
+- **Memory usage (%)**
+
+- **Network in / out**
+
+- **Instance-level activity**
+
+These metrics help you understand load, performance, and scaling needs.
+
+---
+
+## **Deployed Projects & Services**
+
+If any projects are deployed to this cloud server, the instance view also shows:
+
+- Which **projects** are running on the server
+
+- Which **services** are deployed per project
+
+- Runtime status of deployed services
+
+This provides clear visibility into **what is running where**.
+
+---
+
+## **Instance Actions**
+
+From the instance detail page, you can:
+
+- Scale instance count
+
+- Monitor usage and metrics
+
+- View deployed projects and services
+
+- Terminate the instance when no longer needed
+
+> ⚠️ Terminating an instance will stop all workloads running on that server.
+
+---
+
+# **7. Payment & Billing**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765808805538-5jza9iab9ld-pasted-image-1765808803837.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="985" alt="" />
+
+The Payment & Billing section provides visibility into all **financial activity** related to your workspace.
+
+From this page, you can review invoices generated from:
+
+- Subscription plans
+
+- Cloud server setup fees
+
+- Usage-based charges (e.g. hourly instances)
+
+---
+
+## **Payment & Billing → Invoices**
+
+The Invoices page lists all billing invoices associated with the current workspace.
+
+### **What you see on this page**
+
+- A list of generated invoices (when available)
+
+- Invoice records are grouped per workspace
+
+- Each invoice represents a completed billing event
+
+If no billing activity has occurred yet, the page displays an empty state.
+
+---
+
+## **No Invoices Found**
+
+When the workspace has not yet generated any invoices, you will see:
+
+> **No invoices found**
+
+This typically means:
+
+- You are using only the **Free plan**
+
+- No cloud servers have been created yet
+
+- No paid subscription or usage-based charges have occurred
+
+Invoices will automatically appear here once any billable action is completed.
+
+---
+
+## **What Happens When an Invoice Is Created**
+
+When billing activity occurs, this page will allow you to:
+
+- View invoice details
+
+- Track billing history over time
+
+- Access records for accounting or reporting purposes
+
+Invoices are created automatically and require no manual action.
+
+---
+
+# **8. Profile & Account Management**
+
+The Profile section allows you to manage your **personal account settings**, security preferences, and workspaces.
+
+You can access this section from the **avatar menu** in the sidebar.
+
+---
+
+## **Profile → Avatar Menu**
+
+When you click on your **avatar** in the sidebar, a quick-access menu opens.
+
+### **What you see in this menu**
+
+- Your **name and email**
+
+- Current active workspace
+
+- Shortcut to **My Workspaces**
+
+- **Logout** action
+
+This menu helps you quickly understand **where you are** and switch context if needed.
+
+---
+
+## **Profile → Personal Information**
+
+Accessible by clicking the **settings icon** from the avatar menu.
+
+This page allows you to update your **basic profile details**.
+
+### **What you can manage**
+
+**Basic Information**
+
+- Profile avatar
+
+- Full name
+
+- Birthday
+
+**Contact Information**
+
+- Email address
+
+- Phone number
+
+### **How to apply changes**
+
+- Edit the fields
+
+- Click **Save**
+
+- Changes are applied immediately to your account
+
+---
+
+## **Profile → Security**
+
+The Security page allows you to manage **account protection and access**.
+
+### **Change Password**
+
+You can update your password by providing:
+
+- Current password
+
+- New password
+
+- Password confirmation
+
+> Passwords must meet platform security requirements.
+
+Click **Save** to apply the change.
+
+---
+
+### **Archive Account**
+
+At the bottom of the page, you can archive your account.
+
+**Important notes**
+
+- Archiving schedules account deletion within **30 days**
+
+- All data will be permanently deleted unless restored
+
+- This action should be used with caution
+
+---
+
+## **Profile → Workspaces**
+
+The Workspaces page shows all workspaces you are a member of.
+
+### **What you see**
+
+- Workspace name
+
+- Number of projects
+
+- Number of members
+
+- Your role in each workspace (e.g. Owner)
+
+- Edit preferences for each workspace
+
+From this page, you can **switch**, **manage**, or **create** workspaces.
+
+---
+
+## **Profile → Create New Workspace**
+
+Clicking **New Workspace** opens a configuration modal.
+
+### **Workspace Creation Fields**
+
+- **Organization Name**
+
+- **Company Business Name**
+
+- **Description**
+
+- **Web Address**
+
+These fields define the identity of the new workspace.
+
+### **How it works**
+
+- Fill in the required fields
+
+- Click **Save**
+
+- A new workspace is created and added to your workspace list
+
+- You are assigned as the **Owner**
+
+Each workspace has its own:
+
+- Projects
+
+- Members
+
+- Subscription plan
+
+- Cloud servers
+
+- Billing history
+
+---
+
+# **9. Notifications**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765874620785-hirme1wydlm-pasted-image-1765874619622.png?q=85&fm=auto&auto=compress%2Cformat" width="1913" height="980" alt="" />
+
+The Notifications page displays all **system messages, alerts, and activity updates** related to your account and workspaces.
+
+It helps you stay informed about important events without interrupting your workflow.
+
+---
+
+## **Notifications → Overview**
+
+At the top of the page, you’ll see a list of your most recent notifications.
+
+These may include:
+
+- Account-related updates (e.g. email verification)
+
+- Workspace activity
+
+- System alerts
+
+- Usage or action confirmations
+
+Notifications are ordered from newest to oldest.
+
+---
+
+## **Notification Filters**
+
+You can filter notifications using the tabs at the top of the page:
+
+- **All Notifications** – shows every notification
+
+- **Alerts** – important system or usage alerts
+
+- **Activity** – general activity updates
+
+- **Unread** – notifications you haven’t viewed yet
+
+These filters help you quickly focus on what matters most.
+
+---
+
+## **Mark as Read**
+
+The **Mark all as read** button allows you to:
+
+- Clear unread notification indicators
+
+- Mark all visible notifications as read at once
+
+This is useful after reviewing updates in bulk.
+
+---
+
+## **Notification Items**
+
+Each notification item displays:
+
+- A short **title**
+
+- A **description** explaining the event
+
+- A **timestamp** showing when it occurred
+
+- A **category label** (e.g. Activity)
+
+Example notification types include:
+
+- Welcome and account activation messages
+
+- Workspace-related updates
+
+- System confirmations
+
+---
+
+## **Pagination**
+
+If you have many notifications, pagination controls appear at the bottom of the page.
+
+You can:
+
+- Navigate between pages
+
+- Review older notifications when needed
+
+---
 
