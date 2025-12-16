@@ -233,12 +233,13 @@ interface IntegrationConfiguration = {
 
 An Enum vaue to store the names of the integration providers
 
-```javascript
+```js
 IntegrationProviderNames = [
   "amazonS3",
   "googleGemini",
   "googleMaps",
   "Telegram",
+  "jiraServiceManagement",
 ];
 
 const IntegrationProvider = {
@@ -246,15 +247,17 @@ const IntegrationProvider = {
   googleGemini: 1,
   googleMaps: 2,
   Telegram: 3,
+  jiraServiceManagement: 4,
 };
 ```
 
-| Enum         | Description                                |
-| ------------ | ------------------------------------------ |
-| amazonS3     | A famous file storage service              |
-| googleGemini | An AI Model Api provided by Google         |
-| googleMaps   | A maps api provided by Google              |
-| Telegram     | A messaging api based on Telegram platform |
+| Enum                  | Description                                |
+| --------------------- | ------------------------------------------ |
+| amazonS3              | A famous file storage service              |
+| googleGemini          | An AI Model Api provided by Google         |
+| googleMaps            | A maps api provided by Google              |
+| Telegram              | A messaging api based on Telegram platform |
+| jiraServiceManagement | A workspace and project management api     |
 
 #### DataMapItem
 
@@ -306,15 +309,15 @@ interface ProjectAuthentication = {
 }
 ```
 
-| Field                    | Description                                                                                                                                                                                                                                                                                                                                                                |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| authenticationEssentials | Basic authentication settings for the project. Defines the core authentication method (e.g., email/password, token-based) and global authentication behaviors.                                                                                                                                                                                                             |
-| loginDefinition          | Specifies how users, user groups, and tenants are defined in the project's data model. These definitions allow Mindbricks to dynamically extract identity and authorization data from project-specific data objects.                                                                                                                                                       |
-| verificationServices     | Defines optional verification flows such as password reset, email confirmation, mobile verification, and 2FA. Mindbricks automatically generates the required backend logic for these features under the user service.                                                                                                                                                     |
-| accessControl            | Specifies permission-based access control settings. These govern what users or roles can access, based on project-wide authorization rules.                                                                                                                                                                                                                                |
-| socialLogins             | Configuration for allowing users to sign in or register using external identity providers. Supported providers include Google, Facebook, Twitter, Apple, GitHub, and GitLab.                                                                                                                                                                                               |
-| userProperties           | Defines additional properties to include in the user data object. These are added to the default fields \[ email, password, fullname, name, surname, mobile, emailVerified, mobileVerified, roleId] and shape the structure of the User model in the generated user service. Note: Standard fields (`id`, `isActive`, `createdAt`, `updatedAt`) are automatically created. |
-| tenantProperties         | Defines additional properties to include in the tenant data object. Alongside required fields like name and ownerId, these shape the structure of the Tenant model. Note: Standard fields (`id`, `isActive`, `createdAt`, `updatedAt`) are automatically created.                                                                                                          |
+| Field                    | Description                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| authenticationEssentials | Basic authentication settings for the project. Defines the core authentication method (e.g., email/password, token-based) and global authentication behaviors.                                                                                                                                                                                                            |
+| loginDefinition          | Specifies how users, user groups, and tenants are defined in the project's data model. These definitions allow Mindbricks to dynamically extract identity and authorization data from project-specific data objects.                                                                                                                                                      |
+| verificationServices     | Defines optional verification flows such as password reset, email confirmation, mobile verification, and 2FA. Mindbricks automatically generates the required backend logic for these features under the user service.                                                                                                                                                    |
+| accessControl            | Specifies permission-based access control settings. These govern what users or roles can access, based on project-wide authorization rules.                                                                                                                                                                                                                               |
+| socialLogins             | Configuration for allowing users to sign in or register using external identity providers. Supported providers include Google, Facebook, Twitter, Apple, GitHub, and GitLab.                                                                                                                                                                                              |
+| userProperties           | Defines additional properties to include in the user data object. These are added to the default fields [ email, password, fullname, name, surname, mobile, emailVerified, mobileVerified, roleId] and shape the structure of the User model in the generated user service. Note: Standard fields (`id`, `isActive`, `createdAt`, `updatedAt`) are automatically created. |
+| tenantProperties         | Defines additional properties to include in the tenant data object. Alongside required fields like name and ownerId, these shape the structure of the Tenant model. Note: Standard fields (`id`, `isActive`, `createdAt`, `updatedAt`) are automatically created.                                                                                                         |
 
 ### AuthBasics
 
@@ -439,16 +442,16 @@ interface SSOServerSettings = {
 }
 ```
 
-| Field        | Description                                                                                                                                                          |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| tokenHost    | The base URL of the SSO provider (e.g., [https://auth.example.com](https://auth.example.com)). This value is used as the root for building all other endpoint paths. |
-| authPath     | The relative path to initiate user authorization on the SSO provider (e.g., /oauth2/authorize).                                                                      |
-| tokenPath    | The relative path to request access tokens from the SSO provider (e.g., /oauth2/token).                                                                              |
-| userInfoPath | The relative path to fetch the authenticated user's profile information (e.g., /userinfo).                                                                           |
-| logoutPath   | The relative path to perform logout on the SSO provider (e.g., /logout).                                                                                             |
-| redirectUrl  | The full callback URL of the client application to which the SSO provider will redirect after login. This URL must match the one registered with the SSO provider.   |
-| clientId     | The client identifier issued to your application by the SSO provider. This ID is used to identify your app during the authentication flow.                           |
-| clientSecret | The secret associated with the client ID, used to authenticate your application with the SSO provider when exchanging tokens.                                        |
+| Field        | Description                                                                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| tokenHost    | The base URL of the SSO provider (e.g., https://auth.example.com). This value is used as the root for building all other endpoint paths.                           |
+| authPath     | The relative path to initiate user authorization on the SSO provider (e.g., /oauth2/authorize).                                                                    |
+| tokenPath    | The relative path to request access tokens from the SSO provider (e.g., /oauth2/token).                                                                            |
+| userInfoPath | The relative path to fetch the authenticated user's profile information (e.g., /userinfo).                                                                         |
+| logoutPath   | The relative path to perform logout on the SSO provider (e.g., /logout).                                                                                           |
+| redirectUrl  | The full callback URL of the client application to which the SSO provider will redirect after login. This URL must match the one registered with the SSO provider. |
+| clientId     | The client identifier issued to your application by the SSO provider. This ID is used to identify your app during the authentication flow.                         |
+| clientSecret | The secret associated with the client ID, used to authenticate your application with the SSO provider when exchanging tokens.                                      |
 
 #### APIKeyAuth
 
@@ -492,7 +495,7 @@ interface APIKeyAuthConfig = {
 
 An enum type to refer to a specific section of an HTTP request where data (e.g., tokens or parameters) can be located.
 
-```javascript
+```js
 RequestLocationsNames = [
   "bearer",
   "cookie",
@@ -625,7 +628,7 @@ interface LoginDefUserSettings = {
 
 Specifies how user names are represented in the data model.
 
-```javascript
+```js
 UserNameTypeNames = ["asFullname", "asNamePair"];
 
 const UserNameType = {
@@ -725,7 +728,7 @@ interface VerificationSettings = {
 
 An enum value to define the verification mode of the verification services to be able to manage the development process and the production process.
 
-```javascript
+```js
 VerificationModeNames = ["testMode", "liveMode"];
 
 const VerificationMode = {
@@ -783,7 +786,7 @@ interface VerificationConfig = {
 
 Defines the method used for user verification flows such as password reset, two-factor authentication, or account confirmation. This enum helps determine whether the user interacts with a clickable link or a manually entered code.
 
-```javascript
+```js
 VerificationTypeNames = ["byLink", "byCode"];
 
 const VerificationType = {
@@ -1359,7 +1362,7 @@ interface PropertyBasicSettings = {
 
 These are the standardized data types used in microservice data models and BFF data views in Mindbricks.
 
-```javascript
+```js
 DataTypesNames = [
   "ID",
   "String",
@@ -1523,26 +1526,24 @@ interface PropertyRelationConfig = {
   relationName : String;
   relationTargetObject : DataObjectName;
   relationTargetKey : PropRefer;
-  relationTargetIsParent : Boolean;
   onDeleteAction : RelationOnDeleteAction;
   relationIsRequired : Boolean;
 }
 ```
 
-| Field                  | Description                                                                                                                                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| relationName           | A single-word, human-readable name that identifies the relationship. This name is used in generated code and documentation to represent joined data via this relation.                                 |
-| relationTargetObject   | The name of the data object this property relates to. This defines the target of the foreign key relationship.                                                                                         |
-| relationTargetKey      | The property name (usually 'id') in the target object that this property references. This is the destination key for the relation.                                                                     |
-| relationTargetIsParent | Specifies whether the related object should be treated as a parent in the domain model. If true, the current object is conceptually a child of the target object (e.g., user belongs to organization). |
-| onDeleteAction         | Determines what action should be taken if the related (parent) object is deleted. Options include cascading the delete or nullifying this property.                                                    |
-| relationIsRequired     | Defines whether the relation is mandatory. If true, the property must always reference a valid record in the related data object.                                                                      |
+| Field                | Description                                                                                                                                                            |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| relationName         | A single-word, human-readable name that identifies the relationship. This name is used in generated code and documentation to represent joined data via this relation. |
+| relationTargetObject | The name of the data object this property relates to. This defines the target of the foreign key relationship.                                                         |
+| relationTargetKey    | The property name (usually 'id') in the target object that this property references. This is the destination key for the relation.                                     |
+| onDeleteAction       | Determines what action should be taken if the related (parent) object is deleted. Options include cascading the delete or nullifying this property.                    |
+| relationIsRequired   | Defines whether the relation is mandatory. If true, the property must always reference a valid record in the related data object.                                      |
 
 #### RelationOnDeleteAction
 
 Defines the available strategies for handling related records when a referenced (parent) object is deleted.
 
-```javascript
+```js
 RelationOnDeleteActionNames = ["doDelete", "setNull"];
 
 const RelationOnDeleteAction = {
@@ -1774,7 +1775,7 @@ interface BFFService = {
 
 **MPO Version:** 1.3.0
 
-A DataView defines an aggregated projection of data for the BFF service in Mindbricks. It serves as a unified structure that collects and combines information from multiple microservices. DataViews can be configured as either *stored* or *dynamic*. Stored DataViews persist their results in Elasticsearch and are optimal for queries requiring filtering, sorting, or cross-service joins. Dynamic DataViews are assembled at runtime during the request cycle and are suitable for lightweight, user-specific, or real-time scenarios. Both types aim to simplify frontend development by consolidating distributed data into a single, queryable view.
+A DataView defines an aggregated projection of data for the BFF service in Mindbricks. It serves as a unified structure that collects and combines information from multiple microservices. DataViews can be configured as either _stored_ or _dynamic_. Stored DataViews persist their results in Elasticsearch and are optimal for queries requiring filtering, sorting, or cross-service joins. Dynamic DataViews are assembled at runtime during the request cycle and are suitable for lightweight, user-specific, or real-time scenarios. Both types aim to simplify frontend development by consolidating distributed data into a single, queryable view.
 
 ```typescript
 interface DataView = {
@@ -1860,13 +1861,13 @@ interface ViewLookup = {
 }
 ```
 
-| Field       | Description                                                                                                                                                                                                                                                                                                                              |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| name        | The name of the lookup field in the DataView output. This is the property that will hold the resolved value, such as 'userRoleName'. For stored DataViews, Mindbricks stores multilingual variants using suffixes like 'userRoleName\_en', 'userRoleName\_tr'. When returned to the client, only the relevant language value is exposed. |
-| lookupDict  | The name of the dictionary index where the lookup value resides. This can be any dictionary-like dataset, such as countries, roles, or labels. For multilingual dictionaries, Mindbricks automatically appends the language suffix (e.g., '\_en', '\_tr') to the index name during lookup.                                               |
-| multiLang   | Whether the lookup dictionary is multilingual. If true, Mindbricks will automatically manage language-specific fields and suffixes. If false, a single language-independent value is returned.                                                                                                                                           |
-| lookupKey   | The key field in the main object (or its aggregates) used to match against the dictionary index. This is typically a reference like 'roleId' or 'countryId'. The dictionary index's target key is always assumed to be 'id'.                                                                                                             |
-| lookupValue | The field in the dictionary index whose value will be returned. For example, 'name' or 'label'. This is what will appear in the DataView as the resolved text.                                                                                                                                                                           |
+| Field       | Description                                                                                                                                                                                                                                                                                                                            |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name        | The name of the lookup field in the DataView output. This is the property that will hold the resolved value, such as 'userRoleName'. For stored DataViews, Mindbricks stores multilingual variants using suffixes like 'userRoleName_en', 'userRoleName_tr'. When returned to the client, only the relevant language value is exposed. |
+| lookupDict  | The name of the dictionary index where the lookup value resides. This can be any dictionary-like dataset, such as countries, roles, or labels. For multilingual dictionaries, Mindbricks automatically appends the language suffix (e.g., '\_en', '\_tr') to the index name during lookup.                                             |
+| multiLang   | Whether the lookup dictionary is multilingual. If true, Mindbricks will automatically manage language-specific fields and suffixes. If false, a single language-independent value is returned.                                                                                                                                         |
+| lookupKey   | The key field in the main object (or its aggregates) used to match against the dictionary index. This is typically a reference like 'roleId' or 'countryId'. The dictionary index's target key is always assumed to be 'id'.                                                                                                           |
+| lookupValue | The field in the dictionary index whose value will be returned. For example, 'name' or 'label'. This is what will appear in the DataView as the resolved text.                                                                                                                                                                         |
 
 #### ViewStat
 
@@ -1903,7 +1904,7 @@ Defines a single mathematical operation to apply to a group of records within a 
 ```typescript
 interface AggregateItem = {
   name : String;
-  aggType : String;
+  aggType : AggTypes;
   aggField : PropRefer;
   dataType : DataTypes;
   filterValue : MScript;
@@ -1913,10 +1914,34 @@ interface AggregateItem = {
 | Field       | Description                                                                                                                                                                                                  |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | name        | The identifier of the computed metric (e.g., 'orderCount', 'totalAmount'). Appears as a key in the result object.                                                                                            |
-| aggType     | The mathematical operation to perform (e.g., 'value\_count', 'sum', 'average', 'min', 'max').                                                                                                                |
+| aggType     | The mathematical operation to perform (e.g., 'value_count', 'sum', 'average', 'min', 'max').                                                                                                                 |
 | aggField    | The field of the target object used in the aggregation (e.g., 'amount', 'id'). For count operations, typically use 'id'.                                                                                     |
 | dataType    | The expected data type of the result (e.g., 'Integer', 'Float'). Often reflects the type of the aggField but may differ (e.g., averaging integers produces floats).                                          |
 | filterValue | Optional MScript condition to filter records inside the bucket before applying the operation. Allows multiple filtered aggregations on the same group (e.g., 'totalCanceledAmount', 'totalCompletedAmount'). |
+
+#### AggTypes
+
+Specifies the type of aggregation to perform.
+
+```js
+AggTypesNames = ["value_count", "sum", "avg", "min", "max"];
+
+const AggTypes = {
+  value_count: 0,
+  sum: 1,
+  avg: 2,
+  min: 3,
+  max: 4,
+};
+```
+
+| Enum        | Description                            |
+| ----------- | -------------------------------------- |
+| value_count | Count the number of records.           |
+| sum         | Sum the values of the records.         |
+| avg         | Average the values of the records.     |
+| min         | Find the minimum value of the records. |
+| max         | Find the maximum value of the records. |
 
 ## NotificationService
 
@@ -1994,7 +2019,7 @@ interface NotificationServiceOptions = {
 
 Defines valid SMS providers for project-wide notifications.
 
-```javascript
+```js
 SmsProviderNames = ["amazonsns", "fake", "netgsm", "twilio", "vonage"];
 
 const SmsProvider = {
@@ -2018,7 +2043,7 @@ const SmsProvider = {
 
 Defines valid email providers for project-wide notifications.
 
-```javascript
+```js
 EmailProviderNames = ["amazonsns", "fake", "sendgrid", "smtp"];
 
 const EmailProvider = {
@@ -2040,7 +2065,7 @@ const EmailProvider = {
 
 Defines valid push notification providers for project-wide delivery.
 
-```javascript
+```js
 PushProviderNames = ["amazonsns", "fake", "firebase", "onesignal"];
 
 const PushProvider = {
@@ -2412,7 +2437,7 @@ interface EventNotificationBasics = {
 
 Specifies the medium through which the notification will be sent.
 
-```javascript
+```js
 NotificationJobTypesNames = ["email", "sms", "push", "inApp"];
 
 const NotificationJobTypes = {
@@ -2624,7 +2649,7 @@ interface ServiceOptions = {
 
 Enumeration of supported database types for service-level data models.
 
-```javascript
+```js
 DbTypesNames = ["postgresql", "mongodb"];
 
 const DbTypes = {
@@ -2726,7 +2751,7 @@ interface ObjectAuthorization = {
 
 Defines the possible access levels for a DataObject. This type captures whether the object is only visible to its owner/admins (private), shared with authenticated project users (protected), or exposed to the public including anonymous users (public). The key difference is between restricted vs. shared access, and within shared access whether authentication is required.
 
-```javascript
+```js
 DataObjectAccessNames = ["accessPrivate", "accessProtected", "accessPublic"];
 
 const DataObjectAccess = {
@@ -2797,14 +2822,14 @@ interface CompositeIndex = {
 | Field       | Description                                                                                                                                                                                                  |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | indexName   | Unique name of the database index. Used in DDL statements and must be unique within the scope of the current data object. Choose a descriptive name that reflects the indexed fields (e.g., userEmailIndex). |
-| indexFields | List of field names that form the composite index. The order of fields matters for query optimization. For example, \['email', 'clientId'] allows fast lookups for email within a specific client context.   |
+| indexFields | List of field names that form the composite index. The order of fields matters for query optimization. For example, ['email', 'clientId'] allows fast lookups for email within a specific client context.    |
 | onDuplicate | Defines the behavior when an insert operation encounters a duplicate key on this index. Options include updating the existing row or throwing an error. Useful for implementing upsert logic.                |
 
 #### OnDuplicate
 
 Enumeration that defines the conflict resolution strategy when a new record would violate a composite index constraint.
 
-```javascript
+```js
 OnDuplicateNames = ["doUpdate", "throwError", "stopOperation", "doInsert"];
 
 const OnDuplicate = {
@@ -2878,7 +2903,7 @@ interface StripeOrderConfig = {
 
 Enum options for handling errors that occur during the Stripe checkout process.
 
-```javascript
+```js
 OnCheckoutErrorNames = ["continueRoute", "throwError"];
 
 const OnCheckoutError = {
@@ -2947,12 +2972,12 @@ interface MembershipSettingsConfig = {
 }
 ```
 
-| Field                      | Description                                                                                                                                                                                          |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| membershipObjectName       | Specifies the name of the external data object used to manage membership. This object contains membership entries linking users to this object.                                                      |
-| membershipObjectIdProperty | The field name in the membership object that refers back to this data object (e.g., organizationId). It links the membership entry to this object.                                                   |
-| membershipUserIdProperty   | The field name in the membership object that refers to the user who holds membership. This is typically linked to the user's session during authorization checks.                                    |
-| membershipStatusCheck      | Optional MScript condition to determine if a membership entry is valid. Can be used to check fields like status, startDate, or endDate. This filter is applied at query time when evaluating access. |
+| Field                      | Description                                                                                                                                                                                                          |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| membershipObjectName       | Specifies the name of the external data object used to manage membership. This object contains membership entries linking users to this object.                                                                      |
+| membershipObjectIdProperty | The field name in the membership object that refers back to this data object (e.g., organizationId). It links the membership entry to this object.                                                                   |
+| membershipUserIdProperty   | The field name in the membership object that refers to the user who holds membership. This is typically linked to the user's session during authorization checks.                                                    |
+| membershipStatusCheck      | Optional MScript condition to determine if a membership entry is valid. Can be used to check fields like status, startDate, or endDate. This filter is applied at query time when evaluating access. {age:{$gte:18}} |
 
 ### BusinessApi
 
@@ -3040,7 +3065,7 @@ interface ApiOptions = {
 
 CrudTypes define the fundamental operation mode of a route. Each route is classified by a CRUD type that reflects its intended data operation: create, update, read, or delete.
 
-```javascript
+```js
 CrudTypesNames = ["create", "update", "get", "list", "delete"];
 
 const CrudTypes = {
@@ -3234,7 +3259,7 @@ interface ApiGrpcSettingsConfig = {
 
 Controls the structure of the gRPC response.
 
-```javascript
+```js
 GrpcApiResponseFormatNames = ["dataItem", "fullResponse"];
 
 const GrpcApiResponseFormat = {
@@ -3252,7 +3277,7 @@ const GrpcApiResponseFormat = {
 
 Controls whether the gRPC method returns a single message or a stream.
 
-```javascript
+```js
 GrpcApiResponseTypeNames = ["single", "stream"];
 
 const GrpcApiResponseType = {
@@ -3399,20 +3424,22 @@ interface SelectJoin = {
   joinName : String;
   condition : MScript;
   joinedDataObject : DataObjectName;
+  selector : String;
   properties : PropRefer[];
   sort : SortByItem[];
   topPick : Integer;
 }
 ```
 
-| Field            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| joinName         | A human readable single code safe word to name the SelectJoin definition. This name is also used as the property name of the joined object or object list in the main data object.                                                                                                                                                                                                                                                                                                                                                                  |
-| condition        | An MScript expression evaluates to Boolean and specifies whether this join should be made or not in code level, e.g (this.includeProductData). Note that this condition can not reference to the main object or main object list, for complex joins use a BFF View.                                                                                                                                                                                                                                                                                 |
-| joinedDataObject | The name of the data object to be joined. Note that this object should be defined as a related object in the relation settings of one of the main object properties. Or the joined object should have got a relation defined in one of its properties. If the main object is defined as a parent of the joined object, the join result will be an array for an object list. The relation may be either in the same service or in a remote service. Mindbricks will arrange the code to make the join either through db or the elastic search index. |
-| properties       | An array of property names to return in the join response. Leave empty to return all fields.                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| sort             | undefined                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| topPick          | A number to limit the number of objects in array result fecthed in case the tarrget has a parental relation with the main object. Leave it null for one to one joins where only one or no object will be fetched. If top pick is 1, the result will be a single object even though teh fetch is an array. Example usage, to get the older member of a club in a getClub api, the member join will be sorted by -age desc- and topPick will be 1.                                                                                                    |
+| Field            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| joinName         | A human readable single code safe word to name the SelectJoin definition. This name is also used as the property name of the joined object or object list in the main data object.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| condition        | An MScript expression evaluates to Boolean and specifies whether this join should be made or not in code level, e.g (this.includeProductData). Note that this condition can not reference to the main object or main object list, for complex joins use a BFF View.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| joinedDataObject | The name of the data object to be joined. Note that this object should be defined as a related object in the relation settings of one of the main object properties. Or the joined object should have got a relation defined in one of its properties. If the relation is to the main object form another object, the join result will be an array for an object list. The relation may be either in the same service or in a remote service. Mindbricks will arrange the code to make the join either through db or the elastic search index.                                                                                                                                                                                                                                                                                                                        |
+| selector         | The selector to find the property relation if there is more than one relation. A relation selector is a special string with a map syntax foreignKey->localKey. Leave null to select the first in case you are sure there is only one realtion with the target data object. Eg. Main object is user, joined object is project, id->ownerId (user projects). Main object is project and joined object is user, ownerId->id (project owner). Relation selector has got optional syntaxes. -> or empty (the first relation to the user object, use if there is only one). ->lastUpdateUserId (the first relation to joined object's lastUserId or from it.), Main object is project and joined object is user, ownerId-> (the first relation made from ownerId property to the joined object. project owner ). But for readability it is best to use the complete syntax. |
+| properties       | An array of property names to return in the join response. Leave empty to return all fields.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| sort             | undefined                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| topPick          | A number to limit the number of objects in array result fecthed in case the tarrget has a parental relation with the main object. Leave it null for one to one joins where only one or no object will be fetched. If top pick is 1, the result will be a single object even though teh fetch is an array. Example usage, to get the older member of a club in a getClub api, the member join will be sorted by -age desc- and topPick will be 1.                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 #### SortByItem
 
@@ -3438,7 +3465,7 @@ interface SortByItem = {
 
 Defines sorting direction — ascending (asc) or descending (desc).
 
-```javascript
+```js
 SortOrderNames = ["asc", "desc"];
 
 const SortOrder = {
@@ -3662,7 +3689,7 @@ interface ListJointFilterSettings = {
 
 Filter combination is used to define how any multiple id arrayy based list filters will be combined
 
-```javascript
+```js
 FilterOperatorNames = ["AND", "OR"];
 
 const FilterOperator = {
@@ -3687,16 +3714,18 @@ interface ListJointFilter = {
   name : String;
   condition : MScript;
   joinedDataObject : DataObjectName;
+  selector : String;
   whereClause : MScript;
 }
 ```
 
-| Field            | Description                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| name             | A human readble single code safe word to name the JointFilter deifnition.                                                                                                                                                                                                                                                                                                                                                       |
-| condition        | An MScript expression evaluates to Boolean and specifies wheather this filtering should be made or not in code level. Note that this condition can not reference to the main object list, for complex joint filters use a BFF View.                                                                                                                                                                                             |
-| joinedDataObject | The name of the data object to be joined. Note that this object should be defined a s a related object in the relation settings of one of the main object properties. Or the joined object should have got a relation defined in one of its properties. The relation may be either in the same service or in a remote service. Mindbricks will arrange the code to make the join either through db or the elastic search index. |
-| whereClause      | An Mscript query to select the object id array from th target object. Note that the result object id list will be used in the main where clause.                                                                                                                                                                                                                                                                                |
+| Field            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name             | A human readble single code safe word to name the JointFilter deifnition.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| condition        | An MScript expression evaluates to Boolean and specifies wheather this filtering should be made or not in code level. Note that this condition can not reference to the main object list, for complex joint filters use a BFF View.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| joinedDataObject | The name of the data object to be joined. Note that this object should be defined a s a related object in the relation settings of one of the main object properties. Or the joined object should have got a relation defined in one of its properties. The relation may be either in the same service or in a remote service. Mindbricks will arrange the code to make the join either through db or the elastic search index.                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| selector         | The selector to find the property relation if there is more than one relation. A relation selector is a special string with a map syntax foreignKey->localKey. Leave null to select the first in case you are sure there is only one relation with the target data object. Eg. Main object is user, joined object is project, id->ownerId (user projects). Main object is project and joined object is user, ownerId->id (project owner). Relation selector has got optional syntaxes. -> or empty (the first relation to the user object, use if there is only one). ->lastUpdateUserId (the first relation to joined object's lastUserId or from it.), Main object is project and joined object is user, ownerId-> (the first relation made from ownerId property to the joined object. project owner ). But for readability it is best to use the complete syntax. |
+| whereClause      | An Mscript query to select the object id array from th target object. Note that the result object id list will be used in the main where clause.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 #### PaginationOptions
 
@@ -3732,7 +3761,7 @@ interface BusinessApiActionStore = {
   collateListsActions : CollateListsAction[];
   functionCallActions : FunctionCallAction[];
   arrowFunctionActions : ArrowFunctionAction[];
-  listMapActions : ListMapActions[];
+  listMapActions : ListMapAction[];
   interserviceCallActions : InterserviceCallAction[];
   createCrudActions : CreateCrudAction[];
   deleteCrudActions : DeleteCrudAction[];
@@ -3774,7 +3803,7 @@ interface BusinessApiActionStore = {
 | fetchStatsActions           | Actions that perform aggregate computations (count, sum, min, max) across a data object, often for contextual summaries or conditional logic.                                                                                                                                                                                                              |
 | fetchParentActions          | Actions that retrieve parent object data of the current context, typically for display enrichment or validation.                                                                                                                                                                                                                                           |
 | searchObjectActions         | Actions that searches the main object or a related object in elastic search index with a keyword and returns an id array                                                                                                                                                                                                                                   |
-| fetchFromElasticActions     | Actions that make a fetch from elastic using a raw elastic query, the result is returned as a normalized object.                                                                                                                                                                                                                                           |
+| fetchFromElasticActions     | Actions that make a fetch from elastic using a raw elastic query, the result is returned as a normalized {items:[], aggregations: {} } object.                                                                                                                                                                                                             |
 | collateListsActions         | Actions that collate objects of a source array to a target array's objects using key matching like collating an address list with a user list.                                                                                                                                                                                                             |
 | functionCallActions         | Actions that invoke a custom or reusable library function written in MScript. Useful for transformation, derived value computation, or conditional logic.                                                                                                                                                                                                  |
 | arrowFunctionActions        | Actions that defines an arrow function to be called with its context name in other MScripted areas.                                                                                                                                                                                                                                                        |
@@ -3906,7 +3935,7 @@ interface SearchObjectAction extends BusinessApiAction = {
 
 **MPO Version:** 1.3.0
 
-Fetches data object data from its elastic search index, using a given elastic raw search body, and returning elastic response as half baked, an items array for normalized hits result and an aggreagtions object in elastic search aggregation resul format. Top\_hits style aggregations are also normalized as items array.
+Fetches data object data from its elastic search index, using a given elastic raw search body, and returning elastic response as half baked, an items array for normalized hits result and an aggreagtions object in elastic search aggregation resul format. Top_hits style aggregations are also normalized as items array.
 
 ```typescript
 interface FetchFromElasticAction extends BusinessApiAction = {
@@ -3975,10 +4004,30 @@ interface ArrowFunctionAction extends BusinessApiAction = {
 }
 ```
 
-| Field          | Description                                                                        |
-| -------------- | ---------------------------------------------------------------------------------- |
-| parameterNames | An array of strings to represent the names of the function parameters              |
-| functionBody   | A text area to represent the js code of the function body, keep it in js block (). |
+| Field          | Description                                                                          |
+| -------------- | ------------------------------------------------------------------------------------ |
+| parameterNames | An array of strings to represent the names of the function parameters                |
+| functionBody   | A text area to represent the js code of the function body, keep it in js block ({}). |
+
+#### ListMapAction
+
+**MPO Version:** 1.3.0
+
+This action crerates a new list out of a current list by mapping its items with MScript. The new list is stored to contextPropertyName
+
+```typescript
+interface ListMapAction extends BusinessApiAction = {
+  sourceList : MScript;
+  itemName : String;
+  mapScript : MScript;
+}
+```
+
+| Field      | Description                                                                                                                                                                                                                                                                                                                                         |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| sourceList | An MScript expression to reference the source array to map from                                                                                                                                                                                                                                                                                     |
+| itemName   | A codesafe string which will be used in code to reference the item of the source array. eg. user                                                                                                                                                                                                                                                    |
+| mapScript  | An MScript to return the new item based on the source item. Reference to the source item using the itemName given. eg. {name:user.name, email:user.Email, firstName: user.name.split(' ')[0]}. If you need a multi-lined script to make precalculations use an arrow function definition called inline. eg: ((user) => { // your code here })(user) |
 
 #### InterserviceCallAction
 
@@ -4130,7 +4179,7 @@ interface HTTPRequest = {
 
 An enum representing the HTTP method to use in a request.
 
-```javascript
+```js
 HTTPRequestMethodsNames = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 
 const HTTPRequestMethods = {
@@ -4244,7 +4293,7 @@ interface MembershipCheckAction extends BusinessApiAction = {
 
 Defines how the result of a validation, permission, or membership check is used within the Business API lifecycle.
 
-```javascript
+```js
 ApiCheckTypeNames = ["storedCheck", "liveCheck"];
 
 const ApiCheckType = {
@@ -4314,7 +4363,7 @@ interface ReadJwtTokenAction extends BusinessApiAction = {
 | Field         | Description                                                                                                                                                                                                                                                                                                                                                      |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | readTokenFrom | An MScript value that evaluates to the decoded value of token. It may be in the context through parameters like `this.accessToken`, it may be read directly from controller request like `this.request.query.payToken` or it may be read from the session in cases where users have their own tokens for authorization like this.session.userSubscrition.        |
-| jwtKey        | An MScript value that evaluates to the Jwt key to validate the token signature. It may be an hardcoded value like `1234560987abcdef` or a reference to context like this.jwtKey or a env reference like process.env.SUBS\_KEY.                                                                                                                                   |
+| jwtKey        | An MScript value that evaluates to the Jwt key to validate the token signature. It may be an hardcoded value like `1234560987abcdef` or a reference to context like this.jwtKey or a env reference like process.env.SUBS_KEY.                                                                                                                                    |
 | isRequired    | A Boolean value to define if the token is required. Set it true if you want the application throw an error if the token is null or can not be validated.                                                                                                                                                                                                         |
 | statusCheck   | If you want to check the payload across some specific requirements use this check script. If the check is not validated the token will be considered invalid. You can also use this script if you will use token for only single business logic validation, if you need the validation in many steps then dont use this script other than general status checks. |
 
@@ -4348,7 +4397,7 @@ interface ValidationAction extends BusinessApiAction = {
 
 Mindbricks error status codes represent standardized HTTP-style error responses used across all controller types. These codes provide consistent semantic feedback for route errors, especially in REST APIs.
 
-```javascript
+```js
 ErrorStatusNames = ["400", "401", "403", "404", "500"];
 
 const ErrorStatus = {
@@ -4476,7 +4525,7 @@ interface DataToFileAction extends BusinessApiAction = {
 
 Specifies supported output formats for content generation, serialization, or export. These are primarily text-based formats, suitable for structured data, document rendering, and developer-facing outputs.
 
-```javascript
+```js
 FileFormatsNames = [
   "json",
   "xml",
@@ -4641,7 +4690,7 @@ interface BucketPermission = {
 
 An enum type to define the access right of a bucket token.
 
-```javascript
+```js
 BucketPermissionTypeNames = ["read", "write"];
 
 const BucketPermissionType = {
@@ -4802,7 +4851,7 @@ interface RefineByAiAction extends BusinessApiAction = {
 | provider     | The name of the AI provider to use (e.g., `openai`, `anthropic`). Must be configured in the service's AI settings.                                                                                                          |
 | inputData    | An MScript expression that evaluates to the input string to be refined. This should be a plain text value from the context, parameters, or a prior action.                                                                  |
 | systemPrompt | An optional system-level instruction string to guide the AI's tone or intent. Example: 'You are a professional editor. Keep meaning intact, improve clarity and grammar.'. Leave it null if you want to use default prompt. |
-| temperature  | A value between 0 and 1 indicating how much variation the model should apply. Use low values (\~0.2) for subtle fixes, and higher values (\~0.7) for more creative rewrites.                                                |
+| temperature  | A value between 0 and 1 indicating how much variation the model should apply. Use low values (~0.2) for subtle fixes, and higher values (~0.7) for more creative rewrites.                                                  |
 | mode         | Optional label representing the level or style of refinement. Common values might include `preserve`, `light`, `reword`, `rewrite`, `summarize`. This can be interpreted by your backend to choose a prompt template.       |
 
 #### CheckoutAction
@@ -4827,7 +4876,7 @@ interface CheckoutAction extends BusinessApiAction = {
 
 The target stage of the payment lifecyle on which the action's decision for next step to be executed is based.
 
-```javascript
+```js
 CheckoutStageNames = ["simple", "start", "complete", "refresh", "callback"];
 
 const CheckoutStage = {
@@ -5163,14 +5212,10 @@ interface ServiceLibrary = {
 }
 ```
 
-| Field         | Description                                                                                                                                                                                                                                                                                                                               |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| functions     | List of reusable JavaScript functions available in the service. These are general-purpose functions used in validations, permissions, and other scripts. Each function is defined as a `LibModule`, exporting a callable function or a structured object.                                                                                 |
-| edgeFunctions | Functions invoked by edge controllers, enabling fully custom handling of requests. These modules must export an async function that accepts a single request parameter and returns an API response or throws an error. Standard validations will still apply before execution. A sample helloWorld edge function would be like following. |
-
-````json
-{ 'moduleName': 'helloWorld', 'moduleExtension': 'js', 'moduleBody': 'module.exports = async (request) => { return { status: 200, message: "Hello from the edge function", date: new Date().toISOString() }; }' }
-``` |
+| Field         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| functions     | List of reusable JavaScript functions available in the service. These are general-purpose functions used in validations, permissions, and other scripts. Each function is defined as a `LibModule`, exporting a callable function or a structured object.                                                                                                                                                                                                                                                                                                   |
+| edgeFunctions | Functions invoked by edge controllers, enabling fully custom handling of requests. These modules must export an async function that accepts a single request parameter and returns an API response or throws an error. Standard validations will still apply before execution. A sample helloWorld edge function would be like following. { 'moduleName': 'helloWorld', 'moduleExtension': 'js', 'moduleBody': 'module.exports = async (request) => { return { status: 200, message: "Hello from the edge function", date: new Date().toISOString() }; }' } |
 | templates     | Templates used within the service to render dynamic content such as emails, documents, or downloads. Typically written in `ejs`, they are evaluated with route data before rendering the final output.                                                                                                                                                                                                                                                                                                                                                      |
 | assets        | Static text or image-based files (e.g., credentials, configs, illustrations) used by the business logic. These can be used internally or for generating downloadable content. Each is defined as a `LibModule`.                                                                                                                                                                                                                                                                                                                                             |
 | public        | Public files exposed via a static URL, accessible directly by frontend or client-side apps. Used for assets like logos, PDFs, or other client-facing files.                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -5187,7 +5232,7 @@ interface LibModule = {
   moduleExtension : String;
   moduleBody : Text;
 }
-````
+```
 
 | Field           | Description                                                                                                                                                                         |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -5248,4 +5293,3 @@ interface EdgeRestSettings = {
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | path   | The relative URL path for this controller. It determines where the edge function will be accessible in the REST API (e.g., '/generate-invoice'). |
 | method | The HTTP method that will trigger the edge controller. Typical values include GET, POST, PUT, DELETE, etc.                                       |
-
