@@ -1,0 +1,30 @@
+---
+title: ReadFromRedisAction
+---
+## **ReadFromRedisAction**
+
+**Purpose**
+Read a value from Redis (key computed via MScript) and put it into context.
+
+**When to use it**
+
+* Early: `afterReadParameters` / `afterTransposeParameters` (to influence validation/auth)
+* Before where/data clause (dynamic behavior)
+
+**Key fields**
+
+| Field                 | Type    | Description                                                         |
+| --------------------- | ------- | ------------------------------------------------------------------- |
+| `redisKey`            | MScript | Computes the key to read (`\`tenant:\${this.session.tenantId}\`\`). |
+| `contextPropertyName` | String  | Where to store the value (e.g., `this.tenantConfig`).               |
+
+**Example**
+
+```json
+{
+  "id": "a250-read-tenant",
+  "name": "readTenantConfig",
+  "redisKey": "`tenant:${this.session.tenantId}:config`",
+  "contextPropertyName": "tenantConfig"
+}
+```

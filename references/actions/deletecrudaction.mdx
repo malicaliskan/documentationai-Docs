@@ -1,0 +1,31 @@
+---
+title: DeleteCrudAction
+---
+## **DeleteCrudAction**
+
+**Purpose**
+Deletes or soft-deletes related child entities conditionally.
+Used for clean-ups (e.g., remove orphaned records) or enforcing cascading deletions.
+
+**When to use it**
+
+* After parent delete (`afterMainDeleteOperation`)
+* After an update that logically removes ownership
+
+**Key fields**
+
+| Field         | Type           | Description                             |
+| ------------- | -------------- | --------------------------------------- |
+| `childObject` | DataObjectName | Object to delete from.                  |
+| `whereClause` | MScript        | Query defining which records to remove. |
+
+**Example**
+
+```json
+{
+  "id": "a130-delete-files",
+  "name": "deleteProjectFiles",
+  "childObject": "file",
+  "whereClause": "{ projectId: this.projectId }"
+}
+```

@@ -1,0 +1,33 @@
+---
+title: PublishEventAction
+---
+## **PublishEventAction**
+
+**Purpose**
+Publish a domain event to a topic/queue (e.g., Kafka).
+Use for decoupled orchestration beyond the built-in **API events**.
+
+**When to use it**
+
+* After main op (`afterMainCreate/Update/DeleteOperation`)
+* After `afterApiEvent` for custom streams
+
+**Key fields**
+
+| Field     | Type    | Description                    |
+| --------- | ------- | ------------------------------ |
+| `topic`   | String  | Destination topic/channel.     |
+| `message` | MScript | Payload object/string to send. |
+
+**Example**
+
+```json
+{
+  "id": "a270-publish-campaign",
+  "name": "emitCampaignCreated",
+  "topic": "marketing.campaign.created",
+  "message": "{ id: this.campaign.id, createdBy: this.session.userId }"
+}
+```
+
+> Note: If `ApiOptions.raiseApiEvent=true`, Mindbricks already emits the **standard API event**; use `PublishEventAction` for **additional** custom events.

@@ -1,0 +1,44 @@
+---
+title: ReadJwtTokenAction
+---
+## **ReadJwtTokenAction**
+
+**Purpose**
+Read and **validate a JWT**, then write its **payload** to context (`contextPropertyName`).
+Used for shared links, limited-access flows, or token-based gating without full login.
+
+**When to use it**
+
+* `afterReadParameters` (token from query/body/header)
+* `afterCheckBasicAuth` (overlay token-based rights)
+* Before where/data clause building if the payload drives access
+
+**Key fields**
+
+| Field                 | Type    | Notes                                                                       |
+| --------------------- | ------- | --------------------------------------------------------------------------- |
+| `readTokenFrom`       | MScript | Where to read token (e.g., `this.request.query.token`, `this.accessToken`). |
+| `jwtKey`              | MScript | HMAC key / secret to validate signature (env/param/context).                |
+| `isRequired`          | Boolean | If true, missing/invalid → error.                                           |
+| `statusCheck`         | MScript | Optional extra boolean check on payload (e.g., not expired, correct scope). |
+| `contextPropertyName` | String  | Where to stash the **validated payload**.                                   |
+
+**Behavior**
+
+* If `isRequired=true` and token invalid, the action throws (authorization-style failure).
+* If `statusCheck` is provided and returns false, token is considered invalid.
+* Later actions can reference `this.<contextPropertyName>` to gate logic.
+
+**Example**
+
+```json
+{
+  "id": "a240-read-jwt",
+  "name": "readPublicShareToken",
+  "readTokenFrom": "this.request.query.shareToken",
+  "jwtKey": "process.env.SHARE_TOKEN_KEY",
+  "isRequired": true,
+  "statusCheck": "this.tokenPayload?.scope === 'read-only'",
+  "contextPropertyName": "tokenPayload"
+}
+```

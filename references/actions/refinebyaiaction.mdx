@@ -1,0 +1,39 @@
+---
+title: RefineByAiAction
+---
+## **RefineByAiAction**
+
+**Purpose**
+Refines or transforms text using an AI provider (e.g., OpenAI, Anthropic).
+Commonly used to summarize, rephrase, or tone-adjust text generated during workflow.
+
+**When to use it**
+
+* After generating a report or text (`RenderDataAction`)
+* Before returning data to the client or storing results
+
+**Key fields**
+
+| Field                 | Type    | Description                                                        |
+| --------------------- | ------- | ------------------------------------------------------------------ |
+| `provider`            | String  | AI provider name (`openai`, `anthropic`, etc.).                    |
+| `inputData`           | MScript | Text to refine.                                                    |
+| `systemPrompt`        | String  | Optional system instruction for style or tone.                     |
+| `temperature`         | Number  | Degree of variation (0–1).                                         |
+| `mode`                | String  | Optional label for refinement style (`summarize`, `reword`, etc.). |
+| `contextPropertyName` | String  | Where refined text is stored.                                      |
+
+**Example**
+
+```json
+{
+  "id": "a100-refine-summary",
+  "name": "summarizeReport",
+  "provider": "openai",
+  "inputData": "this.emailHtml",
+  "systemPrompt": "Summarize the report in a concise and professional tone.",
+  "temperature": 0.4,
+  "mode": "summarize",
+  "contextPropertyName": "reportSummary"
+}
+```

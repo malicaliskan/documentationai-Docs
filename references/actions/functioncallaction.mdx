@@ -1,0 +1,32 @@
+---
+title: FunctionCallAction
+---
+## **FunctionCallAction**
+
+**Purpose**
+Runs a reusable function written in MScript or defined in a shared library (e.g., `LIB.utils.calculateTotal`).
+It’s typically used to compute derived values, perform calculations, or call small utility functions.
+
+**When to use it**
+
+* After parameters are validated (`afterCheckParameters`)
+* Before building the data clause (`afterBuildDataClause`)
+* For computed values before sending responses (`afterBuildOutput`)
+
+**Key fields**
+
+| Field                 | Type    | Description                                                                      |
+| --------------------- | ------- | -------------------------------------------------------------------------------- |
+| `callScript`          | MScript | Expression that represents the function call (e.g., `LIB.calcTax(this.amount)`). |
+| `contextPropertyName` | String  | Optional – name to store result in context (`this.<name>`).                      |
+
+**Example**
+
+```json
+{
+  "id": "a50-call-total",
+  "name": "calculateTotal",
+  "callScript": "LIB.finance.calculateInvoiceTotal(this.items)",
+  "contextPropertyName": "invoiceTotal"
+}
+```

@@ -1,1 +1,463 @@
-"{\n  \"name\": \"Mindbricks Documentation\",\n  \"initialRoute\": \"introduction\",\n  \"colors\": {\n    \"light\": {\n      \"brand\": \"#7c7c7c\",\n      \"heading\": \"#1a1a1a\",\n      \"text\": \"#374151\"\n    },\n    \"dark\": {\n      \"brand\": \"#a3a3a3\",\n      \"heading\": \"#f2f2f2\",\n      \"text\": \"#c1c1c1\"\n    }\n  },\n  \"navigation\": {\n    \"tabs\": [\n      {\n        \"tab\": \"Documentation\",\n        \"icon\": \"book\",\n        \"groups\": [\n          {\n            \"group\": \"Getting Started\",\n            \"icon\": \"rocket\",\n            \"pages\": [\n              {\n                \"title\": \"Introduction\",\n                \"path\": \"introduction\",\n                \"icon\": \"star\"\n              },\n              {\n                \"title\": \"Mindbricks Saas Guide\",\n                \"path\": \"mindbricks-saas\"\n              },\n              {\n                \"title\": \"Mindbricks Project Guide\",\n                \"path\": \"mindbricks-gui-guide\"\n              }\n            ]\n          },\n          {\n            \"group\": \"Design Your App\",\n            \"pages\": [\n              {\n                \"title\": \"Start Design\",\n                \"path\": \"start-building\"\n              },\n              {\n                \"title\": \"Manage Authentication\",\n                \"path\": \"authentication-and-authorization\"\n              },\n              {\n                \"title\": \"Design Your Service\",\n                \"path\": \"build-your-service\"\n              },\n              {\n                \"title\": \"Design Your Data Model\",\n                \"path\": \"build-your-data-model\"\n              },\n              {\n                \"title\": \"Build Your API\",\n                \"path\": \"build-your-api\"\n              },\n              {\n                \"title\": \"Actions and Workflow\",\n                \"path\": \"actions-and-workflow\"\n              }\n            ]\n          },\n          {\n            \"group\": \"Design With AI\",\n            \"pages\": [\n              {\n                \"title\": \"Using AI To Design An App\",\n                \"path\": \"using-ai-to-design-an-app\"\n              }\n            ]\n          },\n          {\n            \"group\": \"Deployment\",\n            \"pages\": [\n              {\n                \"title\": \"Preview Your App\",\n                \"path\": \"preview-your-app\"\n              },\n              {\n                \"title\": \"Create Your Infrastructure\",\n                \"path\": \"create-your-infrastructure\"\n              },\n              {\n                \"title\": \"Deploy By One-Click\",\n                \"path\": \"deploy-by-one-click\"\n              },\n              {\n                \"title\": \"Custom Domain\",\n                \"path\": \"custom-domain\"\n              },\n              {\n                \"title\": \"Track Your Metrics\",\n                \"path\": \"track-your-metrics\"\n              },\n              {\n                \"title\": \"Teke Out Your Code\",\n                \"path\": \"teke-out-your-code\"\n              }\n            ]\n          },\n          {\n            \"group\": \"Integrations\",\n            \"pages\": [\n              {\n                \"title\": \"Using Integrations In Mindbricks\",\n                \"path\": \"using-integrations-in-mindbricks\"\n              },\n              {\n                \"title\": \"Google Gemini Integration\",\n                \"path\": \"google-gemini-integration\"\n              },\n              {\n                \"title\": \"Telegram Integration\",\n                \"path\": \"telegram-integration\"\n              },\n              {\n                \"title\": \"Amazon S3 Integration\",\n                \"path\": \"amazon-s3-integration\"\n              },\n              {\n                \"title\": \"Google Maps Integration\",\n                \"path\": \"google-maps-integration\"\n              }\n            ]\n          },\n          {\n            \"group\": \"Mastering Mindbricks\",\n            \"pages\": [\n              {\n                \"title\": \"Write Your Own Code\",\n                \"path\": \"write-your-own-code\"\n              },\n              {\n                \"title\": \"MScript Cookbook\",\n                \"path\": \"mscript-cookbook\"\n              },\n              {\n                \"title\": \"BFF Service\",\n                \"path\": \"bff-service\"\n              },\n              {\n                \"title\": \"Notification Service\",\n                \"path\": \"notification-service\"\n              },\n              {\n                \"title\": \"Bucket Service\",\n                \"path\": \"bucket-service\"\n              },\n              {\n                \"title\": \"Multi Tennancy Guide\",\n                \"path\": \"mut-tennancy-guide\"\n              },\n              {\n                \"title\": \"Payment Workflow\",\n                \"path\": \"payment-workflow\"\n              },\n              {\n                \"title\": \"Geography Features\",\n                \"path\": \"geography-features\"\n              },\n              {\n                \"title\": \"MScript Query\",\n                \"path\": \"mscript-query\"\n              },\n              {\n                \"title\": \"GRPC Controllers\",\n                \"path\": \"grpc-controllers\"\n              },\n              {\n                \"title\": \"Cron Jobs\",\n                \"path\": \"cron-jobs\"\n              },\n              {\n                \"title\": \"Kafka Controllers\",\n                \"path\": \"kafka-controllers\"\n              },\n              {\n                \"title\": \"Realtime Service\",\n                \"path\": \"realtime-service\"\n              }\n            ]\n          },\n          {\n            \"group\": \"Frontend Dev's Guide\",\n            \"pages\": [\n              {\n                \"title\": \"Consuming Your Backend\",\n                \"path\": \"accessing-application-backend\"\n              },\n              {\n                \"title\": \"Authentication\",\n                \"path\": \"authentication\"\n              },\n              {\n                \"title\": \"Verification Services\",\n                \"path\": \"verification-services\"\n              },\n              {\n                \"title\": \"Profile Management\",\n                \"path\": \"profile-management\"\n              },\n              {\n                \"title\": \"User Management\",\n                \"path\": \"user-management\"\n              }\n            ]\n          },\n          {\n            \"group\": \"Power Patterns\",\n            \"pages\": [\n              {\n                \"title\": \"Membership Patterns\",\n                \"path\": \"how-to-use-share-tokens\"\n              },\n              {\n                \"title\": \"Session Aware Logic\",\n                \"path\": \"session-aware-logic\"\n              },\n              {\n                \"title\": \"Static Joins\",\n                \"path\": \"static-joins\"\n              },\n              {\n                \"title\": \"Index Patterns\",\n                \"path\": \"index-patterns\"\n              },\n              {\n                \"title\": \"Select Join Pattern\",\n                \"path\": \"select-join-pattern\"\n              },\n              {\n                \"title\": \"List Filters\",\n                \"path\": \"list-filters\"\n              }\n            ]\n          },\n          {\n            \"group\": \"References\",\n            \"icon\": \"zap\",\n            \"pages\": [\n              {\n                \"title\": \"Generated Assets Reference\",\n                \"path\": \"generated-assets-reference\"\n              },\n              {\n                \"group\": \"Action References\",\n                \"pages\": [\n                  {\n                    \"title\": \"AiCallAction\",\n                    \"path\": \"aicallaction\"\n                  },\n                  {\n                    \"title\": \"AddToContextAction\",\n                    \"path\": \"addtocontextaction\"\n                  },\n                  {\n                    \"title\": \"AddToResponseAction\",\n                    \"path\": \"addtoresponseaction\"\n                  }\n                ]\n              },\n              {\n                \"title\": \"MScript Syntax\",\n                \"path\": \"mscript-syntax\"\n              },\n              {\n                \"title\": \"Mindbricks Pattern Ontology\",\n                \"path\": \"mindbricks-pattern-ontology\"\n              }\n            ]\n          }\n        ]\n      },\n      {\n        \"tab\": \"API Reference\",\n        \"icon\": \"code\",\n        \"groups\": [\n          {\n            \"group\": \"Endpoints\",\n            \"icon\": \"terminal\",\n            \"openapi\": \"openapi.yaml\",\n            \"pages\": [\n              {\n                \"title\": \"Sample Auth Service Api\",\n                \"path\": \"sample-auth-service-api\"\n              }\n            ]\n          }\n        ]\n      },\n      {\n        \"tab\": \"Changelog\",\n        \"icon\": \"clock\",\n        \"pages\": [\n          {\n            \"title\": \"Release History\",\n            \"path\": \"changelog\",\n            \"icon\": \"history\"\n          }\n        ]\n      }\n    ]\n  }\n}"
+{
+  "name": "Mindbricks Documentation",
+  "initialRoute": "introduction",
+  "colors": {
+    "light": {
+      "brand": "#7c7c7c",
+      "heading": "#1a1a1a",
+      "text": "#374151"
+    },
+    "dark": {
+      "brand": "#a3a3a3",
+      "heading": "#f2f2f2",
+      "text": "#c1c1c1"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "icon": "book",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "icon": "rocket",
+            "pages": [
+              {
+                "title": "Introduction",
+                "path": "introduction",
+                "icon": "star"
+              },
+              {
+                "title": "Mindbricks Saas Guide",
+                "path": "mindbricks-saas"
+              },
+              {
+                "title": "Mindbricks Project Guide",
+                "path": "mindbricks-gui-guide"
+              }
+            ]
+          },
+          {
+            "group": "Design Your App",
+            "pages": [
+              {
+                "title": "Start Design",
+                "path": "start-building"
+              },
+              {
+                "title": "Manage Authentication",
+                "path": "authentication-and-authorization"
+              },
+              {
+                "title": "Design Your Service",
+                "path": "build-your-service"
+              },
+              {
+                "title": "Design Your Data Model",
+                "path": "build-your-data-model"
+              },
+              {
+                "title": "Build Your API",
+                "path": "build-your-api"
+              },
+              {
+                "title": "Actions and Workflow",
+                "path": "actions-and-workflow"
+              }
+            ]
+          },
+          {
+            "group": "Design With AI",
+            "pages": [
+              {
+                "title": "Using AI To Design An App",
+                "path": "using-ai-to-design-an-app"
+              }
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              {
+                "title": "Preview Your App",
+                "path": "preview-your-app"
+              },
+              {
+                "title": "Create Your Infrastructure",
+                "path": "create-your-infrastructure"
+              },
+              {
+                "title": "Deploy By One-Click",
+                "path": "deploy-by-one-click"
+              },
+              {
+                "title": "Custom Domain",
+                "path": "custom-domain"
+              },
+              {
+                "title": "Track Your Metrics",
+                "path": "track-your-metrics"
+              },
+              {
+                "title": "Teke Out Your Code",
+                "path": "teke-out-your-code"
+              }
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              {
+                "title": "Using Integrations In Mindbricks",
+                "path": "using-integrations-in-mindbricks"
+              },
+              {
+                "title": "Google Gemini Integration",
+                "path": "google-gemini-integration"
+              },
+              {
+                "title": "Telegram Integration",
+                "path": "telegram-integration"
+              },
+              {
+                "title": "Amazon S3 Integration",
+                "path": "amazon-s3-integration"
+              },
+              {
+                "title": "Google Maps Integration",
+                "path": "google-maps-integration"
+              }
+            ]
+          },
+          {
+            "group": "Mastering Mindbricks",
+            "pages": [
+              {
+                "title": "Write Your Own Code",
+                "path": "write-your-own-code"
+              },
+              {
+                "title": "MScript Cookbook",
+                "path": "mscript-cookbook"
+              },
+              {
+                "title": "BFF Service",
+                "path": "bff-service"
+              },
+              {
+                "title": "Notification Service",
+                "path": "notification-service"
+              },
+              {
+                "title": "Bucket Service",
+                "path": "bucket-service"
+              },
+              {
+                "title": "Multi Tennancy Guide",
+                "path": "mut-tennancy-guide"
+              },
+              {
+                "title": "Payment Workflow",
+                "path": "payment-workflow"
+              },
+              {
+                "title": "Geography Features",
+                "path": "geography-features"
+              },
+              {
+                "title": "MScript Query",
+                "path": "mscript-query"
+              },
+              {
+                "title": "GRPC Controllers",
+                "path": "grpc-controllers"
+              },
+              {
+                "title": "Cron Jobs",
+                "path": "cron-jobs"
+              },
+              {
+                "title": "Kafka Controllers",
+                "path": "kafka-controllers"
+              },
+              {
+                "title": "Realtime Service",
+                "path": "realtime-service"
+              }
+            ]
+          },
+          {
+            "group": "Frontend Dev's Guide",
+            "pages": [
+              {
+                "title": "Consuming Your Backend",
+                "path": "accessing-application-backend"
+              },
+              {
+                "title": "Authentication",
+                "path": "authentication"
+              },
+              {
+                "title": "Verification Services",
+                "path": "verification-services"
+              },
+              {
+                "title": "Profile Management",
+                "path": "profile-management"
+              },
+              {
+                "title": "User Management",
+                "path": "user-management"
+              }
+            ]
+          },
+          {
+            "group": "Power Patterns",
+            "pages": [
+              {
+                "title": "Membership Patterns",
+                "path": "how-to-use-share-tokens"
+              },
+              {
+                "title": "Session Aware Logic",
+                "path": "session-aware-logic"
+              },
+              {
+                "title": "Static Joins",
+                "path": "static-joins"
+              },
+              {
+                "title": "Index Patterns",
+                "path": "index-patterns"
+              },
+              {
+                "title": "Select Join Pattern",
+                "path": "select-join-pattern"
+              },
+              {
+                "title": "List Filters",
+                "path": "list-filters"
+              }
+            ]
+          },
+          {
+            "group": "References",
+            "icon": "zap",
+            "pages": [
+              {
+                "title": "Generated Assets Reference",
+                "path": "generated-assets-reference"
+              },
+              {
+                "group": "Action References",
+                "pages": [
+                  {
+                    "title": "AddToContextAction",
+                    "path": "references/actions/addtocontextaction"
+                  },
+                  {
+                    "title": "AddToResponseAction",
+                    "path": "references/actions/addtoresponseaction"
+                  },
+                  {
+                    "title": "AiCallAction",
+                    "path": "references/actions/aicallaction"
+                  },
+                  {
+                    "title": "ApiCallAction",
+                    "path": "references/actions/apicallaction"
+                  },
+                  {
+                    "title": "ArrowFunctionAction",
+                    "path": "references/actions/arrowfunctionaction"
+                  },
+                  {
+                    "title": "CheckoutAction",
+                    "path": "references/actions/checkoutaction"
+                  },
+                  {
+                    "title": "CollateListsAction",
+                    "path": "references/actions/collatelistsaction"
+                  },
+                  {
+                    "title": "CreateBucketTokenAction",
+                    "path": "references/actions/createbuckettokenaction"
+                  },
+                  {
+                    "title": "CreateCrudAction",
+                    "path": "references/actions/createcrudaction"
+                  },
+                  {
+                    "title": "CreateJWTTokenAction",
+                    "path": "references/actions/createjwttokenaction"
+                  },
+                  {
+                    "title": "CreateObjectAction",
+                    "path": "references/actions/createobjectaction"
+                  },
+                  {
+                    "title": "DataToFileAction",
+                    "path": "references/actions/datatofileaction"
+                  },
+                  {
+                    "title": "DeleteCrudAction",
+                    "path": "references/actions/deletecrudaction"
+                  },
+                  {
+                    "title": "FetchFromElasticAction",
+                    "path": "references/actions/fetchfromelasticaction"
+                  },
+                  {
+                    "title": "FetchObjectAction",
+                    "path": "references/actions/fetchobjectaction"
+                  },
+                  {
+                    "title": "FetchParentAction",
+                    "path": "references/actions/fetchparentaction"
+                  },
+                  {
+                    "title": "FetchStatsAction",
+                    "path": "references/actions/fetchstatsaction"
+                  },
+                  {
+                    "title": "FunctionCallAction",
+                    "path": "references/actions/functioncallaction"
+                  },
+                  {
+                    "title": "IntegrationAction",
+                    "path": "references/actions/integrationaction"
+                  },
+                  {
+                    "title": "InterserviceCallAction",
+                    "path": "references/actions/interservicecallaction"
+                  },
+                  {
+                    "title": "ListMapAction",
+                    "path": "references/actions/listmapaction"
+                  },
+                  {
+                    "title": "LoopAction",
+                    "path": "references/actions/loopaction"
+                  },
+                  {
+                    "title": "MembershipCheckAction",
+                    "path": "references/actions/membershipcheckaction"
+                  },
+                  {
+                    "title": "ObjectPermissionCheckAction",
+                    "path": "references/actions/objectpermissioncheckaction"
+                  },
+                  {
+                    "title": "ParallelAction",
+                    "path": "references/actions/parallelaction"
+                  },
+                  {
+                    "title": "PermissionCheckAction",
+                    "path": "references/actions/permissioncheckaction"
+                  },
+                  {
+                    "title": "PublishEventAction",
+                    "path": "references/actions/publisheventaction"
+                  },
+                  {
+                    "title": "ReadFromRedisAction",
+                    "path": "references/actions/readfromredisaction"
+                  },
+                  {
+                    "title": "ReadJwtTokenAction",
+                    "path": "references/actions/readjwttokenaction"
+                  },
+                  {
+                    "title": "RedirectAction",
+                    "path": "references/actions/redirectaction"
+                  },
+                  {
+                    "title": "RefineByAiAction",
+                    "path": "references/actions/refinebyaiaction"
+                  },
+                  {
+                    "title": "RemoveFromResponseAction",
+                    "path": "references/actions/removefromresponseaction"
+                  },
+                  {
+                    "title": "RenderDataAction",
+                    "path": "references/actions/renderdataaction"
+                  },
+                  {
+                    "title": "SearchObjectAction",
+                    "path": "references/actions/searchobjectaction"
+                  },
+                  {
+                    "title": "SendMailAction",
+                    "path": "references/actions/sendmailaction"
+                  },
+                  {
+                    "title": "SendPushNotificationAction",
+                    "path": "references/actions/sendpushnotificationaction"
+                  },
+                  {
+                    "title": "SendSmsAction",
+                    "path": "references/actions/sendsmsaction"
+                  },
+                  {
+                    "title": "UpdateCrudAction",
+                    "path": "references/actions/updatecrudaction"
+                  },
+                  {
+                    "title": "ValidationAction",
+                    "path": "references/actions/validationaction"
+                  },
+                  {
+                    "title": "VerifyWebhookAction",
+                    "path": "references/actions/verifywebhookaction"
+                  },
+                  {
+                    "title": "WriteToRedisAction",
+                    "path": "references/actions/writetoredisaction"
+                  }
+                ]
+              },
+              {
+                "title": "MScript Syntax",
+                "path": "mscript-syntax"
+              },
+              {
+                "title": "Mindbricks Pattern Ontology",
+                "path": "mindbricks-pattern-ontology"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "icon": "code",
+        "groups": [
+          {
+            "group": "Endpoints",
+            "icon": "terminal",
+            "openapi": "openapi.yaml",
+            "pages": [
+              {
+                "title": "Sample Auth Service Api",
+                "path": "sample-auth-service-api"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Changelog",
+        "icon": "clock",
+        "pages": [
+          {
+            "title": "Release History",
+            "path": "changelog",
+            "icon": "history"
+          }
+        ]
+      }
+    ]
+  }
+}

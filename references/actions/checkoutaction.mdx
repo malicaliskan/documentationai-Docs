@@ -1,0 +1,33 @@
+---
+title: CheckoutAction
+---
+## **CheckoutAction**
+
+**Purpose**
+Handles a **payment lifecycle** using a native gateway integration (currently Stripe).
+It can start, complete, refresh, or accept webhooks for checkout sessions.
+
+**When to use it**
+
+* During transactional flows (`afterMainCreateOperation` for orders)
+* On scheduled sync (`afterApiEvent` for refresh/callback)
+
+**Key fields**
+
+| Field                 | Type                | Description                                                  |
+| --------------------- | ------------------- | ------------------------------------------------------------ |
+| `gateway`             | String              | Payment gateway (`Stripe`).                                  |
+| `stage`               | Enum(CheckoutStage) | One of `simple`, `start`, `complete`, `refresh`, `callback`. |
+| `contextPropertyName` | String              | Where to store the checkout response or token.               |
+
+**Example**
+
+```json
+{
+  "id": "a170-start-checkout",
+  "name": "startStripeCheckout",
+  "gateway": "Stripe",
+  "stage": "start",
+  "contextPropertyName": "checkoutSession"
+}
+```

@@ -1,0 +1,37 @@
+---
+title: CreateCrudAction
+---
+## **CreateCrudAction**
+
+**Purpose**
+Creates related (child or dependent) records inside another Data Object as part of the current API execution.
+Used for cascading inserts such as creating audit logs, attachments, or dependent tasks when a parent record is created or updated.
+
+**When to use it**
+
+* Immediately after the parent create (`afterMainCreateOperation`)
+* After update (`afterMainUpdateOperation`) when new related entities must be inserted
+
+**Key fields**
+
+| Field                 | Type                | Description                                                                                                            |
+| --------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `childObject`         | DataObjectName      | The Data Object where the new record(s) will be created.                                                               |
+| `dataClause`          | \[ApiAggregateData] | Array of property–value pairs to populate the new record. Each value is evaluated with MScript in the current context. |
+| `contextPropertyName` | String              | Optional – store the newly created record in `this.<name>` for later use.                                              |
+
+**Example**
+
+```json
+{
+  "id": "a110-create-log",
+  "name": "createAuditLog",
+  "childObject": "auditLog",
+  "dataClause": [
+    { "dataProperty": "objectId", "dataValue": "this.project.id" },
+    { "dataProperty": "message", "dataValue": "`Project created by ${this.session.userId}`" },
+    { "dataProperty": "isActive", "dataValue": "true" }
+  ],
+  "contextPropertyName": "logEntry"
+}
+```

@@ -1,0 +1,36 @@
+---
+title: UpdateCrudAction
+---
+## **UpdateCrudAction**
+
+**Purpose**
+Updates related or child records based on a query.
+Used for propagating state changes or syncing dependent records after the main record is updated.
+
+**When to use it**
+
+* After an update (`afterMainUpdateOperation`)
+* After specific validations when business state must cascade
+
+**Key fields**
+
+| Field         | Type                | Description                                            |
+| ------------- | ------------------- | ------------------------------------------------------ |
+| `childObject` | DataObjectName      | Target object to update.                               |
+| `whereClause` | MScript             | Query that selects which records to update.            |
+| `dataClause`  | \[ApiAggregateData] | Property–value assignments applied to matched records. |
+
+**Example**
+
+```json
+{
+  "id": "a120-update-tasks",
+  "name": "closeRelatedTasks",
+  "childObject": "task",
+  "whereClause": "{ projectId: this.projectId, status: 'open' }",
+  "dataClause": [
+    { "dataProperty": "status", "dataValue": "'closed'" },
+    { "dataProperty": "closedAt", "dataValue": "NOW()" }
+  ]
+}
+```

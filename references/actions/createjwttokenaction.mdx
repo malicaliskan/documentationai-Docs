@@ -1,0 +1,33 @@
+---
+title: CreateJWTTokenAction
+---
+## **CreateJWTTokenAction**
+
+**Purpose**
+Create a signed JWT (HMAC) from a payload; store in context or response.
+
+**When to use it**
+
+* After auth flow or post-create (invite tokens, magic links)
+* Before response to hand out temporary access
+
+**Key fields**
+
+| Field                 | Type    | Description                     |
+| --------------------- | ------- | ------------------------------- |
+| `JWTKey`              | MScript | Secret key (usually env).       |
+| `payload`             | MScript | Object to sign (claims/scopes). |
+| `contextPropertyName` | String  | Where to store token string.    |
+
+**Example**
+
+```json
+{
+  "id": "a280-create-jwt",
+  "name": "createInvitationToken",
+  "JWTKey": "process.env.INVITE_JWT_KEY",
+  "payload": "{ inviteId: this.invite.id, exp: NOW()+3600 }",
+  "contextPropertyName": "inviteToken",
+  "writeToResponse": true
+}
+```

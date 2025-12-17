@@ -1,0 +1,37 @@
+---
+title: CreateBucketTokenAction
+---
+## **CreateBucketTokenAction**
+
+**Purpose**
+Create a JWT **bucket token** to access Mindbricks Bucket Service with scoped permissions.
+
+**When to use it**
+
+* After creating resources tied to object storage
+* Before returning URLs/credentials to clients
+
+**Key fields**
+
+| Field               | Type                | Description                |
+| ------------------- | ------------------- | -------------------------- |
+| `bucketPermissions` | \[BucketPermission] | One or more bucket grants. |
+
+**Example**
+
+```json
+{
+  "id": "a290-bucket-token",
+  "name": "grantProjectBucketWrite",
+  "bucketPermissions": [
+    {
+      "bucketName": "privateProjectBucket",
+      "bucketId": "`proj:${this.projectId}-private`",
+      "permissionType": "write",
+      "isPublic": false
+    }
+  ],
+  "contextPropertyName": "bucketToken",
+  "writeToResponse": true
+}
+```
