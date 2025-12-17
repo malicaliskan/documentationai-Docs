@@ -56,33 +56,35 @@ interface NotificationServiceOptions = {
 
 Defines valid SMS providers for project-wide notifications.
 
+```js
 const SmsProvider = {
-amazonsns : "amazonsns",
-fake : "fake",
-netgsm : "netgsm",
-twilio : "twilio",
-vonage : "vonage",
-}
-
+  amazonsns: "amazonsns",
+  fake: "fake",
+  netgsm: "netgsm",
+  twilio: "twilio",
+  vonage: "vonage",
+};
 ```
 
-Enum | Description
-------|-------------
-  amazonsns | Use Amazon SNS for SMS delivery.
-  fake | Use a mock provider for development/testing.
-  netgsm | Use NetGSM as an SMS gateway (common in Turkey).
-  twilio | Use Twilio for SMS notifications.
-  vonage | Use Vonage (formerly Nexmo) for SMS notifications.
+| Enum      | Description                                        |
+| --------- | -------------------------------------------------- |
+| amazonsns | Use Amazon SNS for SMS delivery.                   |
+| fake      | Use a mock provider for development/testing.       |
+| netgsm    | Use NetGSM as an SMS gateway (common in Turkey).   |
+| twilio    | Use Twilio for SMS notifications.                  |
+| vonage    | Use Vonage (formerly Nexmo) for SMS notifications. |
+
 ### EmailProvider
 
 Defines valid email providers for project-wide notifications.
 
+```js
 const EmailProvider = {
-  amazonsns : "amazonsns",
-  fake : "fake",
-  sendgrid : "sendgrid",
-  smtp : "smtp",
-}
+  amazonsns: "amazonsns",
+  fake: "fake",
+  sendgrid: "sendgrid",
+  smtp: "smtp",
+};
 ```
 
 | Enum      | Description                                   |
@@ -96,25 +98,25 @@ const EmailProvider = {
 
 Defines valid push notification providers for project-wide delivery.
 
+```js
 const PushProvider = {
-amazonsns : "amazonsns",
-fake : "fake",
-firebase : "firebase",
-onesignal : "onesignal",
-}
+  amazonsns: "amazonsns",
+  fake: "fake",
+  firebase: "firebase",
+  onesignal: "onesignal",
+};
+```
 
-````
-
-Enum | Description
-------|-------------
-  amazonsns | Use Amazon SNS to deliver push notifications.
-  fake | Use a mock provider for development/testing.
-  firebase | Use Firebase Cloud Messaging (FCM) for push notifications.
-  onesignal | Use OneSignal for cross-platform push delivery.
+| Enum      | Description                                                |
+| --------- | ---------------------------------------------------------- |
+| amazonsns | Use Amazon SNS to deliver push notifications.              |
+| fake      | Use a mock provider for development/testing.               |
+| firebase  | Use Firebase Cloud Messaging (FCM) for push notifications. |
+| onesignal | Use OneSignal for cross-platform push delivery.            |
 
 ## SmtpSettings
 
-**MPO Version:**  1.3.0
+**MPO Version:** 1.3.0
 
 Defines configuration for using a custom SMTP server to send emails. Mindbricks uses a managed cloud provider by default, but you may configure your own server here.
 
@@ -123,7 +125,7 @@ interface SmtpSettings = {
   useCustomSmptServer : Boolean;
   configuration : SmtpSettingsConfig;
 }
-````
+```
 
 | Field               | Description                                                                                  |
 | ------------------- | -------------------------------------------------------------------------------------------- |

@@ -62,21 +62,21 @@ interface LoginDefUserSettings = {
 
 Specifies how user names are represented in the data model.
 
+```js
 const UserNameType = {
-asFullname : "asFullname",
-asNamePair : "asNamePair",
-}
+  asFullname: "asFullname",
+  asNamePair: "asNamePair",
+};
+```
 
-````
-
-Enum | Description
-------|-------------
-  asFullname | Stores the user's name in a single 'fullname' field.
-  asNamePair | Stores the user's name in separate 'name' and 'surname' fields.
+| Enum       | Description                                                     |
+| ---------- | --------------------------------------------------------------- |
+| asFullname | Stores the user's name in a single 'fullname' field.            |
+| asNamePair | Stores the user's name in separate 'name' and 'surname' fields. |
 
 ## LoginDefTenantSettings
 
-**MPO Version:**  1.3.0
+**MPO Version:** 1.3.0
 
 Specifies how tenant-based access control is structured for multi-tenant projects. This includes the tenant object name, registration permissions, and tenant separation logic. When enabled, this enforces strict data and user isolation by tenant.
 
@@ -85,7 +85,7 @@ interface LoginDefTenantSettings = {
   useMultiTenantFeature : Boolean;
   configuration : LoginDefTenantSettingsConfig;
 }
-````
+```
 
 | Field                 | Description                                                                                                                                                      |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
