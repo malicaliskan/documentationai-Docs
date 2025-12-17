@@ -421,10 +421,6 @@
               {
                 "title": "MScript Syntax",
                 "path": "mscript-syntax"
-              },
-              {
-                "title": "Mindbricks Pattern Ontology",
-                "path": "mindbricks-pattern-ontology"
               }
             ]
           }
