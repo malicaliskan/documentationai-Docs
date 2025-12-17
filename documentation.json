@@ -242,6 +242,111 @@
             ]
           },
           {
+            "group": "Mindbricks Pattern Onotology",
+            "pages": [
+              {
+                "title": "Mindbricks Project",
+                "path": "ontology/MindbricksProject"
+              },
+              {
+                "title": "Project Settings",
+                "path": "ontology/ProjectSettings"
+              },
+              {
+                "group": "Project Authentication",
+                "pages": [
+                  {
+                    "title": "Project Authentication",
+                    "path": "ontology/ProjectAuthentication/ProjectAuthentication"
+                  },
+                  {
+                    "title": "Auth Basics",
+                    "path": "ontology/ProjectAuthentication/AuthBasics"
+                  },
+                  {
+                    "title": "Login Definition",
+                    "path": "ontology/ProjectAuthentication/LoginDefinition"
+                  },
+                  {
+                    "title": "Verification Services",
+                    "path": "ontology/ProjectAuthentication/VerificationServices"
+                  },
+                  {
+                    "title": "Access Control",
+                    "path": "ontology/ProjectAuthentication/AccessControl"
+                  },
+                  {
+                    "title": "Social Login Settings",
+                    "path": "ontology/ProjectAuthentication/SocialLoginSettings"
+                  },
+                  {
+                    "title": "Data Property",
+                    "path": "ontology/ProjectAuthentication/DataProperty"
+                  }
+                ]
+              },
+              {
+                "group": "B F F Service",
+                "pages": [
+                  {
+                    "title": "B F F Service",
+                    "path": "ontology/BFFService/BFFService"
+                  },
+                  {
+                    "title": "Data View",
+                    "path": "ontology/BFFService/DataView"
+                  }
+                ]
+              },
+              {
+                "group": "Notification Service",
+                "pages": [
+                  {
+                    "title": "Notification Service",
+                    "path": "ontology/NotificationService/NotificationService"
+                  },
+                  {
+                    "title": "Notification Service Settings",
+                    "path": "ontology/NotificationService/NotificationServiceSettings"
+                  },
+                  {
+                    "title": "Event Notification",
+                    "path": "ontology/NotificationService/EventNotification"
+                  }
+                ]
+              },
+              {
+                "group": "Service",
+                "pages": [
+                  {
+                    "title": "Service",
+                    "path": "ontology/Service/Service"
+                  },
+                  {
+                    "title": "Service Settings",
+                    "path": "ontology/Service/ServiceSettings"
+                  },
+                  {
+                    "title": "Data Object",
+                    "path": "ontology/Service/DataObject"
+                  },
+                  {
+                    "title": "Business Api",
+                    "path": "ontology/Service/BusinessApi"
+                  },
+                  {
+                    "title": "Service Library",
+                    "path": "ontology/Service/ServiceLibrary"
+                  },
+                  {
+                    "title": "Edge Controller",
+                    "path": "ontology/Service/EdgeController"
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "group": "References",
             "icon": "zap",
             "pages": [
