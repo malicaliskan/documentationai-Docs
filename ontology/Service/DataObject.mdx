@@ -307,9 +307,9 @@ interface MembershipSettingsConfig = {
 }
 ```
 
-| Field                      | Description                                                                                                                                                                                                          |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| membershipObjectName       | Specifies the name of the external data object used to manage membership. This object contains membership entries linking users to this object.                                                                      |
-| membershipObjectIdProperty | The field name in the membership object that refers back to this data object (e.g., organizationId). It links the membership entry to this object.                                                                   |
-| membershipUserIdProperty   | The field name in the membership object that refers to the user who holds membership. This is typically linked to the user's session during authorization checks.                                                    |
-| membershipStatusCheck      | Optional MScript condition to determine if a membership entry is valid. Can be used to check fields like status, startDate, or endDate. This filter is applied at query time when evaluating access. {age:{$gte:18}} |
+| Field                      | Description                                                                                                                                                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| membershipObjectName       | Specifies the name of the external data object used to manage membership. This object contains membership entries linking users to this object.                                                                                       |
+| membershipObjectIdProperty | The field name in the membership object that refers back to this data object (e.g., organizationId). It links the membership entry to this object.                                                                                    |
+| membershipUserIdProperty   | The field name in the membership object that refers to the user who holds membership. This is typically linked to the user's session during authorization checks.                                                                     |
+| membershipStatusCheck      | Optional MScript condition to determine if a membership entry is valid. Can be used to check fields like status, startDate, or endDate. This filter is applied at query time when evaluating access. Example: `{ age: { $gte: 18 } }` |
