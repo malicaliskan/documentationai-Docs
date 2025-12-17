@@ -286,10 +286,10 @@
                 ]
               },
               {
-                "group": "B F F Service",
+                "group": "BFF Service",
                 "pages": [
                   {
-                    "title": "B F F Service",
+                    "title": "BFF Service",
                     "path": "ontology/BFFService/BFFService"
                   },
                   {

@@ -45,9 +45,9 @@
     },
     {
       "type": "folder",
-      "title": "B F F Service",
+      "title": "BFF Service",
       "content": [
-        { "type": "file", "title": "B F F Service", "path": "BFFService.mdx" },
+        { "type": "file", "title": "BFF Service", "path": "BFFService.mdx" },
         { "type": "file", "title": "Data View", "path": "DataView.mdx" }
       ]
     },
