@@ -94,16 +94,15 @@ interface ServiceOptions = {
 
 Enumeration of supported database types for service-level data models.
 
-```js
-DbTypesNames = ["postgresql", "mongodb"];
-
 const DbTypes = {
-  postgresql: 0,
-  mongodb: 1,
-};
+postgresql : "postgresql",
+mongodb : "mongodb",
+}
+
 ```
 
-| Enum       | Description                                                         |
-| ---------- | ------------------------------------------------------------------- |
-| postgresql | Use PostgreSQL for relational database management.                  |
-| mongodb    | Use MongoDB for document-oriented data storage (currently in beta). |
+Enum | Description
+------|-------------
+  postgresql | Use PostgreSQL for relational database management.
+  mongodb | Use MongoDB for document-oriented data storage (currently in beta).
+```

@@ -150,22 +150,21 @@ interface AggregateItem = {
 
 Specifies the type of aggregation to perform.
 
-```js
-AggTypesNames = ["value_count", "sum", "avg", "min", "max"];
-
 const AggTypes = {
-  value_count: 0,
-  sum: 1,
-  avg: 2,
-  min: 3,
-  max: 4,
-};
+value_count : "value_count",
+sum : "sum",
+avg : "avg",
+min : "min",
+max : "max",
+}
+
 ```
 
-| Enum        | Description                            |
-| ----------- | -------------------------------------- |
-| value_count | Count the number of records.           |
-| sum         | Sum the values of the records.         |
-| avg         | Average the values of the records.     |
-| min         | Find the minimum value of the records. |
-| max         | Find the maximum value of the records. |
+Enum | Description
+------|-------------
+  value_count | Count the number of records.
+  sum | Sum the values of the records.
+  avg | Average the values of the records.
+  min | Find the minimum value of the records.
+  max | Find the maximum value of the records.
+```

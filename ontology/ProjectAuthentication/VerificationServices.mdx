@@ -46,23 +46,21 @@ interface VerificationSettings = {
 
 An enum value to define the verification mode of the verification services to be able to manage the development process and the production process.
 
-```js
-VerificationModeNames = ["testMode", "liveMode"];
-
 const VerificationMode = {
-  testMode: 0,
-  liveMode: 1,
-};
-```
+testMode : "testMode",
+liveMode : "liveMode",
+}
 
-| Enum     | Description                                                                                   |
-| -------- | --------------------------------------------------------------------------------------------- |
-| testMode | In test mode, secret code is also sent to the frontend in the response of the /start request. |
-| liveMode | In live mode, secret code is only sent to the user's email or phone number.                   |
+````
+
+Enum | Description
+------|-------------
+  testMode | In test mode, secret code is also sent to the frontend in the response of the /start request.
+  liveMode | In live mode, secret code is only sent to the user's email or phone number.
 
 ## PasswordResetByEmail
 
-**MPO Version:** 1.3.0
+**MPO Version:**  1.3.0
 
 Configuration for enabling password reset via email. Defines whether the feature is active, how long the reset token remains valid, and how frequently a user can request resending the verification message.
 
@@ -71,7 +69,7 @@ interface PasswordResetByEmail = {
   passwordResetByEmailIsActive : Boolean;
   configuration : VerificationConfig;
 }
-```
+````
 
 | Field                        | Description                                                                                                   |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -104,23 +102,21 @@ interface VerificationConfig = {
 
 Defines the method used for user verification flows such as password reset, two-factor authentication, or account confirmation. This enum helps determine whether the user interacts with a clickable link or a manually entered code.
 
-```js
-VerificationTypeNames = ["byLink", "byCode"];
-
 const VerificationType = {
-  byLink: 0,
-  byCode: 1,
-};
-```
+byLink : "byLink",
+byCode : "byCode",
+}
 
-| Enum   | Description                                                                                                      |
-| ------ | ---------------------------------------------------------------------------------------------------------------- |
-| byLink | Sends a clickable verification link via email or SMS. The user verifies by clicking the link.                    |
-| byCode | Sends a numerical or alphanumerical code. The user verifies by entering the code into the application interface. |
+````
+
+Enum | Description
+------|-------------
+  byLink | Sends a clickable verification link via email or SMS. The user verifies by clicking the link.
+  byCode | Sends a numerical or alphanumerical code. The user verifies by entering the code into the application interface.
 
 ## PasswordResetByMobile
 
-**MPO Version:** 1.3.0
+**MPO Version:**  1.3.0
 
 Configuration for enabling password reset via mobile. Specifies token expiration time, resend intervals, and verification type (link or code).
 
@@ -129,7 +125,7 @@ interface PasswordResetByMobile = {
   passwordResetByMobileIsActive : Boolean;
   configuration : VerificationConfig;
 }
-```
+````
 
 | Field                         | Description                                                                                                     |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------- |

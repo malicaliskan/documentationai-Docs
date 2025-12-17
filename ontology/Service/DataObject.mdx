@@ -86,25 +86,23 @@ interface ObjectAuthorization = {
 
 Defines the possible access levels for a DataObject. This type captures whether the object is only visible to its owner/admins (private), shared with authenticated project users (protected), or exposed to the public including anonymous users (public). The key difference is between restricted vs. shared access, and within shared access whether authentication is required.
 
-```js
-DataObjectAccessNames = ["accessPrivate", "accessProtected", "accessPublic"];
-
 const DataObjectAccess = {
-  accessPrivate: 0,
-  accessProtected: 1,
-  accessPublic: 2,
-};
-```
+accessPrivate : "accessPrivate",
+accessProtected : "accessProtected",
+accessPublic : "accessPublic",
+}
 
-| Enum            | Description                                                 |
-| --------------- | ----------------------------------------------------------- |
-| accessPrivate   | Only the object owner and system administrators can access. |
-| accessProtected | All authenticated project users can access.                 |
-| accessPublic    | All users, including anonymous, can access.                 |
+````
+
+Enum | Description
+------|-------------
+  accessPrivate | Only the object owner and system administrators can access.
+  accessProtected | All authenticated project users can access.
+  accessPublic | All users, including anonymous, can access.
 
 ### RedisEntityCacheSettings
 
-**MPO Version:** 1.3.0
+**MPO Version:**  1.3.0
 
 Configuration for Redis-based entity-level caching. Enables fast access to frequently used data by storing and serving object-level records from Redis, with support for custom cache criteria and smart expiration.
 
@@ -113,7 +111,7 @@ interface RedisEntityCacheSettings = {
   useEntityCaching : Boolean;
   configuration : RedisEntityCacheConfig;
 }
-```
+````
 
 | Field            | Description                                                                                                                                                       |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -164,27 +162,25 @@ interface CompositeIndex = {
 
 Enumeration that defines the conflict resolution strategy when a new record would violate a composite index constraint.
 
-```js
-OnDuplicateNames = ["doUpdate", "throwError", "stopOperation", "doInsert"];
-
 const OnDuplicate = {
-  doUpdate: 0,
-  throwError: 1,
-  stopOperation: 2,
-  doInsert: 3,
-};
-```
+doUpdate : "doUpdate",
+throwError : "throwError",
+stopOperation : "stopOperation",
+doInsert : "doInsert",
+}
 
-| Enum          | Description                                                                                                                                                            |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| doUpdate      | Update the existing record if a duplicate key is encountered. Equivalent to an upsert operation.                                                                       |
-| throwError    | Throw a database error when a duplicate key is encountered. Prevents the insertion of conflicting data.                                                                |
-| stopOperation | Stop the operation silently if a duplicate key is encountered. The existing record remains unchanged and no error is thrown.                                           |
-| doInsert      | Proceed with the operation without checking for duplicates. Use this option when your composite index is designed for search purposes only and duplicates are allowed. |
+````
+
+Enum | Description
+------|-------------
+  doUpdate | Update the existing record if a duplicate key is encountered. Equivalent to an upsert operation.
+  throwError | Throw a database error when a duplicate key is encountered. Prevents the insertion of conflicting data.
+  stopOperation | Stop the operation silently if a duplicate key is encountered. The existing record remains unchanged and no error is thrown.
+  doInsert | Proceed with the operation without checking for duplicates. Use this option when your composite index is designed for search purposes only and duplicates are allowed.
 
 ### StripeOrder
 
-**MPO Version:** 1.3.0
+**MPO Version:**  1.3.0
 
 Defines the settings for integrating this data object with Stripe to handle e-commerce orders and payments. When enabled, Mindbricks automatically generates the required logic and auxiliary objects for managing payment workflows. Ensure Stripe credentials are set at the project level to activate this integration.
 
@@ -193,7 +189,7 @@ interface StripeOrder = {
   objectIsAnOrderObject : Boolean;
   configuration : StripeOrderConfig;
 }
-```
+````
 
 | Field                 | Description                                                                                                                        |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
@@ -238,23 +234,21 @@ interface StripeOrderConfig = {
 
 Enum options for handling errors that occur during the Stripe checkout process.
 
-```js
-OnCheckoutErrorNames = ["continueRoute", "throwError"];
-
 const OnCheckoutError = {
-  continueRoute: 0,
-  throwError: 1,
-};
-```
+continueRoute : "continueRoute",
+throwError : "throwError",
+}
 
-| Enum          | Description                                                      |
-| ------------- | ---------------------------------------------------------------- |
-| continueRoute | Continue processing, log the error, and set status to 'failed'.  |
-| throwError    | Throw an error and halt processing when a checkout error occurs. |
+````
+
+Enum | Description
+------|-------------
+  continueRoute | Continue processing, log the error, and set status to 'failed'.
+  throwError | Throw an error and halt processing when a checkout error occurs.
 
 ##### PaymentResultMap
 
-**MPO Version:** 1.3.0
+**MPO Version:**  1.3.0
 
 Defines how various Stripe payment outcomes map to internal order status values using MScript expressions.
 
@@ -265,7 +259,7 @@ interface PaymentResultMap = {
   paymentResultFailed : MScript;
   paymentResultSuccess : MScript;
 }
-```
+````
 
 | Field                 | Description                                                                   |
 | --------------------- | ----------------------------------------------------------------------------- |

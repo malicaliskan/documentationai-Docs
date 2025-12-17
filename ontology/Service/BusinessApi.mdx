@@ -84,36 +84,34 @@ interface ApiOptions = {
 
 CrudTypes define the fundamental operation mode of a route. Each route is classified by a CRUD type that reflects its intended data operation: create, update, read, or delete.
 
-```js
-CrudTypesNames = ["create", "update", "get", "list", "delete"];
-
 const CrudTypes = {
-  create: 0,
-  update: 1,
-  get: 2,
-  list: 3,
-  delete: 4,
-};
-```
+create : "create",
+update : "update",
+get : "get",
+list : "list",
+delete : "delete",
+}
 
-| Enum   | Description                                                                                                                                                                                                                                           |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| create | Specifies that the route handles creation operations. It inserts a new record into the associated data object. Mindbricks auto-generates default behavior for create routes, but custom logic can be defined via the route’s createSettings.          |
-| update | Specifies that the route handles update operations for a single existing record. The primary access criterion is the record's ID. Mindbricks auto-generates default behavior for update routes, but customizations can be added using updateSettings. |
-| get    | Specifies that the route retrieves a single record of the data object. The primary access criterion is the record's ID. Mindbricks provides default logic, but route-specific getSettings can be applied for custom retrieval.                        |
-| list   | Specifies that the route retrieves multiple records of the data object. By default, results are filtered by authorization rules. List-level customizations can be configured through listOptions and paginationOptions                                |
-| delete | Specifies that the route handles deletion of a single record. The access criterion is the record's ID. Mindbricks supports both hard and soft deletes, with behavior controlled through deleteOptions.                                                |
+````
+
+Enum | Description
+------|-------------
+  create | Specifies that the route handles creation operations. It inserts a new record into the associated data object. Mindbricks auto-generates default behavior for create routes, but custom logic can be defined via the route’s createSettings.
+  update | Specifies that the route handles update operations for a single existing record. The primary access criterion is the record's ID. Mindbricks auto-generates default behavior for update routes, but customizations can be added using updateSettings.
+  get | Specifies that the route retrieves a single record of the data object. The primary access criterion is the record's ID. Mindbricks provides default logic, but route-specific getSettings can be applied for custom retrieval.
+  list | Specifies that the route retrieves multiple records of the data object. By default, results are filtered by authorization rules. List-level customizations can be configured through listOptions and paginationOptions
+  delete | Specifies that the route handles deletion of a single record. The access criterion is the record's ID. Mindbricks supports both hard and soft deletes, with behavior controlled through deleteOptions.
 
 ### LocalDataObjectName
 
-**MPO Version:** 1.3.0
+**MPO Version:**  1.3.0
 
 Represents a reference to a data object within the same service. The value must be a simple object name; not a qualified reference in the format 'serviceName:objectName'.
 
 ```typescript
 interface LocalDataObjectName = {
 }
-```
+````
 
 | Field | Description |
 | ----- | ----------- |
@@ -278,31 +276,25 @@ interface ApiGrpcSettingsConfig = {
 
 Controls the structure of the gRPC response.
 
-```js
-GrpcApiResponseFormatNames = ["dataItem", "fullResponse"];
-
 const GrpcApiResponseFormat = {
-  dataItem: 0,
-  fullResponse: 1,
-};
+dataItem : "dataItem",
+fullResponse : "fullResponse",
+}
+
 ```
 
-| Enum         | Description                                                      |
-| ------------ | ---------------------------------------------------------------- |
-| dataItem     | Returns only the core data item.                                 |
-| fullResponse | Returns the full JSON API response with metadata and pagination. |
-
+Enum | Description
+------|-------------
+  dataItem | Returns only the core data item.
+  fullResponse | Returns the full JSON API response with metadata and pagination.
 #### GrpcApiResponseType
 
 Controls whether the gRPC method returns a single message or a stream.
 
-```js
-GrpcApiResponseTypeNames = ["single", "stream"];
-
 const GrpcApiResponseType = {
-  single: 0,
-  stream: 1,
-};
+  single : "single",
+  stream : "stream",
+}
 ```
 
 | Enum   | Description                                              |
@@ -484,23 +476,21 @@ interface SortByItem = {
 
 Defines sorting direction — ascending (asc) or descending (desc).
 
-```js
-SortOrderNames = ["asc", "desc"];
-
 const SortOrder = {
-  asc: 0,
-  desc: 1,
-};
-```
+asc : "asc",
+desc : "desc",
+}
 
-| Enum | Description                |
-| ---- | -------------------------- |
-| asc  | Ascending order (default). |
-| desc | Descending order.          |
+````
+
+Enum | Description
+------|-------------
+  asc | Ascending order (default).
+  desc | Descending order.
 
 ## DataClauseSettings
 
-**MPO Version:** 1.3.0
+**MPO Version:**  1.3.0
 
 Defines additional data values to be used in create or update operations. This clause augments the auto-generated data object by injecting or overriding values from context.
 
@@ -508,7 +498,7 @@ Defines additional data values to be used in create or update operations. This c
 interface DataClauseSettings = {
   customData : DataMapItem[];
 }
-```
+````
 
 | Field      | Description                                                                                                                                                          |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -708,23 +698,21 @@ interface ListJointFilterSettings = {
 
 Filter combination is used to define how any multiple id arrayy based list filters will be combined
 
-```js
-FilterOperatorNames = ["AND", "OR"];
-
 const FilterOperator = {
-  AND: 0,
-  OR: 1,
-};
-```
+AND : "AND",
+OR : "OR",
+}
 
-| Enum | Description                                  |
-| ---- | -------------------------------------------- |
-| AND  | Combine the multiple filters by AND operator |
-| OR   | Combine the multiple filters by OR operator  |
+````
+
+Enum | Description
+------|-------------
+  AND | Combine the multiple filters by AND operator
+  OR | Combine the multiple filters by OR operator
 
 #### ListJointFilter
 
-**MPO Version:** 1.3.0
+**MPO Version:**  1.3.0
 
 ListJointFilter definition object for a joint filter from the main object to another related data object to filter the main list result. This is like lefy join in the where clause. If you want to filter your list result with a criteria which is evaluated in a related object other than main object, you can use joint filter.
 
@@ -736,7 +724,7 @@ interface ListJointFilter = {
   selector : String;
   whereClause : MScript;
 }
-```
+````
 
 | Field            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1200,29 +1188,27 @@ interface HTTPRequest = {
 
 An enum representing the HTTP method to use in a request.
 
-```js
-HTTPRequestMethodsNames = ["GET", "POST", "PUT", "PATCH", "DELETE"];
-
 const HTTPRequestMethods = {
-  GET: 0,
-  POST: 1,
-  PUT: 2,
-  PATCH: 3,
-  DELETE: 4,
-};
-```
+GET : "GET",
+POST : "POST",
+PUT : "PUT",
+PATCH : "PATCH",
+DELETE : "DELETE",
+}
 
-| Enum   | Description                                           |
-| ------ | ----------------------------------------------------- |
-| GET    | Retrieve data from the remote service.                |
-| POST   | Submit new data to the remote service.                |
-| PUT    | Replace existing data in the remote service.          |
-| PATCH  | Partially update existing data in the remote service. |
-| DELETE | Remove data from the remote service.                  |
+````
+
+Enum | Description
+------|-------------
+  GET | Retrieve data from the remote service.
+  POST | Submit new data to the remote service.
+  PUT | Replace existing data in the remote service.
+  PATCH | Partially update existing data in the remote service.
+  DELETE | Remove data from the remote service.
 
 ##### HTTPRequestParameters
 
-**MPO Version:** 1.3.0
+**MPO Version:**  1.3.0
 
 Defines the parameters to be sent with an HTTP request. This includes data sent in the request body, query string, headers, or cookies.
 
@@ -1233,7 +1219,7 @@ interface HTTPRequestParameters = {
   httpRequestHeaders : DataMapItem[];
   httpRequestCookies : DataMapItem[];
 }
-```
+````
 
 | Field              | Description                                                                                 |
 | ------------------ | ------------------------------------------------------------------------------------------- |
@@ -1314,23 +1300,21 @@ interface MembershipCheckAction extends BusinessApiAction = {
 
 Defines how the result of a validation, permission, or membership check is used within the Business API lifecycle.
 
-```js
-ApiCheckTypeNames = ["storedCheck", "liveCheck"];
-
 const ApiCheckType = {
-  storedCheck: 0,
-  liveCheck: 1,
-};
-```
+storedCheck : "storedCheck",
+liveCheck : "liveCheck",
+}
 
-| Enum        | Description                                                                                                                                                                                                                               |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| storedCheck | The result of the check is written to the context and does not interrupt API execution. This allows deferred decision-making or combining the result with other checks later in the workflow (e.g., in conditionals or response shaping). |
-| liveCheck   | If the check fails, the Business API will immediately throw an authorization or validation error and halt execution. Use this mode when the check outcome must strictly control access or behavior.                                       |
+````
+
+Enum | Description
+------|-------------
+  storedCheck | The result of the check is written to the context and does not interrupt API execution. This allows deferred decision-making or combining the result with other checks later in the workflow (e.g., in conditionals or response shaping).
+  liveCheck | If the check fails, the Business API will immediately throw an authorization or validation error and halt execution. Use this mode when the check outcome must strictly control access or behavior.
 
 ### PermissionCheckAction
 
-**MPO Version:** 1.3.0
+**MPO Version:**  1.3.0
 
 Defines a global permission check that evaluates whether the user holds specific platform or service-level permissions. This check is not tied to any particular object instance and is useful for validating roles such as `canAccessAdminPanel`, `canExportData`, or `canSendEmails`. You can either enforce the result immediately or store it in context for conditional usage later in the flow.
 
@@ -1339,7 +1323,7 @@ interface PermissionCheckAction extends BusinessApiAction = {
   permissionName : String;
   checkType : ApiCheckType;
 }
-```
+````
 
 | Field          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1418,29 +1402,27 @@ interface ValidationAction extends BusinessApiAction = {
 
 Mindbricks error status codes represent standardized HTTP-style error responses used across all controller types. These codes provide consistent semantic feedback for route errors, especially in REST APIs.
 
-```js
-ErrorStatusNames = ["400", "401", "403", "404", "500"];
-
 const ErrorStatus = {
-  400: 0,
-  401: 1,
-  403: 2,
-  404: 3,
-  500: 4,
-};
-```
+400 : "400",
+401 : "401",
+403 : "403",
+404 : "404",
+500 : "500",
+}
 
-| Enum | Description                                                                                                                              |
-| ---- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| 400  | BadRequestError — Returned when request parameters are invalid, malformed, or missing required data.                                     |
-| 401  | NotAuthenticatedError — Returned when no valid user session is found. Typically indicates a login is required.                           |
-| 403  | ForbiddenError — Returned when the user is authenticated but does not have sufficient permissions or rights for the requested operation. |
-| 404  | NotFoundError — Returned when a required resource or data entry is not found in the system, such as a missing record or object.          |
-| 500  | HttpSystemError — Returned for internal server or system-level errors, such as database failures or unexpected exceptions.               |
+````
+
+Enum | Description
+------|-------------
+  400 | BadRequestError — Returned when request parameters are invalid, malformed, or missing required data.
+  401 | NotAuthenticatedError — Returned when no valid user session is found. Typically indicates a login is required.
+  403 | ForbiddenError — Returned when the user is authenticated but does not have sufficient permissions or rights for the requested operation.
+  404 | NotFoundError — Returned when a required resource or data entry is not found in the system, such as a missing record or object.
+  500 | HttpSystemError — Returned for internal server or system-level errors, such as database failures or unexpected exceptions.
 
 ### AddToContextAction
 
-**MPO Version:** 1.3.0
+**MPO Version:**  1.3.0
 
 Adds one or more calculated values to the runtime context (`this`) at a specific point in the Business API flow. This is typically used to prepare values that will be referenced in later actions, such as computed totals, enriched properties, or temporary flags. The values are evaluated via MScript and written under the names you specify.
 
@@ -1448,7 +1430,7 @@ Adds one or more calculated values to the runtime context (`this`) at a specific
 interface AddToContextAction extends BusinessApiAction = {
   context : ContextData[];
 }
-```
+````
 
 | Field   | Description                                                                                                                                                                                                                             |
 | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1546,62 +1528,45 @@ interface DataToFileAction extends BusinessApiAction = {
 
 Specifies supported output formats for content generation, serialization, or export. These are primarily text-based formats, suitable for structured data, document rendering, and developer-facing outputs.
 
-```js
-FileFormatsNames = [
-  "json",
-  "xml",
-  "csv",
-  "tsv",
-  "txt",
-  "html",
-  "md",
-  "yaml",
-  "yml",
-  "svg",
-  "pdf",
-  "rtf",
-  "log",
-  "tex",
-];
-
 const FileFormats = {
-  json: 0,
-  xml: 1,
-  csv: 2,
-  tsv: 3,
-  txt: 4,
-  html: 5,
-  md: 6,
-  yaml: 7,
-  yml: 8,
-  svg: 9,
-  pdf: 10,
-  rtf: 11,
-  log: 12,
-  tex: 13,
-};
-```
+json : "json",
+xml : "xml",
+csv : "csv",
+tsv : "tsv",
+txt : "txt",
+html : "html",
+md : "md",
+yaml : "yaml",
+yml : "yml",
+svg : "svg",
+pdf : "pdf",
+rtf : "rtf",
+log : "log",
+tex : "tex",
+}
 
-| Enum | Description                                                                                              |
-| ---- | -------------------------------------------------------------------------------------------------------- |
-| json | JavaScript Object Notation — structured, widely used for API and machine-readable exports.               |
-| xml  | Extensible Markup Language — structured, verbose format common in enterprise and legacy systems.         |
-| csv  | Comma-Separated Values — simple flat data format, best for spreadsheets or tabular exports.              |
-| tsv  | Tab-Separated Values — like CSV but uses tabs, better for escaping commas in data.                       |
-| txt  | Plain Text — raw string content without formatting.                                                      |
-| html | HyperText Markup Language — suitable for browser rendering and templated output.                         |
-| md   | Markdown — lightweight markup language for documentation and developer-friendly reports.                 |
-| yaml | YAML Ain’t Markup Language — human-readable config format, commonly used in CI/CD pipelines and devops.  |
-| yml  | YAML shorthand extension (alias of `.yaml`).                                                             |
-| svg  | Scalable Vector Graphics — XML-based vector image format used in charts and exports.                     |
-| pdf  | Portable Document Format — styled, paginated, formal format for reports, receipts, or printable content. |
-| rtf  | Rich Text Format — supports basic styling, used in word processors.                                      |
-| log  | Log file — typically used for line-based event or debug data.                                            |
-| tex  | LaTeX — markup format used for academic or mathematical document generation.                             |
+````
+
+Enum | Description
+------|-------------
+  json | JavaScript Object Notation — structured, widely used for API and machine-readable exports.
+  xml | Extensible Markup Language — structured, verbose format common in enterprise and legacy systems.
+  csv | Comma-Separated Values — simple flat data format, best for spreadsheets or tabular exports.
+  tsv | Tab-Separated Values — like CSV but uses tabs, better for escaping commas in data.
+  txt | Plain Text — raw string content without formatting.
+  html | HyperText Markup Language — suitable for browser rendering and templated output.
+  md | Markdown — lightweight markup language for documentation and developer-friendly reports.
+  yaml | YAML Ain’t Markup Language — human-readable config format, commonly used in CI/CD pipelines and devops.
+  yml | YAML shorthand extension (alias of `.yaml`).
+  svg | Scalable Vector Graphics — XML-based vector image format used in charts and exports.
+  pdf | Portable Document Format — styled, paginated, formal format for reports, receipts, or printable content.
+  rtf | Rich Text Format — supports basic styling, used in word processors.
+  log | Log file — typically used for line-based event or debug data.
+  tex | LaTeX — markup format used for academic or mathematical document generation.
 
 ### RedirectAction
 
-**MPO Version:** 1.3.0
+**MPO Version:**  1.3.0
 
 Redirects the client to a new URL after the API execution. This is often used in web-based flows like OAuth callbacks, login success handlers, or conditional navigation.
 
@@ -1609,7 +1574,7 @@ Redirects the client to a new URL after the API execution. This is often used in
 interface RedirectAction extends BusinessApiAction = {
   redirectUrl : HTTPRequest;
 }
-```
+````
 
 | Field       | Description                                                                                                                                                        |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -1711,23 +1676,21 @@ interface BucketPermission = {
 
 An enum type to define the access right of a bucket token.
 
-```js
-BucketPermissionTypeNames = ["read", "write"];
-
 const BucketPermissionType = {
-  read: 0,
-  write: 1,
-};
-```
+read : "read",
+write : "write",
+}
 
-| Enum  | Description                                                                                                                                  |
-| ----- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| read  | Anyone with this bucket token can request to read a file in the private bucket with bucketId from the Bucket Service.                        |
-| write | Anyone with this bucket token can request to create/update/delete a file in the private/public bucket with bucketId from the Bucket Service. |
+````
+
+Enum | Description
+------|-------------
+  read | Anyone with this bucket token can request to read a file in the private bucket with bucketId from the Bucket Service.
+  write | Anyone with this bucket token can request to create/update/delete a file in the private/public bucket with bucketId from the Bucket Service.
 
 ### PublishEventAction
 
-**MPO Version:** 1.3.0
+**MPO Version:**  1.3.0
 
 Publishes a message to an event topic (such as a message bus, queue, or pub/sub channel) as part of the Business API flow. This action is used to emit domain events or trigger asynchronous workflows that are consumed by other services or systems. The payload is defined using MScript and can include structured data from the API context.
 
@@ -1736,7 +1699,7 @@ interface PublishEventAction extends BusinessApiAction = {
   topic : String;
   message : MScript;
 }
-```
+````
 
 | Field   | Description                                                                                                                                                                                                |
 | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1897,29 +1860,27 @@ interface CheckoutAction extends BusinessApiAction = {
 
 The target stage of the payment lifecyle on which the action's decision for next step to be executed is based.
 
-```js
-CheckoutStageNames = ["simple", "start", "complete", "refresh", "callback"];
-
 const CheckoutStage = {
-  simple: 0,
-  start: 1,
-  complete: 2,
-  refresh: 3,
-  callback: 4,
-};
-```
+simple : "simple",
+start : "start",
+complete : "complete",
+refresh : "refresh",
+callback : "callback",
+}
 
-| Enum     | Description                                                                                                                                                                                                  |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| simple   | The lifecycle is simple it is just one sync call to handle everything, creating the charge immedeatly.                                                                                                       |
-| start    | The payment operation is wanted to be started, mostly an intent is created on the frontend side, but also it can be started in the server side.                                                              |
-| complete | The payment operation is wanted to be completed, the intent will be a real charge.                                                                                                                           |
-| refresh  | The payment operation data in the gateway server will be fetched and the application payment tickets and order status will be refreshed according to the server. Use this if you dont want to use a webhook. |
-| callback | The api is called by the gateway webhook, so the refresh operation will be held asyncronously. Use this option if you provide your api as a webhook to the provider.                                         |
+````
+
+Enum | Description
+------|-------------
+  simple | The lifecycle is simple it is just one sync call to handle everything, creating the charge immedeatly.
+  start | The payment operation is wanted to be started, mostly an intent is created on the frontend side, but also it can be started in the server side.
+  complete | The payment operation is wanted to be completed, the intent will be a real charge.
+  refresh | The payment operation data in the gateway server will be fetched and the application payment tickets and order status will be refreshed according to the server. Use this if you dont want to use a webhook.
+  callback | The api is called by the gateway webhook, so the refresh operation will be held asyncronously. Use this option if you provide your api as a webhook to the provider.
 
 ### VerifyWebhookAction
 
-**MPO Version:** 1.3.0
+**MPO Version:**  1.3.0
 
 Verifies a webhook call of a provider with its signature secret and reads the parameeters and writes them to the context.
 
@@ -1928,7 +1889,7 @@ interface VerifyWebhookAction extends BusinessApiAction = {
   provider : String;
   secretKey : MScript;
 }
-```
+````
 
 | Field     | Description                                                                                                           |
 | --------- | --------------------------------------------------------------------------------------------------------------------- |
