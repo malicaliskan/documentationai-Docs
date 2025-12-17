@@ -1,23 +1,27 @@
 ---
 title: FetchFromElasticAction
+description: >-
+  Execute a raw Elasticsearch query for a data object and return normalized hits
+  (items) and aggregations into context.
 ---
 ## **FetchFromElasticAction**
 
-**Purpose**  
+**Purpose**\
 Execute a raw Elasticsearch query for a data object and return normalized hits (`items`) and `aggregations` into context.
 
 **When to use it**
 
 - Need advanced ES features (aggregations, highlight, collapse) beyond standard fetch/search actions.
+
 - Preparing analytics slices or complex filters before responding.
 
 **Key fields**
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `targetObject` | DataObjectName | Object whose ES index will be queried. |
-| `body` | MScript | JS object representing the ES search body. |
-| `properties` | \[PropRefer] | Optional list of fields to pull from `_source` hits. |
+| Field          | Type           | Description                                          |
+| -------------- | -------------- | ---------------------------------------------------- |
+| `targetObject` | DataObjectName | Object whose ES index will be queried.               |
+| `body`         | MScript        | JS object representing the ES search body.           |
+| `properties`   | \[PropRefer]   | Optional list of fields to pull from `_source` hits. |
 
 **Example**
 
