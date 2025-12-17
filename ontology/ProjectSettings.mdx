@@ -1,0 +1,265 @@
+# ProjectSettings
+
+**MPO Version:** 1.3.0
+
+Defines the core configuration of your Mindbricks project, including metadata, environment preferences, and infrastructure integrations. Use this section to set up the project name, description, and optionally override managed infrastructure services with your own. While Mindbricks provides managed services by default to ensure a reliable, production-ready architecture, you may choose to integrate custom services for Redis, PostgreSQL, Kafka, and others as needed.
+
+```typescript
+interface ProjectSettings = {
+  basicSettings : BasicProjectSettings;
+  stripeSettings : StripeSettings;
+  aiSettings : AiSettings;
+  corsSettings : CorsSettings;
+  pipelineTemplates : PipelineTemplate[];
+  integrations : IntegrationConfiguration[];
+}
+```
+
+| Field             | Description                                                                                                                                                                                                                                                                                                                                                    |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| basicSettings     | Defines the essential metadata for the project, including its name, full title, description, icon, and environment variables.                                                                                                                                                                                                                                  |
+| stripeSettings    | Settings for integrating Stripe as a payment gateway. Mindbricks does not provide a managed Stripe account—project owners must configure their own Stripe credentials here.                                                                                                                                                                                    |
+| aiSettings        | Settings for connecting to external AI services such as OpenAI. Use this section to input API keys and model preferences for AI-based features in your application.                                                                                                                                                                                            |
+| corsSettings      | Defines CORS settings for service accesses. When enabled Cross Origins will be accepted according to the settings.                                                                                                                                                                                                                                             |
+| pipelineTemplates | A list of ejs templates that renders custom CI-CD files for your services. Each file will be created in the root of your microservices after rendered using the templates with service configuration. Use these templates if you will take out your project to ypur own deployment environment and you want Mindbricks to generate your deploy pipeline files. |
+| integrations      | An array of 3rd party integration configurations which will be used through out the services. When an integration is activated in the project with its cclient configurations, it will be visible in the business api design to add integration actions which call an integration client's method with in the business logic                                   |
+
+## BasicProjectSettings
+
+**MPO Version:** 1.3.0
+
+Defines the basic settings of your Mindbricks project, including its identity, descriptive metadata, environment variables, and current lifecycle stage. These values are essential for naming, documentation, and runtime configuration.
+
+```typescript
+interface BasicProjectSettings = {
+  name : String;
+  fullname : String;
+  description : Text;
+  avatar : String;
+  frontendDocument : Text;
+  hasAuthentication : Boolean;
+  ignoreDeploymentSpecificFiles : Boolean;
+  customVariables : DataMapSimpleItem[];
+}
+```
+
+| Field                         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name                          | The short name of the project. This is a required field and is often a single word. It is used as a prefix for naming project assets and resources.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| fullname                      | The full, descriptive name of the project. This will appear in dashboards, documentation, and UIs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| description                   | A long-form description of the project. This text is used in documentation materials and for internal references.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| avatar                        | A URL to the project's avatar icon. This image is shown in UI panels and documentation headers.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| frontendDocument              | A text based information to inform the frontend developer or frontend AI agent about the general UX behaviour of the application based on user stories and use cases. The format may be either text or markdown(recommended). Write the document as an AI prompt and describe application gneric UX behaviours. Any service or data object specific information should be given as a brief key sentence, since they will be detailed in their own objects. Note that this document will be given to the AI agent or human developer combined with all technical details that is generated from the project design,so this document should only focus on application-global behavioral UX business logic. |
+| hasAuthentication             | Determines if the project uses an authentication system (for users, administrators, etc.). Enabling this typically activates an auth microservice and related security features. Detailed settings are in the main authentication module.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ignoreDeploymentSpecificFiles | Use this in your custom deployment not to generate auto-deployemnt specific files so you can integrate your own files to your repository. AI Agents should keep this false.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| customVariables               | Key-value pairs defining custom environment variables for the project. These variables are available in runtime and can be accessed in service logic and functions.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+
+### DataMapSimpleItem
+
+**MPO Version:** 1.3.0
+
+Represents a single key-value pair used in most context. The value is constant.
+
+```typescript
+interface DataMapSimpleItem = {
+  name : String;
+  value : String;
+}
+```
+
+| Field | Description                                                                  |
+| ----- | ---------------------------------------------------------------------------- |
+| name  | The key name for the data item (e.g., a header name or parameter name).      |
+| value | The value of the data item, should be deifned as string even it is a number. |
+
+## StripeSettings
+
+**MPO Version:** 1.3.0
+
+Defines integration settings for Stripe payments. Mindbricks does not provide a managed Stripe account—keys for both test and live modes must be supplied manually.
+
+```typescript
+interface StripeSettings = {
+  useStripe : Boolean;
+  configuration : StripeSettingsConfig;
+}
+```
+
+| Field         | Description                                                                           |
+| ------------- | ------------------------------------------------------------------------------------- |
+| useStripe     | Specifies whether Stripe payments are enabled.                                        |
+| configuration | The configuration object for the Stripe service. Leave it null if useStripe is false. |
+
+### StripeSettingsConfig
+
+**MPO Version:** 1.3.0
+
+Defines the configuration for Stripe. This object is used when useStripe is set to true. It includes API keys for both test and live modes.
+
+```typescript
+interface StripeSettingsConfig = {
+  testPublicKey : String;
+  testSecretKey : String;
+  livePublicKey : String;
+  liveSecretKey : String;
+}
+```
+
+| Field         | Description                                                           |
+| ------------- | --------------------------------------------------------------------- |
+| testPublicKey | The public key for Stripe test mode, used in development and staging. |
+| testSecretKey | The secret key for Stripe test mode, used in development and staging. |
+| livePublicKey | The public key for Stripe live mode, used in production.              |
+| liveSecretKey | The secret key for Stripe live mode, used in production.              |
+
+## AiSettings
+
+**MPO Version:** 1.3.0
+
+Defines API keys for AI service providers such as OpenAI and Anthropic. These keys are used in any AI-powered logic within the application.
+
+```typescript
+interface AiSettings = {
+  openAiApiKey : String;
+  anthropicApiKey : String;
+}
+```
+
+| Field           | Description                                   |
+| --------------- | --------------------------------------------- |
+| openAiApiKey    | The API key for accessing OpenAI services.    |
+| anthropicApiKey | The API key for accessing Anthropic services. |
+
+## CorsSettings
+
+**MPO Version:** 1.3.0
+
+Defines CORS settings for service accesses. When enabled Cross Origins will be accepted according to the settings.
+
+```typescript
+interface CorsSettings = {
+  useCorsControl : Boolean;
+  configuration : CorsSettingsConfig;
+}
+```
+
+| Field          | Description                                                                                           |
+| -------------- | ----------------------------------------------------------------------------------------------------- |
+| useCorsControl | Specifies whether CORS control is enabled. Leave false if you allow service accesses from any domain. |
+| configuration  | The configuration object for the CORS settings. Leave it null if useCorsControl is false.             |
+
+### CorsSettingsConfig
+
+**MPO Version:** 1.3.0
+
+Defines the configuration for CORS settings. This object is used when useCorsControl is set to true. Note that if your service is in a different subdomain, Mindbricks automatically uses wildcard url control and allows other subdomains in the same main domain. Localhost Vite ports are also allowed automatically.
+
+```typescript
+interface CorsSettingsConfig = {
+  allowedOrigins : String[];
+  allowAllSubdomains : Boolean;
+}
+```
+
+| Field              | Description                                                                                                                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| allowedOrigins     | A list of full url addresses that are allowed as cross origin.(with https or http)                                                                                                         |
+| allowAllSubdomains | When set to true, the services will accept all cross origins that have different subdomain but same domain. It is not recommended if your services share a domain with foreign subdomains. |
+
+## PipelineTemplate
+
+**MPO Version:** 1.3.0
+
+The asset to store a template for generating custom pipeline files. Used in project level and applied to all microservices.
+
+```typescript
+interface PipelineTemplate = {
+  filename : String;
+  template : Text;
+}
+```
+
+| Field    | Description                                                              |
+| -------- | ------------------------------------------------------------------------ |
+| filename | The name of the pipeline file that will be generated like .gitlab-ci.yml |
+| template | The ejs source code of the template that renders the pipeline file.      |
+
+## IntegrationConfiguration
+
+**MPO Version:** 1.3.0
+
+A configuration class to define client parameters to use a remote API like AWS S3, Twillio or any other 3rd part api provider.
+
+```typescript
+interface IntegrationConfiguration = {
+  provider : IntegrationProvider;
+  configuration : DataMapItem[];
+}
+```
+
+| Field         | Description                                                                                                                                                                                                                                                                                             |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| provider      | A specific name for the api client that want to be connected and used in the business logic. The name must match the names of the supported provider list of Mindbricks.                                                                                                                                |
+| configuration | The client parameters to create a client to the pre-registered provider. Mostly credentials like CLientId, ClientSecret, ApiKey or initila options like region select in AWS. The confuration parameter list must match with the definition of the provider configuration in the integrations document. |
+
+## IntegrationProvider
+
+An Enum vaue to store the names of the integration providers
+
+```js
+IntegrationProviderNames = [
+  "amazonS3",
+  "googleGemini",
+  "googleMaps",
+  "Telegram",
+  "jiraServiceManagement",
+];
+
+const IntegrationProvider = {
+  amazonS3: 0,
+  googleGemini: 1,
+  googleMaps: 2,
+  Telegram: 3,
+  jiraServiceManagement: 4,
+};
+```
+
+| Enum                  | Description                                |
+| --------------------- | ------------------------------------------ |
+| amazonS3              | A famous file storage service              |
+| googleGemini          | An AI Model Api provided by Google         |
+| googleMaps            | A maps api provided by Google              |
+| Telegram              | A messaging api based on Telegram platform |
+| jiraServiceManagement | A workspace and project management api     |
+
+### DataMapItem
+
+**MPO Version:** 1.3.0
+
+Represents a single key-value pair used in most context. The value can be defined dynamically using an MScript.
+
+```typescript
+interface DataMapItem = {
+  name : String;
+  value : MScript;
+}
+```
+
+| Field | Description                                                                                 |
+| ----- | ------------------------------------------------------------------------------------------- |
+| name  | The key name for the data item (e.g., a header name or parameter name).                     |
+| value | The value of the data item, defined using MScript to allow dynamic expressions or literals. |
+
+#### MScript
+
+**MPO Version:** 1.3.0
+
+Represents a Mindbricks JavaScript expression used for logic, validation, or configuration. An MScript is stored as a string in the JSON schema but is expected to conform to a valid JavaScript ExpressionStatement. Acceptable forms include literals, identifiers, expressions, function calls, or a module.exports assignment returning a valid object. Although stored as plain text, MScripts are parsed and analyzed using a specialized override class that allows static checks and evaluation.
+
+```typescript
+interface MScript = {
+}
+```
+
+| Field | Description |
+| ----- | ----------- |

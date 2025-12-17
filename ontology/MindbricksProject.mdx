@@ -1,0 +1,23 @@
+# MindbricksProject
+
+**MPO Version:** 1.3.0
+
+MindbricksProject is the root class representing the entire architecture of a software project in Mindbricks. It sits at the top of the Mindbricks ontology tree—a structured, semantic pattern definition scheme used to model projects. Mindbricks leverages this ontology to generate microservice-based applications by interpreting and compiling interconnected pattern objects. Each pattern object is defined as a class with typed properties, which can include both primitive types and references to other pattern classes. Projects are built as JSON instances that follow this schema, enabling AI agents and human architects to collaboratively define a system's structure, behavior, and deployment blueprint in a unified and machine-readable format.
+
+```typescript
+interface MindbricksProject = {
+  projectSettings : ProjectSettings;
+  authentication : ProjectAuthentication;
+  bffService : BFFService;
+  notificationService : NotificationService;
+  services : Service[];
+}
+```
+
+| Field               | Description                                                                                                                                                                                                                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| projectSettings     | Defines the general configuration of the project. This includes fundamental attributes like project name, description, and environmental setup. Recommended as the first section to complete when initializing a new project.                                 |
+| authentication      | Configures the authentication and authorization mechanisms of the project. This module defines login models, session behavior, social logins, and access control. It is referenced by all services that require secure user management.                       |
+| bffService          | Defines the Back-For-Front (BFF) service that serves as a frontend aggregation layer. It composes data from multiple services and presents them in optimized formats for the frontend.                                                                        |
+| notificationService | Settings for configuring notification options at the project level so that a separte notification service can be used to send messages via email, SMS, or push notifications. This module defines the providers and event-driven behaviors for notifications. |
+| services            | Defines the individual microservices within the project. Each service includes its own data model, logic, and CRUD capabilities. All services are listed as an array of Service objects.                                                                      |

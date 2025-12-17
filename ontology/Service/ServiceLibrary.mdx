@@ -1,0 +1,43 @@
+# ServiceLibrary
+
+**MPO Version:** 1.3.0
+
+Defines a custom service library for your Mindbricks service. A ServiceLibrary is a modular container for user-defined code, templates, and assets. It allows developers to inject business-specific logic or reusable components into the service. You can define functions, templates, and assets, as well as edge functions (used by edge controllers to fully control the route lifecycle). These modules can be referenced throughout the service—for example, in validations, permissions, conditions, or hooks.
+
+```typescript
+interface ServiceLibrary = {
+  functions : LibModule[];
+  edgeFunctions : LibModule[];
+  templates : LibModule[];
+  assets : LibModule[];
+  public : LibModule[];
+}
+```
+
+| Field         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| functions     | List of reusable JavaScript functions available in the service. These are general-purpose functions used in validations, permissions, and other scripts. Each function is defined as a `LibModule`, exporting a callable function or a structured object.                                                                                                                                                                                                                                                                                                   |
+| edgeFunctions | Functions invoked by edge controllers, enabling fully custom handling of requests. These modules must export an async function that accepts a single request parameter and returns an API response or throws an error. Standard validations will still apply before execution. A sample helloWorld edge function would be like following. { 'moduleName': 'helloWorld', 'moduleExtension': 'js', 'moduleBody': 'module.exports = async (request) => { return { status: 200, message: "Hello from the edge function", date: new Date().toISOString() }; }' } |
+| templates     | Templates used within the service to render dynamic content such as emails, documents, or downloads. Typically written in `ejs`, they are evaluated with route data before rendering the final output.                                                                                                                                                                                                                                                                                                                                                      |
+| assets        | Static text or image-based files (e.g., credentials, configs, illustrations) used by the business logic. These can be used internally or for generating downloadable content. Each is defined as a `LibModule`.                                                                                                                                                                                                                                                                                                                                             |
+| public        | Public files exposed via a static URL, accessible directly by frontend or client-side apps. Used for assets like logos, PDFs, or other client-facing files.                                                                                                                                                                                                                                                                                                                                                                                                 |
+
+## LibModule
+
+**MPO Version:** 1.3.0
+
+Defines a module file in the service library. This object is used for declaring code, templates, or file assets that enhance your business logic. A `LibModule` can be a JavaScript function, an HTML template, or a static text/image file. JavaScript modules should export functions or objects conforming to their assigned context, such as validations, edge functions.
+
+```typescript
+interface LibModule = {
+  moduleName : String;
+  moduleExtension : String;
+  moduleBody : Text;
+}
+```
+
+| Field           | Description                                                                                                                                                                         |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| moduleName      | The name of the module. Should be unique within the library. Use lowercase or camelCase (e.g., `updateParent`). This name is used to reference the function or file in route logic. |
+| moduleExtension | The file extension of the module, such as `js`, `json`, `ejs`, `txt`, `svg`, or `pdf`. This defines how Mindbricks interprets or stores the content.                                |
+| moduleBody      | The content of the module. This may be JavaScript code, template HTML, or any other textual asset depending on its extension.                                                       |

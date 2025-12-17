@@ -1,0 +1,27 @@
+# ProjectAuthentication
+
+**MPO Version:** 1.3.0
+
+Defines the authentication and authorization configuration for the entire project. This module serves as the foundation for user identity, login behavior, access control, and verification flows. All services in the project, especially user services, rely on these centralized settings.
+
+```typescript
+interface ProjectAuthentication = {
+  authenticationEssentials : AuthBasics;
+  loginDefinition : LoginDefinition;
+  verificationServices : VerificationServices;
+  accessControl : AccessControl;
+  socialLogins : SocialLoginSettings;
+  userProperties : DataProperty[];
+  tenantProperties : DataProperty[];
+}
+```
+
+| Field                    | Description                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| authenticationEssentials | Basic authentication settings for the project. Defines the core authentication method (e.g., email/password, token-based) and global authentication behaviors.                                                                                                                                                                                                            |
+| loginDefinition          | Specifies how users, user groups, and tenants are defined in the project's data model. These definitions allow Mindbricks to dynamically extract identity and authorization data from project-specific data objects.                                                                                                                                                      |
+| verificationServices     | Defines optional verification flows such as password reset, email confirmation, mobile verification, and 2FA. Mindbricks automatically generates the required backend logic for these features under the user service.                                                                                                                                                    |
+| accessControl            | Specifies permission-based access control settings. These govern what users or roles can access, based on project-wide authorization rules.                                                                                                                                                                                                                               |
+| socialLogins             | Configuration for allowing users to sign in or register using external identity providers. Supported providers include Google, Facebook, Twitter, Apple, GitHub, and GitLab.                                                                                                                                                                                              |
+| userProperties           | Defines additional properties to include in the user data object. These are added to the default fields [ email, password, fullname, name, surname, mobile, emailVerified, mobileVerified, roleId] and shape the structure of the User model in the generated user service. Note: Standard fields (`id`, `isActive`, `createdAt`, `updatedAt`) are automatically created. |
+| tenantProperties         | Defines additional properties to include in the tenant data object. Alongside required fields like name and ownerId, these shape the structure of the Tenant model. Note: Standard fields (`id`, `isActive`, `createdAt`, `updatedAt`) are automatically created.                                                                                                         |

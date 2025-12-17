@@ -1,0 +1,244 @@
+# AuthBasics
+
+**MPO Version:** 1.3.0
+
+Defines the fundamental authentication configuration for the project. These settings determine the authentication method(s) used across all services, including token-based, SSO, remote service, or API key authentication.
+
+```typescript
+interface AuthBasics = {
+  JWTAuthentication : JWTAuth;
+  ssoAuthentication : SSOAuth;
+  apiKeyAuthentication : APIKeyAuth;
+  httpSettings : AuthHttpSettings;
+  cookieSettings : CookieSettings;
+}
+```
+
+| Field                | Description                                                                                                                                                                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| JWTAuthentication    | Configuration for JWT-based authentication, where the project issues and verifies its own JSON Web Tokens. This is the recommended authentication method in Mindbricks for secure, scalable identity management.                                                          |
+| ssoAuthentication    | Settings for enabling Single Sign-On (SSO) integration with external identity providers, typically used by enterprise users. Mindbricks does not generate an SSO server but supports integration with your organization's existing SSO infrastructure.                    |
+| apiKeyAuthentication | Enables API key-based authentication for accessing the project's services. This method can be used either as the primary authentication mechanism or as a secondary option alongside others.                                                                              |
+| httpSettings         | Defines the HTTP configuration of the auth service. Primarily includes the port on which the auth service will accept HTTP requests.                                                                                                                                      |
+| cookieSettings       | Use this settings to arrange the allowed domains of your applications cookie. Note thar a mindbricks service cookie is set as secure:true, httpOnly:true, sameSite:none, but domain is set according to the login requesrt hos if it is in. the allowed list or defaults. |
+
+## JWTAuth
+
+**MPO Version:** 1.3.0
+
+Defines the configuration for JWT-based authentication, where the project issues and verifies its own JSON Web Tokens. This is the recommended authentication method in Mindbricks due to its stateless nature and scalability.
+
+```typescript
+interface JWTAuth = {
+  useJWTForAuthentication : Boolean;
+  configuration : JWTAuthConfig;
+}
+```
+
+| Field                   | Description                                                                                         |
+| ----------------------- | --------------------------------------------------------------------------------------------------- |
+| useJWTForAuthentication | Indicates whether JWT authentication is enabled for the project.                                    |
+| configuration           | The configuration object for JWT authentication. Leave it null if useJWTForAuthentication is false. |
+
+### JWTAuthConfig
+
+**MPO Version:** 1.3.0
+
+Defines the configuration details for JWT-based authentication. This object is used when useJWTForAuthentication is set to true. It includes token and key refresh periods.
+
+```typescript
+interface JWTAuthConfig = {
+  tokenPeriodInDays : Integer;
+  keyRefreshPeriodInDays : Integer;
+}
+```
+
+| Field                  | Description                                                                                                                           |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| tokenPeriodInDays      | Specifies the lifespan of each JWT token, in days. After this period, the token will expire and require reauthentication.             |
+| keyRefreshPeriodInDays | Specifies how often the JWT signing key pair (private/public) should be regenerated, in days. Regular key rotation enhances security. |
+
+## SSOAuth
+
+**MPO Version:** 1.3.0
+
+Defines the Single Sign-On (SSO) configuration for the project. This allows users to authenticate via their organization's identity provider using standard SSO protocols. Mindbricks integrates with external SSO providers but does not generate or host its own SSO server.
+
+```typescript
+interface SSOAuth = {
+  useSSOForAuthentication : Boolean;
+  configuration : SSOAuthConfig;
+}
+```
+
+| Field                   | Description                                                                                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| useSSOForAuthentication | Specifies whether SSO is enabled as an authentication method for the project. If enabled, users will be able to log in using an external SSO provider. |
+| configuration           | The configuration object for the SSO provider. Leave it null if useSSOForAuthentication is false.                                                      |
+
+### SSOAuthConfig
+
+**MPO Version:** 1.3.0
+
+Defines the configuration for an external SSO provider. This object is used when useSSOForAuthentication is set to true. It includes provider name, token period, endpoints, and profile mapping.
+
+```typescript
+interface SSOAuthConfig = {
+  ssoName : String;
+  tokenPeriodInMinutes : Integer;
+  emailPropertyInProfile : String;
+  userNamePropertyInProfile : String;
+  ssoUserIdPropertyInProfile : String;
+  ssoServerSettings : SSOServerSettings;
+}
+```
+
+| Field                      | Description                                                                                                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ssoName                    | A human-readable name to identify this SSO provider in your project (e.g., 'corporateSSO' or 'okta').                                                               |
+| tokenPeriodInMinutes       | Specifies how long a session token issued via SSO remains valid, in minutes. After expiration, the user must be reauthenticated through the SSO server.             |
+| emailPropertyInProfile     | The field in the SSO profile payload to use as the user's email address. Used for identifying or creating the user record.                                          |
+| userNamePropertyInProfile  | The field in the SSO profile payload to use as the user's display name. Used when creating a new user on first login.                                               |
+| ssoUserIdPropertyInProfile | The field in the SSO profile payload that will be used as the unique SSO user ID in Mindbricks. Common defaults are 'sub' or 'id'.                                  |
+| ssoServerSettings          | Configuration of the SSO provider's endpoints and client credentials. Includes authorization, token, user profile, and logout URLs as well as client ID and secret. |
+
+#### SSOServerSettings
+
+**MPO Version:** 1.3.0
+
+The `SSOServerSettings` object defines the configuration for a Single Sign-On (SSO) integration, including endpoint URLs and client credentials. These settings enable the service to interact with an external identity provider using OAuth2/OIDC protocols by specifying how to authenticate, retrieve tokens, get user info, and handle logouts.
+
+```typescript
+interface SSOServerSettings = {
+  tokenHost : String;
+  authPath : String;
+  tokenPath : String;
+  userInfoPath : String;
+  logoutPath : String;
+  redirectUrl : String;
+  clientId : String;
+  clientSecret : String;
+}
+```
+
+| Field        | Description                                                                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| tokenHost    | The base URL of the SSO provider (e.g., https://auth.example.com). This value is used as the root for building all other endpoint paths.                           |
+| authPath     | The relative path to initiate user authorization on the SSO provider (e.g., /oauth2/authorize).                                                                    |
+| tokenPath    | The relative path to request access tokens from the SSO provider (e.g., /oauth2/token).                                                                            |
+| userInfoPath | The relative path to fetch the authenticated user's profile information (e.g., /userinfo).                                                                         |
+| logoutPath   | The relative path to perform logout on the SSO provider (e.g., /logout).                                                                                           |
+| redirectUrl  | The full callback URL of the client application to which the SSO provider will redirect after login. This URL must match the one registered with the SSO provider. |
+| clientId     | The client identifier issued to your application by the SSO provider. This ID is used to identify your app during the authentication flow.                         |
+| clientSecret | The secret associated with the client ID, used to authenticate your application with the SSO provider when exchanging tokens.                                      |
+
+## APIKeyAuth
+
+**MPO Version:** 1.3.0
+
+Defines the configuration for API key-based authentication. This method allows clients to authenticate by providing a public API key and an optional secret in the request. It can be used as the primary or a supplemental authentication method.
+
+```typescript
+interface APIKeyAuth = {
+  useAPIKeyForAuthentication : Boolean;
+  configuration : APIKeyAuthConfig;
+}
+```
+
+| Field                      | Description                                                                                                |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| useAPIKeyForAuthentication | Indicates whether API key authentication is enabled for the project.                                       |
+| configuration              | The configuration object for API key authentication. Leave it null if useAPIKeyForAuthentication is false. |
+
+### APIKeyAuthConfig
+
+**MPO Version:** 1.3.0
+
+Configuration details for API key authentication, including key and secret names and their locations.
+
+```typescript
+interface APIKeyAuthConfig = {
+  apiKeyLocation : RequestLocations;
+  apiKeyName : String;
+  apiSecretName : String;
+}
+```
+
+| Field          | Description                                                                                                                                         |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| apiKeyLocation | Specifies where in the request the API key and secret will be sent. This must be one of the defined RequestLocations (e.g., header, query, cookie). |
+| apiKeyName     | The name of the API key in the request, used to identify the client's public access key.                                                            |
+| apiSecretName  | The name of the API secret in the request, used to identify the client's private key or shared secret.                                              |
+
+#### RequestLocations
+
+An enum type to refer to a specific section of an HTTP request where data (e.g., tokens or parameters) can be located.
+
+```js
+RequestLocationsNames = [
+  "bearer",
+  "cookie",
+  "header",
+  "query",
+  "body",
+  "urlpath",
+  "session",
+  "request",
+];
+
+const RequestLocations = {
+  bearer: 0,
+  cookie: 1,
+  header: 2,
+  query: 3,
+  body: 4,
+  urlpath: 5,
+  session: 6,
+  request: 7,
+};
+```
+
+| Enum    | Description                                                                                                 |
+| ------- | ----------------------------------------------------------------------------------------------------------- |
+| bearer  | Use when the data is sent as a Bearer token in the Authorization header. No name is required for this mode. |
+| cookie  | Use when the data is sent in cookies. The name refers to the cookie's key.                                  |
+| header  | Use when the data is sent in a custom HTTP header. The name is the header's name.                           |
+| query   | Use when the data is sent as a query parameter. The name is the name of the query parameter.                |
+| body    | Use when the data is sent in the body of the request. The name refers to a property in the request body.    |
+| urlpath | Use when the data is part of the dynamic URL path (e.g., /users/:id). The name is the parameter name.       |
+| session | Use when the data is extracted from the server-side session object.                                         |
+| request | Use when the data exists directly on the root of the request object.                                        |
+
+## AuthHttpSettings
+
+**MPO Version:** 1.3.0
+
+Defines the HTTP configuration of the auth service. Primarily includes the port on which the auth service will accept HTTP requests.
+
+```typescript
+interface AuthHttpSettings = {
+  httpPort : Integer;
+  routerSuffix : String;
+}
+```
+
+| Field        | Description                                                                                                                                                           |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| httpPort     | The port number that the auth service will use to listen for HTTP traffic. Recommended to use ports in the 3000-3099 range for consistency across microservices.      |
+| routerSuffix | Use this in your custom deployment if you have any suffix in your auth service url to be removed before evaluated in express router. AI Agents should keep this null. |
+
+## CookieSettings
+
+**MPO Version:** 1.3.0
+
+Use this settings to arrange the allowed domains of your applications cookie. Note thar a mindbricks service cookie is set as secure:true, httpOnly:true, sameSite:none, but domain is set according to the login requesrt hos if it is in. the allowed list or defaults.
+
+```typescript
+interface CookieSettings = {
+  allowedDomains : String[];
+}
+```
+
+| Field          | Description                                                                                                                                                                                                                                             |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| allowedDomains | Mindbricks create cookies that is allowed for localhost, and the subdomain of the project in mindbricks.co, the architect may add his own one or more frontend urls, it can be given either as domain like xapp.com or as a subdomain like web.xapp.com |

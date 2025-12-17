@@ -1,0 +1,171 @@
+# SocialLoginSettings
+
+**MPO Version:** 1.3.0
+
+Configuration for enabling social login support within the project. This object defines integration settings for third-party authentication providers, such as Google and Apple, allowing users to sign in or register using their existing accounts. Each provider must be configured with its credentials and registration behavior.
+
+```typescript
+interface SocialLoginSettings = {
+  google : GoogleLoginSetting;
+  apple : AppleLoginSetting;
+  gitlab : GitlabLoginSetting;
+  github : GithubLoginSetting;
+}
+```
+
+| Field  | Description                                                                                                      |
+| ------ | ---------------------------------------------------------------------------------------------------------------- |
+| google | Settings for enabling Google OAuth login and optional user registration. Defined as a GoogleLoginSetting object. |
+| apple  | Settings for enabling Apple OAuth login and optional user registration. Defined as an AppleLoginSetting object.  |
+| gitlab | Settings for enabling GitLab OAuth login and optional user registration. Defined as a GitlabLoginSetting object. |
+| github | Settings for enabling GitHub OAuth login and optional user registration. Defined as a GithubLoginSetting object. |
+
+## GoogleLoginSetting
+
+**MPO Version:** 1.3.0
+
+Configuration for Google OAuth login. This section defines whether Google login is enabled, the client ID and secret, and whether users can register using their Google accounts.
+
+```typescript
+interface GoogleLoginSetting = {
+  useGoogleLogin : Boolean;
+  configuration : GoogleLoginConfig;
+}
+```
+
+| Field          | Description                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| useGoogleLogin | A boolean value to enable or disable Google OAuth login. When true, users can sign in using their Google accounts. |
+| configuration  | The configuration object for Google OAuth login. Leave it null if useGoogleLogin is false.                         |
+
+### GoogleLoginConfig
+
+**MPO Version:** 1.3.0
+
+Configuration details for Google OAuth login, including client ID, secret, and registration behavior. This object is used when Google login is enabled.
+
+```typescript
+interface GoogleLoginConfig = {
+  clientId : String;
+  clientSecret : String;
+  useForRegister : Boolean;
+}
+```
+
+| Field          | Description                                                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| clientId       | The Google OAuth client ID. This should match the identifier registered in your Google Developer Console.                             |
+| clientSecret   | The Google OAuth client secret. This is a confidential key issued by Google, stored securely in the Mindbricks secret store.          |
+| useForRegister | If true, users can register with their Google account. If false, Google login is permitted only for authentication of existing users. |
+
+## AppleLoginSetting
+
+**MPO Version:** 1.3.0
+
+Configuration for Apple OAuth login. This section defines whether Apple login is enabled, the client ID, and whether users can register using their Apple accounts.
+
+```typescript
+interface AppleLoginSetting = {
+  useAppleLogin : Boolean;
+  configuration : AppleLoginConfig;
+}
+```
+
+| Field         | Description                                                                                                      |
+| ------------- | ---------------------------------------------------------------------------------------------------------------- |
+| useAppleLogin | A boolean value to enable or disable Apple OAuth login. When true, users can sign in using their Apple accounts. |
+| configuration | The configuration object for Apple OAuth login. Leave it null if useAppleLogin is false.                         |
+
+### AppleLoginConfig
+
+**MPO Version:** 1.3.0
+
+Configuration details for Apple OAuth login, including client ID and registration behavior. This object is used when Apple login is enabled.
+
+```typescript
+interface AppleLoginConfig = {
+  clientId : String;
+  useForRegister : Boolean;
+}
+```
+
+| Field          | Description                                                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| clientId       | The Apple OAuth client ID, also known as the Service ID. This should match the identifier registered in your Apple Developer account. |
+| useForRegister | If true, users can register with their Apple ID. If false, Apple login is permitted only for authentication of existing users.        |
+
+## GitlabLoginSetting
+
+**MPO Version:** 1.3.0
+
+Configuration for GitLab OAuth login. This section defines whether GitLab login is enabled, the client ID and secret, and whether users can register using their GitLab accounts.
+
+```typescript
+interface GitlabLoginSetting = {
+  useGitlabLogin : Boolean;
+  configuration : GitlabLoginConfig;
+}
+```
+
+| Field          | Description                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| useGitlabLogin | A boolean value to enable or disable GitLab OAuth login. When true, users can sign in using their GitLab accounts. |
+| configuration  | The configuration object for GitLab OAuth login. Leave it null if useGitlabLogin is false.                         |
+
+### GitlabLoginConfig
+
+**MPO Version:** 1.3.0
+
+Configuration details for GitLab OAuth login, including client ID, secret, and registration behavior. This object is used when GitLab login is enabled.
+
+```typescript
+interface GitlabLoginConfig = {
+  clientId : String;
+  clientSecret : String;
+  useForRegister : Boolean;
+}
+```
+
+| Field          | Description                                                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| clientId       | The GitLab OAuth client ID. This should match the identifier registered in your GitLab application settings.                          |
+| clientSecret   | The GitLab OAuth client secret. This is a confidential key issued by GitLab, stored securely in the Mindbricks secret store.          |
+| useForRegister | If true, users can register with their GitLab account. If false, GitLab login is permitted only for authentication of existing users. |
+
+## GithubLoginSetting
+
+**MPO Version:** 1.3.0
+
+Configuration for GitHub OAuth login. This section defines whether GitHub login is enabled, the client ID and secret, and whether users can register using their GitHub accounts.
+
+```typescript
+interface GithubLoginSetting = {
+  useGithubLogin : Boolean;
+  configuration : GithubLoginConfig;
+}
+```
+
+| Field          | Description                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| useGithubLogin | A boolean value to enable or disable GitHub OAuth login. When true, users can sign in using their GitHub accounts. |
+| configuration  | The configuration object for GitHub OAuth login. Leave it null if useGithubLogin is false.                         |
+
+### GithubLoginConfig
+
+**MPO Version:** 1.3.0
+
+Configuration details for GitHub OAuth login, including client ID, secret, and registration behavior. This object is used when GitHub login is enabled.
+
+```typescript
+interface GithubLoginConfig = {
+  clientId : String;
+  clientSecret : String;
+  useForRegister : Boolean;
+}
+```
+
+| Field          | Description                                                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| clientId       | The GitHub OAuth client ID. This should match the identifier registered in your GitHub application settings.                          |
+| clientSecret   | The GitHub OAuth client secret. This is a confidential key issued by GitHub, stored securely in the Mindbricks secret store.          |
+| useForRegister | If true, users can register with their GitHub account. If false, GitHub login is permitted only for authentication of existing users. |

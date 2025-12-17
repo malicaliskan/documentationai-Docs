@@ -1,0 +1,145 @@
+# EventNotification
+
+**MPO Version:** 1.3.0
+
+Defines a single event-triggered notification within the project. These notifications are triggered by messages on a Kafka topic and can be sent as email, SMS, push, or in-app messages depending on configuration.
+
+```typescript
+interface EventNotification = {
+  eventNotificationBasics : EventNotificationBasics;
+  eventDataSettings : EventDataSettings;
+  targets : NotificationTarget[];
+  template : NotificationTemplate;
+}
+```
+
+| Field                   | Description                                                                                                                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| eventNotificationBasics | Basic properties of the event notification, including its name, description, storage behavior, and job type.                                                                               |
+| eventDataSettings       | Settings for how the notification extracts and processes data from incoming Kafka messages. This includes the dataview source, paths, and any additional data to include.                  |
+| targets                 | A list of NotificationTarget objects that define how to extract user(s) from the rendered data. Each target specifies a path in the notification data where user information can be found. |
+| template                | The notification template used to render the notification content.                                                                                                                         |
+
+## EventNotificationBasics
+
+**MPO Version:** 1.3.0
+
+Defines the basic properties of an event notification, including its name, description, storage behavior, and job type. This section is used to configure how the notification behaves and what type of message it sends.
+
+```typescript
+interface EventNotificationBasics = {
+  name : String;
+  description : Text;
+  isStored : Boolean;
+  jobType : NotificationJobTypes;
+  actionDeepLink : MScript;
+  actionText : MScript;
+  fromUser : MScript;
+}
+```
+
+| Field          | Description                                                                                                                                                                                                                                    |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name           | The unique, human-readable name of the event notification. Use one-word camelCase names such as userCreated or orderShipped.                                                                                                                   |
+| description    | A brief explanation of the event notification's purpose and scope.                                                                                                                                                                             |
+| isStored       | Determines whether the notification should be stored in the database for future reference. If true, notifications are saved and can be listed in the frontend. If false, they are only sent during the request lifecycle and are not retained. |
+| jobType        | The type of notification to send: email, sms, push, or inApp.                                                                                                                                                                                  |
+| actionDeepLink | An MScript expression that generates a deep link for client-side actions. The frontend can use this to navigate or perform custom logic when the user interacts with the notification. Leave null for no integration case.                     |
+| actionText     | An MScript expression defining the display text for the action deep link in the frontend interface. Leave null for no integration case.                                                                                                        |
+| fromUser       | An MScript expression identifying the sender of the notification (e.g., for inApp messages or email 'from' fields).                                                                                                                            |
+
+### NotificationJobTypes
+
+Specifies the medium through which the notification will be sent.
+
+```js
+NotificationJobTypesNames = ["email", "sms", "push", "inApp"];
+
+const NotificationJobTypes = {
+  email: 0,
+  sms: 1,
+  push: 2,
+  inApp: 3,
+};
+```
+
+| Enum  | Description                                                                                                                               |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| email | Send the notification as an email using the configured email provider.                                                                    |
+| sms   | Send the notification as an SMS using the configured SMS provider.                                                                        |
+| push  | Send the notification as a push message using the configured push provider.                                                               |
+| inApp | Create an in-app notification stored in the system. It will be listed in the default InAppNotification object with auto-generated routes. |
+
+## EventDataSettings
+
+**MPO Version:** 1.3.0
+
+Defines how the event notification extracts and processes data from incoming Kafka messages. This includes the data source, paths to relevant information, and any additional data to include in the notification.
+
+```typescript
+interface EventDataSettings = {
+  channel : String;
+  condition : MScript;
+  dataViewName : String;
+  dataViewIdPathInPayload : String;
+  includeData : DataMapItem[];
+}
+```
+
+| Field                   | Description                                                                                                                                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| channel                 | The Kafka topic name that will trigger this notification. The notification manager listens on this channel.                                                                                                                     |
+| condition               | An optional MScript condition to determine whether the notification should be triggered, based on the incoming Kafka message payload. To access data from both data source and the received Kafka event, use `this.dataSource`. |
+| dataViewName            | The name of the data view to use when the data source is 'dataView'.                                                                                                                                                            |
+| dataViewIdPathInPayload | The path in the payload where the ID of the object needed by the data view can be found. Defaults to 'id'.                                                                                                                      |
+| includeData             | An optional list of key-value mappings to merge additional values from the event payload into the notification data. Useful when using dataView or narrowed payload paths.                                                      |
+
+## NotificationTarget
+
+**MPO Version:** 1.3.0
+
+Defines a recipient or list of recipients for an event notification. Targets are derived from the notification data and can be conditional.
+
+```typescript
+interface NotificationTarget = {
+  targetName : String;
+  targetPathInData : String;
+  isArray : Boolean;
+  targetUserIdInArrayTargetItem : String;
+  targetItemNameInArray : String;
+  condition : MScript;
+}
+```
+
+| Field                         | Description                                                                                                                                                                                                                                             |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| targetName                    | A unique, human-readable name for the target. Use camelCase (e.g., 'customer', 'internalApprovers').                                                                                                                                                    |
+| targetPathInData              | The path to the user(s) inside the source notification dataview. If the target is a single user, this is the property name. If an array, it refers to the list. In case data is a multi-level nested object, `prop1.prop2.prop3` notation must be used. |
+| isArray                       | Indicates whether the target path contains a list of users. If true, the notification will be sent to each user in the array.                                                                                                                           |
+| targetUserIdInArrayTargetItem | When targeting a user array, this is the property name that holds the user ID inside each item.                                                                                                                                                         |
+| targetItemNameInArray         | If the target is an array, this is the property that holds each individual user object including the userId.Leave it empty if the user objects are already the target items.                                                                            |
+| condition                     | An MScript expression that determines whether the notification should be sent to this target, based on the target data. Access the target data using `target` (without `this`) and data source using `this.dataSource`.                                 |
+
+## NotificationTemplate
+
+**MPO Version:** 1.3.0
+
+Defines a notification template used to render the content of event notifications. Templates are written in EJS and can include dynamic data from the notification payload.
+
+```typescript
+interface NotificationTemplate = {
+  name : String;
+  description : Text;
+  subjectTemplate : Text;
+  bodyTemplate : Text;
+  parser : String;
+}
+```
+
+| Field           | Description                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------------ |
+| name            | The unique name of the notification template. This is used to reference the template in event notifications. |
+| description     | A brief description of the template's purpose and usage.                                                     |
+| subjectTemplate | The EJS template text used to generate the notification subject line.                                        |
+| bodyTemplate    | The EJS template text used to generate the notification body content.                                        |
+| parser          | The template rendering engine. Currently, only 'ejs' is supported.                                           |

@@ -1,0 +1,421 @@
+# NotificationServiceSettings
+
+**MPO Version:** 1.3.0
+
+Defines the basic notification configuration for the project. This includes the notification options providers for different notification channels such as SMS, email, and push notifications.
+
+```typescript
+interface NotificationServiceSettings = {
+  serviceOptions : NotificationServiceOptions;
+  smtpSettings : SmtpSettings;
+  amazonSNSSettings : AmazonSNSSettings;
+  firebaseSettings : FirebaseSettings;
+  sendGridSettings : SendGridSettings;
+  twilioSettings : TwilioSettings;
+  vonageSettings : VonageSettings;
+  netGsmSettings : NetGSMSettings;
+  oneSignalSettings : OneSignalSettings;
+}
+```
+
+| Field             | Description                                                                                                                                                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| serviceOptions    | Defines the global notification configuration for the project. This includes providers for different notification channels and the list of event-driven notification behaviors triggered by Kafka messages. |
+| smtpSettings      | Settings for using a custom SMTP server to send emails. Mindbricks includes a managed SMTP server by default. Override this setting if you want to use your own provider.                                   |
+| amazonSNSSettings | Settings for integrating Amazon SNS for messaging and notifications. Mindbricks does not provide a managed SNS setup, so you must supply your own credentials if you choose to use this service.            |
+| firebaseSettings  | Settings for using Firebase services. Mindbricks does not include Firebase by default, so this setup is required only if Firebase will be used for messaging or real-time features.                         |
+| sendGridSettings  | Settings for integrating SendGrid to send transactional or notification emails. You must register a SendGrid account and provide your API key.                                                              |
+| twilioSettings    | Settings for using Twilio to send SMS or perform voice operations. Mindbricks does not provide a managed Twilio account, so integration must be configured here.                                            |
+| vonageSettings    | Settings for integrating Vonage as an SMS provider. Provide credentials for your Vonage account if this service is used.                                                                                    |
+| netGsmSettings    | Settings for using the Turkish SMS provider NetGSM. You must supply your own credentials to use this service in Mindbricks.                                                                                 |
+| oneSignalSettings | Settings for OneSignal push notifications. Mindbricks does not manage OneSignal accounts, so a valid app ID and API key must be provided.                                                                   |
+
+## NotificationServiceOptions
+
+**MPO Version:** 1.3.0
+
+Defines the global notification configuration for the project. This includes providers for different notification channels and the list of event-driven notification behaviors triggered by Kafka messages.
+
+```typescript
+interface NotificationServiceOptions = {
+  storedNotice : Boolean;
+  smsProvider : SmsProvider;
+  emailProvider : EmailProvider;
+  pushProvider : PushProvider;
+}
+```
+
+| Field         | Description                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| storedNotice  | Determines whether notifications will be persisted and listed within the app. If set to true, notifications are stored in the database and can be retrieved later. If false, notifications are sent transiently during the request cycle and are not stored. Disabling storage can improve performance in simple use cases where tracking historical notifications is unnecessary. |
+| smsProvider   | Specifies the SMS provider for project-level notifications. Supported values: amazonsns, fake, netgsm, twilio, vonage.                                                                                                                                                                                                                                                             |
+| emailProvider | Specifies the email provider for project-level notifications. Supported values: amazonsns, fake, sendgrid, smtp.                                                                                                                                                                                                                                                                   |
+| pushProvider  | Specifies the push notification provider for the project. Supported values: amazonsns, fake, firebase, onesignal.                                                                                                                                                                                                                                                                  |
+
+### SmsProvider
+
+Defines valid SMS providers for project-wide notifications.
+
+```js
+SmsProviderNames = ["amazonsns", "fake", "netgsm", "twilio", "vonage"];
+
+const SmsProvider = {
+  amazonsns: 0,
+  fake: 1,
+  netgsm: 2,
+  twilio: 3,
+  vonage: 4,
+};
+```
+
+| Enum      | Description                                        |
+| --------- | -------------------------------------------------- |
+| amazonsns | Use Amazon SNS for SMS delivery.                   |
+| fake      | Use a mock provider for development/testing.       |
+| netgsm    | Use NetGSM as an SMS gateway (common in Turkey).   |
+| twilio    | Use Twilio for SMS notifications.                  |
+| vonage    | Use Vonage (formerly Nexmo) for SMS notifications. |
+
+### EmailProvider
+
+Defines valid email providers for project-wide notifications.
+
+```js
+EmailProviderNames = ["amazonsns", "fake", "sendgrid", "smtp"];
+
+const EmailProvider = {
+  amazonsns: 0,
+  fake: 1,
+  sendgrid: 2,
+  smtp: 3,
+};
+```
+
+| Enum      | Description                                   |
+| --------- | --------------------------------------------- |
+| amazonsns | Use Amazon SNS for sending emails.            |
+| fake      | Use a mock provider for development/testing.  |
+| sendgrid  | Use SendGrid for transactional or bulk email. |
+| smtp      | Use a custom SMTP server for email delivery.  |
+
+### PushProvider
+
+Defines valid push notification providers for project-wide delivery.
+
+```js
+PushProviderNames = ["amazonsns", "fake", "firebase", "onesignal"];
+
+const PushProvider = {
+  amazonsns: 0,
+  fake: 1,
+  firebase: 2,
+  onesignal: 3,
+};
+```
+
+| Enum      | Description                                                |
+| --------- | ---------------------------------------------------------- |
+| amazonsns | Use Amazon SNS to deliver push notifications.              |
+| fake      | Use a mock provider for development/testing.               |
+| firebase  | Use Firebase Cloud Messaging (FCM) for push notifications. |
+| onesignal | Use OneSignal for cross-platform push delivery.            |
+
+## SmtpSettings
+
+**MPO Version:** 1.3.0
+
+Defines configuration for using a custom SMTP server to send emails. Mindbricks uses a managed cloud provider by default, but you may configure your own server here.
+
+```typescript
+interface SmtpSettings = {
+  useCustomSmptServer : Boolean;
+  configuration : SmtpSettingsConfig;
+}
+```
+
+| Field               | Description                                                                                  |
+| ------------------- | -------------------------------------------------------------------------------------------- |
+| useCustomSmptServer | Specifies whether a custom SMTP server should be used.                                       |
+| configuration       | The configuration object for the SMTP server. Leave it null if useCustomSmptServer is false. |
+
+### SmtpSettingsConfig
+
+**MPO Version:** 1.3.0
+
+Defines the configuration for a custom SMTP server. This object is used when useCustomSmptServer is set to true. It includes the host, port, authentication, and security details.
+
+```typescript
+interface SmtpSettingsConfig = {
+  emailFrom : String;
+  emailHost : String;
+  emailPort : Integer;
+  emailUser : String;
+  emailPass : String;
+  isSecure : Boolean;
+}
+```
+
+| Field     | Description                                                      |
+| --------- | ---------------------------------------------------------------- |
+| emailFrom | The default sender email address used in outgoing messages.      |
+| emailHost | The hostname of the SMTP server.                                 |
+| emailPort | The port number used by the SMTP server.                         |
+| emailUser | The username used for SMTP authentication.                       |
+| emailPass | The password used for SMTP authentication.                       |
+| isSecure  | Indicates whether the SMTP server connection should use SSL/TLS. |
+
+## AmazonSNSSettings
+
+**MPO Version:** 1.3.0
+
+Defines configuration for integrating Amazon SNS for messaging and notifications. Mindbricks does not provide a managed SNS setup, so you must supply your own credentials if you choose to use this service.
+
+```typescript
+interface AmazonSNSSettings = {
+  useAmazonSNS : Boolean;
+  configuration : AmazonSNSSettingsConfig;
+}
+```
+
+| Field         | Description                                                                                  |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| useAmazonSNS  | Specifies whether Amazon SNS should be enabled for the project.                              |
+| configuration | The configuration object for the Amazon SNS service. Leave it null if useAmazonSNS is false. |
+
+### AmazonSNSSettingsConfig
+
+**MPO Version:** 1.3.0
+
+Defines the configuration for Amazon SNS. This object is used when useAmazonSNS is set to true. It includes the secret key, access key, and region.
+
+```typescript
+interface AmazonSNSSettingsConfig = {
+  secretKey : String;
+  accessKey : String;
+  region : String;
+}
+```
+
+| Field     | Description                                        |
+| --------- | -------------------------------------------------- |
+| secretKey | The secret access key for the Amazon SNS service.  |
+| accessKey | The access key ID for the Amazon SNS service.      |
+| region    | The AWS region in which the SNS service is hosted. |
+
+## FirebaseSettings
+
+**MPO Version:** 1.3.0
+
+Defines configuration for using Firebase services. Mindbricks does not include Firebase by default, so this setup is required only if Firebase will be used for messaging or real-time features.
+
+```typescript
+interface FirebaseSettings = {
+  useFirebase : Boolean;
+  configuration : FirebaseSettingsConfig;
+}
+```
+
+| Field         | Description                                                                               |
+| ------------- | ----------------------------------------------------------------------------------------- |
+| useFirebase   | Specifies whether Firebase should be enabled.                                             |
+| configuration | The configuration object for the Firebase service. Leave it null if useFirebase is false. |
+
+### FirebaseSettingsConfig
+
+**MPO Version:** 1.3.0
+
+Defines the configuration for Firebase. This object is used when useFirebase is set to true. It includes the API key for Firebase services.
+
+```typescript
+interface FirebaseSettingsConfig = {
+  firebaseKey : String;
+}
+```
+
+| Field       | Description                                   |
+| ----------- | --------------------------------------------- |
+| firebaseKey | The API key used to access Firebase services. |
+
+## SendGridSettings
+
+**MPO Version:** 1.3.0
+
+Defines configuration for integrating SendGrid to send transactional or notification emails. You must register a SendGrid account and provide your API key.
+
+```typescript
+interface SendGridSettings = {
+  useSendGrid : Boolean;
+  configuration : SendGridSettingsConfig;
+}
+```
+
+| Field         | Description                                                                               |
+| ------------- | ----------------------------------------------------------------------------------------- |
+| useSendGrid   | Specifies whether SendGrid is enabled for the project.                                    |
+| configuration | The configuration object for the SendGrid service. Leave it null if useSendGrid is false. |
+
+### SendGridSettingsConfig
+
+**MPO Version:** 1.3.0
+
+Defines the configuration for SendGrid. This object is used when useSendGrid is set to true. It includes the API key and sender email address.
+
+```typescript
+interface SendGridSettingsConfig = {
+  sendGridApiKey : String;
+  sendGridFromEmail : String;
+}
+```
+
+| Field             | Description                                                 |
+| ----------------- | ----------------------------------------------------------- |
+| sendGridApiKey    | The API key used to authenticate with the SendGrid service. |
+| sendGridFromEmail | The sender email address to be used for outgoing messages.  |
+
+## TwilioSettings
+
+**MPO Version:** 1.3.0
+
+Defines configuration for using Twilio to send SMS or perform voice operations. Mindbricks does not provide a managed Twilio account, so integration must be configured here.
+
+```typescript
+interface TwilioSettings = {
+  useTwilio : Boolean;
+  configuration : TwilioSettingsConfig;
+}
+```
+
+| Field         | Description                                                                           |
+| ------------- | ------------------------------------------------------------------------------------- |
+| useTwilio     | Specifies whether Twilio is enabled.                                                  |
+| configuration | The configuration object for the Twilio service. Leave it null if useTwilio is false. |
+
+### TwilioSettingsConfig
+
+**MPO Version:** 1.3.0
+
+Defines the configuration for Twilio. This object is used when useTwilio is set to true. It includes the Account SID, authentication token, and sender identity.
+
+```typescript
+interface TwilioSettingsConfig = {
+  twilioAccountSid : String;
+  twilioAuthToken : String;
+  twilioSender : String;
+}
+```
+
+| Field            | Description                                                             |
+| ---------------- | ----------------------------------------------------------------------- |
+| twilioAccountSid | The Account SID for your Twilio service.                                |
+| twilioAuthToken  | The authentication token used with your Twilio account.                 |
+| twilioSender     | The default sender identity (phone number or name) for Twilio messages. |
+
+## VonageSettings
+
+**MPO Version:** 1.3.0
+
+Defines configuration for integrating Vonage as an SMS provider. Provide credentials for your Vonage account if this service is used.
+
+```typescript
+interface VonageSettings = {
+  useVonage : Boolean;
+  configuration : VonageSettingsConfig;
+}
+```
+
+| Field         | Description                                                                           |
+| ------------- | ------------------------------------------------------------------------------------- |
+| useVonage     | Specifies whether Vonage is enabled.                                                  |
+| configuration | The configuration object for the Vonage service. Leave it null if useVonage is false. |
+
+### VonageSettingsConfig
+
+**MPO Version:** 1.3.0
+
+Defines the configuration for Vonage. This object is used when useVonage is set to true. It includes the token and sender name/number.
+
+```typescript
+interface VonageSettingsConfig = {
+  vonageToken : String;
+  vonageSender : String;
+}
+```
+
+| Field        | Description                                             |
+| ------------ | ------------------------------------------------------- |
+| vonageToken  | The token used to authenticate with the Vonage service. |
+| vonageSender | The sender name or number used for Vonage messages.     |
+
+## NetGSMSettings
+
+**MPO Version:** 1.3.0
+
+Defines configuration for using the Turkish SMS provider NetGSM. You must supply your own credentials to use this service in Mindbricks.
+
+```typescript
+interface NetGSMSettings = {
+  useNetGSM : Boolean;
+  configuration : NetGSMSettingsConfig;
+}
+```
+
+| Field         | Description                                                                           |
+| ------------- | ------------------------------------------------------------------------------------- |
+| useNetGSM     | Specifies whether NetGSM is enabled for the project.                                  |
+| configuration | The configuration object for the NetGSM service. Leave it null if useNetGSM is false. |
+
+### NetGSMSettingsConfig
+
+**MPO Version:** 1.3.0
+
+Defines the configuration for NetGSM. This object is used when useNetGSM is set to true. It includes the username, password, and sender ID.
+
+```typescript
+interface NetGSMSettingsConfig = {
+  netGsmUsername : String;
+  netGsmPassword : String;
+  netGsmSender : String;
+}
+```
+
+| Field          | Description                                      |
+| -------------- | ------------------------------------------------ |
+| netGsmUsername | The username used to authenticate with NetGSM.   |
+| netGsmPassword | The password used to authenticate with NetGSM.   |
+| netGsmSender   | The sender ID or label used for NetGSM messages. |
+
+## OneSignalSettings
+
+**MPO Version:** 1.3.0
+
+Defines configuration for OneSignal push notifications. Mindbricks does not manage OneSignal accounts, so a valid app ID and API key must be provided.
+
+```typescript
+interface OneSignalSettings = {
+  useOneSignal : Boolean;
+  configuration : OneSignalSettingsConfig;
+}
+```
+
+| Field         | Description                                                                                 |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| useOneSignal  | Specifies whether OneSignal is enabled for push notifications.                              |
+| configuration | The configuration object for the OneSignal service. Leave it null if useOneSignal is false. |
+
+### OneSignalSettingsConfig
+
+**MPO Version:** 1.3.0
+
+Defines the configuration for OneSignal. This object is used when useOneSignal is set to true. It includes the app ID and REST API key.
+
+```typescript
+interface OneSignalSettingsConfig = {
+  oneSignalAppId : String;
+  oneSignalApiKey : String;
+}
+```
+
+| Field           | Description                                      |
+| --------------- | ------------------------------------------------ |
+| oneSignalAppId  | The OneSignal application ID for the target app. |
+| oneSignalApiKey | The REST API key for the OneSignal project.      |

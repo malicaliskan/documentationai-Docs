@@ -1,0 +1,171 @@
+# DataView
+
+**MPO Version:** 1.3.0
+
+A DataView defines an aggregated projection of data for the BFF service in Mindbricks. It serves as a unified structure that collects and combines information from multiple microservices. DataViews can be configured as either _stored_ or _dynamic_. Stored DataViews persist their results in Elasticsearch and are optimal for queries requiring filtering, sorting, or cross-service joins. Dynamic DataViews are assembled at runtime during the request cycle and are suitable for lightweight, user-specific, or real-time scenarios. Both types aim to simplify frontend development by consolidating distributed data into a single, queryable view.
+
+```typescript
+interface DataView = {
+  viewBasics : ViewBasics;
+  aggregates : ViewAggregate[];
+  lookups : ViewLookup[];
+  stats : ViewStat[];
+}
+```
+
+| Field      | Description                                                                                                                                                                                                                                     |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| viewBasics | Basic metadata and configuration for the DataView, including its name, storage strategy, source object, and selected properties. This section determines the fundamental structure and behavior of the view.                                    |
+| aggregates | A list of aggregate definitions that perform data joins from related objects, similar to SQL joins. These are used to enrich the DataView with related datasets, such as joining orders into a customer view.                                   |
+| lookups    | A list of lightweight lookup definitions used to fetch reference values, typically for UI display purposes (e.g., converting a userType ID into a localized label like 'Administrator'). These join single values from dictionary-like sources. |
+| stats      | A list of statistical calculations performed within the view to enrich it with precomputed analytics.                                                                                                                                           |
+
+## ViewBasics
+
+**MPO Version:** 1.3.0
+
+Configuration for a DataView's identity and structure. It specifies whether the view is stored (in Elasticsearch) or dynamic (evaluated at runtime), the name of the view, the main source object it is built upon, and the list of core properties to retrieve from the main object.
+
+```typescript
+interface ViewBasics = {
+  name : String;
+  isStored : Boolean;
+  mainObject : DataObjectName;
+  properties : PropRefer[];
+}
+```
+
+| Field      | Description                                                                                                                                                                                                              |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| name       | A unique name for the DataView. Avoid using a name that matches any existing data object to prevent conflicts. Prefer descriptive names like 'UserDetailsView' that clearly indicate the view's purpose.                 |
+| isStored   | A boolean value that indicates whether the view is persisted in Elasticsearch. Set this to true for performance-optimized, filterable views. Set to false for dynamic, real-time data aggregations executed per request. |
+| mainObject | The primary data object or existing view that the DataView is structured around. This object serves as the root of the aggregation.                                                                                      |
+| properties | An array of property names from the main object that should be included in the view's result.                                                                                                                            |
+
+## ViewAggregate
+
+**MPO Version:** 1.3.0
+
+Defines an aggregate (join) within a DataView that links related objects to the main object, similar to SQL-style joins. Aggregates are resolved at the Elasticsearch layer using replicated microservice data. Each aggregate pulls in one or more records from a child object based on matching keys and optional conditions, then embeds them under the specified property name in the final view output.
+
+```typescript
+interface ViewAggregate = {
+  name : String;
+  childObject : DataObjectName;
+  parentKey : PropRefer;
+  childKey : PropRefer;
+  oneToMany : Boolean;
+  condition : MScript;
+  properties : PropRefer[];
+  checkIn : MScript;
+}
+```
+
+| Field       | Description                                                                                                                                                                 |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name        | The property name under which the joined data will be added in the DataView. This is typically a descriptive alias for the child object, like 'userRoles' or 'companyInfo'. |
+| childObject | The name of the data object being joined (child object). This is the source of the aggregated data.                                                                         |
+| parentKey   | The key field from the main object used to perform the join. Often this is a foreign key like 'companyId' or 'userId'.                                                      |
+| childKey    | The key field from the child object that is matched against the parent key. Typically this would be the child's primary identifier or a linking field.                      |
+| oneToMany   | Specifies whether the relationship is one-to-many (true) or one-to-one (false). If true, the result will be an array of records from the child object.                      |
+| condition   | An MScript condition evaluated on the main object to decide whether this aggregation should be executed.                                                                    |
+| properties  | The list of property names to extract from the child object. Only these fields will be included in the aggregated result.                                                   |
+| checkIn     | An MScript condition evaluated on each child record to determine whether it should be included in the final aggregation result.                                             |
+
+## ViewLookup
+
+**MPO Version:** 1.3.0
+
+Defines a lookup operation in a DataView, typically used to enrich an object with a human-readable label or translated text from a dictionary index. Lookups are similar to aggregates but are optimized for fetching a single value, such as a label, for UI rendering. They are especially useful for localization (e.g., converting 'userType: 0' to 'Administrator') or enriching records with descriptive names from static dictionaries like country, city, or status lists. Multi-language lookups automatically resolve language-specific values based on the user's locale if the view is dynamic; if stored, all language variants are stored with suffixes.
+
+```typescript
+interface ViewLookup = {
+  name : String;
+  lookupDict : String;
+  multiLang : Boolean;
+  lookupKey : String;
+  lookupValue : String;
+}
+```
+
+| Field       | Description                                                                                                                                                                                                                                                                                                                            |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name        | The name of the lookup field in the DataView output. This is the property that will hold the resolved value, such as 'userRoleName'. For stored DataViews, Mindbricks stores multilingual variants using suffixes like 'userRoleName_en', 'userRoleName_tr'. When returned to the client, only the relevant language value is exposed. |
+| lookupDict  | The name of the dictionary index where the lookup value resides. This can be any dictionary-like dataset, such as countries, roles, or labels. For multilingual dictionaries, Mindbricks automatically appends the language suffix (e.g., '\_en', '\_tr') to the index name during lookup.                                             |
+| multiLang   | Whether the lookup dictionary is multilingual. If true, Mindbricks will automatically manage language-specific fields and suffixes. If false, a single language-independent value is returned.                                                                                                                                         |
+| lookupKey   | The key field in the main object (or its aggregates) used to match against the dictionary index. This is typically a reference like 'roleId' or 'countryId'. The dictionary index's target key is always assumed to be 'id'.                                                                                                           |
+| lookupValue | The field in the dictionary index whose value will be returned. For example, 'name' or 'label'. This is what will appear in the DataView as the resolved text.                                                                                                                                                                         |
+
+## ViewStat
+
+**MPO Version:** 1.3.0
+
+Defines a statistical aggregation for a DataView. Unlike ViewAggregates that collect related records, ViewStats compute mathematical summaries such as sum, count, average, min, and max over grouped data. These groupings, or 'buckets', are constructed based on parent-child relationships between objects. This is conceptually similar to Elasticsearch's bucket-based aggregations. Each ViewStat joins the main object with a target object (child) using a foreign key relationship and computes one or more aggregates using the defined conditions. It's ideal for summarizing numerical data across associations, such as counting user orders or summing revenue per company.
+
+```typescript
+interface ViewStat = {
+  name : String;
+  childObject : DataObjectName;
+  parentKey : PropRefer;
+  childKey : PropRefer;
+  select : MScript;
+  aggList : AggregateItem[];
+}
+```
+
+| Field       | Description                                                                                                                                                  |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| name        | The name of the statistic in the DataView result. This will appear as a property in the view (e.g., 'totalRevenue', 'userOrderCount').                       |
+| childObject | The name of the target object to aggregate data from (e.g., orders, sessions, transactions). Can also be a previously defined view.                          |
+| parentKey   | The key from the main object that groups the stat results. Acts as the bucket owner (e.g., userId if calculating per user).                                  |
+| childKey    | The foreign key in the target object used to relate it back to the main object. Typically a reference like 'userId' or 'companyId'.                          |
+| select      | An optional MScript filter applied before bucketing. Use this to narrow the child data (e.g., only 'canceled' orders in the last month).                     |
+| aggList     | The list of AggregateItems to apply on the grouped buckets. Each defines a numeric operation like sum, count, average. If empty, a default count is applied. |
+
+### AggregateItem
+
+**MPO Version:** 1.3.0
+
+Defines a single mathematical operation to apply to a group of records within a ViewStat. Supports standard operations like sum, average, min, max, and count. Each AggregateItem targets a specific field in the child object and may apply additional filters. It is particularly useful when multiple grouped metrics are required from the same set of joined records, such as 'count of failed orders' vs. 'sum of successful order values'.
+
+```typescript
+interface AggregateItem = {
+  name : String;
+  aggType : AggTypes;
+  aggField : PropRefer;
+  dataType : DataTypes;
+  filterValue : MScript;
+}
+```
+
+| Field       | Description                                                                                                                                                                                                  |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| name        | The identifier of the computed metric (e.g., 'orderCount', 'totalAmount'). Appears as a key in the result object.                                                                                            |
+| aggType     | The aggregation operation to perform.                                                                                                                                                                        |
+| aggField    | The field of the target object used in the aggregation (e.g., 'amount', 'id'). For count operations, typically use 'id'.                                                                                     |
+| dataType    | The expected data type of the result (e.g., 'Integer', 'Float'). Often reflects the type of the aggField but may differ (e.g., averaging integers produces floats).                                          |
+| filterValue | Optional MScript condition to filter records inside the bucket before applying the operation. Allows multiple filtered aggregations on the same group (e.g., 'totalCanceledAmount', 'totalCompletedAmount'). |
+
+#### AggTypes
+
+Specifies the type of aggregation to perform.
+
+```js
+AggTypesNames = ["value_count", "sum", "avg", "min", "max"];
+
+const AggTypes = {
+  value_count: 0,
+  sum: 1,
+  avg: 2,
+  min: 3,
+  max: 4,
+};
+```
+
+| Enum        | Description                            |
+| ----------- | -------------------------------------- |
+| value_count | Count the number of records.           |
+| sum         | Sum the values of the records.         |
+| avg         | Average the values of the records.     |
+| min         | Find the minimum value of the records. |
+| max         | Find the maximum value of the records. |

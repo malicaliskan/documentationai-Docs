@@ -1,0 +1,115 @@
+# LoginDefinition
+
+**MPO Version:** 1.3.0
+
+Defines the core login architecture of the project, including the user and tenant structures that underpin authentication and access. These settings enable Mindbricks to generate a built-in 'auth' service tailored to your data model, supporting user registration, login, permissions, and optional multi-tenant behavior.
+
+```typescript
+interface LoginDefinition = {
+  userSettings : LoginDefUserSettings;
+  tenantSettings : LoginDefTenantSettings;
+}
+```
+
+| Field          | Description                                                                                                                                                                                                                                                                                                                                                                                                      |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| userSettings   | Defines how the built-in user object is configured and authenticated within the project. While the user data model is fully managed by Mindbricks, this setting allows you to control aspects such as super admin credentials, registration behavior, user group support, and whether mobile-based features are enabled. These settings shape how authentication flows and access are handled at the user level. |
+| tenantSettings | Configuration for multi-tenant applications, including tenant object definitions and their relationship to users and user groups. When enabled, this isolates resources by tenant and supports tenant-scoped access control. Omit this section for single-tenant projects.                                                                                                                                       |
+
+## LoginDefUserSettings
+
+**MPO Version:** 1.3.0
+
+Defines how users are stored, managed, and authenticated within the project. This includes super admin credentials, login identifiers, optional mobile and email verification settings, public registration policies, and whether user groups are active. This structure governs the behavior and structure of the user service's primary data model.
+
+```typescript
+interface LoginDefUserSettings = {
+  superAdminEmail : String;
+  superAdminPassword : String;
+  userNameType : UserNameType;
+  superAdminData : DataMapItem[];
+  userGroupsActive : Boolean;
+  userGroupsInTenantLevel : Boolean;
+  userMobileIsActive : Boolean;
+  emailVerificationRequiredForLogin : Boolean;
+  mobileVerificationRequiredForLogin : Boolean;
+  mobile2FARequiredForLogin : Boolean;
+  email2FARequiredForLogin : Boolean;
+  userRegisterIsPublic : Boolean;
+  userAutoAvatarScript : MScript;
+  userGroupAutoAvatarScript : MScript;
+}
+```
+
+| Field                              | Description                                                                                                                                                                                                                                                                       |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| superAdminEmail                    | The login email of the super admin user. This user has full permissions across the project and is not tenant-scoped. If not defined, the project owner's email is used. This email must be unique and valid to support email-based features like verification and password reset. |
+| superAdminPassword                 | The password of the super admin user. This preset password is used to access the system after initial deployment and should be changed in production environments.                                                                                                                |
+| userNameType                       | Specifies whether the user's name will be stored as a single 'fullname' or as separate 'name' and 'surname' fields.                                                                                                                                                               |
+| superAdminData                     | Preset values for the super admin user. Required only for custom properties beyond the standard fields (email, name, password, etc.).                                                                                                                                             |
+| userGroupsActive                   | Indicates whether user group functionality is enabled. When active, a 'userGroup' data object is added to the user service with fixed fields (id, name, description), optionally scoped by tenant.                                                                                |
+| userGroupsInTenantLevel            | If true, user groups are defined per tenant; otherwise, they are defined globally across the SaaS. Applies only when user groups are enabled.                                                                                                                                     |
+| userMobileIsActive                 | Indicates whether mobile numbers are stored in the user data model. Required for enabling mobile-based authentication features such as 2FA.                                                                                                                                       |
+| emailVerificationRequiredForLogin  | Indicates whether users must verify their email address before they can log in. Related verification flows must be enabled in VerificationServices.                                                                                                                               |
+| mobileVerificationRequiredForLogin | Indicates whether users must verify their mobile number before logging in. This applies only when 'userMobileIsActive' is true.                                                                                                                                                   |
+| mobile2FARequiredForLogin          | Indicates whether two-factor authentication via mobile is required during login. This applies only when 'userMobileIsActive' is true.                                                                                                                                             |
+| email2FARequiredForLogin           | Indicates whether two-factor authentication via email is required during login. Related verification flows must be enabled in VerificationServices.                                                                                                                               |
+| userRegisterIsPublic               | Determines if users can self-register. If false, only administrators can create users.                                                                                                                                                                                            |
+| userAutoAvatarScript               | An MScript expression that generates a default avatar for the user. This is used when no avatar is provided in the request.                                                                                                                                                       |
+| userGroupAutoAvatarScript          | An MScript expression that generates a default avatar for the user group. This is used when no avatar is provided in the request.                                                                                                                                                 |
+
+### UserNameType
+
+Specifies how user names are represented in the data model.
+
+```js
+UserNameTypeNames = ["asFullname", "asNamePair"];
+
+const UserNameType = {
+  asFullname: 0,
+  asNamePair: 1,
+};
+```
+
+| Enum       | Description                                                     |
+| ---------- | --------------------------------------------------------------- |
+| asFullname | Stores the user's name in a single 'fullname' field.            |
+| asNamePair | Stores the user's name in separate 'name' and 'surname' fields. |
+
+## LoginDefTenantSettings
+
+**MPO Version:** 1.3.0
+
+Specifies how tenant-based access control is structured for multi-tenant projects. This includes the tenant object name, registration permissions, and tenant separation logic. When enabled, this enforces strict data and user isolation by tenant.
+
+```typescript
+interface LoginDefTenantSettings = {
+  useMultiTenantFeature : Boolean;
+  configuration : LoginDefTenantSettingsConfig;
+}
+```
+
+| Field                 | Description                                                                                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| useMultiTenantFeature | Enable this if the project requires multi-tenant architecture. If false, the project will be treated as single-tenant and no tenant-based separation is applied. |
+| configuration         | The configuration object for tenant settings. Leave it null if useMultiTenantFeature is false.                                                                   |
+
+### LoginDefTenantSettingsConfig
+
+**MPO Version:** 1.3.0
+
+Configuration details for tenant-based access control, including tenant registration, naming, and avatar script.
+
+```typescript
+interface LoginDefTenantSettingsConfig = {
+  tenantRegisterIsPublic : Boolean;
+  tenantName : String;
+  tenantAutoAvatarScript : MScript;
+}
+```
+
+| Field                  | Description                                                                                                                                                                        |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| tenantRegisterIsPublic | If true, any user can create a tenant. If false, only SaaS admins can register tenants. When a user creates a tenant, they are automatically assigned as the tenant owner.         |
+| tenantName             | Defines the name of the tenant object in the system (e.g., 'client', 'organization', 'workspace'). This name will be used to generate code, database models, and field references. |
+| tenantAutoAvatarScript | An MScript expression that generates a default avatar for the tenant. This is used when no avatar is provided in the request.                                                      |

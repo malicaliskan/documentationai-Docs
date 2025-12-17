@@ -1,0 +1,227 @@
+# AccessControl
+
+**MPO Version:** 1.3.0
+
+Configuration chapter for defining the access control architecture of the project. Mindbricks supports multiple authorization models including role-based, user-based, object-based, and attribute-based access controls. This section enables a unified, flexible, and scalable permission system that ensures resources and operations are securely accessed based on defined authorization rules across services.
+
+```typescript
+interface AccessControl = {
+  permissionBasics : PermissionBasics;
+  roleSettings : RBACSettings;
+  permissionTypes : PermissionTypes;
+  objectBasedSettings : OBACPermission;
+  attributeBasedSettings : AbacPermission;
+}
+```
+
+| Field                  | Description                                                                                                                                                                                                                                              |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| permissionBasics       | Defines the core permission vocabulary of the project, including permission groups and named permissions. These are referenced in access control logic across services.                                                                                  |
+| roleSettings           | Settings for Role-Based Access Control (RBAC), which defines how roles are assigned to users and how roles are mapped to permissions. This is the most common access control strategy in projects.                                                       |
+| permissionTypes        | Specifies which permission application methods are active in the project. Mindbricks supports role-based, user-based, user-group-based, object-based (OBAC), and attribute-based (ABAC) authorization models. Multiple types can be active concurrently. |
+| objectBasedSettings    | Settings related to Object-Based Access Control (OBAC). In this model, access is determined based on the user's relation to a specific object instance, such as ownership.                                                                               |
+| attributeBasedSettings | Settings for Attribute-Based Access Control (ABAC). In this model, access decisions are based on dynamic rules involving user, object, or contextual attributes.                                                                                         |
+
+## PermissionBasics
+
+**MPO Version:** 1.3.0
+
+Defines the foundational permission model of the project. This section enables Permission-Based Access Control (PBAC) by allowing the architect to organize granular permissions into named groups. These permission groups act as the reference set for roles, users, and object-level rules throughout the project.
+
+```typescript
+interface PermissionBasics = {
+  pbacIsActive : Boolean;
+  configuration : PermissionBasicsConfig;
+}
+```
+
+| Field         | Description                                                                                                                                                                                           |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pbacIsActive  | A boolean flag indicating whether Permission-Based Access Control (PBAC) is active for this project. If enabled, Mindbricks will enforce permission checks according to the defined permission model. |
+| configuration | The configuration object for permission basics. Leave it null if pbacIsActive is false.                                                                                                               |
+
+### PermissionBasicsConfig
+
+**MPO Version:** 1.3.0
+
+Configuration details for permission basics, including permission groups.
+
+```typescript
+interface PermissionBasicsConfig = {
+  permissionGroups : PermissionGroup[];
+}
+```
+
+| Field            | Description                                                                                                                                                                                          |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| permissionGroups | An array of PermissionGroup objects that define the named permissions of the project grouped under logical categories. These groups help structure and reuse permission definitions across services. |
+
+#### PermissionGroup
+
+**MPO Version:** 1.3.0
+
+Defines a group of permissions under a shared namespace. Each permission group has a unique groupName and a list of permissions that are referenced across the project using either 'groupName.permission' or standalone permission identifiers. These groups simplify permission management in large-scale projects.
+
+```typescript
+interface PermissionGroup = {
+  groupName : String;
+  permissions : String[];
+}
+```
+
+| Field       | Description                                                                                                                                                       |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| groupName   | The unique identifier of the permission group. It is used as a namespace in the format groupName.permission when referencing permissions in roles or other rules. |
+| permissions | A list of permission names (strings) defined under this group. These should be unique across the project to ensure consistent access rules.                       |
+
+## RBACSettings
+
+**MPO Version:** 1.3.0
+
+Configuration for Role-Based Access Control (RBAC) within the project. When enabled, RBAC allows permissions to be assigned to named roles, which are then associated with users. This setup supports both single-role and multi-role configurations, along with custom logical roles defined by dynamic lookup conditions.
+
+```typescript
+interface RBACSettings = {
+  rbacIsActive : Boolean;
+  configuration : RBACSettingsConfig;
+}
+```
+
+| Field         | Description                                                                                                                                           |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| rbacIsActive  | A boolean value to enable or disable role-based access control (RBAC) in the project. When enabled, access decisions can be made based on user roles. |
+| configuration | The configuration object for RBAC settings. Leave it null if rbacIsActive is false.                                                                   |
+
+### RBACSettingsConfig
+
+**MPO Version:** 1.3.0
+
+Configuration details for RBAC, including roles, role ID data type, custom role lookups, and multi-role support.
+
+```typescript
+interface RBACSettingsConfig = {
+  rolesObject : RoleItem[];
+  customRoleLookups : DataMapItem[];
+  usersHaveMultipleRoles : Boolean;
+}
+```
+
+| Field                  | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| rolesObject            | Defines the list of roles available in the project. Each role is represented as a RoleItem object with a name and a value. These roles will be used to assign permissions and will appear in session data during authentication. Note that for single tenant applications, superAdmin, admin , user roles and for multi-tenant applications superAdmin, saasAdmin, tenantOwner, tenantAdmin, tenantUser roles are default system roles. And thery are active even RBAC is not active.Any role item in this rolesObject will be addtional role to these system roles. |
+| customRoleLookups      | An optional mapping of custom logical roles and their evaluation logic. Each entry maps a role name to an MScript condition that determines whether the role is assigned to a user dynamically.                                                                                                                                                                                                                                                                                                                                                                      |
+| usersHaveMultipleRoles | Indicates whether users can have multiple roles. If true, the `roleId` in the session and user model will be treated as an array of role values.                                                                                                                                                                                                                                                                                                                                                                                                                     |
+
+#### RoleItem
+
+**MPO Version:** 1.3.0
+
+Represents a role definition in the RBAC system. Each role includes a `name` for display and a `value` used in session data and permission checks.
+
+```typescript
+interface RoleItem = {
+  name : String;
+  value : Any;
+}
+```
+
+| Field | Description                                                                                                                                                                           |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name  | The display name of the role (e.g., 'Admin', 'Editor'). This name will be used for reference and documentation purposes.                                                              |
+| value | The internal value of the role, which will be stored in the `roleId` field of the user or session data. This value is used during authorization checks and can be a string or number. |
+
+## PermissionTypes
+
+**MPO Version:** 1.3.0
+
+Defines the active permission mechanisms in the project. Mindbricks supports multiple types of permission strategies including role-based (RBAC), user-specific overrides, user group-level permissions, object-level (OBAC), and tenant-specific rules. This configuration determines which of these models are enabled for the access control logic.
+
+```typescript
+interface PermissionTypes = {
+  roleBasedPermissionsIsActive : Boolean;
+  userBasedPermissionsIsActive : Boolean;
+  userGroupBasedPermissionsIsActive : Boolean;
+  objectBasedPermissionsIsActive : Boolean;
+  tenantBasedPermissionsIsActive : Boolean;
+}
+```
+
+| Field                             | Description                                                                                                                                                                                                  |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| roleBasedPermissionsIsActive      | Enables Role-Based Access Control (RBAC) for the project. When active, permissions can be assigned to roles, and users inherit access through their roles.                                                   |
+| userBasedPermissionsIsActive      | Enables user-specific permission overrides. When active, admins can assign custom permissions directly to individual users regardless of their roles or groups.                                              |
+| userGroupBasedPermissionsIsActive | Enables permission control via user groups. When active, permissions can be assigned to defined user groups and inherited by all members.                                                                    |
+| objectBasedPermissionsIsActive    | Enables Object-Based Access Control (OBAC). When active, permission rules can be defined per individual data object (e.g., per record) and evaluated dynamically based on the object's relation to the user. |
+| tenantBasedPermissionsIsActive    | Activates tenant-specific permission logic. In multi-tenant projects, this allows SaaS administrators to define custom permission profiles per tenant, enabling isolated authorization policies.             |
+
+## OBACPermission
+
+**MPO Version:** 1.3.0
+
+Configuration for Object-Based Access Control (OBAC), which restricts access to specific data objects based on object ownership or association. If your system requires permissions that vary per object instance (e.g., 'only the creator can edit this record'), OBAC should be enabled and the relevant data objects listed.
+
+```typescript
+interface OBACPermission = {
+  objectBasedPermissionsIsActive : Boolean;
+  dataObjects : DataObjectName[];
+}
+```
+
+| Field                          | Description                                                                                                                                              |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| objectBasedPermissionsIsActive | A boolean value that enables object-level permission checks. When true, permissions can be enforced per record based on ownership or related fields.     |
+| dataObjects                    | An array of data object names to which object-level permissions will apply. These are the models for which individual access control should be enforced. |
+
+### DataObjectName
+
+**MPO Version:** 1.3.0
+
+Represents a reference to a data object within the project. The value can be either a simple object name or a qualified reference in the format 'serviceName:objectName'. When using the qualified format, the part before the ':' specifies the service name, and the part after specifies the object name within that service. If only a single name is provided (without ':'), the system first searches for the object in the current service, then searches across other services in the project. As a best practice, when referencing data objects from other services, always fully qualified 'serviceName:objectName' format should be used to avoid potential naming conflicts.
+
+```typescript
+interface DataObjectName = {
+}
+```
+
+| Field | Description |
+| ----- | ----------- |
+
+## AbacPermission
+
+**MPO Version:** 1.3.0
+
+Configuration for Attribute-Based Access Control (ABAC), allowing fine-grained permission control using attribute-level rules on data objects. ABAC evaluates access by applying custom filter conditions to each object. When a rule matches, the user session may be granted specific permissions or even dynamic roles for that object. These rules can supplement or override standard RBAC or OBAC logic.
+
+```typescript
+interface AbacPermission = {
+  attributeBasedPermissionsIsActive : Boolean;
+  abacDefinitions : ABACDefinititon[];
+}
+```
+
+| Field                             | Description                                                                                                                                                                                                                       |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| attributeBasedPermissionsIsActive | A boolean value that enables attribute-level access control. When true, data access will be filtered according to ABAC rules defined in `abacDefinitions`.                                                                        |
+| abacDefinitions                   | An object array to define ABAC (Attribute-Based Access Control) rules. Each rule applies a conditional filter to determine which records a user can access, and grants either dynamic permissions or a role for matching records. |
+
+### ABACDefinititon
+
+**MPO Version:** 1.3.0
+
+Defines a single ABAC (Attribute-Based Access Control) rule for a given data object. Each rule applies a conditional filter to determine which records a user can access, and grants either dynamic permissions or a role for matching records.
+
+```typescript
+interface ABACDefinititon = {
+  name : String;
+  dataObject : DataObjectName;
+  whereClause : MScript;
+  permissions : String[];
+}
+```
+
+| Field       | Description                                                                                                                                                                                                             |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name        | The unique identifier for this ABAC rule. It is used in the backend logic, database, and UI for reference.                                                                                                              |
+| dataObject  | The name of the data object to which this ABAC rule applies.                                                                                                                                                            |
+| whereClause | A JavaScript-style `where` clause defined using MScript syntax. This condition determines which records in the data object will match the rule and grant access.                                                        |
+| permissions | A list of permission strings that will be granted when the ABAC rule matches a record. These permissions are context-specific and take precedence over less-specific permission types (such as role-based permissions). |

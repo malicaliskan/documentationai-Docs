@@ -1,0 +1,109 @@
+# ServiceSettings
+
+**MPO Version:** 1.3.0
+
+Defines the foundational settings of the service module, including basic metadata and authentication configurations. These settings must be established before designing the service's data model. They determine the service's identity, behavior within the project, and how it handles authentication. This configuration acts as the entry point for service-level behavior, ensuring consistency and security from the outset of development.
+
+```typescript
+interface ServiceSettings = {
+  serviceBasics : ServiceBasics;
+  serviceOptions : ServiceOptions;
+}
+```
+
+| Field          | Description                                                                                                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| serviceBasics  | Defines the basic metadata of the service, including its unique name, description, and optional custom configuration variables. These basics are used throughout code generation, routing, and documentation. |
+| serviceOptions | Defines basic options of the service for authentication, http and data model                                                                                                                                  |
+
+## ServiceBasics
+
+**MPO Version:** 1.3.0
+
+Provides core identifiers and metadata for the service. Includes the service's internal ID, a unique name (used in code, routing, and service naming), a descriptive text for documentation, and any custom variables required for runtime configuration.
+
+```typescript
+interface ServiceBasics = {
+  id : String;
+  name : String;
+  description : Text;
+  frontendDocument : Text;
+  customVariables : DataMapSimpleItem[];
+  nodejsPackages : NodeJsPackageItem[];
+}
+```
+
+| Field            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| id               | Unique identifier of the service, automatically managed within the project.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| name             | Service name used for naming files, folders, endpoints, and routes. Use short, single-word names in camelCase if needed. This field impacts many system-level identifiers.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| description      | A clear, human-readable explanation of what the service does. This description appears in service-level documentation and interface annotations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| frontendDocument | A text based information to inform the frontend developer or frontend AI agent about the service specific UX behaviour of the service logic based on user stories and use cases. The format may be either text or markdown(recommended). Write the document as an AI prompt and describe service gneric UX behaviours. Any data object specific information should be given as a brief key sentence, since they will be detailed in their own objects. Note that this document will be given to the AI agent or human developer combined with all technical details that is generated from the servic design,so this document should only focus on service-specific behavioral UX business logic. |
+| customVariables  | A list of custom key-value pairs that will be available to all scripts and functions within the service. Useful for environment-specific settings or reusable values.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| nodejsPackages   | A list of npm packages to be added to the nodejs package json of the service. They will be imported in the business api context if required.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+
+### NodeJsPackageItem
+
+**MPO Version:** 1.3.0
+
+An object to define a nodejs npm package requirement to be added to the nodejs package json of the service
+
+```typescript
+interface NodeJsPackageItem = {
+  packageName : String;
+  version : String;
+  defaultImportConst : String;
+}
+```
+
+| Field              | Description                                                                                               |
+| ------------------ | --------------------------------------------------------------------------------------------------------- |
+| packageName        | The official import name of the package in the npm cloud. It may be a single string or a path like string |
+| version            | The version of the package that will be imported. Use an asterix (\*) if you need the latest version      |
+| defaultImportConst | A const name like `axios` that will be the main default import of the librarry.                           |
+
+## ServiceOptions
+
+**MPO Version:** 1.3.0
+
+Defines a configuration class for the basic options of the service for authentication, http and data model
+
+```typescript
+interface ServiceOptions = {
+  serviceRequiresLogin : Boolean;
+  serviceAllowsUserToLogin : Boolean;
+  httpPort : Integer;
+  routerSuffix : String;
+  dataModelName : String;
+  dbType : DbTypes;
+  useSoftDelete : Boolean;
+}
+```
+
+| Field                    | Description                                                                                                                                                                                                                                                                                                    |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| serviceRequiresLogin     | If true, all API calls to this service require a valid login token unless explicitly marked otherwise.                                                                                                                                                                                                         |
+| serviceAllowsUserToLogin | Keep this false unless you know what you are doing. If true, the service provides login endpoints for users, allowing it to act as an authentication provider. This option is used if you want to make your own auth/user service instead of the default one created with authentication module configuration. |
+| httpPort                 | The port number that the service will use to listen for HTTP traffic. Recommended to use ports in the 3000-3099 range for consistency across microservices.                                                                                                                                                    |
+| routerSuffix             | Use this in your custom deployment if you have any suffix in your service url to be removed before evaluated in express router. AI Agents should keep this null.                                                                                                                                               |
+| dataModelName            | The name identifier of the data model configuration. For current Mindbricks versions, use 'main' or 'default'. In future versions with support for multiple data models per service, this name will distinguish them.                                                                                          |
+| dbType                   | Specifies the type of database engine used for storing the service's data. It must be one of the values in the DbTypes enum. Currently, PostgreSQL is fully supported; MongoDB is in beta.                                                                                                                     |
+| useSoftDelete            | Indicates whether records are soft-deleted (i.e., marked inactive using an 'isActive' flag) instead of being physically removed from the database. This setting applies globally unless overridden at the data object level.                                                                                   |
+
+### DbTypes
+
+Enumeration of supported database types for service-level data models.
+
+```js
+DbTypesNames = ["postgresql", "mongodb"];
+
+const DbTypes = {
+  postgresql: 0,
+  mongodb: 1,
+};
+```
+
+| Enum       | Description                                                         |
+| ---------- | ------------------------------------------------------------------- |
+| postgresql | Use PostgreSQL for relational database management.                  |
+| mongodb    | Use MongoDB for document-oriented data storage (currently in beta). |

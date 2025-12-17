@@ -1,0 +1,315 @@
+# DataObject
+
+**MPO Version:** 1.3.0
+
+A DataObject is the core building block of a service in Mindbricks. It represents both the data schema (like a table in SQL or a collection in MongoDB) and the business logic that operates around it. Each DataObject includes a set of DataProperties (fields), and it governs how the data is stored, validated, secured, and exposed through automatically generated business APIs. Beyond simple data modeling, DataObjects enable complex logic configurations, such as access control, field-level behaviors, validation, and custom API route behavior. They serve not only as data containers but also as logical units of functionality within the microservice.
+
+```typescript
+interface DataObject = {
+  objectSettings : ObjectSettings;
+  properties : DataProperty[];
+}
+```
+
+| Field          | Description                                                                                                                                                                                                                                                                                                                                                       |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| objectSettings | Settings that define general behavior and characteristics of the data object, such as naming, indexing, visibility, and access options.                                                                                                                                                                                                                           |
+| properties     | The list of data properties of the data object. Each property represents a field and encapsulates both the type of the data and behavioral configurations like default values, constraints, visibility, or computed logic. Note: Mindbricks automatically creates standard fields (`id`, `isActive`, `createdAt`, `updatedAt`), so avoid defining these manually. |
+
+## ObjectSettings
+
+**MPO Version:** 1.3.0
+
+Configuration settings that govern the behavior, access control, and optimization strategies of a data object. These settings allow fine-grained control over how the data object behaves in terms of authorization, caching, indexing, payment processing, and membership relationships. This is the central point to define how the object integrates with infrastructure and security policies in a microservice.
+
+```typescript
+interface ObjectSettings = {
+  basicSettings : ObjectBasicSettings;
+  authorization : ObjectAuthorization;
+  redisEntityCacheSettings : RedisEntityCacheSettings;
+  compositeIndexSettings : CompositeIndex[];
+  stripeOrder : StripeOrder;
+  membershipSettings : MembershipSettings;
+}
+```
+
+| Field                    | Description                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| basicSettings            | Core definitions of the data object such as its name, label, and description. These settings influence how the object appears in documentation and interfaces.                                                                                                                                                                                                                     |
+| authorization            | Rules and permissions that control access to this data object. These object-level rules enhance or override project-level authorization to implement fine-grained security models.                                                                                                                                                                                                 |
+| redisEntityCacheSettings | Configuration for enabling Redis-based entity-level caching. Useful for frequently accessed, lightweight records that benefit from high-speed lookups and smart cache invalidation.                                                                                                                                                                                                |
+| compositeIndexSettings   | Defines one or more composite indexes to ensure uniqueness across multiple fields and improve the efficiency of compound queries. This is especially critical for enforcing business constraints or query performance in relational databases. Please note that if you need unique constraints on a single field, you can use the `unique` property of the DataProperty instead.   |
+| stripeOrder              | Activates e-commerce order support for the data object through Stripe integration. Automatically configures order and payment processing infrastructure when the object represents billable entities like purchases or subscriptions.                                                                                                                                              |
+| membershipSettings       | Settings to enable access control for this object through an external membership relationship. This object represents the protected resource (such as a project), and access to it is managed by another object (such as projectMember) that links users or roles to this resource. Useful in multi-user collaboration domains where permissions are scoped per resource instance. |
+
+### ObjectBasicSettings
+
+**MPO Version:** 1.3.0
+
+Basic configuration for a data object, including its identity, documentation, and deletion strategy. A data object acts as a logical model for a database table or MongoDB collection, and is central to defining how data is stored, queried, and managed within a microservice.
+
+```typescript
+interface ObjectBasicSettings = {
+  name : String;
+  description : Text;
+  frontendDocument : Text;
+  useSoftDelete : Boolean;
+}
+```
+
+| Field            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name             | A unique identifier for the data object used consistently across generated code, API routes, and documentation. The name must be a single, camelCase word without spaces or special characters, and should be unique within the project. Use a singular noun that clearly represents the entity (e.g., 'product', 'order', 'task').                                                                                                                                                                                                                                                      |
+| description      | A descriptive explanation of what the data object represents. This description is used in documentation and helps clarify the business domain the object serves.                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| frontendDocument | A text based information to inform the frontend developer or frontend AI agent about the data object specific UX behaviour of the data object logic based on user stories and use cases. The format may be either text or markdown(recommended). Write the document as an AI prompt and describe data object specific UX behaviours. Note that this document will be given to the AI agent or human developer combined with all technical details that is generated from the data object design,so this document should only focus on data object-specific behavioral UX business logic. |
+| useSoftDelete    | Overrides the default data model setting to enable or disable soft deletion for this object. If enabled, records will not be physically deleted but marked inactive using an 'isActive' flag. These records will be excluded from normal queries unless explicitly requested.                                                                                                                                                                                                                                                                                                            |
+
+### ObjectAuthorization
+
+**MPO Version:** 1.3.0
+
+Defines access control scope for this data object, including tenant scoping and public accessibility. These settings are applied globally unless explicitly overridden at the Business API level.
+
+```typescript
+interface ObjectAuthorization = {
+  dataObjectAccess : DataObjectAccess;
+  objectDataIsInTenantLevel : Boolean;
+}
+```
+
+| Field                     | Description                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| dataObjectAccess          | Specifies the default access level for this DataObject and its related get/list APIs. The value is defined by the DataObjectAccess enum, which determines whether the object is private (restricted to owner/admins), protected (available to all authenticated project users), or public (open to everyone, including anonymous). API-level configurations may override this default. |
+| objectDataIsInTenantLevel | Determines whether this object is scoped per tenant in a multi-tenant architecture. If true, an implicit tenant ID field (e.g., clientId) will be added to segregate data per tenant. Use this for tenant-owned data like projects or documents.                                                                                                                                       |
+
+#### DataObjectAccess
+
+Defines the possible access levels for a DataObject. This type captures whether the object is only visible to its owner/admins (private), shared with authenticated project users (protected), or exposed to the public including anonymous users (public). The key difference is between restricted vs. shared access, and within shared access whether authentication is required.
+
+```js
+DataObjectAccessNames = ["accessPrivate", "accessProtected", "accessPublic"];
+
+const DataObjectAccess = {
+  accessPrivate: 0,
+  accessProtected: 1,
+  accessPublic: 2,
+};
+```
+
+| Enum            | Description                                                 |
+| --------------- | ----------------------------------------------------------- |
+| accessPrivate   | Only the object owner and system administrators can access. |
+| accessProtected | All authenticated project users can access.                 |
+| accessPublic    | All users, including anonymous, can access.                 |
+
+### RedisEntityCacheSettings
+
+**MPO Version:** 1.3.0
+
+Configuration for Redis-based entity-level caching. Enables fast access to frequently used data by storing and serving object-level records from Redis, with support for custom cache criteria and smart expiration.
+
+```typescript
+interface RedisEntityCacheSettings = {
+  useEntityCaching : Boolean;
+  configuration : RedisEntityCacheConfig;
+}
+```
+
+| Field            | Description                                                                                                                                                       |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| useEntityCaching | Enables Redis entity caching for this object. When active, individual records are cached in Redis, improving read performance for high-frequency access patterns. |
+| configuration    | Configuration settings for Redis entity caching. Includes cache criteria and expiration logic. Leave it null if useEntityCaching is false.                        |
+
+#### RedisEntityCacheConfig
+
+**MPO Version:** 1.3.0
+
+Configuration for Redis-based entity-level caching. Enables fast access to frequently used data by storing and serving object-level records from Redis, with support for custom cache criteria and smart expiration.
+
+```typescript
+interface RedisEntityCacheConfig = {
+  useSmartCaching : Boolean;
+  cacheCriteria : MScript;
+  checkCriteriaOnlyInCreateAndUpdates : Boolean;
+}
+```
+
+| Field                               | Description                                                                                                                                                                                                                                                          |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| useSmartCaching                     | Activates smart cache expiration logic. TTL (time-to-live) is dynamically calculated based on access frequency, which is useful for large datasets with volatile usage patterns.                                                                                     |
+| cacheCriteria                       | A condition (written as an MScript Query object) that determines whether a specific record should be cached. Useful for filtering which records are cache-worthy (e.g., only active events, unexpired tickets).                                                      |
+| checkCriteriaOnlyInCreateAndUpdates | If true, cache criteria will be evaluated only during create and update operations, ideal for conditions based solely on internal record fields. Set false to re-evaluate criteria at read time when the condition depends on external context (e.g., current date). |
+
+### CompositeIndex
+
+**MPO Version:** 1.3.0
+
+Defines a composite index for a data object. Composite indexes improve database performance for queries that filter or sort based on multiple fields. Each index is created at the database level and can optionally handle duplicate conflicts during insert operations. Note that if you need unique constraints on a single field, you can use the `unique` property of the DataProperty instead. Composite indexes are particularly useful for optimizing complex queries that involve multiple fields, such as searching for users by email and client ID simultaneously or whne you need to ensure uniqueness across multiple fields (e.g., email and clientId). They are defined at the data object level and will be used across all related Business APIs.
+
+```typescript
+interface CompositeIndex = {
+  indexName : String;
+  indexFields : PropRefer[];
+  onDuplicate : OnDuplicate;
+}
+```
+
+| Field       | Description                                                                                                                                                                                                  |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| indexName   | Unique name of the database index. Used in DDL statements and must be unique within the scope of the current data object. Choose a descriptive name that reflects the indexed fields (e.g., userEmailIndex). |
+| indexFields | List of field names that form the composite index. The order of fields matters for query optimization. For example, ['email', 'clientId'] allows fast lookups for email within a specific client context.    |
+| onDuplicate | Defines the behavior when an insert operation encounters a duplicate key on this index. Options include updating the existing row or throwing an error. Useful for implementing upsert logic.                |
+
+#### OnDuplicate
+
+Enumeration that defines the conflict resolution strategy when a new record would violate a composite index constraint.
+
+```js
+OnDuplicateNames = ["doUpdate", "throwError", "stopOperation", "doInsert"];
+
+const OnDuplicate = {
+  doUpdate: 0,
+  throwError: 1,
+  stopOperation: 2,
+  doInsert: 3,
+};
+```
+
+| Enum          | Description                                                                                                                                                            |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| doUpdate      | Update the existing record if a duplicate key is encountered. Equivalent to an upsert operation.                                                                       |
+| throwError    | Throw a database error when a duplicate key is encountered. Prevents the insertion of conflicting data.                                                                |
+| stopOperation | Stop the operation silently if a duplicate key is encountered. The existing record remains unchanged and no error is thrown.                                           |
+| doInsert      | Proceed with the operation without checking for duplicates. Use this option when your composite index is designed for search purposes only and duplicates are allowed. |
+
+### StripeOrder
+
+**MPO Version:** 1.3.0
+
+Defines the settings for integrating this data object with Stripe to handle e-commerce orders and payments. When enabled, Mindbricks automatically generates the required logic and auxiliary objects for managing payment workflows. Ensure Stripe credentials are set at the project level to activate this integration.
+
+```typescript
+interface StripeOrder = {
+  objectIsAnOrderObject : Boolean;
+  configuration : StripeOrderConfig;
+}
+```
+
+| Field                 | Description                                                                                                                        |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| objectIsAnOrderObject | Enables Stripe order logic for this object. When true, the object is treated as an order and integrated with Stripe payment flows. |
+| configuration         | The configuration object for Stripe order integration. Leave it null if objectIsAnOrderObject is false.                            |
+
+#### StripeOrderConfig
+
+**MPO Version:** 1.3.0
+
+Configuration settings for Stripe order integration. Defines the order name, ID, amount, currency, description, and other properties used in the Stripe payment flow.
+
+```typescript
+interface StripeOrderConfig = {
+  orderName : String;
+  orderId : MScript;
+  amount : MScript;
+  currency : MScript;
+  description : MScript;
+  orderStatusProperty : PropRefer;
+  orderStatusUpdateDateProperty : PropRefer;
+  orderOwnerIdProperty : PropRefer;
+  mapPaymentResultToOrderStatus : PaymentResultMap;
+  onCheckoutError : OnCheckoutError;
+}
+```
+
+| Field                         | Description                                                                                                                                |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| orderName                     | The name of the order as it will appear in Stripe and internal records.                                                                    |
+| orderId                       | MScript expression to extract the order's unique identifier.                                                                               |
+| amount                        | MScript expression to determine the order amount for payment.                                                                              |
+| currency                      | MScript expression to determine the currency for the order.                                                                                |
+| description                   | MScript expression for the order description, shown in Stripe and receipts.                                                                |
+| orderStatusProperty           | The field name in the data object that holds the current order status. This will be automatically updated based on payment results.        |
+| orderStatusUpdateDateProperty | The field name that records the timestamp of the last order status update. This is auto-managed during payment events.                     |
+| orderOwnerIdProperty          | The field that holds the ID of the user who owns the order. This is used to ensure correct access control in payment flows.                |
+| mapPaymentResultToOrderStatus | Defines how Stripe's payment results (started, success, failed, canceled) map to internal order statuses using MScript expressions.        |
+| onCheckoutError               | Determines the system's behavior if a checkout error occurs. Options are 'continueRoute' to proceed or 'throwError' to stop with an error. |
+
+##### OnCheckoutError
+
+Enum options for handling errors that occur during the Stripe checkout process.
+
+```js
+OnCheckoutErrorNames = ["continueRoute", "throwError"];
+
+const OnCheckoutError = {
+  continueRoute: 0,
+  throwError: 1,
+};
+```
+
+| Enum          | Description                                                      |
+| ------------- | ---------------------------------------------------------------- |
+| continueRoute | Continue processing, log the error, and set status to 'failed'.  |
+| throwError    | Throw an error and halt processing when a checkout error occurs. |
+
+##### PaymentResultMap
+
+**MPO Version:** 1.3.0
+
+Defines how various Stripe payment outcomes map to internal order status values using MScript expressions.
+
+```typescript
+interface PaymentResultMap = {
+  paymentResultStarted : MScript;
+  paymentResultCanceled : MScript;
+  paymentResultFailed : MScript;
+  paymentResultSuccess : MScript;
+}
+```
+
+| Field                 | Description                                                                   |
+| --------------------- | ----------------------------------------------------------------------------- |
+| paymentResultStarted  | MScript for mapping the Stripe 'started' status to an internal order status.  |
+| paymentResultCanceled | MScript for mapping the Stripe 'canceled' status to an internal order status. |
+| paymentResultFailed   | MScript for mapping the Stripe 'failed' status to an internal order status.   |
+| paymentResultSuccess  | MScript for mapping the Stripe 'success' status to an internal order status.  |
+
+### MembershipSettings
+
+**MPO Version:** 1.3.0
+
+Configuration settings for membership-based access control of a data object. This object does not define access itself but relies on a separate membership data object to manage which users can access this data object. For example, an 'organization' object might have access control defined through an 'organizationMember' object, which holds references to both the user and the organization.
+
+```typescript
+interface MembershipSettings = {
+  hasMembership : Boolean;
+  configuration : MembershipSettingsConfig;
+}
+```
+
+| Field         | Description                                                                                                                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| hasMembership | Indicates whether this data object uses an external membership object to manage access rights. If set to true, access to this object is governed by entries in another object. Default is false. |
+| configuration | The configuration object for membership settings. Leave it null if hasMembership is false.                                                                                                       |
+
+#### MembershipSettingsConfig
+
+**MPO Version:** 1.3.0
+
+Configuration settings for membership-based access control of a data object. This object does not define access itself but relies on a separate membership data object to manage which users can access this data object. For example, an 'organization' object might have access control defined through an 'organizationMember' object, which holds references to both the user and the organization.
+
+```typescript
+interface MembershipSettingsConfig = {
+  membershipObjectName : DataObjectName;
+  membershipObjectIdProperty : PropRefer;
+  membershipUserIdProperty : PropRefer;
+  membershipStatusCheck : MScript;
+}
+```
+
+| Field                      | Description                                                                                                                                                                                                          |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| membershipObjectName       | Specifies the name of the external data object used to manage membership. This object contains membership entries linking users to this object.                                                                      |
+| membershipObjectIdProperty | The field name in the membership object that refers back to this data object (e.g., organizationId). It links the membership entry to this object.                                                                   |
+| membershipUserIdProperty   | The field name in the membership object that refers to the user who holds membership. This is typically linked to the user's session during authorization checks.                                                    |
+| membershipStatusCheck      | Optional MScript condition to determine if a membership entry is valid. Can be used to check fields like status, startDate, or endDate. This filter is applied at query time when evaluating access. {age:{$gte:18}} |

@@ -1,0 +1,53 @@
+# EdgeController
+
+**MPO Version:** 1.3.0
+
+An edge controller defines a fully customized route handled by a developer-defined function. Unlike standard Busines APIs, it gives full control over the request processing by directly calling a function from the service library. This allows advanced operations like database queries, external API calls, or dynamic responses without following the CRUD cycle. Edge controllers are ideal for building special-purpose APIs or custom flows outside Mindbricks' automatic route generation.
+
+```typescript
+interface EdgeController = {
+  edgeControllerOptions : EdgeControllerOptions;
+  edgeRestSettings : EdgeRestSettings;
+}
+```
+
+| Field                 | Description                                                                                                                                          |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| edgeControllerOptions | Configuration object for the edge controller. It defines which edge function will be executed and whether login is required to access it.            |
+| edgeRestSettings      | HTTP settings for exposing the edge controller as a REST API. It allows specifying the URL path and HTTP method that will trigger the edge function. |
+
+## EdgeControllerOptions
+
+**MPO Version:** 1.3.0
+
+Options that define the execution behavior of the edge controller, including the function to call and login requirement.
+
+```typescript
+interface EdgeControllerOptions = {
+  functionName : String;
+  loginRequired : Boolean;
+}
+```
+
+| Field         | Description                                                                                                                                                                                                             |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| functionName  | The name of the function defined in the service library that will handle this controller’s logic. The function must be an async module under 'edgeFunctions' and should return an object or throw an error as response. |
+| loginRequired | Whether the caller must be logged in to access this edge route. If true, Mindbricks will enforce authentication using session or token checks before invoking the function.                                             |
+
+## EdgeRestSettings
+
+**MPO Version:** 1.3.0
+
+Defines the public REST endpoint for the edge controller. Specifies how the route is exposed via HTTP, including path and method.
+
+```typescript
+interface EdgeRestSettings = {
+  path : String;
+  method : HTTPRequestMethods;
+}
+```
+
+| Field  | Description                                                                                                                                      |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| path   | The relative URL path for this controller. It determines where the edge function will be accessible in the REST API (e.g., '/generate-invoice'). |
+| method | The HTTP method that will trigger the edge controller. Typical values include GET, POST, PUT, DELETE, etc.                                       |

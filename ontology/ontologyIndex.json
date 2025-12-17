@@ -1,0 +1,100 @@
+{
+  "content": [
+    {
+      "type": "file",
+      "title": "Mindbricks Project",
+      "path": "MindbricksProject.mdx"
+    },
+    {
+      "type": "file",
+      "title": "Project Settings",
+      "path": "ProjectSettings.mdx"
+    },
+    {
+      "type": "folder",
+      "title": "Project Authentication",
+      "content": [
+        {
+          "type": "file",
+          "title": "Project Authentication",
+          "path": "ProjectAuthentication.mdx"
+        },
+        { "type": "file", "title": "Auth Basics", "path": "AuthBasics.mdx" },
+        {
+          "type": "file",
+          "title": "Login Definition",
+          "path": "LoginDefinition.mdx"
+        },
+        {
+          "type": "file",
+          "title": "Verification Services",
+          "path": "VerificationServices.mdx"
+        },
+        {
+          "type": "file",
+          "title": "Access Control",
+          "path": "AccessControl.mdx"
+        },
+        {
+          "type": "file",
+          "title": "Social Login Settings",
+          "path": "SocialLoginSettings.mdx"
+        },
+        { "type": "file", "title": "Data Property", "path": "DataProperty.mdx" }
+      ]
+    },
+    {
+      "type": "folder",
+      "title": "B F F Service",
+      "content": [
+        { "type": "file", "title": "B F F Service", "path": "BFFService.mdx" },
+        { "type": "file", "title": "Data View", "path": "DataView.mdx" }
+      ]
+    },
+    {
+      "type": "folder",
+      "title": "Notification Service",
+      "content": [
+        {
+          "type": "file",
+          "title": "Notification Service",
+          "path": "NotificationService.mdx"
+        },
+        {
+          "type": "file",
+          "title": "Notification Service Settings",
+          "path": "NotificationServiceSettings.mdx"
+        },
+        {
+          "type": "file",
+          "title": "Event Notification",
+          "path": "EventNotification.mdx"
+        }
+      ]
+    },
+    {
+      "type": "folder",
+      "title": "Service",
+      "content": [
+        { "type": "file", "title": "Service", "path": "Service.mdx" },
+        {
+          "type": "file",
+          "title": "Service Settings",
+          "path": "ServiceSettings.mdx"
+        },
+        { "type": "file", "title": "Data Object", "path": "DataObject.mdx" },
+        { "type": "file", "title": "Business Api", "path": "BusinessApi.mdx" },
+        {
+          "type": "file",
+          "title": "Service Library",
+          "path": "ServiceLibrary.mdx"
+        },
+        {
+          "type": "file",
+          "title": "Edge Controller",
+          "path": "EdgeController.mdx"
+        }
+      ]
+    }
+  ]
+}

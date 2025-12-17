@@ -1,0 +1,15 @@
+# BFFService
+
+**MPO Version:** 1.3.0
+
+The BFF (Backend-for-Frontend) service is strongly recommended in microservice-based projects to simplify and optimize data access for frontend clients. As data is distributed across multiple services, the BFF service acts as a unified gateway that aggregates and delivers the necessary information in a single response. Mindbricks supports a hybrid CQRS architecture using DataViews, which represent structured aggregations of service data. These can be configured as either Static or Dynamic DataViews. Static DataViews are persisted in Elasticsearch and are ideal for performance-critical or cross-service filtered queries. Dynamic DataViews, on the other hand, fetch and assemble data on-the-fly during each request, making them suitable for user-specific or context-dependent views without storing the output. If no DataViews are defined, the BFF service will not be generated as part of the project.
+
+```typescript
+interface BFFService = {
+  dataViews : DataView[];
+}
+```
+
+| Field     | Description                                                                                                                                                                                                                                                |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| dataViews | A list of DataView definitions that describe how data should be aggregated and exposed by the BFF service. These views can be optionally persisted in Elasticsearch for efficient querying, or resolved dynamically depending on performance and use case. |
