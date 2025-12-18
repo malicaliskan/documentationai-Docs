@@ -33,71 +33,74 @@ Each cloud server belongs to a **workspace** and can host multiple projects and 
 
 ---
 
-## **Viewing Available Instances**
+## **Cloud Servers → Instances**
 
-<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765980724499-xo3dy5v3fq-pasted-image-1765980724349.png?q=85&fm=auto&auto=compress%2Cformat" width="1915" height="976" alt="" />
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765894230131-7phwjbbhiv-pasted-image-1765894228978.png?q=85&fm=auto&auto=compress%2Cformat" width="1911" height="973" alt="" />
 
-The **Instances** page displays all available worker group configurations.
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765894360625-b9joiunyszw-pasted-image-1765894359861.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="974" alt="" />
 
-Each worker group represents a predefined server type with:
+The Instances page shows available **server worker groups** that you can purchase and deploy.
 
-- CPU core count
-
-- Memory (RAM)
-
-- Disk storage
-
-- Hourly pricing
-
-You can review and compare configurations before creating a server.
+Each worker group represents a predefined server configuration.
 
 ---
 
-## **Buying an Instance**
+## **Cloud Servers → Buy Instance**
 
-<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765980834785-t9pgn69kwqf-pasted-image-1765980834879.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="974" alt="" />
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765894323972-llzgzxtk3sb-pasted-image-1765894323261.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="973" alt="" />
 
-When you click **Buy Instance**, you choose the worker group that best fits your workload.
+This page lists available **worker group types** with their specifications and pricing.
 
-Each option shows:
+### **Worker Group Details**
 
-- **Price** (billed hourly)
+Each worker group displays:
 
-- **CPU**
+- **Price** (hourly billing)
 
-- **Memory**
+- **CPU** cores
+
+- **Memory (RAM)**
 
 - **Storage**
 
-This allows you to balance performance and cost based on expected traffic and usage.
+- **Buy Instance** action
+
+Example (Small Node Group):
+
+- **Price:** $0.25 / hour
+
+- **CPU:** 2 cores
+
+- **Memory:** 8 GB
+
+- **Storage:** 30 GB
+
+Use this page to choose the server capacity that fits your workload.
 
 ---
 
-## **Creating a Cloud Server**
+## **Cloud Servers → Create Cloud Server**
 
-<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765980909076-9rukejrqfpn-pasted-image-1765980909428.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="983" alt="" />
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765894465361-n1z1tihexbb-pasted-image-1765894464365.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="979" alt="" />
 
-After selecting a worker group, you configure how the server will run.
+After clicking **Buy Instance**, a configuration modal opens where you define how the server will run.
 
 ### **Configuration Fields**
 
 **Server Name**\
-A unique identifier for the server inside the workspace.
+A unique name to identify this cloud server inside the workspace.
 
 **Min Instance Count**\
-The minimum number of instances that must always stay running.
+The minimum number of instances that must always be running.
 
 **Max Instance Count**\
-The maximum number of instances the server can scale up to.
+The maximum number of instances allowed to scale up to.
 
 **Desired Instance Count**\
-The number of instances to start immediately.
+The initial number of instances to start.\
+Must be between the minimum and maximum values.
 
-These values define the **scaling behavior** of the server.
-
----
-
-### **Example Configuration**
+### **Example**
 
 - Min Instances: `2`
 
@@ -105,119 +108,165 @@ These values define the **scaling behavior** of the server.
 
 - Desired Instances: `2`
 
-This ensures baseline availability while allowing automatic scaling when load increases.
+This setup ensures baseline availability while allowing future scaling.
 
 ---
 
-## **Payment & Setup**
+## **Cloud Servers → Payment & Setup**
 
-When creating a cloud server for the first time, a **one-time setup fee** is required.
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765808135112-pbv6ecvih1-pasted-image-1765808133294.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="928" alt="" />
 
-This fee covers:
+When creating a new cloud server for the first time, a **one-time server setup fee** is required.
 
-- Initial provisioning
+### **Server Setup Fee**
 
-- Infrastructure configuration
+- Covers **initial server provisioning and configuration**
 
-- Runtime preparation
+- Charged **once per server**
 
-After payment is completed, the server setup begins automatically.
+- Shown clearly before payment confirmation
 
----
+### **Payment Options**
 
-## **Server Provisioning Status**
+- Secure card payment
 
-Once payment is successful:
+- Payment link (if supported)
 
-- The server enters a **Pending** state
-
-- Infrastructure provisioning runs in the background
-
-- Status updates appear in the interface
-
-When provisioning completes, the server becomes **Active** and ready for deployments.
+After successful payment, the server creation process begins automatically.
 
 ---
 
-## **Managing Cloud Server Details**
+## **Cloud Servers → Payment Successful**
 
-<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765981175544-llu2u0auzj-pasted-image-1765981175383.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="975" alt="" />
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765894750836-fs27nu96sn-pasted-image-1765894749946.png?q=85&fm=auto&auto=compress%2Cformat" width="706" height="771" alt="" />
 
-Each cloud server has a dedicated **Instance Details** page.
+Once the payment is completed, a confirmation modal is shown.
 
-Here you can view:
+**What this means**
 
-- Server status (Pending / Active)
+- Your cloud server has been successfully created
+
+- The server enters an initial **Pending** state
+
+- Provisioning and setup start in the background
+
+The confirmation view displays:
+
+- Server name
+
+- Instance type (worker group)
+
+- Hourly price
+
+- Min / Max instance counts
+
+- Current status
+
+---
+
+## **Cloud Servers → Instance Details**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765894961472-kmt3gdfv4dg-pasted-image-1765894959033.png?q=85&fm=auto&auto=compress%2Cformat" width="1918" height="973" alt="" />
+
+After creation, each cloud server has its own **instance detail page**.
+
+This page allows you to **monitor, scale, and manage** the server.
+
+### **Instance Information**
+
+- Server name and status (Pending / Active)
 
 - Worker group type
 
-- Hourly pricing
+- Hourly price
 
-- CPU, memory, and storage information
+- CPU
+
+- Memory
+
+- Storage
 
 ---
 
-## **Scaling the Server**
+## **Scaling the Worker Group**
 
-The **Scale Worker Group** section allows you to adjust capacity at any time.
+The **Scale Worker Group** section allows you to control how many instances are running.
 
-You can change:
+**Controls**
 
-- Minimum instance count
+- **Min** – minimum number of instances that must always stay active
 
-- Desired instance count
+- **Desired** – currently running instance count
 
-- Maximum instance count
+- **Max** – maximum number of instances allowed
 
-Scaling changes apply dynamically and control how the server responds to traffic and workload changes.
+You can adjust scaling using the slider within the allowed range.
+
+Changes take effect dynamically and respect the configured limits.
 
 ---
 
 ## **Budget & Usage Alerts**
 
-Cloud servers include **budget and usage monitoring**.
+The **Worker Group Budget Alert** section helps you control monthly costs.
 
-You can configure:
+**You can configure**
 
 - Monthly usage alert thresholds
 
-- Budget warnings
+- Budget limit warnings
 
 - Visual indicators as usage approaches limits
 
-These tools help prevent unexpected infrastructure costs.
+These alerts help prevent unexpected costs.
 
 ---
 
-## **Metrics & Monitoring**
+## **Instance Metrics & Monitoring**
 
-Each cloud server provides real-time metrics, including:
+Each cloud server provides **real-time metrics** for performance and usage monitoring.
 
-- CPU usage percentage
+Available metrics include:
 
-- Memory usage percentage
+- **CPU usage (%)**
 
-- Network traffic (in / out)
+- **Memory usage (%)**
 
-- Instance-level activity
+- **Network in / out**
 
-These metrics help you understand performance and scaling needs before and after deployment.
+- **Instance-level activity**
+
+These metrics help you understand load, performance, and scaling needs.
 
 ---
 
 ## **Deployed Projects & Services**
 
-When services are deployed to a cloud server, you can see:
+If any projects are deployed to this cloud server, the instance view also shows:
 
-- Which projects are running on the server
+- Which **projects** are running on the server
 
-- Which services belong to each project
+- Which **services** are deployed per project
 
 - Runtime status of deployed services
 
-This gives clear visibility into **what is running where**.
+This provides clear visibility into **what is running where**.
 
 ---
+
+## **Instance Actions**
+
+From the instance detail page, you can:
+
+- Scale instance count
+
+- Monitor usage and metrics
+
+- View deployed projects and services
+
+- Terminate the instance when no longer needed
+
+> ⚠️ Terminating an instance will stop all workloads running on that server.
 
 ## **Infrastructure and Deployment Connection**
 
