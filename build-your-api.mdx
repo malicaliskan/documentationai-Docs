@@ -1948,6 +1948,96 @@ In this example:
 
 Mindbricks’ **permission and membership filters** therefore work not as runtime conditions, but as **pre-resolved ID restrictions** — ensuring that the underlying query operates strictly on the set of allowed objects, making list APIs both **secure and efficient**.
 
+
+### The Main Data and The Output
+
+Each Mindbricks API generates an **output JavaScript object** that is sent back as a JSON response. This output has a well-defined structure and can be **enriched or transformed** by clauses (select/data/where) and by **Business API actions**. Any action that writes to the context using `contextPropertyName` can also be exposed in the final response. Conceptually, a Business API response always contains:
+
+- **Main data** – the primary object (or list of objects) returned from the database.
+- **Additional data** – any extra values written by actions (totals, flags, lookup labels, external API responses, etc.).
+
+The **main data** is the result of the DB operation executed in the MainDbOperation step (the compiled query coming from `selectClause`, `dataClause`, `whereClause`, and type-specific options). This data is also accessible in the runtime context for further manipulation before response is finalized.
+
+#### Single Item Data
+
+In **Get / Create / Update / Delete** operations, the main data is a **single JavaScript object** that represents the target data object instance.
+In the final JSON output, it is exposed under the **data object name** so that API consumers can access it directly.
+
+For example, if your Business API operates on the `customer` object, a `getCustomer` or `createCustomer` API will produce a response like:
+```json
+// response json
+{
+  // ...
+  customer: { 
+    // ...
+  }
+}
+```
+
+The main data written to the response is accessible in the `this` context, so actions and MScript expressions can **read and mutate** it before it is sent.
+
+**Important:** Do not completely override the object with actions or custom functions – instead, **mutate its fields** (add, remove, or adjust properties) so the core semantics of the API remain predictable.
+
+In the API execution context you can access the same single object through several aliases that all point to the same reference:
+
+```javascript
+// For a single-object API on Customer:
+this.customer    // named after the data object (recommended for clarity)
+this.dbResult    // raw DB result reference
+this.data        // normalized main data reference
+```
+
+This makes it easy for actions to do things like:
+
+```javascript
+// inside an MScript field of an action
+this.customer.fullName = `${this.customer.name} ${this.customer.surname}`;
+this.customer.isVip = this.customer.totalSpent > 1000;
+```
+
+Later, you could use an `AddToResponseAction` to expose a computed field under a different name without touching the original object.
+
+#### List Data
+
+In **List** operations the main data is a **JavaScript object that wraps a list** of target data object instances and extra information like pagination and filters.
+In the final JSON output response the list is exposed under the **plural form** of the `dataObject` name for the API consumer.
+
+For example, for a `customer` list API:
+```json
+// response json
+{
+  // ...
+  customers: [{}, {}]
+}
+```
+
+The main list data written to the response is accessible in the `this` context to be **iterated and enriched**. You can:
+
+- Loop over items to compute derived fields.
+- Map them to simplified DTOs using `ListMapAction`.
+- Join additional data using `CollateListsAction` or fetch extra details per item using other actions.
+
+**Again:** Do not fully replace the list object from actions – mutate or extend it to keep the contract stable.
+
+In the context you can access the list through several properties that share the same underlying reference:
+
+```javascript
+// For a list API on Customer:
+this.customers      // pluralized data object name – the main list
+this.dbResult.items // low-level list inside the db result wrapper
+this.data           // normalized list reference (same pointer)
+```
+
+In list APIs the `dbResult` from the compiled DB script is an object that includes **both the list and its accessories**, such as pagination data, total counts, or filters applied.
+The list itself is under `this.dbResult.items`, this list is also exposed as `this.data` and as the customized list property (e.g., `this.customers`) which is then serialized as the `customers` field in the JSON response.
+
+You can combine this with actions, for example:
+
+- A `ListMapAction` that maps `this.customers` to a lighter array of `{ id, fullName }` and stores it as `this.publicCustomers`, followed by an `AddToResponseAction` to expose `publicCustomers`.
+- A `FetchStatsAction` that computes aggregated metrics (like total order count per customer) and then a `CollateListsAction` to merge those stats into `this.customers` before sending the response.
+
+
+
 ### **Conclusion**
 
 In this document, we explored how **Mindbricks Business APIs** are structured, configured, and connected to the platform’s architectural patterns.
