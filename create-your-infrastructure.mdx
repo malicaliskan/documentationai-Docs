@@ -1,0 +1,235 @@
+---
+title: Create Your Infrastructure
+description: >-
+  Set up and manage cloud servers that provide the persistent runtime
+  environment required to deploy your application to staging or production.
+---
+## **Create Your Infrastructure**
+
+After previewing your application, the next step is to create **persistent infrastructure** where your services will run for staging or production.
+
+Preview environments are temporary and automatically shut down.\
+To deploy your application for real users, you must create **Cloud Servers**.
+
+Cloud servers act as the **runtime foundation** for deployments.
+
+---
+
+## **Cloud Servers Overview**
+
+Cloud servers provide:
+
+- Compute resources (CPU, memory, storage)
+
+- Auto-scalable worker groups
+
+- Persistent runtime environments
+
+- Monitoring, metrics, and logs
+
+- Cost control via usage alerts
+
+Each cloud server belongs to a **workspace** and can host multiple projects and services.
+
+---
+
+## **Viewing Available Instances**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765980724499-xo3dy5v3fq-pasted-image-1765980724349.png?q=85&fm=auto&auto=compress%2Cformat" width="1915" height="976" alt="" />
+
+The **Instances** page displays all available worker group configurations.
+
+Each worker group represents a predefined server type with:
+
+- CPU core count
+
+- Memory (RAM)
+
+- Disk storage
+
+- Hourly pricing
+
+You can review and compare configurations before creating a server.
+
+---
+
+## **Buying an Instance**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765980834785-t9pgn69kwqf-pasted-image-1765980834879.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="974" alt="" />
+
+When you click **Buy Instance**, you choose the worker group that best fits your workload.
+
+Each option shows:
+
+- **Price** (billed hourly)
+
+- **CPU**
+
+- **Memory**
+
+- **Storage**
+
+This allows you to balance performance and cost based on expected traffic and usage.
+
+---
+
+## **Creating a Cloud Server**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765980909076-9rukejrqfpn-pasted-image-1765980909428.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="983" alt="" />
+
+After selecting a worker group, you configure how the server will run.
+
+### **Configuration Fields**
+
+**Server Name**\
+A unique identifier for the server inside the workspace.
+
+**Min Instance Count**\
+The minimum number of instances that must always stay running.
+
+**Max Instance Count**\
+The maximum number of instances the server can scale up to.
+
+**Desired Instance Count**\
+The number of instances to start immediately.
+
+These values define the **scaling behavior** of the server.
+
+---
+
+### **Example Configuration**
+
+- Min Instances: `2`
+
+- Max Instances: `10`
+
+- Desired Instances: `2`
+
+This ensures baseline availability while allowing automatic scaling when load increases.
+
+---
+
+## **Payment & Setup**
+
+When creating a cloud server for the first time, a **one-time setup fee** is required.
+
+This fee covers:
+
+- Initial provisioning
+
+- Infrastructure configuration
+
+- Runtime preparation
+
+After payment is completed, the server setup begins automatically.
+
+---
+
+## **Server Provisioning Status**
+
+Once payment is successful:
+
+- The server enters a **Pending** state
+
+- Infrastructure provisioning runs in the background
+
+- Status updates appear in the interface
+
+When provisioning completes, the server becomes **Active** and ready for deployments.
+
+---
+
+## **Managing Cloud Server Details**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765981175544-llu2u0auzj-pasted-image-1765981175383.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="975" alt="" />
+
+Each cloud server has a dedicated **Instance Details** page.
+
+Here you can view:
+
+- Server status (Pending / Active)
+
+- Worker group type
+
+- Hourly pricing
+
+- CPU, memory, and storage information
+
+---
+
+## **Scaling the Server**
+
+The **Scale Worker Group** section allows you to adjust capacity at any time.
+
+You can change:
+
+- Minimum instance count
+
+- Desired instance count
+
+- Maximum instance count
+
+Scaling changes apply dynamically and control how the server responds to traffic and workload changes.
+
+---
+
+## **Budget & Usage Alerts**
+
+Cloud servers include **budget and usage monitoring**.
+
+You can configure:
+
+- Monthly usage alert thresholds
+
+- Budget warnings
+
+- Visual indicators as usage approaches limits
+
+These tools help prevent unexpected infrastructure costs.
+
+---
+
+## **Metrics & Monitoring**
+
+Each cloud server provides real-time metrics, including:
+
+- CPU usage percentage
+
+- Memory usage percentage
+
+- Network traffic (in / out)
+
+- Instance-level activity
+
+These metrics help you understand performance and scaling needs before and after deployment.
+
+---
+
+## **Deployed Projects & Services**
+
+When services are deployed to a cloud server, you can see:
+
+- Which projects are running on the server
+
+- Which services belong to each project
+
+- Runtime status of deployed services
+
+This gives clear visibility into **what is running where**.
+
+---
+
+## **Infrastructure and Deployment Connection**
+
+Cloud servers are used directly during deployment:
+
+1. You choose a deployment environment (Stage or Production)
+
+2. You select an existing cloud server
+
+3. Services are deployed onto that server
+
+4. Traffic is routed to the deployed services
+
+Without an active cloud server, deployment cannot proceed.
+

@@ -12,23 +12,281 @@ This document shows how to takeout your code, best practices for reusing Mindbri
 
 # Takeout Your Application
 
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1766059899980-rv8a233h4oq-pasted-image-1766059895841.png?q=85&fm=auto&auto=compress%2Cformat" width="1403" height="981" alt="" />
+
 It is your design, your code. You have got full copyrights on your code. Though it is strongly recommended to use Mindbricks own development and deployment environment for managing a perfect project life cycle, you may need to have your own code out in your own repositories. So Mindbricks give you all tools to be able to take your code out to your own properties. 
 
-## Github/Gitlab Settings For Takeout
+## **GitHub / GitLab Settings for Takeout**
 
-....
+Mindbricks allows you to export your generated application code to your **own GitHub or GitLab repositories**, giving you full ownership and control over your backend.
 
-## Assets Delivered To Your Repository
+Before taking your code out, you must configure a **repository provider** at the workspace level.
 
-.....
+---
+
+### **Supported Repository Providers**
+
+Mindbricks currently supports:
+
+- **GitHub**
+
+- **GitLab**
+
+You can choose either provider based on your organization’s workflow and infrastructure.
+
+---
+
+### **Configuring GitHub for Takeout**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1766058644381-2pu18zl0n2j-pasted-image-1766058643263.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="979" alt="" />
+
+To enable GitHub takeout, configure the following in **Workspace Settings**:
+
+- **GitHub username**
+
+- **GitHub personal access token** with repository permissions
+
+Once configured, Mindbricks can:
+
+- Create repositories under your GitHub account
+
+- Push generated service code automatically
+
+- Update repositories when project designs change
+
+---
+
+### **Configuring GitLab for Takeout**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1766058622298-eeje6zzkn7k-pasted-image-1766058619339.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="978" alt="" />
+
+To enable GitLab takeout, configure:
+
+- **GitLab instance URL**
+
+- **GitLab access token**
+
+- (Optional) **Default GitLab group** for organization projects
+
+With these settings, Mindbricks can:
+
+- Create projects inside your GitLab organization or group
+
+- Push generated code securely
+
+- Keep repositories in sync with design updates
+
+---
+
+### **How Takeout Settings Are Used**
+
+Repository settings are:
+
+- Configured **once per workspace**
+
+- Applied to **all projects** in that workspace
+
+- Used for:
+
+  - Code takeout
+
+  - Repository updates
+
+  - External deployment workflows
+
+Access tokens are stored securely and are **never included** in the generated code.
+
+---
+
+## **Assets Delivered to Your Repository**
+
+When you take your application out of Mindbricks, the platform delivers a **complete, production-ready backend codebase** to your repository.
+
+Each takeout includes all assets required to **run, extend, document, and deploy** the application independently.
+
+---
+
+### **Repository Structure**
+
+The exported repository includes:
+
+- One folder per microservice
+
+- Shared configuration and infrastructure files
+
+- Environment templates
+
+- Service-level documentation
+
+Each service is fully isolated and can be deployed, scaled, or reused independently.
+
+---
+
+### **Included Assets**
+
+The following assets are delivered as part of the takeout:
+
+---
+
+#### **Service Code**
+
+- Fully generated backend services
+
+- Controllers, routes, and handlers
+
+- Business logic and workflows
+
+- Authentication and authorization logic
+
+- Error handling and middleware
+
+---
+
+#### **Data Layer**
+
+- Data object models
+
+- Database mappings
+
+- Index and relationship definitions
+
+- Migration-ready schemas
+
+---
+
+#### **API Definitions**
+
+- REST API endpoints
+
+- Request validation logic
+
+- Permission enforcement
+
+- Standardized response and error formats
+
+---
+
+#### **Environment Files**
+
+- `.env.example` files for each service
+
+- Environment variable templates for:
+
+  - Database connections
+
+  - Authentication secrets
+
+  - External integrations
+
+  - Service-specific configuration
+
+These files act as a **clear contract** for configuring environments outside Mindbricks.
+
+---
+
+#### **Docker & Container Assets**
+
+- **Dockerfile** for each service
+
+- Production-ready container configuration
+
+- Consistent base images and build steps
+
+- Ready for use with Docker, Docker Compose, or Kubernetes
+
+This allows you to build and run services locally or in any container-based infrastructure.
+
+---
+
+#### **Package Management**
+
+- `package.json` for each service
+
+- Defined dependencies and versions
+
+- Script commands for:
+
+  - Running services
+
+  - Building the project
+
+  - Running tests
+
+This ensures reproducible builds and predictable dependency management.
+
+---
+
+#### **Configuration Files**
+
+- Service-level configuration files
+
+- Deployment-related settings
+
+- Runtime options and flags
+
+These files make the system adaptable to different environments and infrastructures.
+
+---
+
+#### **Generated Tests&#x20;**
+
+- Unit test definitions
+
+Tests can be run locally or integrated into external CI pipelines.
+
+---
+
+#### **Documentation Assets**
+
+Depending on the project configuration, your repository may also include:
+
+- Project-level documentation
+
+- Service-level README files
+
+- API documentation
+
+- Business API definitions
+
+- Integration notes for frontend teams
+
+This ensures that teams working outside Mindbricks have **full architectural and functional context**.
+
+---
+
+### **Ownership and Reuse**
+
+Once the code is taken out:
+
+- You have **full ownership** of all source code
+
+- You can modify, extend, or refactor services freely
+
+- You can reuse services across different projects
+
+- You can integrate with any CI/CD pipeline
+
+- You can deploy to any infrastructure you own
+
+Mindbricks imposes **no runtime lock-in** on exported applications.
+
+---
+
+### **Updating the Repository**
+
+You can continue development in two ways:
+
+- **One-time takeout**\
+  Export the code and manage it fully externally
+
+- **Iterative takeout**\
+  Update the repository again after design changes in Mindbricks
+
+This allows you to combine **visual design in Mindbricks** with **custom external development workflows**.
 
 # Reusing Mindbricks Generated Services
-
-.....
 
 # Manual Deployment Guide
 
 ##
-
-
 

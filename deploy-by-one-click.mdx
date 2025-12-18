@@ -1,0 +1,196 @@
+---
+title: One-Click Deployment
+description: >-
+  Deploy your fully designed backend to staging or production with a single
+  action, monitor build progress, access live APIs, and track deployment
+  history.
+---
+## **One-Click Deployment**
+
+After your infrastructure is ready and microservices are designed, Mindbricks allows you to **deploy your entire backend to the cloud with a single click**.
+
+This step turns your designed system into a **live, accessible backend**, complete with URLs, logs, and runtime monitoring.
+
+---
+
+## **Deployment Environments**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1766049270578-vx48qtpb16i-pasted-image-1766049268762.png?q=85&fm=auto&auto=compress%2Cformat" width="1404" height="970" alt="" />
+
+The main Deployment page shows the available **deployment environments** for your project.
+
+By default, Mindbricks provides:
+
+- **Staging** – for testing, QA, and validation
+
+- **Production** – for live users and real traffic
+
+Each environment displays:
+
+- Current deployed version
+
+- Deployment status (Passive, In Progress, Success)
+
+- Public service URLs (once deployed)
+
+- A **Deploy** button
+
+Each environment is deployed **independently**, allowing controlled rollouts.
+
+---
+
+## **Deploying to an Environment**
+
+When you select an environment (for example **Stage**), you enter the environment-specific deployment view.
+
+### **Selecting an Instance**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1766049371528-8p9tdo7rjx9-pasted-image-1766049370170.png?q=85&fm=auto&auto=compress%2Cformat" width="1464" height="711" alt="" />
+
+Before deployment begins, you must select the **cloud server instance** where the services will run.
+
+- Choose an instance from the dropdown
+
+- The instance must already exist in **Cloud Servers**
+
+- All services in this environment will run on that instance
+
+---
+
+## **Deploying Services**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1766049406949-7g2vq16atd6-pasted-image-1766049405033.png?q=85&fm=auto&auto=compress%2Cformat" width="1506" height="974" alt="" />
+
+Once an instance is selected, all project services are listed.
+
+For each service, you can see:
+
+- Service name
+
+- Current deployed version
+
+- Public service URL (if already deployed)
+
+- Deployment status
+
+- Last deployment timestamp
+
+Clicking **Deploy** triggers deployment **only for that service**, allowing:
+
+- Incremental rollouts
+
+- Partial updates
+
+- Safe version upgrades
+
+When a service’s code changes, its **version is automatically incremented** and reflected here.
+
+---
+
+## **Live Deployment Logs**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1766049473531-lw696cbjy7h-pasted-image-1766049471763.png?q=85&fm=auto&auto=compress%2Cformat" width="1404" height="975" alt="" />
+
+During deployment, Mindbricks shows **real-time logs** for each service.
+
+These logs indicate:
+
+- Build start and completion
+
+- Queue and execution status
+
+- Deployment progress
+
+- Success or failure events
+
+Once deployment completes successfully, the service status switches to **Success**, confirming it is live.
+
+---
+
+## **Live API Interface (Post-Deployment)**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1766049540295-vhlwgzc0zen-pasted-image-1766049538479.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="979" alt="" />
+
+After deployment, each service exposes a **live API interface**.
+
+This interface is identical to the Preview API Interface described earlier, with one key difference:
+
+> **There is no time limit.**\
+> The API remains available **as long as the server is running**.
+
+From here, you can:
+
+- Test live endpoints
+
+- Inspect real responses
+
+- Validate authentication and permissions
+
+- Connect frontend applications
+
+---
+
+## **Deployment History**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1766049599248-r088dvbd2g8-pasted-image-1766049597852.png?q=85&fm=auto&auto=compress%2Cformat" width="1452" height="975" alt="" />
+
+The **Deploy History** page keeps a full record of all deployment activity.
+
+For each deployment, you can see:
+
+- Service name
+
+- Deployed version
+
+- Environment
+
+- Build duration
+
+- Deployment duration
+
+- Final status (Success / Failed)
+
+This gives you traceability and confidence when managing releases.
+
+---
+
+## **Using Deployed APIs in Your Application**
+
+Once deployment is successful:
+
+- Each service receives a **public subdomain**
+
+- APIs are accessible from anywhere
+
+- You can connect:
+
+  - Web frontends
+
+  - Mobile apps
+
+  - External systems
+
+  - Third-party integrations
+
+At this point, your project is a **fully operational backend**.
+
+---
+
+## **What One-Click Deployment Gives You**
+
+- No manual DevOps setup
+
+- No CI/CD configuration required
+
+- Automatic builds and versioning
+
+- Live logs and history
+
+- Stable, persistent APIs
+
+- Production-ready infrastructure
+
+This completes the journey from **design → preview → deployment**, all inside Mindbricks.
+
+---
+
