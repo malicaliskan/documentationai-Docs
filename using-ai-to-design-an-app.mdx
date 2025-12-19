@@ -1,51 +1,82 @@
 ---
 title: Building Applications with AI in Mindbricks
 ---
-## Scope
+## **Scope**
 
-Mindbricks features an **AI-powered collaborative design system** that transforms natural language requirements into production-ready microservice architectures. This document guides you through the **AI-assisted application building process**, where a team of specialized AI agents collaboratively analyzes, designs, and architects your application from initial concept to detailed implementation.
+Mindbricks is an **AI-powered collaborative backend design platform** that transforms natural language requirements into **production-ready microservice architectures**.
 
-The AI team consists of three specialized agents working in sequence:
+This document explains **how applications are designed using Mindbricks’ AI-assisted workflow**, from initial idea to fully specified backend architecture. It focuses on:
 
-- **Product Manager Agent** - Requirements gathering and project scoping
+- How the AI agents collaborate  
+- How requirements evolve into architecture  
+- How users guide and refine the design process  
+- How manual customization fits into the AI workflow  
 
-- **Business Analyst Agent** - Use case definition and user story mapping
+📋 **Manual Alternative**  
+If you prefer a fully manual, step-by-step design experience without AI assistance, see:  
+*Building an Application in Mindbricks*.
 
-- **Software Architect Agent** - Service design and technical architecture
+---
 
-📋 **Manual Alternative** For users who prefer traditional manual design approaches, refer to the companion guide: *Building an Application in Mindbricks*.
+## **AI-Assisted + Manual Design (Hybrid Model)**
 
-## 🔄 Hybrid Approach: AI + Manual Customization
+Mindbricks follows a **hybrid design model**:  
+AI automation for speed and consistency, combined with **full manual control** for precision.
 
-Mindbricks offers a **flexible hybrid approach** that combines the power of AI automation with manual control and customization. After the AI agents complete their analysis and generate comprehensive architecture documentation, you have full freedom to:
+After the AI completes its initial analysis and architecture design, you can:
 
-- **Review and Validate**: Examine all AI-generated specifications, user stories, use cases, and service architectures
+- **Review and validate** all generated specifications  
+- **Edit or refine** data models, APIs, business rules, and configurations  
+- **Add new elements** such as services, routes, or integrations  
+- **Remove or simplify** parts that do not match your needs  
+- **Adjust business logic** as requirements evolve  
 
-- **Modify Existing Components**: Edit data models, API endpoints, business logic, and service configurations to match your specific requirements
+This ensures:
 
-- **Add Custom Elements**: Introduce new services, data objects, routes, or integration points that the AI may not have identified
+- Rapid initial design using proven best practices  
+- No architectural lock-in  
+- Complete ownership and control over the final system  
 
-- **Remove Unnecessary Parts**: Eliminate components that don't fit your use case or simplify the architecture as needed
+The AI acts as an **accelerator and guide**, not a restriction.
 
-- **Refine Business Logic**: Adjust workflows, validation rules, and business processes to align with your domain expertise
+---
 
-This approach ensures that you get the **speed and comprehensive coverage of AI analysis** while maintaining **complete control over the final architecture**. The AI provides an intelligent starting point and handles the complex work of creating consistent, well-structured specifications, while you focus on the business-specific customizations and optimizations that only human expertise can provide.
+## **Understanding the AI-Driven Architecture Process**
 
-## Understanding AI-Driven Architecture
+Mindbricks’ AI design workflow follows a **structured, incremental pipeline**.  
+Each stage builds on the output of the previous one, ensuring clarity, traceability, and architectural consistency.
 
-The AI building process in Mindbricks follows a **structured, incremental approach** where each AI agent builds upon the work of the previous one. This ensures comprehensive coverage of your application requirements while maintaining architectural consistency and best practices.
+Instead of asking all questions upfront, the AI progressively refines the design by:
 
-### The AI Agent Team
+- Clarifying business intent  
+- Defining system behavior  
+- Translating behavior into technical architecture  
 
-Each agent specializes in a specific aspect of application design:
+This approach avoids over-engineering while ensuring nothing critical is missed.
 
-- **Product Manager Agent**: Focuses on understanding business requirements, user needs, project scope and creates a PRD and user stories.
+---
 
-- **Business Analyst Agent**: Translates requirements and user stories into structured use cases.
+### **The AI Agent Team**
 
-- **Software Architect Agent**: Designs the technical architecture using Mindbricks pattern ontology
+Mindbricks uses **three specialized AI agents**, each responsible for a distinct design layer:
 
-### Process Flow Overview
+- **Product Manager Agent**  
+  Gathers and clarifies business requirements, project scope, and high-level goals.  
+  Produces the project description and user stories.
+
+- **Business Analyst Agent**  
+  Transforms user stories into structured use cases and system workflows.  
+  Defines how users and systems interact.
+
+- **Software Architect Agent**  
+  Converts requirements and use cases into a complete backend architecture using the **Mindbricks Pattern Ontology**.  
+  Designs microservices, data models, APIs, integrations, and system boundaries.
+
+Each agent focuses on **what it does best**, while passing structured output to the next stage.
+
+---
+
+### **Process Flow Overview**
 
 Project Creation → Product Manager → Business Analyst → Software Architect → Generated Architecture
 
@@ -66,6 +97,214 @@ You begin by providing basic project information:
 ### Incremental Requirements Gathering
 
 The Product Manager Agent uses your initial description as a starting point and begins an **incremental questioning process** to gather comprehensive requirements. The questions adapt based on your responses, creating a natural conversation flow.
+
+### Strategic Way to Talk With the Mindbricks AI Architect
+
+This section explains **how to communicate effectively with the Mindbricks AI Architect** during the requirements discovery phase to achieve the best possible system design.
+
+Mindbricks’ AI is optimized for **intent-driven architecture**, not command-based prompting.  
+You are not expected to describe technical implementation details.
+
+---
+
+### The Golden Rule
+
+> **Describe what you want to build, not how to build it.**
+
+Mindbricks automatically determines:
+- Microservice boundaries
+- Databases and data models
+- Messaging and events
+- Security and permissions
+- Integrations and scaling patterns
+
+Your role is to explain **business intent, constraints, and outcomes**.
+
+---
+
+### The 3-Layer Conversation Strategy
+
+Every successful interaction with the Mindbricks AI naturally follows three conceptual layers.  
+You do not need to name them explicitly — understanding them is enough.
+
+---
+
+#### 1️⃣ Intent Layer — What Is This System?
+
+Start by describing the **type of product** you are building.
+
+Examples:
+- “An e-commerce marketplace like eBay”
+- “A multi-tenant SaaS platform”
+- “An auction-based exchange”
+- “A ticketing system for events”
+- “A B2C platform with user accounts and payments”
+
+This immediately tells the AI:
+- Which industry patterns to activate
+- Which default services to include
+- Which security and compliance rules apply
+
+A **single sentence** is sufficient.
+
+---
+
+#### 2️⃣ Constraint Layer — What Must Be True?
+
+Next, describe **non-negotiable business rules**.
+
+Examples:
+- “Each store must be isolated”
+- “Buyers must log in to purchase”
+- “Stripe only”
+- “No organizations, single scope”
+- “Auctions last exactly 5 hours”
+- “One role per user”
+
+This helps the AI:
+- Enforce permissions correctly
+- Apply multi-tenancy where needed
+- Shape data models and workflows
+- Avoid invalid assumptions
+
+You do not need to explain *how* these rules are implemented — only *that they must exist*.
+
+---
+
+#### 3️⃣ Delegation Layer — Let the AI Decide
+
+At any point, you can delegate decisions back to the AI.
+
+Common delegation phrases:
+- “Use best practices”
+- “Finalize as you see fit”
+- “Standard setup”
+- “Like eBay”
+- “Proceed”
+
+This signals the AI to:
+- Stop exploratory questioning
+- Lock assumptions
+- Apply platform defaults
+- Move forward with architecture design
+
+Delegation is **intentional and encouraged**, not a shortcut.
+
+---
+
+### How to Answer AI Questions Correctly
+
+The AI asks questions to **remove ambiguity**, not to test technical knowledge.
+
+Best practices when responding:
+- Short answers are acceptable
+- Imperfect answers are acceptable
+- Business language is preferred
+- You can revise decisions later
+
+Examples of excellent responses:
+- “Marketplace”
+- “Yes, multi-tenant”
+- “No isolation”
+- “Stripe is enough”
+- “Email + SMS”
+- “Admins manage everything”
+
+The AI fills in the technical gaps safely.
+
+---
+
+### When You Don’t Know the Answer
+
+If you are unsure, state it clearly.
+
+Good responses:
+- “I’m not sure — use best practices”
+- “Decide based on standard platforms”
+- “Whatever scales better”
+- “Default behavior is fine”
+
+The AI is designed to handle uncertainty without introducing risk.
+
+---
+
+### The Summary Checkpoint (Very Important)
+
+Before generating architecture, the AI will always present a **project summary**, for example:
+
+> “Here’s the project summary. Does this reflect your requirements?”
+
+This is the **most important checkpoint** in the conversation.
+
+At this stage:
+- Confirm business correctness
+- Ignore technical details
+- Adjust rules, not implementation
+
+If the summary looks correct, respond with **“Proceed”**.
+
+---
+
+### How to Steer Without Micromanaging
+
+You can guide architecture using **comparisons**, not instructions.
+
+Examples:
+- “Like eBay”
+- “Like Airbnb”
+- “Like Shopify but multi-tenant”
+- “Like Eventbrite with auctions”
+
+These references activate known architectural patterns inside Mindbricks.
+
+---
+
+### What Not to Do
+
+Avoid:
+- Naming infrastructure components
+- Designing microservices manually
+- Requesting specific technologies
+
+Examples to avoid:
+- “Use Kafka”
+- “Add Redis”
+- “Split into 5 services”
+- “Use CQRS”
+
+These reduce the effectiveness of the AI.
+
+---
+
+### Mental Model to Keep
+
+Think of the AI as:
+
+> **A senior backend architect who already knows best practices  
+> and only needs your business intent.**
+
+You explain:
+- What the system does
+- Who uses it
+- What rules apply
+
+Mindbricks decides:
+- Architecture
+- Services
+- Databases
+- Messaging
+- Integrations
+- Scalability
+
+---
+
+### Final Advice
+
+If you remember only one thing:
+
+> **Speak like a founder or product owner — not like an engineer.**
+
+That is how Mindbricks delivers the best results.
 
 #### Example Question Sequences
 
@@ -1024,4 +1263,5 @@ The AI-powered architecture process in Mindbricks transforms high-level business
 
 The result is a robust, scalable microservice architecture that forms the foundation for your application, ready for code generation and deployment in the Mindbricks platform.
 ```
+
 
