@@ -308,10 +308,13 @@ All external connections are injected at runtime using environment variables.
 
 Your external deployment flow is:
 
-1. Provision required infrastructure services  
-2. Configure external connection environment variables  
-3. Build services using Docker or Node  
-4. Run services using your own orchestrator  
+1. Provision required infrastructure services
+
+2. Configure external connection environment variables
+
+3. Build services using Docker or Node
+
+4. Run services using your own orchestrator
 
 ---
 
@@ -320,13 +323,17 @@ Your external deployment flow is:
 Mindbricks services support multiple runtime environments:
 
 - `test`
+
 - `dev`
+
 - `stage`
+
 - `prod`
 
 When deploying externally:
 
 - Use **stage** variables for staging deployments
+
 - Use **prod** variables for production deployments
 
 Each environment must have its **own configuration set**.
@@ -349,10 +356,15 @@ These services must exist and be reachable before starting the application.
 
 ### **Always Required External Systems**
 
-- **MongoDB** – primary data storage  
-- **Redis** – caching, sessions, queues  
-- **Elasticsearch** – indexing, search, read models  
-- **Kafka** – event-driven communication between services  
+- **PostgreSQL** – The primary transactional database
+
+- **MongoDB** – Document-oriented storage for flexible / non-relational data
+
+- **Redis** – caching, sessions, queues
+
+- **Elasticsearch** – indexing, search, read models
+
+- **Kafka** – event-driven communication between services
 
 If any of these services are missing or misconfigured, the application will fail to start.
 
@@ -361,6 +373,29 @@ If any of these services are missing or misconfigured, the application will fail
 ## **External Connection Environment Variables**
 
 The following environment variables must be configured **manually** when deploying externally.
+
+### **PostgreSQL Connection**
+
+```env
+PG_HOST
+PG_USER
+PG_PASSWORD
+PG_PORT
+```
+
+Used for:
+
+- Core service data models
+
+- Relational domain entities
+
+- Transactional operations
+
+- ACID-compliant persistence
+
+- Strongly consistent business logic
+
+---
 
 ### **MongoDB Connection**
 
@@ -373,10 +408,13 @@ MONGODB_PASSWORD
 
 Used for:
 
-- Data objects
-- Business APIs
-- Authentication storage
-- Transactions and persistence
+- Document-based data models
+
+- Flexible / schema-less data
+
+- Logs, events, snapshots, metadata
+
+- Non-transactional or eventually consistent storage
 
 ---
 
@@ -392,8 +430,11 @@ REDIS_PWD
 Used for:
 
 - Session storage
+
 - Caching
+
 - Background jobs
+
 - Rate limiting
 
 ---
@@ -409,8 +450,11 @@ ELASTIC_PWD
 Used for:
 
 - Search
+
 - Read models
+
 - BFF data views
+
 - Analytics indexes
 
 ---
@@ -424,8 +468,11 @@ KAFKA_URI
 Used for:
 
 - Event publishing
+
 - Service-to-service communication
+
 - Notification triggers
+
 - Async workflows
 
 ---
@@ -481,8 +528,11 @@ Each service includes a **production-ready Dockerfile**.
 You can:
 
 - Build services individually
+
 - Use Docker Compose
+
 - Deploy using Kubernetes
+
 - Run in any container-based platform
 
 Example:
@@ -498,11 +548,15 @@ docker run --env-file .env.prod -p 3000:3000 my-service
 
 When deploying manually, ensure the following startup order:
 
-1. MongoDB  
-2. Redis  
-3. Elasticsearch  
-4. Kafka  
-5. Mindbricks services  
+1. MongoDB
+
+2. Redis
+
+3. Elasticsearch
+
+4. Kafka
+
+5. Mindbricks services
 
 All external services must be running before starting the application layer.
 
@@ -513,8 +567,11 @@ All external services must be running before starting the application layer.
 When deploying outside Mindbricks, the platform does **not**:
 
 - Provision infrastructure
+
 - Manage secrets
+
 - Scale services
+
 - Monitor runtime health
 
 These responsibilities belong entirely to your infrastructure and DevOps setup.
@@ -528,8 +585,11 @@ Manual deployment gives you **full control** over infrastructure and runtime beh
 Mindbricks guarantees:
 
 - Portable services
+
 - Automatically generated internal configuration
+
 - Explicit external connections
+
 - No runtime lock-in
 
 As long as required services are available and external environment variables are correct,
