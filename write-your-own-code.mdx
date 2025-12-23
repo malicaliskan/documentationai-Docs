@@ -389,6 +389,47 @@ Then in a `DataProperty` formula for `shippingFee`:
 
 Best of both worlds: pattern-driven property + custom calculation logic.
 
+#### Passing Business API Context into Library Functions
+
+Library functions can use any signature you design. If you need access to the Business API runtime context (`this`), explicitly receive it as an argument (recommended name: `context`) and pass `this` when you call the function.
+
+**Library function that expects context:**
+
+```json
+{
+  "moduleName": "calculateOffer",
+  "moduleExtension": "js",
+  "moduleBody": "module.exports = function calculateOffer(context, order) {\n  const locale = context.session?.locale ?? 'en';\n  const tenant = context.session?.tenantId;\n  const base = order.subtotal ?? 0;\n  const discount = context.user?.loyaltyLevel === 'gold' ? 0.1 : 0;\n  return { total: Math.max(base * (1 - discount), 0), locale, tenant };\n}"
+}
+```
+
+**Call it inside an action (MScript area of a `FunctionCallAction`):**
+
+```json
+{
+  "actions": {
+    "functionCallActions": [
+      {
+        "extendClassName": "FunctionCallAction",
+        "name": "computeOffer",
+        "callScript": "LIB.calculateOffer(this, this.order)",
+        "contextPropertyName": "offer"
+      }
+    ]
+  }
+}
+```
+
+**Use it inline in other MScript fields (e.g., a condition):**
+
+```json
+{
+  "condition": "LIB.calculateOffer(this, this.order).total > 0"
+}
+```
+
+The key pattern: **design the signature, accept `context`, and pass `this`** wherever you need runtime data from the API in your library code.
+
 ### 3.2 Edge Functions – Custom Route Handlers
 
 `edgeFunctions` are used by `EdgeController` and must export an async function:
