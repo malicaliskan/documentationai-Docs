@@ -204,25 +204,41 @@ interface IntegrationConfiguration = {
 
 ## IntegrationProvider
 
-An Enum vaue to store the names of the integration providers
+An Enum value to store the names of the integration providers
 
 ```js
 const IntegrationProvider = {
   amazonS3: "amazonS3",
+  amazonSES: "amazonSES",
   googleGemini: "googleGemini",
   googleMaps: "googleMaps",
+  googleAnalytics: "googleAnalytics",
   Telegram: "Telegram",
   jiraServiceManagement: "jiraServiceManagement",
+  Amplitude: "Amplitude",
+  Mailgun: "Mailgun",
+  Pusher: "Pusher",
+  Slack: "Slack",
+  Stripe: "Stripe",
+  intercom: "intercom",
 };
 ```
 
-| Enum                  | Description                                |
-| --------------------- | ------------------------------------------ |
-| amazonS3              | A famous file storage service              |
-| googleGemini          | An AI Model Api provided by Google         |
-| googleMaps            | A maps api provided by Google              |
-| Telegram              | A messaging api based on Telegram platform |
-| jiraServiceManagement | A workspace and project management api     |
+| Enum                  | Description                                                |
+| --------------------- | ---------------------------------------------------------- |
+| amazonS3              | A popular object storage service by AWS                    |
+| amazonSES             | AWS Simple Email Service                                   |
+| googleGemini          | An AI model API provided by Google                         |
+| googleMaps            | A geolocation and mapping API provided by Google           |
+| googleAnalytics       | Google’s analytics tracking and reporting API              |
+| Telegram              | Messaging API based on the Telegram platform               |
+| jiraServiceManagement | A service desk and ITSM API by Atlassian                   |
+| Amplitude             | A product and behavior analytics API                       |
+| Mailgun               | A transactional email delivery API                         |
+| Pusher                | A real-time communication API for websockets and channels  |
+| Slack                 | The Slack API for workspace messaging and automation       |
+| Stripe                | A payment processing and billing API                       |
+| intercom              | A customer messaging, support, and engagement platform API |
 
 ### DataMapItem
 

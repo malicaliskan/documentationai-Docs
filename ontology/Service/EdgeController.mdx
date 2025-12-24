@@ -8,13 +8,17 @@ An edge controller defines a fully customized route handled by a developer-defin
 interface EdgeController = {
   edgeControllerOptions : EdgeControllerOptions;
   edgeRestSettings : EdgeRestSettings;
+  edgeKafkaSettings : EdgeKafkaSettings;
+  edgeCronSettings : EdgeCronSettings;
 }
 ```
 
-| Field                 | Description                                                                                                                                          |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| edgeControllerOptions | Configuration object for the edge controller. It defines which edge function will be executed and whether login is required to access it.            |
-| edgeRestSettings      | HTTP settings for exposing the edge controller as a REST API. It allows specifying the URL path and HTTP method that will trigger the edge function. |
+| Field                 | Description                                                                                                                                                                                     |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| edgeControllerOptions | Configuration object for the edge controller. It defines which edge function will be executed and whether login is required to access it.                                                       |
+| edgeRestSettings      | HTTP settings for exposing the edge controller as a REST API. It allows specifying the URL path and HTTP method that will trigger the edge function.                                            |
+| edgeKafkaSettings     | Kafka settings for exposing the edge controller as a Kafka consumer/producer. It allows specifying the Kafka topics that will trigger the edge function and optionally where to send responses. |
+| edgeCronSettings      | Cron settings for scheduling the edge controller to run at specified intervals. It allows defining a cron expression that will trigger the edge function automatically.                         |
 
 ## EdgeControllerOptions
 
@@ -31,7 +35,7 @@ interface EdgeControllerOptions = {
 
 | Field         | Description                                                                                                                                                                                                             |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| functionName  | The name of the function defined in the service library that will handle this controller’s logic. The function must be an async module under 'edgeFunctions' and should return an object or throw an error as response. |
+| functionName  | The name of the function defined in the service library that will handle this controller's logic. The function must be an async module under 'edgeFunctions' and should return an object or throw an error as response. |
 | loginRequired | Whether the caller must be logged in to access this edge route. If true, Mindbricks will enforce authentication using session or token checks before invoking the function.                                             |
 
 ## EdgeRestSettings
@@ -42,12 +46,52 @@ Defines the public REST endpoint for the edge controller. Specifies how the rout
 
 ```typescript
 interface EdgeRestSettings = {
+  restEnabled : Boolean;
   path : String;
   method : HTTPRequestMethods;
 }
 ```
 
-| Field  | Description                                                                                                                                      |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| path   | The relative URL path for this controller. It determines where the edge function will be accessible in the REST API (e.g., '/generate-invoice'). |
-| method | The HTTP method that will trigger the edge controller. Typical values include GET, POST, PUT, DELETE, etc.                                       |
+| Field       | Description                                                                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| restEnabled | Set to true if you want your edge function to be called through its own REST API. Default is true.                                               |
+| path        | The relative URL path for this controller. It determines where the edge function will be accessible in the REST API (e.g., '/generate-invoice'). |
+| method      | The HTTP method that will trigger the edge controller. Typical values include GET, POST, PUT, DELETE, etc.                                       |
+
+## EdgeKafkaSettings
+
+**MPO Version:** 1.3.0
+
+Defines Kafka consumer/producer settings for the edge controller. Specifies how the edge function will be triggered by Kafka messages and optionally where to send responses.
+
+```typescript
+interface EdgeKafkaSettings = {
+  kafkaEnabled : Boolean;
+  requestTopic : String;
+  responseTopic : String;
+}
+```
+
+| Field         | Description                                                                                                                                                                                                       |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| kafkaEnabled  | Set to true if you want your edge function to be triggered by Kafka messages from the specified request topic. Default is false.                                                                                  |
+| requestTopic  | The Kafka topic name from which messages will be consumed to trigger the edge function. When a message arrives on this topic, the edge function will be invoked with the message payload.                         |
+| responseTopic | Optional Kafka topic name where the edge function's response will be published. If not specified, the response will not be sent to Kafka (useful for fire-and-forget scenarios or when using REST for responses). |
+
+## EdgeCronSettings
+
+**MPO Version:** 1.3.0
+
+Defines cron scheduling settings for the edge controller. Specifies how the edge function will be triggered automatically at scheduled intervals using a cron expression.
+
+```typescript
+interface EdgeCronSettings = {
+  cronEnabled : Boolean;
+  cronExpression : String;
+}
+```
+
+| Field          | Description                                                                                                                                                                             |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| cronEnabled    | Set to true if you want your edge function to be triggered automatically on a schedule. Default is false.                                                                               |
+| cronExpression | A cron expression that defines when the edge function should be executed. Uses standard cron syntax (e.g., '0 0 \* \* _' for daily at midnight, '_/5 \* \* \* \*' for every 5 minutes). |
