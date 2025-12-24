@@ -1,6 +1,0 @@
-<% const dbObjectUtilsFunction = dbObject.getDbUtilsFunctions().filter(f => !f.startsWith("geo_")); -%>
-<% const dbObjectGeoUtilsFunction = dbObject.getDbUtilsFunctions().filter(f => f.startsWith("geo_")).map(f => f.replace("geo_","")); -%>
-module.exports = {
-  <%- dbObjectUtilsFunction.map(func => `${func} : require('./${func}'),`).join("\n")  %>
-  <%- dbObjectGeoUtilsFunction.map(func => `${func} : require('./geoUtils${dbObject.modelName}').${func},`).join("\n")  %>
-}
