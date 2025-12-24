@@ -90,7 +90,8 @@ The `StripeOrder` pattern defines the settings for integrating this data object 
     "orderStatusProperty": "PropRefer",
     "orderStatusUpdateDateProperty": "PropRefer",
     "orderOwnerIdProperty": "PropRefer",
-    "mapPaymentResultToOrderStatus": "PaymentResultMap"
+    "mapPaymentResultToOrderStatus": "PaymentResultMap",
+    "edgeFunctionOnStatusChange": "String"
   },
 
   "PaymentResultMap": {
@@ -129,6 +130,8 @@ paymentResultStarted: `"pending"`,
 paymentResultCanceled: `"paymentError"`,
 paymentResultFailed: `"paymentError"`,
 paymentResultSuccess: `"paid"`
+
+`edgeFunctionOnStatusChange`: Optional name of an edge function from the service library that will be automatically triggered after any payment status change (e.g., payment completed, canceled, or failed). The edge function will be invoked via a Kafka edge controller (automatically built in the background) with the session (when a user is logged in) and the latest order object data directly accessible on the request (e.g., `request.order` or `request.ticket`, depending on the data object name). This allows executing custom business logic after payment events without requiring a separate edge controller definition. For example, you might use this to send notification emails, update inventory, trigger fulfillment workflows, or perform any other post-payment operations.
 
 In addition to the `orderStatusProperty `of your own logic, Mindbricks automatically adds a system field to your order data object that manages the status of the payment with system wording. You can always read this property from your data object instance once the instance is created.
 
