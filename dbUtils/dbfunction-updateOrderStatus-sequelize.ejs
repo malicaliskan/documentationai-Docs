@@ -1,0 +1,55 @@
+<% 
+const stripeOrder = dbObject.stripeOrder;
+%>
+
+const { HttpServerError, BadRequestError, NotAuthenticatedError, ForbiddenError, NotFoundError } = require("common");
+const { <%= dbObject.modelName %> } = require("models");
+const { Op } = require("sequelize");
+const { hexaLogger } = require("common");
+const { ElasticIndexer } = require("serviceCommon");
+
+const indexDataToElastic = async (data) => {
+  const elasticIndexer = new ElasticIndexer("<%= dbObject.objectName %>");
+  await elasticIndexer.indexData(data);
+};
+
+const update<%= dbObject.modelName %>OrderStatusById = async (id, status) => {
+
+  <% if (stripeOrder) { %>
+  try {
+
+    <% if (dbObject.objectSettings.basicSettings.useSoftDelete) { %>
+    const whereClause = { id, isActive: true };
+    <% } else { %>
+    const whereClause = { id };
+    <% } %>
+
+    const existingDoc = await <%= dbObject.modelName %>.findOne({ where: whereClause });
+    if (!existingDoc){
+       throw new NotFoundError(`Record with ID ${id} not found.`);
+    }
+
+    const options = { where: whereClause, returning: true };
+    const dataClause = { 
+      //something off here no? 
+      <%= stripeOrder.orderStatusProperty -%> : status, 
+      <%= stripeOrder.orderStatusUpdateDateProperty ? `${stripeOrder.orderStatusUpdateDateProperty}: new Date()` : '' -%>
+      };
+
+    const [rowsCount, [dbDoc]] = await <%= dbObject.modelName %>.update(dataClause, options);
+    if (!dbDoc) {
+      throw new NotFoundError("Record not found for update.");
+    }
+    const _data = dbDoc.getData();
+    await indexDataToElastic(_data);
+    return _data;
+  } catch (err) {
+    //**errorLog
+    throw new HttpServerError("An unexpected error occurred during the update operation.", err);
+  }
+  <% } else { %>
+    throw new BadRequestError("This object is not an order object.");
+  <% } %>
+};
+
+module.exports = update<%= dbObject.modelName %>OrderStatusById;

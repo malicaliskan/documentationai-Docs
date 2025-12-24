@@ -1,0 +1,67 @@
+const { HttpServerError, BadRequestError, NotFoundError } =
+  require("common");
+
+const { <%= dbObject.modelName %> } = require("models");
+const { ElasticIndexer } = require("serviceCommon");
+
+const indexDataToElastic = async (data) => {
+  const elasticIndexer = new ElasticIndexer("<%= dbObject.objectName %>");
+  await elasticIndexer.indexData(data);
+};
+
+const update<%= dbObject.modelName %>ById = async (id, dataClause) => {
+  try {
+    if (!id && dataClause.id) {
+      id = dataClause.id;
+      delete dataClause.id;
+    }
+
+    if (typeof id === "object") {
+      if (!dataClause) dataClause = id;
+      id = id.id;
+      delete dataClause.id;
+    }
+    
+    if (!id) throw new BadRequestError("ID is required in utility update function");
+
+    <% if (dbObject.objectSettings.basicSettings.useSoftDelete) { %>
+    const where = { _id: id };
+    if (dataClause.isActive == null) where.isActive = true;
+    const existingDoc = await <%= dbObject.modelName %>.findOne(where);
+    <% } else { %>
+    const existingDoc = await <%= dbObject.modelName %>.findOne({ _id: id });
+    <% } %>
+    
+    if (!existingDoc) {
+      throw new NotFoundError(`Record with ID ${id} not found.`);
+    }
+
+    const options = { new: true }; 
+    <% if (dbObject.objectSettings.basicSettings.useSoftDelete) { %>
+    const whereClause = { _id: id };
+    if (dataClause.isActive == null) whereClause.isActive = true;
+    <% } else { %>
+    const whereClause = { _id: id };
+    <% } %>
+
+    const dbDoc = await <%= dbObject.modelName %>.findOneAndUpdate(
+      whereClause, 
+      dataClause,
+      options
+    );
+
+    if (!dbDoc) {
+      throw new NotFoundError("Record not found for update.");
+    }
+
+    const _data = dbDoc.getData();
+    await indexDataToElastic(_data);
+    return _data; 
+    
+  } catch (err) {
+    //**errorLog
+    throw new HttpServerError("errMsg_dbErrorWhenUpdating<%= dbObject.modelName %>ById", err);
+  }
+};
+
+module.exports = update<%= dbObject.modelName %>ById;

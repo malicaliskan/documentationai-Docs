@@ -1,0 +1,83 @@
+<% 
+const hasCodename = dbObject.hasCodename(); 
+
+const baseNameField = hasCodename ? 
+  dbObject.properties.find(prop => prop.name == 'shortname')?.name 
+    ?? dbObject.properties.find(prop => prop.name == 'name')?.name 
+  : null;
+%>
+
+const { 
+  HttpServerError, 
+  BadRequestError,
+  newUUID
+} = require("common");
+//should i add the elastic for mongodb? 
+const { ElasticIndexer } = require("serviceCommon");
+
+const { <%= dbObject.modelName %> } = require('models');
+
+<% if (hasCodename) { -%>
+const getNextCodename = async (<%= baseNameField %>) => {
+  const getNextCodenameFor<%= dbObject.modelName %> = require("./getNextCodenameFor<%= dbObject.modelName %>.js");
+  return await getNextCodenameFor<%= dbObject.modelName %>(<%= baseNameField %>);
+}
+<% } -%>
+
+const indexDataToElastic = async (data) => {
+  const elasticIndexer = new ElasticIndexer("<%= dbObject.objectName %>");
+  await elasticIndexer.indexData(data);
+};
+
+const validateData = (data) => {
+  <% const requiredFields = dbObject.properties.filter((property) => property.isRequired).map((property) => `"${property.name}"`); %>
+  <% if (dbObject.objectSettings.basicSettings.useSoftDelete) { %>
+  const requiredFields = [ <%- requiredFields.join(",") %>, "isActive"];
+  <% } else { %>
+  const requiredFields = [ <%- requiredFields.join(",") %>];
+  <% } %>
+
+
+  
+  requiredFields.forEach((field) => {
+      if (data[field] === null || data[field] === undefined) {
+          throw new BadRequestError(`Field "${field}" is required and cannot be null or undefined.`);
+      }
+  });
+
+  if (!data._id && !data.id) {
+      data._id = newUUID();
+  }
+};
+
+const create<%= dbObject.modelName %> = async (data) => {
+  try {
+      if (!data || Object.keys(data).length === 0) {
+          throw new BadRequestError(`errMsg_invalidInputDataFor<%= dbObject.modelName %>`);
+      }
+
+      <% if (hasCodename) { %>
+      if (!data.codename) {
+        data.codename = data.<%= baseNameField %> ? await getNextCodename(data.<%= baseNameField %>) : undefined;
+      }
+      <% } -%>
+
+      validateData(data);
+
+      const new<%= dbObject.objectName %> = new <%= dbObject.modelName %>(data);
+      const created<%= dbObject.objectName %> = await new<%= dbObject.objectName %>.save();
+
+      //shoul i use model's getData method for consistency with Sequelize
+      const _data = created<%= dbObject.objectName %>.getData();
+      
+      await indexDataToElastic(_data);
+      
+
+      return _data;
+  } catch (err) {
+      //**errorLog
+      throw new HttpServerError(`errMsg_dbErrorWhenCreating<%= dbObject.modelName %>`, err);
+  }
+};
+
+module.exports = create<%= dbObject.modelName %>;

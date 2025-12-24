@@ -1,0 +1,55 @@
+<% 
+const baseNameField = 
+  dbObject.properties.find(prop => prop.name == 'shortname')?.name 
+    ?? dbObject.properties.find(prop => prop.name == 'name')?.name;
+ %>
+
+const { HttpServerError } = require("common");
+
+const { <%= dbObject.modelName %> } = require('models');
+
+const getNextCodenameFor<%= dbObject.modelName %> = async (<%= baseNameField %>) => {
+    try {
+        const escaped = <%= baseNameField %>.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const regexPattern = new RegExp(`^${escaped}(\\d+)?$`);
+//should i integrate soft delete part here         
+        <% if (dbObject.objectSettings.basicSettings.useSoftDelete) { %>
+        const matchingRecords = await <%= dbObject.modelName %>.find({
+            codename: { $regex: regexPattern },
+            isActive: true
+        }, { codename: 1 });
+        <% } else { %>
+        const matchingRecords = await <%= dbObject.modelName %>.find({
+            codename: { $regex: regexPattern }
+        }, { codename: 1 });
+        <% } %>
+
+        const taken = new Set();
+
+        matchingRecords.forEach(({ codename }) => {
+            const match = codename.match(regexPattern);
+            if (match) {
+                const suffix = match[1] ? parseInt(match[1], 10) : 0;
+                if (!isNaN(suffix)) {
+                    taken.add(suffix);
+                }
+            }
+        });
+
+        // If plain project name (suffix 0) is free, use it
+        if (!taken.has(0)) return <%= baseNameField %>;
+
+        // Find next available number
+        let i = 1;
+        while (taken.has(i)) i++;
+
+        return `${<%= baseNameField %>}${i}`;
+
+    } catch (err) {
+        //**errorLog
+        console.log(err);
+        throw new HttpServerError("errMsg_dbErrorWhenGettingNextCodenameFor<%= dbObject.modelName %>", err);
+    }
+};
+
+module.exports = getNextCodenameFor<%= dbObject.modelName %>;

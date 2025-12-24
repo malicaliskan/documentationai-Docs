@@ -701,7 +701,7 @@ This gives you **escape hatches** without breaking the Mindbricks structure.
 
 ---
 
-## 5. Importing Internal Mindbricks Libraries (`common`, `serviceCommon`, `dbUtils`, `models`)
+## 5. Importing Internal Mindbricks Libraries (`common`, `serviceCommon`, `dbLayer`, `models`)
 
 When writing custom logic inside your **service library**, **edge controllers**, or **MScript-powered functions**, you are not limited to raw JavaScript. Every Mindbricks service includes a set of **internal libraries**—automatically generated or shared—that encapsulate common infrastructure, data access, and service behaviors.
 
@@ -710,7 +710,7 @@ These libraries are globally available in every service at runtime and can be im
 ```js
 const COMMON = require("common");
 const SERVICE_COMMON = require("serviceCommon");
-const DB = require("dbUtils");
+const DB = require("dbLayer");
 const MODELS = require("models");
 ```
 
@@ -813,33 +813,158 @@ const indexer = new ElasticIndexer("order");
 await indexer.indexData({...});
 ```
 
-### **3.&#x20;****`dbUtils`****&#x20;— Generated DB Layer Functions Based on Your DataObjects**
+### **3.&#x20;****`dbLayer`****&#x20;— Generated DB Layer Functions Based on Your DataObjects**
 
-Every service has a generated **data-access layer** (`dbUtils`), which provides formally defined CRUD, query, and aggregation helpers derived from your `DataObject` patterns.
+Every service has a generated **data-access layer** (`dbLayer`), which provides formally defined CRUD, query, and aggregation helpers derived from your `DataObject` patterns.
 
-Example import:
+**Important:** Always use `dbLayer` functions instead of directly accessing models. These utility functions ensure data consistency between the database, Elasticsearch, and Kafka events triggered on database changes.
+
+Example imports:
 
 ```js
-const DB = require("dbUtils");
+// Using destructuring (recommended)
+const { getUserById, createUser } = require("dbLayer");
+
+// Or using the full module
+const DB = require("dbLayer");
 ```
 
-Depending on the service, this may include functions like:
+For each data object in your service, Mindbricks automatically generates the following utility functions (where `ModelName` is the PascalCase name of your data object):
 
-- `createUser`, `getUserById`, `getUserListByQuery`
+#### **Create Functions**
 
-- `updateUserById`, `deleteUserById`
+- **`create${ModelName}(data)`** — Creates a single record
+  - **Parameters:** `data` (Object) — The data object to create. If `id` is provided and exists, it will update the existing record instead.
+  - **Returns:** Object — The created/updated record data
+  - **Auto-handles:** ID generation (if not provided), codename generation (if applicable), Elasticsearch indexing, Kafka events
 
-- `getUserStatsByQuery`
+- **`createBulk${ModelName}(dataList)`** — Creates multiple records in bulk
+  - **Parameters:** `dataList` (Array) — Array of data objects to create
+  - **Returns:** Array — Array of created/updated record data
+  - **Auto-handles:** Same as single create, processes each item sequentially
 
-These functions offer a **safe, typed, generated repository layer** that:
+#### **Read Functions**
 
-- Respects your schema and constraints
+- **`get${ModelName}ById(id)`** — Retrieves a record by ID
+  - **Parameters:** `id` (String|Array) — Single ID or array of IDs
+  - **Returns:** Object|Array|null — Single record, array of records, or null if not found
+  - **Respects:** Soft delete settings (only returns active records if soft delete is enabled)
 
-- Applies built-in access control (soft deletes, multitenancy)
+- **`get${ModelName}AggById(id)`** — Retrieves a record with aggregated/joined data
+  - **Parameters:** `id` (String|Array) — Single ID or array of IDs
+  - **Returns:** Object|Array|null — Record(s) with joined relations populated via CQRS joins
+  - **Use case:** When you need related data from other services
 
-- Normalizes results
+- **`get${ModelName}ListByQuery(query)`** — Retrieves multiple records matching a query
+  - **Parameters:** `query` (Object) — Sequelize or MongoDB query object (depending on your DB type)
+  - **Returns:** Array — Array of matching records (empty array if none found)
+  - **Respects:** Soft delete settings
 
-- Minimizes the need for raw ORM access
+- **`get${ModelName}ByQuery(query)`** — Retrieves a single record matching a query
+  - **Parameters:** `query` (Object) — Sequelize or MongoDB query object
+  - **Returns:** Object|null — First matching record (ordered by createdAt DESC) or null
+  - **Respects:** Soft delete settings
+
+- **`get${ModelName}StatsByQuery(query, stats)`** — Calculates statistics on matching records
+  - **Parameters:** 
+    - `query` (Object) — Sequelize or MongoDB query object
+    - `stats` (Array|String) — Array of stat operations (e.g., `["count", "sum(amount)", "avg(price)", "min(price)", "max(price)"]`) or single stat string
+  - **Returns:** Number|Object — Single stat value or object with stat labels as keys
+  - **Example:** `await DB.getOrderStatsByQuery({ status: "paid" }, ["count", "sum(totalAmount)"])` returns `{ count: 10, "sum-totalAmount": 5000 }`
+
+- **`getIdListOf${ModelName}ByField(fieldName, fieldValue, isArray)`** — Gets list of IDs matching a field value
+  - **Parameters:**
+    - `fieldName` (String) — Field name to match
+    - `fieldValue` (Any) — Value to match
+    - `isArray` (Boolean) — If true, uses array containment check (for array fields)
+  - **Returns:** Array — Array of IDs matching the criteria
+  - **Use case:** Quick ID lookups for building relationships or filters
+
+#### **Update Functions**
+
+- **`update${ModelName}ById(id, dataClause)`** — Updates a record by ID
+  - **Parameters:**
+    - `id` (String|Object) — Record ID or object with `id` property
+    - `dataClause` (Object) — Fields to update (if `id` is object, can be omitted)
+  - **Returns:** Object — Updated record data
+  - **Auto-handles:** Elasticsearch indexing, Kafka events, soft delete checks
+
+- **`update${ModelName}ByIdList(idList, dataClause)`** — Updates multiple records by ID list
+  - **Parameters:**
+    - `idList` (Array) — Array of IDs to update
+    - `dataClause` (Object) — Fields to update for all records
+  - **Returns:** Array — Array of updated record IDs
+  - **Auto-handles:** Elasticsearch indexing for all updated records
+
+- **`update${ModelName}ByQuery(query, dataClause)`** — Updates all records matching a query
+  - **Parameters:**
+    - `query` (Object) — Sequelize or MongoDB query object
+    - `dataClause` (Object) — Fields to update
+  - **Returns:** Array — Array of updated record data
+  - **Auto-handles:** Elasticsearch indexing for all updated records
+
+#### **Delete Functions**
+
+- **`delete${ModelName}ById(id)`** — Deletes a record by ID
+  - **Parameters:** `id` (String|Object) — Record ID or object with `id` property
+  - **Returns:** Object — Deleted record data
+  - **Auto-handles:** Soft delete (if enabled), Elasticsearch deletion, Kafka events
+
+- **`delete${ModelName}ByQuery(query)`** — Deletes all records matching a query
+  - **Parameters:** `query` (Object) — Sequelize or MongoDB query object
+  - **Returns:** Array — Array of deleted record data
+  - **Auto-handles:** Soft delete (if enabled), Elasticsearch deletion for all records
+
+#### **Query Format**
+
+All functions that accept a `query` parameter use the same format as your selected database type:
+
+- **Sequelize (PostgreSQL, MySQL, etc.):** Standard Sequelize query syntax
+  ```js
+  { status: "active", age: { [Op.gte]: 18 } }
+  ```
+
+- **MongoDB:** Standard MongoDB query syntax
+  ```js
+  { status: "active", age: { $gte: 18 } }
+  ```
+
+#### **Why Use dbLayer Instead of Direct Model Access?**
+
+These functions provide a **safe, typed, generated repository layer** that:
+
+- ✅ **Ensures data consistency** — Automatically syncs with Elasticsearch
+- ✅ **Triggers events** — Publishes Kafka events on data changes
+- ✅ **Respects constraints** — Applies soft deletes, multitenancy, and access control
+- ✅ **Normalizes results** — Returns consistent data structures via `getData()`
+- ✅ **Handles edge cases** — Manages codename generation, ID creation, etc.
+- ✅ **Minimizes errors** — Reduces the need for raw ORM access and potential inconsistencies
+
+**Example usage in a library function:**
+
+```js
+const { getOrderAggById, updateOrderById, getItemListByQuery, getOrderStatsByQuery } = require("dbLayer");
+
+module.exports = async function processOrder(orderId) {
+  // Get order with aggregated data
+  const order = await getOrderAggById(orderId);
+  if (!order) throw new Error("Order not found");
+  
+  // Update order status
+  await updateOrderById(orderId, { status: "processed" });
+  
+  // Get related items
+  const items = await getItemListByQuery({ orderId: orderId });
+  
+  // Calculate total
+  const stats = await getOrderStatsByQuery(
+    { orderId: orderId },
+    ["sum(amount)"]
+  );
+  
+  return { order, items, total: stats["sum-amount"] };
+};
+```
 
 ### **4.&#x20;****`models`****&#x20;— Raw ORM Models (Advanced Only)**
 

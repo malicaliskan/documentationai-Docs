@@ -1,0 +1,115 @@
+<%
+// expects: dbObject
+// generate one set per GeoPoint property
+const properties = dbObject.properties;
+const useSoftDelete = dbObject.objectSettings.basicSettings.useSoftDelete;
+const geoPointProps = properties.filter(p => (p.ordType||p.typeName||p.type) === 'GeoPoint');
+%>
+const { HttpServerError, BadRequestError } = require("common");
+const { <%= dbObject.modelName %> } = require("models");
+const { Op, fn, col, literal, where } = require("sequelize");
+
+<% for (const gp of geoPointProps) { %>
+<% const geoField = gp.name; %> 
+// ------------------------------
+// GEO HELPERS for <%= dbObject.modelName %>.<%= geoField %>
+// ------------------------------
+
+/**
+ * get<Model>ListInCircle_<geoField>
+ * Find docs within radius (meters) of [lon,lat], optional extra filters.
+ */
+const get<%= dbObject.modelName %>ListInCircle_<%= geoField %> = async (lon, lat, radiusM, query = {}, options = {}) => {
+  try {
+    if (typeof lon !== 'number' || typeof lat !== 'number' || typeof radiusM !== 'number') {
+      throw new BadRequestError("lon, lat, radiusM must be numbers");
+    }
+    const pointGeog = literal(`ST_SetSRID(ST_MakePoint(${lon}, ${lat}),4326)::geography`);
+
+    const andClauses = [
+      where(fn('ST_DWithin', col('<%= geoField %>'), pointGeog, radiusM), true)
+    ];
+
+    <% if (useSoftDelete) { %> andClauses.push({ isActive: true }); <% } %>
+    if (query && typeof query === 'object') andClauses.push(query);
+
+    const rows = await <%= dbObject.modelName %>.findAll({
+      where: { [Op.and]: andClauses },
+      attributes: {
+        include: [[ fn('ST_Distance', col('<%= geoField %>'), pointGeog), 'distance_m' ]]
+      },
+      order: options.orderByDistance === false ? undefined : [[ literal('"distance_m"'), 'ASC' ]],
+      limit: options.limit,
+      offset: options.offset
+    });
+
+    return rows.map(r => r.getData());
+  } catch (err) {
+    throw new HttpServerError("errMsg_dbErrorWhenRequesting<%= dbObject.modelName %>ListInCircle", err);
+  }
+};
+
+/**
+ * get<Model>ListMostClose_<geoField>
+ * Nearest N items to [lon,lat]. Optional radiusM to bound the search + extra filters.
+ */
+const get<%= dbObject.modelName %>ListMostClose_<%= geoField %> = async (lon, lat, limit = 10, query = {}, options = {}) => {
+  try {
+    if (typeof lon !== 'number' || typeof lat !== 'number') {
+      throw new BadRequestError("lon, lat must be numbers");
+    }
+    const pointGeog = literal(`ST_SetSRID(ST_MakePoint(${lon}, ${lat}),4326)::geography`);
+    const andClauses = [];
+    if (options.radiusM) {
+      andClauses.push(where(fn('ST_DWithin', col('<%= geoField %>'), pointGeog, Number(options.radiusM)), true));
+    }
+    <% if (useSoftDelete) { %> andClauses.push({ isActive: true }); <% } %>
+    if (query && typeof query === 'object') andClauses.push(query);
+
+    const rows = await <%= dbObject.modelName %>.findAll({
+      where: andClauses.length ? { [Op.and]: andClauses } : undefined,
+      attributes: { include: [[ fn('ST_Distance', col('<%= geoField %>'), pointGeog), 'distance_m' ]] },
+      order: [[ literal('"distance_m"'), 'ASC' ]],
+      limit: Number(limit) || 10,
+      offset: options.offset
+    });
+
+    return rows.map(r => r.getData());
+  } catch (err) {
+    throw new HttpServerError("errMsg_dbErrorWhenRequesting<%= dbObject.modelName %>ListMostClose", err);
+  }
+};
+
+/**
+ * get<Model>ListInBBox_<geoField>
+ * minLon,minLat,maxLon,maxLat bounding box. Optional extra filters.
+ */
+const get<%= dbObject.modelName %>ListInBBox_<%= geoField %> = async (minLon, minLat, maxLon, maxLat, query = {}, options = {}) => {
+  try {
+    [minLon, minLat, maxLon, maxLat].forEach(v => { if (typeof v !== 'number') throw new BadRequestError("BBox values must be numbers"); });
+    const envelope = literal(`ST_MakeEnvelope(${minLon}, ${minLat}, ${maxLon}, ${maxLat}, 4326)`);
+    const fieldGeom = literal(`("<%= geoField %>")::geometry`);
+
+    const andClauses = [
+      where(fn('ST_Intersects', fieldGeom, envelope), true)
+    ];
+    <% if (useSoftDelete) { %> andClauses.push({ isActive: true }); <% } %>
+    if (query && typeof query === 'object') andClauses.push(query);
+
+    const rows = await <%= dbObject.modelName %>.findAll({
+      where: { [Op.and]: andClauses },
+      limit: options.limit,
+      offset: options.offset
+    });
+
+    return rows.map(r => r.getData());
+  } catch (err) {
+    throw new HttpServerError("errMsg_dbErrorWhenRequesting<%= dbObject.modelName %>ListInBBox", err);
+  }
+};
+
+module.exports.get<%= dbObject.modelName %>ListInCircle_<%= geoField %> = get<%= dbObject.modelName %>ListInCircle_<%= geoField %>;
+module.exports.get<%= dbObject.modelName %>ListMostClose_<%= geoField %> = get<%= dbObject.modelName %>ListMostClose_<%= geoField %>;
+module.exports.get<%= dbObject.modelName %>ListInBBox_<%= geoField %> = get<%= dbObject.modelName %>ListInBBox_<%= geoField %>;
+
+<% } // end for each geo prop %>

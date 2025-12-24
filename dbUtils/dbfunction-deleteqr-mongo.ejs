@@ -1,0 +1,35 @@
+const { HttpServerError, BadRequestError } = require("common");
+
+const { <%= dbObject.modelName %> } = require("models");
+
+const delete<%= dbObject.modelName %>ByQuery = async (query) => {
+  try {
+    if (!query || typeof query !== "object") {
+      throw new BadRequestError("Invalid query provided. Query must be an object.");
+    }
+    // sholuld i match the resul returned with sequlize? 
+
+    <% if (dbObject.objectSettings.basicSettings.useSoftDelete) { %>
+    const docs = await <%= dbObject.modelName %>.find({ ...query, isActive: true });
+    if (!docs || docs.length === 0) return [];
+    
+    await <%= dbObject.modelName %>.updateMany(
+      { ...query, isActive: true }, 
+      { isActive: false, _archivedAt: new Date()}
+    );
+    return docs.map(doc => doc.getData());
+    <% } else { %>
+    const docs = await <%= dbObject.modelName %>.find(query);
+    if (!docs || docs.length === 0) return [];
+    
+    await <%= dbObject.modelName %>.deleteMany(query);
+    return docs.map(doc => doc.getData());
+    <% } %>
+
+  } catch (err) {
+    //**errorLog
+    throw new HttpServerError("errMsg_dbErrorWhenDeleting<%= dbObject.modelName %>ByQuery", err);
+  }
+};
+
+module.exports = delete<%= dbObject.modelName %>ByQuery; 

@@ -1,0 +1,81 @@
+
+
+<% 
+const hasCodename = 
+
+dbObject.properties.some(prop => prop.name == 'codename') && 
+(dbObject.properties.some(prop => prop.name == 'name') || 
+ dbObject.properties.some(prop => prop.name == 'shortname'));
+
+const baseNameField = hasCodename ? 
+  dbObject.properties.find(prop => prop.name == 'shortname')?.name 
+    ?? dbObject.properties.find(prop => prop.name == 'name')?.name 
+  : null;
+%>
+
+const { 
+    HttpServerError, 
+    BadRequestError 
+} = require("common");
+
+const { ElasticIndexer } = require("serviceCommon");
+
+const { <%= dbObject.modelName %> } = require('models');
+const { hexaLogger,newUUID } = require("common");
+
+<% if (hasCodename) { -%>
+const getNextCodename = async (<%= baseNameField %>) => {
+  const getNextCodenameFor<%= dbObject.modelName %> = require("./getNextCodenameFor<%= dbObject.modelName %>.js");
+  return await getNextCodenameFor<%= dbObject.modelName %>(<%= baseNameField %>?.toLowerCase());
+}
+<% } -%>
+
+const indexDataToElastic = async (data) => {
+    const elasticIndexer = new ElasticIndexer("<%= dbObject.objectName %>");
+    await elasticIndexer.indexData(data);
+};
+
+const validateData = (data) => {
+
+    if (!data.id) {
+        data.id = newUUID();
+    }
+      
+};
+
+const create<%= dbObject.modelName %> = async (data) => {
+
+    try {
+
+    <% if (hasCodename) { %>
+    if (!data.codename) {
+      data.codename = data.<%= baseNameField %> ? await getNextCodename(data.<%= baseNameField %>) : undefined;
+    }
+    <% } -%>  
+
+    validateData(data);
+
+    const current_<%= dbObject.objectName %> = data.id ? await <%= dbObject.modelName %>.findByPk(data.id) : null;
+    let new<%= dbObject.objectName %> = null;
+    
+    if (current_<%= dbObject.objectName %>) {
+      delete data.id;
+      <% if (dbObject.objectSettings.basicSettings.useSoftDelete) { %> data.isActive = true;<% } %>
+      await current_<%= dbObject.objectName %>.update(data);
+      new<%= dbObject.objectName %> = current_<%= dbObject.objectName %>;
+    }
+
+    if (!new<%= dbObject.objectName %>) {
+      new<%= dbObject.objectName %> = await <%= dbObject.modelName %>.create(data);
+    }
+
+        const _data = new<%= dbObject.objectName %>.getData();
+        await indexDataToElastic(_data);
+        return _data;
+    } catch (err) {
+      //**errorLog
+      throw new HttpServerError("errMsg_dbErrorWhenCreating<%= dbObject.modelName %>", err);
+    }
+};
+
+module.exports = create<%= dbObject.modelName %>;

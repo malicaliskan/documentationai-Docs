@@ -1,0 +1,52 @@
+const { HttpServerError, NotFoundError, BadRequestError } = require("common");
+
+const { <%= dbObject.modelName %> } = require("models");
+const { Op } = require("sequelize");
+
+
+const getIdListOf<%= dbObject.modelName %>ByField = async (fieldName, fieldValue, isArray) => {
+
+  try {
+
+    <% if (dbObject.objectSettings.basicSettings.useSoftDelete) { %>
+    const options = {
+      where:  { isActive: true },
+      attributes: ["id"],
+    };
+    if (fieldName) {
+      options.where = isArray
+        ? { [fieldName]: { [Op.contains]: [fieldValue] }, isActive: true }
+        : { [fieldName]: fieldValue, isActive: true };
+    }
+    <% } else { %>
+    const options = {
+      attributes: ["id"],
+    };
+    if (fieldName) {
+      options.where = isArray
+        ? { [fieldName]: { [Op.contains]: [fieldValue] } }
+        : { [fieldName]: fieldValue };
+    }
+    <% } %>
+
+    let <%= dbObject.objectName %>IdList = await <%= dbObject.modelName %>.findAll(options);
+
+    if (!<%= dbObject.objectName %>IdList) {
+      throw new NotFoundError(
+        `<%= dbObject.modelName %> with the specified criteria not found`
+      );
+    }
+
+    <%= dbObject.objectName %>IdList = <%= dbObject.objectName %>IdList.map((item) => item.id);
+    return <%= dbObject.objectName %>IdList;
+
+  } catch (err) {
+    //**errorLog
+    throw new HttpServerError(
+      "errMsg_dbErrorWhenRequesting<%= dbObject.modelName %>IdListByField",
+      err
+    );
+  }
+};
+
+module.exports = getIdListOf<%= dbObject.modelName %>ByField;

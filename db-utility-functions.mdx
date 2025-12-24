@@ -1,0 +1,752 @@
+---
+title: Database Utility Functions
+description: >-
+  Comprehensive guide to the automatically generated database utility functions
+  for each data object in your Mindbricks service. These functions provide a
+  safe, consistent way to interact with your data while ensuring Elasticsearch
+  synchronization and Kafka event publishing.
+---
+
+Mindbricks automatically generates a comprehensive set of database utility functions for each data object in your service. These functions are available through the `dbLayer` module and provide a **safe, consistent interface** for data operations that automatically handles:
+
+- Database operations (create, read, update, delete)
+- Elasticsearch indexing and synchronization
+- Kafka event publishing on data changes
+- Soft delete handling
+- Data normalization via `getData()`
+
+**Always use these utility functions instead of directly accessing models** to ensure data consistency across your system.
+
+---
+
+## Importing dbLayer
+
+```js
+// Using destructuring (recommended)
+const { getUserById, createUser, updateUserById } = require("dbLayer");
+
+// Or using the full module
+const DB = require("dbLayer");
+```
+
+All functions follow the naming pattern: `<operation>${ModelName}`, where `ModelName` is the PascalCase name of your data object. For example, if your data object is named `order`, the functions will be prefixed with `Order` (e.g., `createOrder`, `getOrderById`).
+
+---
+
+## Create Functions
+
+### `create${ModelName}(data)`
+
+Creates a single record. If an `id` is provided and the record already exists, it will update the existing record instead.
+
+**Signature:**
+```typescript
+create${ModelName}(data: Object): Promise<Object>
+```
+
+**Parameters:**
+- `data` (Object) — The data object to create. Must contain all required fields as defined in your data object schema.
+
+**Returns:**
+- Object — The created/updated record data (normalized via `getData()`)
+
+**Behavior:**
+- Automatically generates a UUID for `id` if not provided
+- Generates `codename` automatically if the data object has codename support and a base name field is provided
+- If `id` exists in database, updates the existing record (useful for upsert scenarios)
+- Automatically indexes the record in Elasticsearch
+- Publishes Kafka events for the creation/update
+
+**Example:**
+```js
+const { createOrder } = require("dbLayer");
+
+// Create a new order
+const order = await createOrder({
+  userId: "user-123",
+  totalAmount: 5000,
+  currency: "USD",
+  status: "pending"
+});
+
+// If order with this ID exists, it will update instead
+const updated = await createOrder({
+  id: order.id,
+  status: "paid"
+});
+```
+
+---
+
+### `createBulk${ModelName}(dataList)`
+
+Creates multiple records in bulk. Processes each item sequentially to ensure proper event handling.
+
+**Signature:**
+```typescript
+createBulk${ModelName}(dataList: Array<Object>): Promise<Array<Object>>
+```
+
+**Parameters:**
+- `dataList` (Array) — Array of data objects to create. Must be a non-empty array.
+
+**Returns:**
+- Array — Array of created/updated record data objects
+
+**Behavior:**
+- Validates that `dataList` is a non-empty array
+- Processes each item sequentially (not in parallel) to ensure proper event handling
+- Each item follows the same rules as `create${ModelName}`
+- Automatically indexes all records in Elasticsearch
+- Publishes Kafka events for each creation
+
+**Example:**
+```js
+const { createBulkOrder } = require("dbLayer");
+
+const orders = await createBulkOrder([
+  { userId: "user-1", totalAmount: 1000, status: "pending" },
+  { userId: "user-2", totalAmount: 2000, status: "pending" },
+  { userId: "user-3", totalAmount: 3000, status: "pending" }
+]);
+```
+
+---
+
+## Read Functions
+
+### `get${ModelName}ById(id)`
+
+Retrieves a record by its ID. Supports both single ID and array of IDs.
+
+**Signature:**
+```typescript
+get${ModelName}ById(id: string | Array<string>): Promise<Object | Array<Object> | null>
+```
+
+**Parameters:**
+- `id` (String|Array) — Single ID string or array of ID strings
+
+**Returns:**
+- Object — Single record if `id` is a string
+- Array — Array of records if `id` is an array
+- null — If single ID not found (returns empty array for array input if none found)
+
+**Behavior:**
+- Respects soft delete settings (only returns active records if soft delete is enabled)
+- Returns normalized data via `getData()`
+- Does not include related/joined data (use `get${ModelName}AggById` for that)
+
+**Example:**
+```js
+const { getOrderById } = require("dbLayer");
+
+// Get single order
+const order = await getOrderById("order-123");
+
+// Get multiple orders
+const orders = await getOrderById(["order-123", "order-456", "order-789"]);
+```
+
+---
+
+### `get${ModelName}AggById(id)`
+
+Retrieves a record with aggregated/joined data from related services via CQRS joins.
+
+**Signature:**
+```typescript
+get${ModelName}AggById(id: string | Array<string>): Promise<Object | Array<Object> | null>
+```
+
+**Parameters:**
+- `id` (String|Array) — Single ID string or array of ID strings
+
+**Returns:**
+- Object — Single record with joined relations if `id` is a string
+- Array — Array of records with joined relations if `id` is an array
+- null — If single ID not found
+
+**Behavior:**
+- Same as `get${ModelName}ById` but includes related data from other services
+- Uses CQRS join mechanism to fetch related data
+- Respects soft delete settings
+- Returns normalized data with populated relations
+
+**Example:**
+```js
+const { getOrderAggById } = require("dbLayer");
+
+// Get order with user and items populated
+const order = await getOrderAggById("order-123");
+// order.user contains user data
+// order.items contains related items
+```
+
+---
+
+### `get${ModelName}ListByQuery(query)`
+
+Retrieves multiple records matching a query.
+
+**Signature:**
+```typescript
+get${ModelName}ListByQuery(query: Object): Promise<Array<Object>>
+```
+
+**Parameters:**
+- `query` (Object) — Sequelize or MongoDB query object (format depends on your selected database type)
+
+**Returns:**
+- Array — Array of matching records (empty array if none found)
+
+**Behavior:**
+- Respects soft delete settings (automatically filters `isActive: true` if soft delete is enabled)
+- Returns normalized data via `getData()`
+- Returns empty array if no matches found (does not throw error)
+
+**Query Format Examples:**
+
+**Sequelize (PostgreSQL, MySQL, etc.):**
+```js
+const { Op } = require("sequelize");
+const { getOrderListByQuery } = require("dbLayer");
+
+// Simple query
+const orders = await getOrderListByQuery({ status: "paid" });
+
+// Complex query
+const orders = await getOrderListByQuery({
+  status: "paid",
+  totalAmount: { [Op.gte]: 1000 },
+  createdAt: { [Op.between]: [startDate, endDate] }
+});
+```
+
+**MongoDB:**
+```js
+const { getOrderListByQuery } = require("dbLayer");
+
+// Simple query
+const orders = await getOrderListByQuery({ status: "paid" });
+
+// Complex query
+const orders = await getOrderListByQuery({
+  status: "paid",
+  totalAmount: { $gte: 1000 },
+  createdAt: { $gte: startDate, $lte: endDate }
+});
+```
+
+---
+
+### `get${ModelName}ByQuery(query)`
+
+Retrieves a single record matching a query. Returns the most recently created record if multiple matches exist.
+
+**Signature:**
+```typescript
+get${ModelName}ByQuery(query: Object): Promise<Object | null>
+```
+
+**Parameters:**
+- `query` (Object) — Sequelize or MongoDB query object
+
+**Returns:**
+- Object — First matching record (ordered by `createdAt DESC`) or null if not found
+
+**Behavior:**
+- Respects soft delete settings
+- Orders results by `createdAt DESC` to get the most recent match
+- Returns null if no match found (does not throw error)
+- Returns normalized data via `getData()`
+
+**Example:**
+```js
+const { getOrderByQuery } = require("dbLayer");
+
+// Get the most recent order for a user
+const latestOrder = await getOrderByQuery({ userId: "user-123" });
+```
+
+---
+
+### `get${ModelName}StatsByQuery(query, stats)`
+
+Calculates statistics (count, sum, avg, min, max) on records matching a query.
+
+**Signature:**
+```typescript
+get${ModelName}StatsByQuery(
+  query: Object,
+  stats: string | Array<string>
+): Promise<number | Object>
+```
+
+**Parameters:**
+- `query` (Object) — Sequelize or MongoDB query object
+- `stats` (String|Array) — Stat operation(s) to perform:
+  - `"count"` — Count of matching records
+  - `"sum(fieldName)"` — Sum of a numeric field
+  - `"avg(fieldName)"` — Average of a numeric field
+  - `"min(fieldName)"` — Minimum value of a field
+  - `"max(fieldName)"` — Maximum value of a field
+
+**Returns:**
+- Number — If single stat is requested
+- Object — If multiple stats are requested, with keys like `"count"`, `"sum-fieldName"`, `"avg-fieldName"`, etc.
+
+**Behavior:**
+- Respects soft delete settings
+- Executes all stats in parallel for performance
+- Returns single value if one stat requested, object with labeled keys if multiple
+
+**Example:**
+```js
+const { getOrderStatsByQuery } = require("dbLayer");
+
+// Single stat
+const count = await getOrderStatsByQuery(
+  { status: "paid" },
+  "count"
+);
+// Returns: 42
+
+// Multiple stats
+const stats = await getOrderStatsByQuery(
+  { status: "paid" },
+  ["count", "sum(totalAmount)", "avg(totalAmount)", "min(totalAmount)", "max(totalAmount)"]
+);
+// Returns: {
+//   count: 42,
+//   "sum-totalAmount": 125000,
+//   "avg-totalAmount": 2976.19,
+//   "min-totalAmount": 100,
+//   "max-totalAmount": 10000
+// }
+```
+
+---
+
+### `getIdListOf${ModelName}ByField(fieldName, fieldValue, isArray)`
+
+Gets a list of IDs for records matching a specific field value. Useful for quick lookups and building relationships.
+
+**Signature:**
+```typescript
+getIdListOf${ModelName}ByField(
+  fieldName: string,
+  fieldValue: any,
+  isArray?: boolean
+): Promise<Array<string>>
+```
+
+**Parameters:**
+- `fieldName` (String) — Name of the field to match
+- `fieldValue` (Any) — Value to match against
+- `isArray` (Boolean, optional) — If `true`, uses array containment check (for array-type fields)
+
+**Returns:**
+- Array — Array of record IDs matching the criteria
+
+**Behavior:**
+- Respects soft delete settings
+- If `isArray` is true, checks if `fieldValue` is contained in the array field
+- Throws `NotFoundError` if no records match (unlike list functions that return empty array)
+- Only returns IDs, not full records (for performance)
+
+**Example:**
+```js
+const { getIdListOfOrderByField } = require("dbLayer");
+
+// Get all order IDs for a user
+const orderIds = await getIdListOfOrderByField("userId", "user-123");
+
+// Get all order IDs that contain a specific tag (array field)
+const taggedOrderIds = await getIdListOfOrderByField("tags", "urgent", true);
+```
+
+---
+
+## Update Functions
+
+### `update${ModelName}ById(id, dataClause)`
+
+Updates a record by its ID.
+
+**Signature:**
+```typescript
+update${ModelName}ById(
+  id: string | Object,
+  dataClause?: Object
+): Promise<Object>
+```
+
+**Parameters:**
+- `id` (String|Object) — Record ID string, or object with `id` property (if object, `dataClause` can be omitted and data included in the object)
+- `dataClause` (Object, optional) — Fields to update (only required if `id` is a string)
+
+**Returns:**
+- Object — Updated record data (normalized via `getData()`)
+
+**Behavior:**
+- Throws `NotFoundError` if record doesn't exist
+- Respects soft delete settings (only updates active records)
+- Automatically indexes updated record in Elasticsearch
+- Publishes Kafka events for the update
+- If `id` is an object, extracts `id` and uses remaining properties as `dataClause`
+
+**Example:**
+```js
+const { updateOrderById } = require("dbLayer");
+
+// Standard usage
+const updated = await updateOrderById("order-123", {
+  status: "shipped",
+  shippedAt: new Date()
+});
+
+// Using object form
+const updated = await updateOrderById({
+  id: "order-123",
+  status: "shipped",
+  shippedAt: new Date()
+});
+```
+
+---
+
+### `update${ModelName}ByIdList(idList, dataClause)`
+
+Updates multiple records by a list of IDs. All records receive the same update.
+
+**Signature:**
+```typescript
+update${ModelName}ByIdList(
+  idList: Array<string>,
+  dataClause: Object
+): Promise<Array<string>>
+```
+
+**Parameters:**
+- `idList` (Array) — Array of record IDs to update
+- `dataClause` (Object) — Fields to update (applied to all records)
+
+**Returns:**
+- Array — Array of updated record IDs
+
+**Behavior:**
+- Updates all records in the list with the same data
+- Respects soft delete settings (only updates active records)
+- Automatically indexes all updated records in Elasticsearch
+- Publishes Kafka events for each update
+- Returns IDs (not full records) for performance
+
+**Example:**
+```js
+const { updateOrderByIdList } = require("dbLayer");
+
+// Mark multiple orders as shipped
+const updatedIds = await updateOrderByIdList(
+  ["order-1", "order-2", "order-3"],
+  {
+    status: "shipped",
+    shippedAt: new Date()
+  }
+);
+```
+
+---
+
+### `update${ModelName}ByQuery(query, dataClause)`
+
+Updates all records matching a query.
+
+**Signature:**
+```typescript
+update${ModelName}ByQuery(
+  query: Object,
+  dataClause: Object
+): Promise<Array<Object>>
+```
+
+**Parameters:**
+- `query` (Object) — Sequelize or MongoDB query object
+- `dataClause` (Object) — Fields to update
+
+**Returns:**
+- Array — Array of updated record data (normalized via `getData()`)
+
+**Behavior:**
+- Updates all records matching the query
+- Respects soft delete settings (only updates active records)
+- Automatically indexes all updated records in Elasticsearch
+- Publishes Kafka events for each update
+- Returns empty array if no records match
+
+**Example:**
+```js
+const { Op } = require("sequelize");
+const { updateOrderByQuery } = require("dbLayer");
+
+// Mark all pending orders older than 7 days as expired
+const expired = await updateOrderByQuery(
+  {
+    status: "pending",
+    createdAt: { [Op.lt]: sevenDaysAgo }
+  },
+  {
+    status: "expired",
+    expiredAt: new Date()
+  }
+);
+```
+
+---
+
+## Delete Functions
+
+### `delete${ModelName}ById(id)`
+
+Deletes a record by its ID. Uses soft delete if enabled, otherwise hard delete.
+
+**Signature:**
+```typescript
+delete${ModelName}ById(id: string | Object): Promise<Object>
+```
+
+**Parameters:**
+- `id` (String|Object) — Record ID string or object with `id` property
+
+**Returns:**
+- Object — Deleted record data (normalized via `getData()`)
+
+**Behavior:**
+- Throws `NotFoundError` if record doesn't exist
+- If soft delete is enabled: sets `isActive: false` and `_archivedAt: timestamp`
+- If soft delete is disabled: permanently deletes from database
+- Automatically removes record from Elasticsearch
+- Publishes Kafka events for the deletion
+
+**Example:**
+```js
+const { deleteOrderById } = require("dbLayer");
+
+// Delete an order
+const deleted = await deleteOrderById("order-123");
+```
+
+---
+
+### `delete${ModelName}ByQuery(query)`
+
+Deletes all records matching a query. Uses soft delete if enabled, otherwise hard delete.
+
+**Signature:**
+```typescript
+delete${ModelName}ByQuery(query: Object): Promise<Array<Object>>
+```
+
+**Parameters:**
+- `query` (Object) — Sequelize or MongoDB query object
+
+**Returns:**
+- Array — Array of deleted record data (normalized via `getData()`)
+
+**Behavior:**
+- Deletes all records matching the query
+- If soft delete is enabled: sets `isActive: false` and `_archivedAt: timestamp` for all matching records
+- If soft delete is disabled: permanently deletes all matching records
+- Automatically removes all records from Elasticsearch
+- Publishes Kafka events for each deletion
+- Returns empty array if no records match
+
+**Example:**
+```js
+const { Op } = require("sequelize");
+const { deleteOrderByQuery } = require("dbLayer");
+
+// Delete all expired orders
+const deleted = await deleteOrderByQuery({
+  status: "expired",
+  expiredAt: { [Op.lt]: oneYearAgo }
+});
+```
+
+---
+
+## Query Format Reference
+
+All functions that accept a `query` parameter use the same format as your selected database type.
+
+### Sequelize (PostgreSQL, MySQL, SQLite, etc.)
+
+Use Sequelize query syntax with operators from `Op`:
+
+```js
+const { Op } = require("sequelize");
+
+// Simple equality
+{ status: "active" }
+
+// Comparison operators
+{ age: { [Op.gte]: 18 } }
+{ price: { [Op.between]: [100, 500] } }
+{ createdAt: { [Op.lt]: new Date() } }
+
+// Array operators
+{ id: { [Op.in]: ["id1", "id2", "id3"] } }
+{ tags: { [Op.contains]: ["urgent"] } }
+
+// Logical operators
+{
+  [Op.and]: [
+    { status: "active" },
+    { age: { [Op.gte]: 18 } }
+  ]
+}
+{
+  [Op.or]: [
+    { status: "pending" },
+    { status: "processing" }
+  ]
+}
+```
+
+### MongoDB
+
+Use MongoDB query syntax:
+
+```js
+// Simple equality
+{ status: "active" }
+
+// Comparison operators
+{ age: { $gte: 18 } }
+{ price: { $gte: 100, $lte: 500 } }
+{ createdAt: { $lt: new Date() } }
+
+// Array operators
+{ id: { $in: ["id1", "id2", "id3"] } }
+{ tags: "urgent" }
+
+// Logical operators
+{
+  $and: [
+    { status: "active" },
+    { age: { $gte: 18 } }
+  ]
+}
+{
+  $or: [
+    { status: "pending" },
+    { status: "processing" }
+  ]
+}
+```
+
+---
+
+## Best Practices
+
+### ✅ Do: Use dbLayer Functions
+
+```js
+const { getOrderById, updateOrderById } = require("dbLayer");
+
+// Good: Uses utility function
+const order = await getOrderById(orderId);
+await updateOrderById(orderId, { status: "paid" });
+```
+
+### ❌ Don't: Access Models Directly
+
+```js
+const { Order } = require("models");
+
+// Bad: Bypasses Elasticsearch sync and Kafka events
+const order = await Order.findByPk(orderId);
+await order.update({ status: "paid" });
+```
+
+### Why?
+
+Direct model access:
+- ❌ Bypasses Elasticsearch synchronization
+- ❌ Doesn't publish Kafka events
+- ❌ May break data consistency
+- ❌ Doesn't respect soft delete settings automatically
+- ❌ Doesn't normalize data via `getData()`
+
+---
+
+## Complete Example
+
+Here's a complete example using multiple utility functions in a library function:
+
+```js
+const { Op } = require("sequelize");
+const {
+  getOrderListByQuery,
+  getOrderStatsByQuery,
+  updateOrderByIdList,
+  getIdListOfOrderByField
+} = require("dbLayer");
+
+module.exports = async function processUserOrders(userId) {
+  // Get all active orders for user
+  const orders = await getOrderListByQuery({
+    userId: userId,
+    status: { [Op.in]: ["pending", "processing"] }
+  });
+
+  if (orders.length === 0) {
+    return { message: "No orders to process" };
+  }
+
+  // Get statistics
+  const stats = await getOrderStatsByQuery(
+    { userId: userId },
+    ["count", "sum(totalAmount)"]
+  );
+
+  // Update all pending orders to processing
+  const orderIds = orders.map(o => o.id);
+  await updateOrderByIdList(orderIds, {
+    status: "processing",
+    processedAt: new Date()
+  });
+
+  // Get order IDs for a specific status
+  const paidOrderIds = await getIdListOfOrderByField("status", "paid");
+
+  return {
+    processed: orders.length,
+    totalAmount: stats["sum-totalAmount"],
+    paidOrders: paidOrderIds.length
+  };
+};
+```
+
+---
+
+## Summary
+
+| Function | Purpose | Returns |
+|----------|---------|---------|
+| `create${ModelName}` | Create single record | Object |
+| `createBulk${ModelName}` | Create multiple records | Array |
+| `get${ModelName}ById` | Get by ID | Object\|Array\|null |
+| `get${ModelName}AggById` | Get by ID with joins | Object\|Array\|null |
+| `get${ModelName}ListByQuery` | Get multiple by query | Array |
+| `get${ModelName}ByQuery` | Get single by query | Object\|null |
+| `get${ModelName}StatsByQuery` | Calculate statistics | Number\|Object |
+| `getIdListOf${ModelName}ByField` | Get IDs by field | Array |
+| `update${ModelName}ById` | Update by ID | Object |
+| `update${ModelName}ByIdList` | Update multiple by IDs | Array (IDs) |
+| `update${ModelName}ByQuery` | Update by query | Array |
+| `delete${ModelName}ById` | Delete by ID | Object |
+| `delete${ModelName}ByQuery` | Delete by query | Array |
+
+All functions automatically handle Elasticsearch indexing, Kafka event publishing, and soft delete logic. Always prefer these utility functions over direct model access to maintain data consistency across your system.
+

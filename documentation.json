@@ -138,6 +138,10 @@
                 "path": "write-your-own-code"
               },
               {
+                "title": "Database Utility Functions",
+                "path": "db-utility-functions"
+              },
+              {
                 "title": "MScript Cookbook",
                 "path": "mscript-cookbook"
               },

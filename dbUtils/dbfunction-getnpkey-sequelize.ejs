@@ -1,0 +1,39 @@
+<% 
+const firstUpper = (str) => {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
+const keyName = firstUpper(npKeyProp.name);
+%>
+
+const { HttpServerError, BadRequestError, NotAuthenticatedError, ForbiddenError, NotFoundError } =
+  require("common");
+const { hexaLogger } = require("common");
+const {<%= dbObject.modelName %>} = require('models');
+const { Op } = require("sequelize");
+
+const get<%= dbObject.modelName %>By<%= keyName  %> = async (<%= npKeyProp.name %>) => {
+    try {
+
+      <% if (dbObject.objectSettings.basicSettings.useSoftDelete) { %>
+      const <%= dbObject.objectName %> = await <%= dbObject.modelName %>.findOne({
+        where: {
+          <%= npKeyProp.name %>: <%= npKeyProp.name %>,
+          isActive: true
+        }
+      });
+      <% } else { %>
+      const <%= dbObject.objectName %> = await <%= dbObject.modelName %>.findOne(
+        { where: {<%= npKeyProp.name %>:<%= npKeyProp.name %>}}
+      );
+      <% } %>
+      if (!<%= dbObject.objectName %>) {
+        return null;
+      }
+      return <%= dbObject.objectName %>.getData();
+    } catch (err) {
+      //**errorLog
+      throw new HttpServerError("errMsg_dbErrorWhenRequesting<%= dbObject.modelName %>By<%= keyName  %>", err);
+    }
+};
+
+module.exports =  get<%= dbObject.modelName %>By<%= keyName  %>;

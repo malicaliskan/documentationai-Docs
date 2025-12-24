@@ -1,0 +1,47 @@
+const { HttpServerError } = require("common");
+
+const {<%= dbObject.modelName %>} = require('models');
+
+const get<%= dbObject.modelName %>ById = async (<%= dbObject.objectName %>Id) => {
+
+    try {
+      let <%= dbObject.objectName %>;
+      
+      if (Array.isArray(<%= dbObject.objectName %>Id)) {
+        <% if (dbObject.objectSettings.basicSettings.useSoftDelete) { %>
+        <%= dbObject.objectName %> = await <%= dbObject.modelName %>.find({
+          _id: { $in: <%= dbObject.objectName %>Id },
+          isActive: true
+        });
+        <% } else { %>
+        <%= dbObject.objectName %> = await <%= dbObject.modelName %>.find({
+          _id: { $in: <%= dbObject.objectName %>Id }
+        });
+        <% } %>
+      } else {
+        <% if (dbObject.objectSettings.basicSettings.useSoftDelete) { %>
+        <%= dbObject.objectName %> = await <%= dbObject.modelName %>.findOne({
+          _id: <%= dbObject.objectName %>Id,
+          isActive: true
+        });
+        <% } else { %>
+        <%= dbObject.objectName %> = await <%= dbObject.modelName %>.findById(<%= dbObject.objectName %>Id);
+        <% } %>
+      }
+        
+      if (!<%= dbObject.objectName %>){
+        return null;
+      }
+
+      
+      return Array.isArray(<%= dbObject.objectName %>Id) 
+        ? <%= dbObject.objectName %>.map(item => item.getData())
+        : <%= dbObject.objectName %>.getData();
+    } catch (err) {
+      //**errorLog
+      throw new HttpServerError("errMsg_dbErrorWhenRequesting<%= dbObject.modelName %>ById", err);
+    }
+  
+};
+
+module.exports = get<%= dbObject.modelName %>ById;

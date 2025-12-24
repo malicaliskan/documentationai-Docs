@@ -1,0 +1,19 @@
+<% 
+const getPopulateCalls = () => { 
+  let result = ''
+  const dbObject = dbFunction.dbObject;
+  const usePaths = dbFunction.usePaths;
+  const ignorePaths = dbFunction.ignorePaths ?? dbFunction.addToIgnorePaths;
+  const absIgnorePaths =  (dbFunction.ignorePaths) ? true : false;
+  const whereClauses = dbFunction.selectByJoins;
+  // const popArray = dbObject.collectPopulates(usePaths,ignorePaths,absIgnorePaths,whereClauses,"");
+  // if (popArray && popArray.length > 0) {
+  //   const popStr = dbObject.dataModel.serviceModel.parseToken({"populate->":popArray});
+  //   if (popStr) result = `${docName} = ${docName}.populate(${popStr})`;
+  // }
+    //this part is returned error related to dbObject.collectPopulates
+
+  return result;
+}
+-%>
+<%- getPopulateCalls() -%>

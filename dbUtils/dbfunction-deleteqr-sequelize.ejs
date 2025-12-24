@@ -1,0 +1,45 @@
+const { HttpServerError, BadRequestError } = require("common");
+const {<%= dbObject.modelName %>} = require('models');
+const { Op } = require("sequelize");
+const { ElasticIndexer } = require("serviceCommon");
+
+const delete<%= dbObject.modelName %>ByQuery = async (query) => {
+  try {
+    if (!query || typeof query !== "object") {
+      throw new BadRequestError("Invalid query provided. Query must be an object.");
+    }
+
+    <% if (dbObject.objectSettings.basicSettings.useSoftDelete) { %>
+    let rowsCount = null;
+    let rows = null;
+    const options = { where: { ...query, isActive: true }, returning: true };
+    [rowsCount, rows] = await <%= dbObject.modelName %>.update({ isActive: false, _archivedAt: new Date()  }, options);
+    if (!rowsCount) return [];
+
+    const elasticIndexer = new ElasticIndexer("<%= dbObject.objectName %>");
+    for (const item of rows) {
+      await elasticIndexer.deleteData(item.id);
+    }
+
+    return rows.map(item => item.getData());
+    <% } else { %>
+    const rows = await <%= dbObject.modelName %>.findAll({ where: query });
+    if (!rows || rows.length === 0) return [];
+    
+    await <%= dbObject.modelName %>.destroy({ where: query });
+
+    const elasticIndexer = new ElasticIndexer("<%= dbObject.objectName %>");
+    for (const item of rows) {
+      await elasticIndexer.deleteData(item.id);
+    }
+
+    return rows.map(item => item.getData());
+    <% } %>
+
+  } catch (err) {
+    //**errorLog
+    throw new HttpServerError("errMsg_dbErrorWhenDeleting<%= dbObject.modelName %>ByQuery", err);
+  }
+};
+
+module.exports =  delete<%= dbObject.modelName %>ByQuery;

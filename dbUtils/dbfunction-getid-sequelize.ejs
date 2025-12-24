@@ -1,0 +1,47 @@
+const { HttpServerError } =
+  require("common");
+
+let {<%= dbObject.modelName %>} = require('models');
+const { hexaLogger } = require("common");
+const { Op } = require("sequelize");
+
+const get<%= dbObject.modelName %>ById = async (<%= dbObject.objectName %>Id) => {
+  try {
+    <% if (dbObject.objectSettings.basicSettings.useSoftDelete) { %>
+    const <%= dbObject.objectName %> = Array.isArray(<%= dbObject.objectName %>Id)
+    ? await <%= dbObject.modelName %>.findAll({
+        where: {
+          id: { [Op.in]: <%= dbObject.objectName %>Id },
+          isActive: true
+        }
+      })
+    : await <%= dbObject.modelName %>.findOne({
+        where: {
+          id: <%= dbObject.objectName %>Id,
+          isActive: true
+        }
+      });
+    <% } else { %>
+    const <%= dbObject.objectName %> = Array.isArray(<%= dbObject.objectName %>Id)
+    ? await <%= dbObject.modelName %>.findAll({
+        where: {
+          id: { [Op.in]: <%= dbObject.objectName %>Id },
+        }
+      })
+    : await <%= dbObject.modelName %>.findByPk(<%= dbObject.objectName %>Id);
+    <% } %>
+    
+    if (!<%= dbObject.objectName %>){
+       return null;
+    }
+    return Array.isArray(<%= dbObject.objectName %>Id) 
+    ? <%= dbObject.objectName %>.map(item => item.getData())
+    : <%= dbObject.objectName %>.getData();
+  } catch (err) {
+    console.log(err);
+    //**errorLog
+    throw new HttpServerError("errMsg_dbErrorWhenRequesting<%= dbObject.modelName %>ById", err);
+  }
+};
+
+module.exports =  get<%= dbObject.modelName %>ById;
