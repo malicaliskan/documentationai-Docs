@@ -351,6 +351,10 @@
             "icon": "zap",
             "pages": [
               {
+                "title": "MScript Query Reference",
+                "path": "mscript-query-reference"
+              },
+              {
                 "group": "Generated Assets Reference",
                 "pages": [
                   {
