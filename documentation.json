@@ -355,8 +355,37 @@
             "icon": "zap",
             "pages": [
               {
-                "title": "Generated Assets Reference",
-                "path": "generated-assets-reference"
+                "group": "Generated Assets Reference",
+                "pages": [
+                  {
+                    "title": "Introduction",
+                    "path": "generated-assets-reference/introduction"
+                  },
+                  {
+                    "title": "General Service Assets",
+                    "path": "generated-assets-reference/general-service-assets"
+                  },
+                  {
+                    "title": "Auth Service Assets",
+                    "path": "generated-assets-reference/auth-service-assets"
+                  },
+                  {
+                    "title": "Payment Service Assets",
+                    "path": "generated-assets-reference/payment-service-assets"
+                  },
+                  {
+                    "title": "BFF Service Assets",
+                    "path": "generated-assets-reference/bff-service-assets"
+                  },
+                  {
+                    "title": "Notification Service Assets",
+                    "path": "generated-assets-reference/notification-service-assets"
+                  },
+                  {
+                    "title": "Bucket Service Assets",
+                    "path": "generated-assets-reference/bucket-service-assets"
+                  }
+                ]
               },
               {
                 "group": "Action References",

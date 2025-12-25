@@ -1,0 +1,141 @@
+---
+title: Generated Assets Reference - Introduction
+description: >-
+  Introduction to Mindbricks generated assets and naming conventions. This guide
+  explains how assets are named and organized, enabling architects to reference
+  these assets in their business logic.
+---
+
+Mindbricks automatically generates a wide range of backend assets based on your pattern definitions. These assets include data objects, Business APIs, REST routes, Kafka topics, database utility functions, and more. Understanding these generated assets is crucial because:
+
+- **They follow naming conventions** that you need to know to reference them in your business logic
+- **They create dependencies** — for example, a Business API generates a REST route and Kafka topics that other APIs or edge controllers may need to consume
+- **They enable integration** — knowing the exact names and structures allows you to connect different parts of your system
+
+This reference guide is organized by service type. Each service has its own document detailing the specific assets generated for that service.
+
+---
+
+## Naming Conventions
+
+All generated assets follow consistent naming conventions. Understanding these conventions is essential for referencing assets in your business logic.
+
+### Data Objects
+
+- **Service-scoped reference:** `{serviceName}:{dataObjectName}` (e.g., `auth:user`, `order:product`)
+- **Model name:** PascalCase (e.g., `User`, `UserGroup`, `Product`, `Order`)
+
+### Business APIs
+
+- **Name:** camelCase (e.g., `createUser`, `listUsers`, `updateUserRole`, `registerUser`)
+- **REST route prefix:** `/{serviceName}-api/v{version}/` (e.g., `/auth-api/v1/`, `/order-api/v1/`)
+
+**Route Generation:**
+
+1. **Standard RESTful routes** (standard action + matching resource):
+   - Create/List: `/{serviceName}-api/v{version}/{pluralizedObjectName}` (e.g., `/auth-api/v1/users`)
+   - Get/Update/Delete: `/{serviceName}-api/v{version}/{pluralizedObjectName}/:{objectName}Id` (e.g., `/auth-api/v1/users/:userId`)
+
+2. **Non-standard routes** (standard action + non-standard resource):
+   - Create/List: `/{serviceName}-api/v{version}/{resourceName}` (e.g., `/auth-api/v1/userrole`)
+   - Get/Update/Delete: `/{serviceName}-api/v{version}/{resourceName}/:{dataName}Id` (e.g., `/auth-api/v1/userrole/:userId`)
+
+3. **Non-standard routes** (non-standard action):
+   - Create/List: `/{serviceName}-api/v{version}/{action}{resourceName}` (e.g., `/auth-api/v1/registeruser`)
+   - Get/Update/Delete: `/{serviceName}-api/v{version}/{action}{resourceName}/:{dataName}Id` (e.g., `/auth-api/v1/archiveprofile/:userId`)
+
+**Standard actions:** `get`, `list`, `create`, `update`, `delete`
+
+**Non-standard actions:** Any other verb (e.g., `register`, `remove`, `archive`, `clear`)
+
+### Kafka Topics
+
+Mindbricks generates Kafka topics for two types of events:
+
+1. **Business API Events** (when `raiseApiEvent` is true):
+   - Pattern: `{projectCodeName}-{serviceName}-service-{resource}-{actionPassiveForm}`
+   - Example: `babilshop-order-service-basket-cleared`
+
+2. **Database Events** (for all data objects):
+   - Pattern: `{projectCodeName}-{serviceName}-service-dbevent-{dataObjectName}-{crudPassive}`
+   - Event types: `created`, `updated`, `deleted` only
+   - Example: `babilshop-order-service-dbevent-basketitem-deleted`
+
+**Variables:**
+- `{projectCodeName}` — The project's code name (e.g., `babilshop`)
+- `{serviceName}` — The service name (e.g., `order`, `auth`)
+- `{resource}` — The resource name from the API name analysis (lowercase)
+- `{actionPassiveForm}` — The passive form of the action verb (e.g., `cleared`, `retrieved`, `created`)
+- `{dataObjectName}` — The data object name (lowercase)
+- `{crudPassive}` — The passive form of the CRUD operation (`created`, `updated`, `deleted`)
+
+### Database Utility Functions
+
+For each data object, Mindbricks generates 13 utility functions in the `dbLayer` module:
+
+- Pattern: `{operation}{ModelName}` (e.g., `getUserById`, `createUser`, `listUsersByQuery`)
+- Available via: `require("dbLayer")`
+
+**Generated Functions:**
+1. `create${ModelName}` — Create a single record
+2. `createBulk${ModelName}` — Create multiple records
+3. `get${ModelName}ById` — Get record by ID
+4. `get${ModelName}AggById` — Get record by ID with aggregated data
+5. `get${ModelName}ListByQuery` — Get list of records by query
+6. `get${ModelName}ByQuery` — Get single record by query
+7. `get${ModelName}StatsByQuery` — Get statistics by query
+8. `getIdListOf${ModelName}ByField` — Get list of IDs by field value
+9. `update${ModelName}ById` — Update record by ID
+10. `update${ModelName}ByIdList` — Update multiple records by ID list
+11. `update${ModelName}ByQuery` — Update records by query
+12. `delete${ModelName}ById` — Delete record by ID
+13. `delete${ModelName}ByQuery` — Delete records by query
+
+**Example:**
+```js
+const {
+  getUserById,
+  createUser,
+  getUserListByQuery,
+  updateUserById,
+  deleteUserById
+} = require("dbLayer");
+```
+
+### Session Routes
+
+All services include session routes mounted at `/{serviceName}-api` (e.g., `/auth-api`, `/order-api`). These routes do not include the version part (`/v1/`) unlike Business API routes.
+
+**Common routes** (available in all services):
+- `/currentuser` — Get current session
+- `/publickey` — Get RSA public key
+- `/permissions` — Get user permissions
+- `/rolepermissions` — Get role permissions
+- `/permissions/:permissionName` — Get specific permission filter
+- `/rawsearch/:index` — Raw Elasticsearch search (admin only)
+
+**Auth service additional routes:**
+- `/login` — User login
+- `/logout` — User logout
+- `/relogin` — Refresh session
+- `/realtimetoken` — Get realtime event token
+- `/getusersessions` — Get user sessions
+- `/getuserhistory` — Get session history
+- `/deleteusersession/:sessionId` — Delete specific session
+- `/deleteallsessions` — Delete all user sessions
+
+---
+
+## Service-Specific Assets
+
+Each service type generates specific assets:
+
+- **[General Service Assets](./general-service-assets)** — Common assets available in all services
+- **[Auth Service Assets](./auth-service-assets)** — User management, authentication, and authorization assets
+- **[Payment Service Assets](./payment-service-assets)** — Stripe payment integration assets
+- **[BFF Service Assets](./bff-service-assets)** — Backend-for-Frontend service assets
+- **[Notification Service Assets](./notification-service-assets)** — Notification workflow assets
+- **[Bucket Service Assets](./bucket-service-assets)** — File storage service assets
+
+Each service document follows the same structure: automatic data objects, Business APIs, REST routes, Kafka topics, database utility functions, and initial data.
+

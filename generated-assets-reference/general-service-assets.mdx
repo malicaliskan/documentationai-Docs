@@ -1,0 +1,143 @@
+---
+title: General Service Assets
+description: >-
+  Common assets generated for all services in Mindbricks, including session routes
+  and general patterns that apply across all service types.
+---
+
+All services in Mindbricks share common generated assets. This document covers assets that are available in every service, regardless of type.
+
+---
+
+## Session and Authentication Routes
+
+All services include a **session router** that provides common session-based routes. These routes are mounted at `/{serviceName}-api` (e.g., `/auth-api`, `/order-api`). This is the main API root of the service that provides the API face (a Swagger-like test panel). Note that session routes do not include the version part (`/v1/`) unlike Business API routes.
+
+### Common Session Routes (All Services)
+
+These routes are available in all services via the session router:
+
+| Route | HTTP Method | Description | Auth Requirements |
+|-------|-------------|-------------|-------------------|
+| `/currentuser` | GET | Get current user session information | Login required (returns 401 if no session) |
+| `/publickey` | GET | Get RSA public key for encryption/decryption | Public (no login required) |
+| `/permissions` | GET | Get all permissions for the current user | Login required |
+| `/rolepermissions` | GET | Get all permissions for the current user's role | Login required |
+| `/permissions/:permissionName` | GET | Get permission filter for a specific permission name | Login required |
+| `/rawsearch/:index` | POST | Perform raw Elasticsearch search on specified index | Login required, admin roles (superAdmin, admin, saasAdmin, tenantAdmin, tenantOwner) |
+
+**Query Parameters:**
+- `/publickey` accepts optional `keyId` query parameter (defaults to current key ID)
+
+**Path Parameters:**
+- `/permissions/:permissionName` — The permission name to query
+- `/rawsearch/:index` — The Elasticsearch index name to search
+
+**Note:** 
+- Session routes are not Business APIs — they are direct Express routes
+- These routes handle authentication, session management, and permission queries
+- The `/rawsearch` route allows direct Elasticsearch queries (admin only for security)
+
+---
+
+## Database Utility Functions
+
+For each data object in any service, Mindbricks generates database utility functions in the `dbLayer` module. These follow the standard naming convention:
+
+**Function Pattern:** `{operation}{ModelName}`
+
+**Available Functions:**
+1. `create${ModelName}` — Create a single record
+2. `createBulk${ModelName}` — Create multiple records
+3. `get${ModelName}ById` — Get record by ID
+4. `get${ModelName}AggById` — Get record by ID with aggregated data
+5. `get${ModelName}ListByQuery` — Get list of records by query
+6. `get${ModelName}ByQuery` — Get single record by query
+7. `get${ModelName}StatsByQuery` — Get statistics by query
+8. `getIdListOf${ModelName}ByField` — Get list of IDs by field value
+9. `update${ModelName}ById` — Update record by ID
+10. `update${ModelName}ByIdList` — Update multiple records by ID list
+11. `update${ModelName}ByQuery` — Update records by query
+12. `delete${ModelName}ById` — Delete record by ID
+13. `delete${ModelName}ByQuery` — Delete records by query
+
+**Example Usage:**
+```js
+const {
+  getProductById,
+  createProduct,
+  getProductListByQuery,
+  updateProductById,
+  deleteProductById
+} = require("dbLayer");
+```
+
+**Important:** Always use `dbLayer` functions instead of direct model access to ensure:
+- Data consistency with Elasticsearch
+- Automatic Kafka event publishing
+- Proper soft delete handling
+- Multi-tenancy support
+
+For detailed documentation on all database utility functions, see the [Database Utility Functions](../db-utility-functions) guide.
+
+---
+
+## Kafka Topics
+
+All services generate Kafka topics for database events. For each data object in a service, three topics are automatically created:
+
+**Topic Pattern:** `{projectCodeName}-{serviceName}-service-dbevent-{dataObjectName}-{crudPassive}`
+
+**Event Types:**
+- `created` — Triggered when a record is created
+- `updated` — Triggered when a record is updated
+- `deleted` — Triggered when a record is deleted
+
+**Example:**
+If you have a `product` data object in the `order` service with project code name `myproject`:
+- `myproject-order-service-dbevent-product-created`
+- `myproject-order-service-dbevent-product-updated`
+- `myproject-order-service-dbevent-product-deleted`
+
+**Message Structure:**
+The Kafka message contains the data object with its full data:
+```json
+{
+  "product": {
+    "id": "...",
+    "name": "...",
+    "price": 100,
+    // ... all other properties
+  }
+}
+```
+
+These topics can be consumed by:
+- Other Business APIs (via Kafka Controllers)
+- Edge Controllers (via Kafka triggers)
+- External services
+- Event handlers
+
+---
+
+## Business API Routes
+
+All Business APIs in any service follow the same route generation patterns. See the [Introduction](./introduction) for detailed route generation rules.
+
+**Key Points:**
+- All routes are prefixed with `/{serviceName}-api/v{version}/`
+- Standard CRUD operations use RESTful conventions
+- Non-standard operations use the full API name in the route
+- Custom routes can be defined via `restSettings.configuration.routePath`
+
+---
+
+## Next Steps
+
+For service-specific assets, see:
+- [Auth Service Assets](./auth-service-assets) — Authentication and user management
+- [Payment Service Assets](./payment-service-assets) — Payment integration
+- [BFF Service Assets](./bff-service-assets) — Backend-for-Frontend
+- [Notification Service Assets](./notification-service-assets) — Notifications
+- [Bucket Service Assets](./bucket-service-assets) — File storage
+
