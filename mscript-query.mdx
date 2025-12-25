@@ -1,0 +1,1447 @@
+---
+title: MScript Query Operators Reference
+description: >-
+  Comprehensive reference for all MScript Query operators with their Sequelize,
+  MongoDB, and Elasticsearch equivalents, including examples for each operator.
+---
+
+MScript Query provides a unified query syntax that works across MongoDB, Elasticsearch, and Sequelize (PostgreSQL, MySQL, etc.). This document provides a complete reference for all available operators, their platform-specific equivalents, and usage examples.
+
+---
+
+## Basic Comparison Operators
+
+### `$eq` - Equals
+
+**Description:** Matches values that are equal to the specified value.
+
+**MScript Query:**
+```json
+{
+  "status": { "$eq": "active" }
+}
+```
+
+**Shorthand:** You can omit `$eq` for simple equality:
+```json
+{
+  "status": "active"
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ status: "active" }` or `{ status: { [Op.eq]: "active" } }` |
+| **MongoDB** | `{ status: "active" }` |
+| **Elasticsearch** | `{ term: { status: { value: "active" } } }` |
+
+**Example:**
+```json
+{
+  "role": { "$eq": "admin" }
+}
+```
+
+---
+
+### `$ne` - Not Equals
+
+**Description:** Matches values that are not equal to the specified value.
+
+**MScript Query:**
+```json
+{
+  "status": { "$ne": "deleted" }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ status: { [Op.ne]: "deleted" } }` |
+| **MongoDB** | `{ status: { $ne: "deleted" } }` |
+| **Elasticsearch** | `{ bool: { must_not: { term: { status: { value: "deleted" } } } } }` |
+
+**Example:**
+```json
+{
+  "isActive": { "$ne": false }
+}
+```
+
+---
+
+### `$gt` - Greater Than
+
+**Description:** Matches values that are greater than the specified value.
+
+**MScript Query:**
+```json
+{
+  "age": { "$gt": 18 }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ age: { [Op.gt]: 18 } }` |
+| **MongoDB** | `{ age: { $gt: 18 } }` |
+| **Elasticsearch** | `{ range: { age: { gt: 18 } } }` |
+
+**Example:**
+```json
+{
+  "price": { "$gt": 100.50 }
+}
+```
+
+---
+
+### `$gte` - Greater Than or Equal
+
+**Description:** Matches values that are greater than or equal to the specified value.
+
+**MScript Query:**
+```json
+{
+  "age": { "$gte": 18 }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ age: { [Op.gte]: 18 } }` |
+| **MongoDB** | `{ age: { $gte: 18 } }` |
+| **Elasticsearch** | `{ range: { age: { gte: 18 } } }` |
+
+**Example:**
+```json
+{
+  "minimumOrder": { "$gte": 50 }
+}
+```
+
+---
+
+### `$lt` - Less Than
+
+**Description:** Matches values that are less than the specified value.
+
+**MScript Query:**
+```json
+{
+  "age": { "$lt": 65 }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ age: { [Op.lt]: 65 } }` |
+| **MongoDB** | `{ age: { $lt: 65 } }` |
+| **Elasticsearch** | `{ range: { age: { lt: 65 } } }` |
+
+**Example:**
+```json
+{
+  "discount": { "$lt": 0.5 }
+}
+```
+
+---
+
+### `$lte` - Less Than or Equal
+
+**Description:** Matches values that are less than or equal to the specified value.
+
+**MScript Query:**
+```json
+{
+  "age": { "$lte": 65 }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ age: { [Op.lte]: 65 } }` |
+| **MongoDB** | `{ age: { $lte: 65 } }` |
+| **Elasticsearch** | `{ range: { age: { lte: 65 } } }` |
+
+**Example:**
+```json
+{
+  "maxPrice": { "$lte": 1000 }
+}
+```
+
+---
+
+### `$in` - In List
+
+**Description:** Matches any of the values specified in an array.
+
+**MScript Query:**
+```json
+{
+  "role": { "$in": ["admin", "user", "moderator"] }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ role: { [Op.in]: ["admin", "user", "moderator"] } }` |
+| **MongoDB** | `{ role: { $in: ["admin", "user", "moderator"] } }` |
+| **Elasticsearch** | `{ terms: { role: ["admin", "user", "moderator"] } }` |
+
+**Example:**
+```json
+{
+  "status": { "$in": ["pending", "processing", "completed"] }
+}
+```
+
+**Note:** You can also use array shorthand:
+```json
+{
+  "role": ["admin", "user"]
+}
+```
+
+---
+
+### `$nin` - Not In List
+
+**Description:** Matches none of the values specified in an array.
+
+**MScript Query:**
+```json
+{
+  "role": { "$nin": ["guest", "banned"] }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ role: { [Op.notIn]: ["guest", "banned"] } }` |
+| **MongoDB** | `{ role: { $nin: ["guest", "banned"] } }` |
+| **Elasticsearch** | `{ bool: { must_not: { terms: { role: ["guest", "banned"] } } } }` |
+
+**Example:**
+```json
+{
+  "category": { "$nin": ["deleted", "archived"] }
+}
+```
+
+---
+
+## Pattern Matching Operators
+
+### `$like` - Like Pattern (Case-Sensitive)
+
+**Description:** Matches strings using SQL LIKE pattern matching (case-sensitive). Use `%` as wildcard.
+
+**MScript Query:**
+```json
+{
+  "name": { "$like": "%john%" }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ name: { [Op.like]: "%john%" } }` |
+| **MongoDB** | `{ name: { $regex: /john/, $options: "i" } }` (Note: MongoDB regex is case-insensitive by default) |
+| **Elasticsearch** | `{ wildcard: { name: "*john*" } }` |
+
+**Example:**
+```json
+{
+  "email": { "$like": "%@gmail.com" }
+}
+```
+
+---
+
+### `$ilike` - Like Pattern (Case-Insensitive)
+
+**Description:** Matches strings using SQL LIKE pattern matching (case-insensitive). Use `%` as wildcard.
+
+**MScript Query:**
+```json
+{
+  "name": { "$ilike": "%john%" }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ name: { [Op.iLike]: "%john%" } }` |
+| **MongoDB** | `{ name: { $regex: /john/i } }` |
+| **Elasticsearch** | `{ wildcard: { name: { value: "*john*", case_insensitive: true } } }` |
+
+**Example:**
+```json
+{
+  "company": { "$ilike": "%tech%" }
+}
+```
+
+---
+
+### `$nlike` - Not Like Pattern
+
+**Description:** Matches strings that do not match the SQL LIKE pattern (case-sensitive).
+
+**MScript Query:**
+```json
+{
+  "name": { "$nlike": "%bot%" }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ name: { [Op.notLike]: "%bot%" } }` |
+| **MongoDB** | `{ name: { $not: { $regex: /bot/ } } }` |
+| **Elasticsearch** | `{ bool: { must_not: { wildcard: { name: "*bot*" } } } }` |
+
+**Example:**
+```json
+{
+  "email": { "$nlike": "%test%" }
+}
+```
+
+---
+
+### `$nilike` - Not ILike Pattern
+
+**Description:** Matches strings that do not match the SQL LIKE pattern (case-insensitive).
+
+**MScript Query:**
+```json
+{
+  "name": { "$nilike": "%bot%" }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ name: { [Op.notILike]: "%bot%" } }` |
+| **MongoDB** | `{ name: { $not: { $regex: /bot/i } } }` |
+| **Elasticsearch** | `{ bool: { must_not: { wildcard: { name: { value: "*bot*", case_insensitive: true } } } } }` |
+
+**Example:**
+```json
+{
+  "domain": { "$nilike": "%spam%" }
+}
+```
+
+---
+
+### `$match` - Match Regex
+
+**Description:** Matches strings using regular expression pattern.
+
+**MScript Query:**
+```json
+{
+  "description": { "$match": "sale|discount" }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ description: { [Op.match]: "sale|discount" } }` |
+| **MongoDB** | `{ description: { $regex: "sale|discount" } }` |
+| **Elasticsearch** | `{ match: { description: "sale|discount" } }` |
+
+**Example:**
+```json
+{
+  "phone": { "$match": "^\\+1[0-9]{10}$" }
+}
+```
+
+---
+
+### `$nmatch` - Not Match Regex
+
+**Description:** Matches strings that do not match the regular expression pattern.
+
+**MScript Query:**
+```json
+{
+  "description": { "$nmatch": "error|failed" }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ description: { [Op.notMatch]: "error|failed" } }` |
+| **MongoDB** | `{ description: { $not: { $regex: "error|failed" } } }` |
+| **Elasticsearch** | `{ bool: { must_not: { match: { description: "error|failed" } } } }` |
+
+**Example:**
+```json
+{
+  "code": { "$nmatch": "^ERROR" }
+}
+```
+
+---
+
+## Range and Null Check Operators
+
+### `$between` - Value Between Range
+
+**Description:** Matches values that fall within the specified range (inclusive).
+
+**MScript Query:**
+```json
+{
+  "price": { "$between": [10, 100] }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ price: { [Op.between]: [10, 100] } }` |
+| **MongoDB** | `{ price: { $gte: 10, $lte: 100 } }` |
+| **Elasticsearch** | `{ range: { price: { gte: 10, lte: 100 } } }` |
+
+**Example:**
+```json
+{
+  "age": { "$between": [18, 65] }
+}
+```
+
+---
+
+### `$nbetween` - Value Not In Range
+
+**Description:** Matches values that fall outside the specified range.
+
+**MScript Query:**
+```json
+{
+  "price": { "$nbetween": [10, 100] }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ price: { [Op.notBetween]: [10, 100] } }` |
+| **MongoDB** | `{ $or: [{ price: { $lt: 10 } }, { price: { $gt: 100 } }] }` |
+| **Elasticsearch** | `{ bool: { must_not: { range: { price: { gte: 10, lte: 100 } } } } }` |
+
+**Example:**
+```json
+{
+  "score": { "$nbetween": [0, 100] }
+}
+```
+
+---
+
+### `$isnull` - Is Null
+
+**Description:** Matches fields that are null or do not exist.
+
+**MScript Query:**
+```json
+{
+  "deletedAt": { "$isnull": true }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ deletedAt: { [Op.is]: null } }` |
+| **MongoDB** | `{ deletedAt: null }` |
+| **Elasticsearch** | `{ bool: { must_not: { exists: { field: "deletedAt" } } } }` |
+
+**Example:**
+```json
+{
+  "optionalField": { "$isnull": true }
+}
+```
+
+---
+
+### `$notnull` - Is Not Null
+
+**Description:** Matches fields that are not null and exist.
+
+**MScript Query:**
+```json
+{
+  "deletedAt": { "$notnull": true }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ deletedAt: { [Op.not]: null } }` |
+| **MongoDB** | `{ deletedAt: { $ne: null } }` |
+| **Elasticsearch** | `{ exists: { field: "deletedAt" } }` |
+
+**Example:**
+```json
+{
+  "email": { "$notnull": true }
+}
+```
+
+---
+
+## Array and String Operations
+
+### `$contains` - Array Contains Value
+
+**Description:** Matches arrays that contain the specified value.
+
+**MScript Query:**
+```json
+{
+  "tags": { "$contains": "news" }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ tags: { [Op.contains]: ["news"] } }` (PostgreSQL array operator) |
+| **MongoDB** | `{ tags: { $elemMatch: { $eq: "news" } } }` |
+| **Elasticsearch** | `{ match: { tags: "news" } }` |
+
+**Example:**
+```json
+{
+  "categories": { "$contains": "technology" }
+}
+```
+
+---
+
+### `$ncontains` - Array Does Not Contain Value
+
+**Description:** Matches arrays that do not contain the specified value.
+
+**MScript Query:**
+```json
+{
+  "tags": { "$ncontains": "draft" }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ tags: { [Op.notContains]: ["draft"] } }` |
+| **MongoDB** | `{ tags: { $not: { $elemMatch: { $eq: "draft" } } } }` |
+| **Elasticsearch** | `{ bool: { must_not: { match: { tags: "draft" } } } }` |
+
+**Example:**
+```json
+{
+  "excludedTags": { "$ncontains": "archived" }
+}
+```
+
+---
+
+### `$overlap` - Arrays Have Common Elements
+
+**Description:** Matches arrays that have at least one element in common with the specified array.
+
+**MScript Query:**
+```json
+{
+  "tags": { "$overlap": ["tech", "ai"] }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ tags: { [Op.overlap]: ["tech", "ai"] } }` (PostgreSQL array operator) |
+| **MongoDB** | `{ tags: { $elemMatch: { $in: ["tech", "ai"] } } }` |
+| **Elasticsearch** | `{ match: { tags: ["tech", "ai"] } }` |
+
+**Example:**
+```json
+{
+  "skills": { "$overlap": ["javascript", "python"] }
+}
+```
+
+---
+
+### `$noverlap` - Arrays Have No Common Elements
+
+**Description:** Matches arrays that have no elements in common with the specified array.
+
+**MScript Query:**
+```json
+{
+  "tags": { "$noverlap": ["old", "deprecated"] }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ [Op.not]: { tags: { [Op.overlap]: ["old", "deprecated"] } } }` |
+| **MongoDB** | `{ tags: { $not: { $elemMatch: { $in: ["old", "deprecated"] } } } }` |
+| **Elasticsearch** | `{ bool: { must_not: { match: { tags: ["old", "deprecated"] } } } }` |
+
+**Example:**
+```json
+{
+  "categories": { "$noverlap": ["deleted", "archived"] }
+}
+```
+
+---
+
+### `$starts` - Starts With String
+
+**Description:** Matches strings that start with the specified value.
+
+**MScript Query:**
+```json
+{
+  "name": { "$starts": "Mr." }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ name: { [Op.startsWith]: "Mr." } }` |
+| **MongoDB** | `{ name: { $regex: /^Mr\./ } }` |
+| **Elasticsearch** | `{ prefix: { name: "Mr." } }` |
+
+**Example:**
+```json
+{
+  "email": { "$starts": "admin@" }
+}
+```
+
+---
+
+### `$nstarts` - Does Not Start With String
+
+**Description:** Matches strings that do not start with the specified value.
+
+**MScript Query:**
+```json
+{
+  "name": { "$nstarts": "Ms." }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ name: { [Op.notStartsWith]: "Ms." } }` |
+| **MongoDB** | `{ name: { $not: { $regex: /^Ms\./ } } }` |
+| **Elasticsearch** | `{ bool: { must_not: { prefix: { name: "Ms." } } } }` |
+
+**Example:**
+```json
+{
+  "path": { "$nstarts": "/admin" }
+}
+```
+
+---
+
+### `$ends` - Ends With String
+
+**Description:** Matches strings that end with the specified value.
+
+**MScript Query:**
+```json
+{
+  "email": { "$ends": "@gmail.com" }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ email: { [Op.endsWith]: "@gmail.com" } }` |
+| **MongoDB** | `{ email: { $regex: /@gmail\.com$/ } }` |
+| **Elasticsearch** | `{ wildcard: { email: "*@gmail.com" } }` |
+
+**Example:**
+```json
+{
+  "filename": { "$ends": ".pdf" }
+}
+```
+
+---
+
+### `$nends` - Does Not End With String
+
+**Description:** Matches strings that do not end with the specified value.
+
+**MScript Query:**
+```json
+{
+  "email": { "$nends": "@yahoo.com" }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ email: { [Op.notEndsWith]: "@yahoo.com" } }` |
+| **MongoDB** | `{ email: { $not: { $regex: /@yahoo\.com$/ } } }` |
+| **Elasticsearch** | `{ bool: { must_not: { wildcard: { email: "*@yahoo.com" } } } }` |
+
+**Example:**
+```json
+{
+  "url": { "$nends": ".exe" }
+}
+```
+
+---
+
+## Logical Operators
+
+### `$and` - All Conditions Must Be True
+
+**Description:** Combines multiple conditions with AND logic. All conditions must be true.
+
+**MScript Query:**
+```json
+{
+  "$and": [
+    { "status": "active" },
+    { "age": { "$gte": 18 } }
+  ]
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ [Op.and]: [{ status: "active" }, { age: { [Op.gte]: 18 } }] }` |
+| **MongoDB** | `{ $and: [{ status: "active" }, { age: { $gte: 18 } }] }` |
+| **Elasticsearch** | `{ bool: { must: [{ term: { status: { value: "active" } } }, { range: { age: { gte: 18 } } }] } }` |
+
+**Example:**
+```json
+{
+  "$and": [
+    { "isPublished": true },
+    { "views": { "$gte": 100 } },
+    { "tags": { "$contains": "featured" } }
+  ]
+}
+```
+
+**Note:** Multiple fields at the same level are automatically combined with `$and`:
+```json
+{
+  "status": "active",
+  "age": { "$gte": 18 }
+}
+```
+This is equivalent to the `$and` example above.
+
+---
+
+### `$or` - At Least One Condition Is True
+
+**Description:** Combines multiple conditions with OR logic. At least one condition must be true.
+
+**MScript Query:**
+```json
+{
+  "$or": [
+    { "status": "pending" },
+    { "status": "processing" }
+  ]
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ [Op.or]: [{ status: "pending" }, { status: "processing" }] }` |
+| **MongoDB** | `{ $or: [{ status: "pending" }, { status: "processing" }] }` |
+| **Elasticsearch** | `{ bool: { should: [{ term: { status: { value: "pending" } } }, { term: { status: { value: "processing" } } }] } }` |
+
+**Example:**
+```json
+{
+  "$or": [
+    { "views": { "$gte": 1000 } },
+    { "likes": { "$gte": 500 } }
+  ]
+}
+```
+
+---
+
+### `$not` - Negates a Condition
+
+**Description:** Negates the specified condition.
+
+**MScript Query:**
+```json
+{
+  "$not": {
+    "status": "deleted"
+  }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ [Op.not]: { status: "deleted" } }` |
+| **MongoDB** | `{ $not: { status: "deleted" } }` |
+| **Elasticsearch** | `{ bool: { must_not: { term: { status: { value: "deleted" } } } } }` |
+
+**Example:**
+```json
+{
+  "$not": {
+    "role": { "$in": ["guest", "banned"] }
+  }
+}
+```
+
+---
+
+### `$nor` - None of the Conditions Are True
+
+**Description:** Matches documents where none of the specified conditions are true.
+
+**MScript Query:**
+```json
+{
+  "$nor": [
+    { "status": "deleted" },
+    { "isArchived": true }
+  ]
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ [Op.not]: [{ status: "deleted" }, { isArchived: true }] }` |
+| **MongoDB** | `{ $nor: [{ status: "deleted" }, { isArchived: true }] }` |
+| **Elasticsearch** | `{ bool: { must_not: [{ term: { status: { value: "deleted" } } }, { term: { isArchived: { value: true } } }] } }` |
+
+**Example:**
+```json
+{
+  "$nor": [
+    { "role": "guest" },
+    { "isBanned": true }
+  ]
+}
+```
+
+---
+
+## MongoDB-Specific Operators
+
+These operators are primarily designed for MongoDB but may have limited support in other platforms.
+
+### `$exists` - Field Exists
+
+**Description:** Matches documents that have the specified field (MongoDB-specific).
+
+**MScript Query:**
+```json
+{
+  "optionalField": { "$exists": true }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ optionalField: { [Op.not]: null } }` (similar behavior) |
+| **MongoDB** | `{ optionalField: { $exists: true } }` |
+| **Elasticsearch** | `{ exists: { field: "optionalField" } }` |
+
+**Example:**
+```json
+{
+  "metadata": { "$exists": true }
+}
+```
+
+---
+
+### `$nexists` - Field Does Not Exist
+
+**Description:** Matches documents that do not have the specified field (MongoDB-specific).
+
+**MScript Query:**
+```json
+{
+  "deletedAt": { "$nexists": true }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ deletedAt: { [Op.is]: null } }` (similar behavior) |
+| **MongoDB** | `{ deletedAt: { $exists: false } }` |
+| **Elasticsearch** | `{ bool: { must_not: { exists: { field: "deletedAt" } } } }` |
+
+**Example:**
+```json
+{
+  "tempField": { "$nexists": true }
+}
+```
+
+---
+
+### `$all` - Array Contains All Values
+
+**Description:** Matches arrays that contain all of the specified values (MongoDB-specific).
+
+**MScript Query:**
+```json
+{
+  "tags": { "$all": ["tech", "ai", "machine-learning"] }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ tags: { [Op.contains]: ["tech", "ai", "machine-learning"] } }` (PostgreSQL) |
+| **MongoDB** | `{ tags: { $all: ["tech", "ai", "machine-learning"] } }` |
+| **Elasticsearch** | `{ match: { tags: { query: "tech ai machine-learning", operator: "and" } } }` |
+
+**Example:**
+```json
+{
+  "requiredSkills": { "$all": ["javascript", "react", "nodejs"] }
+}
+```
+
+---
+
+### `$notall` - Array Does Not Contain All Values
+
+**Description:** Matches arrays that do not contain all of the specified values (MongoDB-specific).
+
+**MScript Query:**
+```json
+{
+  "tags": { "$notall": ["premium", "featured"] }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ [Op.not]: { tags: { [Op.contains]: ["premium", "featured"] } } }` |
+| **MongoDB** | `{ tags: { $not: { $all: ["premium", "featured"] } } }` |
+| **Elasticsearch** | `{ bool: { must_not: { match: { tags: { query: "premium featured", operator: "and" } } } } }` |
+
+**Example:**
+```json
+{
+  "skills": { "$notall": ["expert", "certified"] }
+}
+```
+
+---
+
+### `$size` - Array Size
+
+**Description:** Matches arrays with exactly the specified number of elements (MongoDB-specific).
+
+**MScript Query:**
+```json
+{
+  "tags": { "$size": 3 }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `Sequelize.where(Sequelize.fn('array_length', Sequelize.col('tags'), 1), 3)` (PostgreSQL) |
+| **MongoDB** | `{ tags: { $size: 3 } }` |
+| **Elasticsearch** | `{ script: { script: { source: "doc['tags'].size() == 3" } } }` |
+
+**Example:**
+```json
+{
+  "items": { "$size": 5 }
+}
+```
+
+---
+
+### `$notsize` - Array Size Not Equal
+
+**Description:** Matches arrays that do not have the specified number of elements (MongoDB-specific).
+
+**MScript Query:**
+```json
+{
+  "tags": { "$notsize": 0 }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `Sequelize.where(Sequelize.fn('array_length', Sequelize.col('tags'), 1), { [Op.ne]: 0 })` |
+| **MongoDB** | `{ tags: { $not: { $size: 0 } } }` |
+| **Elasticsearch** | `{ bool: { must_not: { script: { script: { source: "doc['tags'].size() == 0" } } } } }` |
+
+**Example:**
+```json
+{
+  "items": { "$notsize": 1 }
+}
+```
+
+---
+
+### `$any` - Array Contains Any Value
+
+**Description:** Matches arrays that contain any of the specified values (MongoDB-specific, similar to `$overlap`).
+
+**MScript Query:**
+```json
+{
+  "tags": { "$any": ["tech", "ai"] }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ tags: { [Op.overlap]: ["tech", "ai"] } }` (PostgreSQL) |
+| **MongoDB** | `{ tags: { $elemMatch: { $in: ["tech", "ai"] } } }` |
+| **Elasticsearch** | `{ match: { tags: ["tech", "ai"] } }` |
+
+**Example:**
+```json
+{
+  "categories": { "$any": ["news", "blog", "article"] }
+}
+```
+
+---
+
+### `$notany` - Array Does Not Contain Any Value
+
+**Description:** Matches arrays that do not contain any of the specified values (MongoDB-specific).
+
+**MScript Query:**
+```json
+{
+  "tags": { "$notany": ["deleted", "archived"] }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `{ [Op.not]: { tags: { [Op.overlap]: ["deleted", "archived"] } } }` |
+| **MongoDB** | `{ tags: { $not: { $elemMatch: { $in: ["deleted", "archived"] } } } }` |
+| **Elasticsearch** | `{ bool: { must_not: { match: { tags: ["deleted", "archived"] } } } }` |
+
+**Example:**
+```json
+{
+  "excludedCategories": { "$notany": ["spam", "test"] }
+}
+```
+
+---
+
+## Geographic Operators
+
+### `$geoNear` - Geographic Distance
+
+**Description:** Finds documents near a geographic point within a specified distance.
+
+**MScript Query:**
+```json
+{
+  "location": {
+    "$geoNear": {
+      "point": {
+        "type": "Point",
+        "coordinates": [-122.4194, 37.7749]
+      },
+      "maxDistance": 5000,
+      "minDistance": 100
+    }
+  }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `Sequelize.where(Sequelize.fn('ST_DWithin', Sequelize.col('location'), Sequelize.literal('ST_SetSRID(ST_MakePoint(-122.4194, 37.7749),4326)::geography'), 5000), true)` |
+| **MongoDB** | `{ location: { $nearSphere: { $geometry: { type: "Point", coordinates: [-122.4194, 37.7749] }, $maxDistance: 5000, $minDistance: 100 } } }` |
+| **Elasticsearch** | `{ geo_distance: { distance: "5000m", location: { lon: -122.4194, lat: 37.7749 } } }` |
+
+**Example:**
+```json
+{
+  "coordinates": {
+    "$geoNear": {
+      "point": {
+        "type": "Point",
+        "coordinates": [28.9784, 41.0082]
+      },
+      "maxDistance": 10000
+    }
+  }
+}
+```
+
+**Note:** 
+- `point` must be a GeoJSON Point object with `type: "Point"` and `coordinates: [longitude, latitude]`
+- `maxDistance` is required and specified in meters
+- `minDistance` is optional and specified in meters
+
+---
+
+### `$geoWithin` - Geographic Containment
+
+**Description:** Finds documents within a geographic boundary (polygon or bounding box).
+
+**MScript Query (with bounding box):**
+```json
+{
+  "location": {
+    "$geoWithin": {
+      "bbox": [-122.5, 37.7, -122.3, 37.8]
+    }
+  }
+}
+```
+
+**MScript Query (with GeoJSON shape):**
+```json
+{
+  "location": {
+    "$geoWithin": {
+      "shape": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.5, 37.7],
+          [-122.3, 37.7],
+          [-122.3, 37.8],
+          [-122.5, 37.8],
+          [-122.5, 37.7]
+        ]]
+      }
+    }
+  }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `Sequelize.where(Sequelize.fn('ST_Within', Sequelize.literal('("location")::geometry'), Sequelize.literal('ST_MakeEnvelope(-122.5, 37.7, -122.3, 37.8, 4326)')), true)` |
+| **MongoDB** | `{ location: { $geoWithin: { $box: [[-122.5, 37.7], [-122.3, 37.8]] } } }` or `{ location: { $geoWithin: { $geometry: { type: "Polygon", coordinates: [...] } } } }` |
+| **Elasticsearch** | `{ geo_bounding_box: { location: { top_left: { lon: -122.5, lat: 37.8 }, bottom_right: { lon: -122.3, lat: 37.7 } } } }` or `{ geo_polygon: { location: { points: [{ lon: -122.5, lat: 37.7 }, ...] } } }` |
+
+**Example:**
+```json
+{
+  "coordinates": {
+    "$geoWithin": {
+      "bbox": [28.9, 41.0, 29.0, 41.1]
+    }
+  }
+}
+```
+
+**Note:**
+- `bbox` format: `[minLon, minLat, maxLon, maxLat]`
+- `shape` must be a valid GeoJSON Polygon or MultiPolygon
+
+---
+
+### `$geoContains` - Geographic Contains
+
+**Description:** Finds documents where the field (polygon/area) contains the specified point or shape.
+
+**MScript Query:**
+```json
+{
+  "serviceArea": {
+    "$geoContains": {
+      "shape": {
+        "type": "Point",
+        "coordinates": [-122.4194, 37.7749]
+      }
+    }
+  }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `Sequelize.where(Sequelize.fn('ST_Contains', Sequelize.literal('("serviceArea")::geometry'), Sequelize.literal('ST_SetSRID(ST_GeomFromGeoJSON(\'{"type":"Point","coordinates":[-122.4194,37.7749]}\'),4326)')), true)` |
+| **MongoDB** | `{ serviceArea: { $geoIntersects: { $geometry: { type: "Point", coordinates: [-122.4194, 37.7749] } } } }` |
+| **Elasticsearch** | `{ geo_shape: { serviceArea: { shape: { type: "Point", coordinates: [-122.4194, 37.7749] }, relation: "contains" } } }` |
+
+**Example:**
+```json
+{
+  "deliveryZone": {
+    "$geoContains": {
+      "shape": {
+        "type": "Point",
+        "coordinates": [28.9784, 41.0082]
+      }
+    }
+  }
+}
+```
+
+**Note:** The field must be a geographic polygon/area type. The shape can be a Point, Polygon, or other GeoJSON geometry.
+
+---
+
+### `$geoIntersects` - Geographic Intersection
+
+**Description:** Finds documents where the field intersects with the specified shape.
+
+**MScript Query:**
+```json
+{
+  "route": {
+    "$geoIntersects": {
+      "shape": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.5, 37.7],
+          [-122.3, 37.7],
+          [-122.3, 37.8],
+          [-122.5, 37.8],
+          [-122.5, 37.7]
+        ]]
+      }
+    }
+  }
+}
+```
+
+**Platform Equivalents:**
+
+| Platform | Equivalent |
+|----------|-----------|
+| **Sequelize** | `Sequelize.where(Sequelize.fn('ST_Intersects', Sequelize.literal('("route")::geometry'), Sequelize.literal('ST_SetSRID(ST_GeomFromGeoJSON(\'{"type":"Polygon",...}\'),4326)')), true)` |
+| **MongoDB** | `{ route: { $geoIntersects: { $geometry: { type: "Polygon", coordinates: [...] } } } }` |
+| **Elasticsearch** | `{ geo_shape: { route: { shape: { type: "Polygon", coordinates: [...] }, relation: "intersects" } } }` |
+
+**Example:**
+```json
+{
+  "boundary": {
+    "$geoIntersects": {
+      "shape": {
+        "type": "LineString",
+        "coordinates": [[28.9, 41.0], [29.0, 41.1]]
+      }
+    }
+  }
+}
+```
+
+**Note:** The shape can be any GeoJSON geometry type (Point, LineString, Polygon, etc.).
+
+---
+
+## Complex Query Examples
+
+### Combining Multiple Operators
+
+```json
+{
+  "$and": [
+    { "status": "active" },
+    {
+      "$or": [
+        { "age": { "$gte": 18 } },
+        { "isVerified": true }
+      ]
+    },
+    { "tags": { "$overlap": ["premium", "featured"] } },
+    { "email": { "$ilike": "%@gmail.com" } }
+  ]
+}
+```
+
+### Nested Logical Operators
+
+```json
+{
+  "$and": [
+    { "isPublished": true },
+    {
+      "$or": [
+        { "views": { "$gte": 1000 } },
+        {
+          "$and": [
+            { "likes": { "$gte": 500 } },
+            { "comments": { "$gte": 100 } }
+          ]
+        }
+      ]
+    },
+    { "deletedAt": { "$isnull": true } }
+  ]
+}
+```
+
+### Geographic Search with Filters
+
+```json
+{
+  "$and": [
+    {
+      "location": {
+        "$geoNear": {
+          "point": {
+            "type": "Point",
+            "coordinates": [-122.4194, 37.7749]
+          },
+          "maxDistance": 5000
+        }
+      }
+    },
+    { "isActive": true },
+    { "category": { "$in": ["restaurant", "cafe"] } }
+  ]
+}
+```
+
+---
+
+## Platform-Specific Notes
+
+### Sequelize (PostgreSQL/MySQL)
+
+- Array operators (`$contains`, `$overlap`) work best with PostgreSQL array columns
+- Geographic operators require PostGIS extension for PostgreSQL
+- `$ilike` is PostgreSQL-specific; MySQL uses case-insensitive collation
+- `$match` uses database-specific regex syntax
+
+### MongoDB
+
+- Native support for all operators
+- Geographic operators require geospatial indexes
+- Array operators work with MongoDB arrays
+- `$exists` and `$nexists` are MongoDB-native concepts
+
+### Elasticsearch
+
+- Uses Elasticsearch Query DSL
+- Geographic queries require geo_point or geo_shape field mappings
+- Array fields are typically analyzed as text, so array operators may behave differently
+- Pattern matching uses Elasticsearch wildcard or match queries
+
+---
+
+## Best Practices
+
+1. **Use `$ilike` instead of `$like`** for case-insensitive searches when possible
+2. **Combine conditions explicitly** with `$and` when logic is complex
+3. **Use `$in` for multiple exact matches** instead of multiple `$or` conditions
+4. **Leverage `$between` for range queries** instead of combining `$gte` and `$lte`
+5. **Use `$isnull`/`$notnull`** for null checks instead of `$eq: null` or `$ne: null`
+6. **Index fields** used in queries for better performance
+7. **Test geographic queries** carefully as coordinate systems and precision vary by platform
+
+---
+
+## Related Documentation
+
+- [MScript Syntax Guide](./mscript-syntax) — Complete MScript syntax reference
