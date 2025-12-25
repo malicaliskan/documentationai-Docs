@@ -173,7 +173,7 @@ The `givenPermission` data object is generated when Permission-Based Access Cont
 | Property Name | Type | Required | Description |
 |--------------|------|----------|-------------|
 | `id` | UUID | Yes | Unique identifier for the permission assignment record |
-| `permissionName` | String | Yes | Reference to the named permission. Can be formatted as:<br>- `"groupName.permissionName"` (specific permission)<br>- `"permissionName"` (permission without group)<br>- `"groupName.*"` (all permissions in a group) |
+| `permissionName` | String | Yes | Reference to the named permission. Can be formatted as: `"groupName.permissionName"` (specific permission), `"permissionName"` (permission without group), or `"groupName.*"` (all permissions in a group) |
 | `roleId` | String | No | Role name to which the permission is assigned (for role-based permissions) |
 | `subjectUserId` | String | No | User ID to whom the permission is assigned (for user-based permissions) |
 | `subjectUserGroupId` | String | No | User group ID to which the permission is assigned (for group-based permissions) |
