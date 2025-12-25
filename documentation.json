@@ -170,10 +170,6 @@
                 "path": "geography-features"
               },
               {
-                "title": "MScript Query",
-                "path": "mscript-query"
-              },
-              {
                 "title": "GRPC Controllers",
                 "path": "grpc-controllers"
               },
