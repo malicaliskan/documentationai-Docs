@@ -33,7 +33,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ status: "active" }` or `{ status: { [Op.eq]: "active" } }` |
+| **Sequelize** | `{ status: "active" }` or `{ status: { &#91;Op.eq&#93;: "active" } }` |
 | **MongoDB** | `{ status: "active" }` |
 | **Elasticsearch** | `{ term: { status: { value: "active" } } }` |
 
@@ -61,7 +61,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ status: { [Op.ne]: "deleted" } }` |
+| **Sequelize** | `{ status: { &#91;Op.ne&#93;: "deleted" } }` |
 | **MongoDB** | `{ status: { $ne: "deleted" } }` |
 | **Elasticsearch** | `{ bool: { must_not: { term: { status: { value: "deleted" } } } } }` |
 
@@ -89,7 +89,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ age: { [Op.gt]: 18 } }` |
+| **Sequelize** | `{ age: { &#91;Op.gt&#93;: 18 } }` |
 | **MongoDB** | `{ age: { $gt: 18 } }` |
 | **Elasticsearch** | `{ range: { age: { gt: 18 } } }` |
 
@@ -117,7 +117,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ age: { [Op.gte]: 18 } }` |
+| **Sequelize** | `{ age: { &#91;Op.gte&#93;: 18 } }` |
 | **MongoDB** | `{ age: { $gte: 18 } }` |
 | **Elasticsearch** | `{ range: { age: { gte: 18 } } }` |
 
@@ -145,7 +145,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ age: { [Op.lt]: 65 } }` |
+| **Sequelize** | `{ age: { &#91;Op.lt&#93;: 65 } }` |
 | **MongoDB** | `{ age: { $lt: 65 } }` |
 | **Elasticsearch** | `{ range: { age: { lt: 65 } } }` |
 
@@ -173,7 +173,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ age: { [Op.lte]: 65 } }` |
+| **Sequelize** | `{ age: { &#91;Op.lte&#93;: 65 } }` |
 | **MongoDB** | `{ age: { $lte: 65 } }` |
 | **Elasticsearch** | `{ range: { age: { lte: 65 } } }` |
 
@@ -201,7 +201,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ role: { [Op.in]: ["admin", "user", "moderator"] } }` |
+| **Sequelize** | `{ role: { &#91;Op.in&#93;: ["admin", "user", "moderator"] } }` |
 | **MongoDB** | `{ role: { $in: ["admin", "user", "moderator"] } }` |
 | **Elasticsearch** | `{ terms: { role: ["admin", "user", "moderator"] } }` |
 
@@ -236,7 +236,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ role: { [Op.notIn]: ["guest", "banned"] } }` |
+| **Sequelize** | `{ role: { &#91;Op.notIn&#93;: ["guest", "banned"] } }` |
 | **MongoDB** | `{ role: { $nin: ["guest", "banned"] } }` |
 | **Elasticsearch** | `{ bool: { must_not: { terms: { role: ["guest", "banned"] } } } }` |
 
@@ -266,7 +266,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ name: { [Op.like]: "%john%" } }` |
+| **Sequelize** | `{ name: { &#91;Op.like&#93;: "%john%" } }` |
 | **MongoDB** | `{ name: { $regex: /john/, $options: "i" } }` (Note: MongoDB regex is case-insensitive by default) |
 | **Elasticsearch** | `{ wildcard: { name: "*john*" } }` |
 
@@ -294,7 +294,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ name: { [Op.iLike]: "%john%" } }` |
+| **Sequelize** | `{ name: { &#91;Op.iLike&#93;: "%john%" } }` |
 | **MongoDB** | `{ name: { $regex: /john/i } }` |
 | **Elasticsearch** | `{ wildcard: { name: { value: "*john*", case_insensitive: true } } }` |
 
@@ -322,7 +322,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ name: { [Op.notLike]: "%bot%" } }` |
+| **Sequelize** | `{ name: { &#91;Op.notLike&#93;: "%bot%" } }` |
 | **MongoDB** | `{ name: { $not: { $regex: /bot/ } } }` |
 | **Elasticsearch** | `{ bool: { must_not: { wildcard: { name: "*bot*" } } } }` |
 
@@ -350,7 +350,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ name: { [Op.notILike]: "%bot%" } }` |
+| **Sequelize** | `{ name: { &#91;Op.notILike&#93;: "%bot%" } }` |
 | **MongoDB** | `{ name: { $not: { $regex: /bot/i } } }` |
 | **Elasticsearch** | `{ bool: { must_not: { wildcard: { name: { value: "*bot*", case_insensitive: true } } } } }` |
 
@@ -378,7 +378,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ description: { [Op.match]: "sale|discount" } }` |
+| **Sequelize** | `{ description: { &#91;Op.match&#93;: "sale|discount" } }` |
 | **MongoDB** | `{ description: { $regex: "sale|discount" } }` |
 | **Elasticsearch** | `{ match: { description: "sale|discount" } }` |
 
@@ -406,7 +406,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ description: { [Op.notMatch]: "error|failed" } }` |
+| **Sequelize** | `{ description: { &#91;Op.notMatch&#93;: "error|failed" } }` |
 | **MongoDB** | `{ description: { $not: { $regex: "error|failed" } } }` |
 | **Elasticsearch** | `{ bool: { must_not: { match: { description: "error|failed" } } } }` |
 
@@ -436,7 +436,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ price: { [Op.between]: [10, 100] } }` |
+| **Sequelize** | `{ price: { &#91;Op.between&#93;: [10, 100] } }` |
 | **MongoDB** | `{ price: { $gte: 10, $lte: 100 } }` |
 | **Elasticsearch** | `{ range: { price: { gte: 10, lte: 100 } } }` |
 
@@ -464,7 +464,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ price: { [Op.notBetween]: [10, 100] } }` |
+| **Sequelize** | `{ price: { &#91;Op.notBetween&#93;: [10, 100] } }` |
 | **MongoDB** | `{ $or: [{ price: { $lt: 10 } }, { price: { $gt: 100 } }] }` |
 | **Elasticsearch** | `{ bool: { must_not: { range: { price: { gte: 10, lte: 100 } } } } }` |
 
@@ -492,7 +492,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ deletedAt: { [Op.is]: null } }` |
+| **Sequelize** | `{ deletedAt: { &#91;Op.is&#93;: null } }` |
 | **MongoDB** | `{ deletedAt: null }` |
 | **Elasticsearch** | `{ bool: { must_not: { exists: { field: "deletedAt" } } } }` |
 
@@ -520,7 +520,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ deletedAt: { [Op.not]: null } }` |
+| **Sequelize** | `{ deletedAt: { &#91;Op.not&#93;: null } }` |
 | **MongoDB** | `{ deletedAt: { $ne: null } }` |
 | **Elasticsearch** | `{ exists: { field: "deletedAt" } }` |
 
@@ -550,7 +550,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ tags: { [Op.contains]: ["news"] } }` (PostgreSQL array operator) |
+| **Sequelize** | `{ tags: { &#91;Op.contains&#93;: ["news"] } }` (PostgreSQL array operator) |
 | **MongoDB** | `{ tags: { $elemMatch: { $eq: "news" } } }` |
 | **Elasticsearch** | `{ match: { tags: "news" } }` |
 
@@ -578,7 +578,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ tags: { [Op.notContains]: ["draft"] } }` |
+| **Sequelize** | `{ tags: { &#91;Op.notContains&#93;: ["draft"] } }` |
 | **MongoDB** | `{ tags: { $not: { $elemMatch: { $eq: "draft" } } } }` |
 | **Elasticsearch** | `{ bool: { must_not: { match: { tags: "draft" } } } }` |
 
@@ -606,7 +606,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ tags: { [Op.overlap]: ["tech", "ai"] } }` (PostgreSQL array operator) |
+| **Sequelize** | `{ tags: { &#91;Op.overlap&#93;: ["tech", "ai"] } }` (PostgreSQL array operator) |
 | **MongoDB** | `{ tags: { $elemMatch: { $in: ["tech", "ai"] } } }` |
 | **Elasticsearch** | `{ match: { tags: ["tech", "ai"] } }` |
 
@@ -634,7 +634,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ [Op.not]: { tags: { [Op.overlap]: ["old", "deprecated"] } } }` |
+| **Sequelize** | `{ &#91;Op.not&#93;: { tags: { &#91;Op.overlap&#93;: ["old", "deprecated"] } } }` |
 | **MongoDB** | `{ tags: { $not: { $elemMatch: { $in: ["old", "deprecated"] } } } }` |
 | **Elasticsearch** | `{ bool: { must_not: { match: { tags: ["old", "deprecated"] } } } }` |
 
@@ -662,7 +662,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ name: { [Op.startsWith]: "Mr." } }` |
+| **Sequelize** | `{ name: { &#91;Op.startsWith&#93;: "Mr." } }` |
 | **MongoDB** | `{ name: { $regex: /^Mr\./ } }` |
 | **Elasticsearch** | `{ prefix: { name: "Mr." } }` |
 
@@ -690,7 +690,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ name: { [Op.notStartsWith]: "Ms." } }` |
+| **Sequelize** | `{ name: { &#91;Op.notStartsWith&#93;: "Ms." } }` |
 | **MongoDB** | `{ name: { $not: { $regex: /^Ms\./ } } }` |
 | **Elasticsearch** | `{ bool: { must_not: { prefix: { name: "Ms." } } } }` |
 
@@ -718,7 +718,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ email: { [Op.endsWith]: "@gmail.com" } }` |
+| **Sequelize** | `{ email: { &#91;Op.endsWith&#93;: "@gmail.com" } }` |
 | **MongoDB** | `{ email: { $regex: /@gmail\.com$/ } }` |
 | **Elasticsearch** | `{ wildcard: { email: "*@gmail.com" } }` |
 
@@ -746,7 +746,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ email: { [Op.notEndsWith]: "@yahoo.com" } }` |
+| **Sequelize** | `{ email: { &#91;Op.notEndsWith&#93;: "@yahoo.com" } }` |
 | **MongoDB** | `{ email: { $not: { $regex: /@yahoo\.com$/ } } }` |
 | **Elasticsearch** | `{ bool: { must_not: { wildcard: { email: "*@yahoo.com" } } } }` |
 
@@ -779,7 +779,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ [Op.and]: [{ status: "active" }, { age: { [Op.gte]: 18 } }] }` |
+| **Sequelize** | `{ &#91;Op.and&#93;: [{ status: "active" }, { age: { &#91;Op.gte&#93;: 18 } }] }` |
 | **MongoDB** | `{ $and: [{ status: "active" }, { age: { $gte: 18 } }] }` |
 | **Elasticsearch** | `{ bool: { must: [{ term: { status: { value: "active" } } }, { range: { age: { gte: 18 } } }] } }` |
 
@@ -823,7 +823,7 @@ This is equivalent to the `$and` example above.
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ [Op.or]: [{ status: "pending" }, { status: "processing" }] }` |
+| **Sequelize** | `{ &#91;Op.or&#93;: [{ status: "pending" }, { status: "processing" }] }` |
 | **MongoDB** | `{ $or: [{ status: "pending" }, { status: "processing" }] }` |
 | **Elasticsearch** | `{ bool: { should: [{ term: { status: { value: "pending" } } }, { term: { status: { value: "processing" } } }] } }` |
 
@@ -856,7 +856,7 @@ This is equivalent to the `$and` example above.
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ [Op.not]: { status: "deleted" } }` |
+| **Sequelize** | `{ &#91;Op.not&#93;: { status: "deleted" } }` |
 | **MongoDB** | `{ $not: { status: "deleted" } }` |
 | **Elasticsearch** | `{ bool: { must_not: { term: { status: { value: "deleted" } } } } }` |
 
@@ -889,7 +889,7 @@ This is equivalent to the `$and` example above.
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ [Op.not]: [{ status: "deleted" }, { isArchived: true }] }` |
+| **Sequelize** | `{ &#91;Op.not&#93;: [{ status: "deleted" }, { isArchived: true }] }` |
 | **MongoDB** | `{ $nor: [{ status: "deleted" }, { isArchived: true }] }` |
 | **Elasticsearch** | `{ bool: { must_not: [{ term: { status: { value: "deleted" } } }, { term: { isArchived: { value: true } } }] } }` |
 
@@ -924,7 +924,7 @@ These operators are primarily designed for MongoDB but may have limited support 
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ optionalField: { [Op.not]: null } }` (similar behavior) |
+| **Sequelize** | `{ optionalField: { &#91;Op.not&#93;: null } }` (similar behavior) |
 | **MongoDB** | `{ optionalField: { $exists: true } }` |
 | **Elasticsearch** | `{ exists: { field: "optionalField" } }` |
 
@@ -952,7 +952,7 @@ These operators are primarily designed for MongoDB but may have limited support 
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ deletedAt: { [Op.is]: null } }` (similar behavior) |
+| **Sequelize** | `{ deletedAt: { &#91;Op.is&#93;: null } }` (similar behavior) |
 | **MongoDB** | `{ deletedAt: { $exists: false } }` |
 | **Elasticsearch** | `{ bool: { must_not: { exists: { field: "deletedAt" } } } }` |
 
@@ -980,7 +980,7 @@ These operators are primarily designed for MongoDB but may have limited support 
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ tags: { [Op.contains]: ["tech", "ai", "machine-learning"] } }` (PostgreSQL) |
+| **Sequelize** | `{ tags: { &#91;Op.contains&#93;: ["tech", "ai", "machine-learning"] } }` (PostgreSQL) |
 | **MongoDB** | `{ tags: { $all: ["tech", "ai", "machine-learning"] } }` |
 | **Elasticsearch** | `{ match: { tags: { query: "tech ai machine-learning", operator: "and" } } }` |
 
@@ -1008,7 +1008,7 @@ These operators are primarily designed for MongoDB but may have limited support 
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ [Op.not]: { tags: { [Op.contains]: ["premium", "featured"] } } }` |
+| **Sequelize** | `{ &#91;Op.not&#93;: { tags: { &#91;Op.contains&#93;: ["premium", "featured"] } } }` |
 | **MongoDB** | `{ tags: { $not: { $all: ["premium", "featured"] } } }` |
 | **Elasticsearch** | `{ bool: { must_not: { match: { tags: { query: "premium featured", operator: "and" } } } } }` |
 
@@ -1064,7 +1064,7 @@ These operators are primarily designed for MongoDB but may have limited support 
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `Sequelize.where(Sequelize.fn('array_length', Sequelize.col('tags'), 1), { [Op.ne]: 0 })` |
+| **Sequelize** | `Sequelize.where(Sequelize.fn('array_length', Sequelize.col('tags'), 1), { &#91;Op.ne&#93;: 0 })` |
 | **MongoDB** | `{ tags: { $not: { $size: 0 } } }` |
 | **Elasticsearch** | `{ bool: { must_not: { script: { script: { source: "doc['tags'].size() == 0" } } } } }` |
 
@@ -1092,7 +1092,7 @@ These operators are primarily designed for MongoDB but may have limited support 
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ tags: { [Op.overlap]: ["tech", "ai"] } }` (PostgreSQL) |
+| **Sequelize** | `{ tags: { Op.overlap: ["tech", "ai"] } }` (Note: `Op.overlap` is `Sequelize.Op.overlap`, PostgreSQL) |
 | **MongoDB** | `{ tags: { $elemMatch: { $in: ["tech", "ai"] } } }` |
 | **Elasticsearch** | `{ match: { tags: ["tech", "ai"] } }` |
 
@@ -1120,7 +1120,7 @@ These operators are primarily designed for MongoDB but may have limited support 
 
 | Platform | Equivalent |
 |----------|-----------|
-| **Sequelize** | `{ [Op.not]: { tags: { [Op.overlap]: ["deleted", "archived"] } } }` |
+| **Sequelize** | `{ &#91;Op.not&#93;: { tags: { &#91;Op.overlap&#93;: ["deleted", "archived"] } } }` |
 | **MongoDB** | `{ tags: { $not: { $elemMatch: { $in: ["deleted", "archived"] } } } }` |
 | **Elasticsearch** | `{ bool: { must_not: { match: { tags: ["deleted", "archived"] } } } }` |
 
