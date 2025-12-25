@@ -1,0 +1,208 @@
+<% const checkoutObjects = dataModel.objects.filter(dbObject => dbObject.checkout) %>
+
+<%  
+const authentication = projectAuthentication;
+const tenant = authentication.tenant;
+const tenantName = tenant ? tenant.tenantName : null;
+const tenantId = tenant ? tenantName+"Id" : null;
+const tenantHeaderName = tenant ? tenant.headerName : null;
+%>
+
+const express = require("express");
+const stripeDemoRouter = express.Router();
+const paymentMethodsRouter = express.Router();
+const {paymentGatePool} = require("common");
+const fs = require("fs");
+const path = require("path");
+
+
+const
+{
+  getPaymentCustomerId,
+  savePaymentCustomerId,
+  getPaymentMethodsOfUser,
+  addPaymentMethodToCustomer,
+  deletePaymentMethod,
+} = require("utils").paymentUtils;
+
+<% for (const dbObject of checkoutObjects) { -%>
+const {dbGet<%= dbObject.modelName %>PaymentByPaymentId} = require("dbLayer");  
+<% } %> 
+
+
+const createServiceController = require("./create-service-controller");
+
+const initWithRestController = async (name, routeName, req, res) => {
+  const restController = createServiceController(name, routeName, req, res);
+  await restController.init();
+};
+
+
+
+
+<% for (const dbObject of checkoutObjects) { -%>
+
+const get<%= dbObject.modelName %>Controller = async (req, res,next) => {
+
+  await initWithRestController("get<%= dbObject.modelName %>", "get<%= dbObject.modelName %>", req, res);
+
+  const { get<%= dbObject.modelName %>ById } = require("dbLayer");
+  try {
+    const orderId = req.query["orderId"];
+    const fData = await get<%= dbObject.modelName %>ById(orderId);
+    const ownerId = await fData.<%= dbObject.checkout.orderOwnerIdProperty %>;
+
+    if (ownerId != req.session.userId) {
+      res.status(403).send("Unauthorized");
+      return;
+    }
+
+    res.send(fData);
+  } catch (err) {
+    //**errorLog
+    console.log('Unmanaged err in  of <%= dbObject.objectName %> flow demo => ',err.message);
+    throw err;
+  }
+}
+
+const create<%= dbObject.modelName %>Controller = async (req, res,next) => {
+  await initWithRestController("create<%= dbObject.modelName %>", "create<%= dbObject.modelName %>", req, res);
+  const { create<%= dbObject.modelName %>} = require("dbLayer");
+  try {
+    if (!req.session?.userId) {
+      res.status(403).send("Unauthorized");
+      return;
+    }
+    const input = req.body;
+    const fData = await create<%= dbObject.modelName %>(input);
+    res.send(fData);
+  } catch (err) {
+    //**errorLog
+    console.log('Unmanaged err in create<%= dbObject.modelName %> => ',err.message);
+    throw err;
+  }
+}
+
+const get<%= dbObject.modelName %>StripeDemoController = async (req, res,next) => {
+  await initWithRestController("<%= dbObject.modelName %>StripeDemo", "<%= dbObject.modelName %>StripeDemo", req, res);
+  const url = req.url.split("?")[0];
+  let fileName = url.split("/").pop();
+  let userEmail = null;
+  if (fileName == "sign-in.html") {
+    fName = path.join(__dirname,"../","../","stripe-demo", "<%= dbObject.objectName %>", "sign-in.html");
+  } else if (!req.session) {
+    fName = path.join(__dirname,"../","../","stripe-demo", "<%= dbObject.objectName %>", "unauthorized.html");
+  } else {
+    userEmail = req.session.email ?? "unknown";
+    if (fileName == "<%= dbObject.objectName %>" || fileName == "") fileName = "index.html";
+    fName = path.join(__dirname,"../","../","stripe-demo", "<%= dbObject.objectName %>", fileName);
+  }
+  <% if (tenantId) { %> 
+    const <%= tenantId  %> = req.query["<%= tenantId  %>"] || req.headers["<%= tenantHeaderName  %>"];
+  <% } %>
+  const serviceUrl = process.env.SERVICE_URL;
+  const loginUrl = process.env.AUTH_SERVICE_URL+"/login"
+  let fData = fs.readFileSync(fName, 'utf8');
+  <% if (tenantId) { %>fData = fData.replaceAll("$<%= tenantId %>",<%= tenantId %>);<% } %>
+  if (userEmail) fData = fData.replaceAll("$userEmail",userEmail);
+  fData = fData.replaceAll("$serviceUrl",serviceUrl);
+  fData = fData.replaceAll("$loginUrl",loginUrl);
+  res.send(fData);  
+} 
+
+
+<% } %>
+
+<% if (checkoutObjects.length) { -%>
+  const getPaymentMethodsController = async (req, res,next) => {
+    await initWithRestController("getPaymentMethods", "getPaymentMethods", req, res);
+    try {
+
+      if (!req.session) {
+        res.status(403).send("Unauthorized");
+        return;
+      }
+
+      let customerId = await getPaymentCustomerId(req.session,"stripe");
+
+      if (!customerId) return res.send([]);
+
+      const paymentMethods = await getPaymentMethodsOfUser(req.session,"stripe");
+      res.send(paymentMethods);
+    } catch (err) {
+      console.log(err);
+      console.log('Unmanaged err in getPaymentMethods => ',err.message);
+      //**errorLog
+      throw err;
+    }
+  }
+
+  const addPaymentMethodToCustomerController = async (req, res,next) => {
+    await initWithRestController("addPaymentMethod", "addPaymentMethod", req, res);
+    try {
+      if (!req.session) {
+        res.status(403).send("Unauthorized");
+        return;
+      }
+
+      const userId = req.session.userId; 
+      <% if (tenantId) { %>
+      const <%= tenantId  %> = req.query["<%= tenantId  %>"] || req.headers["<%= tenantHeaderName  %>"];
+      <% } %>
+
+      const paymentMethodId = req.body.paymentMethodId;
+      let customerId = null;
+      customerId = await getPaymentCustomerId(req.session,"stripe");
+      if (!customerId) {
+        customerId = await savePaymentCustomerId(req.session,"stripe");
+      }
+      const paymentMethod = await addPaymentMethodToCustomer(userId,customerId, paymentMethodId,"stripe",<%= tenantId %>);
+      res.send(paymentMethod);
+    } catch (err) {
+      console.log('Unmanaged err in addPaymentMethodToCustomer => ',err.message);
+      //**errorLog
+      throw err;
+    }
+  }
+
+  const deletePaymentMethodController = async (req, res,next) =>  {
+    try {
+      await initWithRestController("deletePaymentMethod", "deletePaymentMethod", req, res);
+      if (!req.session) {
+        res.status(403).send("Unauthorized");
+        return;
+      }
+
+      const userId = req.session.userId; 
+      const paymentMethodId = req.params.paymentMethodId;
+      const deletedData = await deletePaymentMethod(userId, paymentMethodId,"stripe");
+      res.send(deletedData);
+    } catch (err) {
+      console.log('Unmanaged err in deletePaymentMethod => ',err.message);
+      //**errorLog
+      throw err;
+    }
+  }
+
+<% } %>
+
+  <% for (const checkoutObject of checkoutObjects) { %>
+     const <%= checkoutObject.objectName %>StripeDemoFolder = path.resolve(__dirname, "../","../",'stripe-demo','<%= checkoutObject.objectName %>');
+    stripeDemoRouter.use("/<%= checkoutObject.objectName %>/images",express.static(path.join(<%= checkoutObject.objectName %>StripeDemoFolder,"images")));
+    stripeDemoRouter.use("/<%= checkoutObject.objectName %>/lib",express.static(path.join(<%= checkoutObject.objectName %>StripeDemoFolder,"lib")));
+
+    stripeDemoRouter.get("/<%= checkoutObject.objectName %>", get<%= checkoutObject.modelName %>StripeDemoController);
+    stripeDemoRouter.get("/<%= checkoutObject.objectName %>/fetch-created-order", get<%= checkoutObject.modelName %>Controller);
+    stripeDemoRouter.get("/<%= checkoutObject.objectName %>/*", get<%= checkoutObject.modelName %>StripeDemoController);
+  <% } -%>
+
+  paymentMethodsRouter.get("/list",getPaymentMethodsController);
+  paymentMethodsRouter.post("/add",addPaymentMethodToCustomerController);
+  paymentMethodsRouter.post("/delete",deletePaymentMethodController);
+
+
+module.exports = {
+stripeDemoRouter,
+paymentMethodsRouter
+  
+}

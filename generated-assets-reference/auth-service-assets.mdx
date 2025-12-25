@@ -329,9 +329,9 @@ For common session routes available in all services, see [General Service Assets
 
 ## Automatic Verification Service Routes
 
-Mindbricks automatically generates verification service routes when the corresponding verification features are activated in the `VerificationServices` configuration. These routes are mounted at `/verification-services` (without version prefix) and are only active when their respective `isActive` flags are set to `true` in the pattern design.
+Mindbricks automatically generates verification service routes when the corresponding verification features are activated in the `VerificationServices` configuration. These routes are mounted at `/auth-api/verification-services` (without version prefix) and are only active when their respective `isActive` flags are set to `true` in the pattern design.
 
-**Note:** All verification routes are system routes and therefore are not versioned. They are mounted directly at `/verification-services/`.
+**Note:** All verification routes are system routes and therefore are not versioned. The `/verification-services` router is mounted to `/auth-api`, so the full route paths are `/auth-api/verification-services/{service}/{action}`.
 
 ### Email Verification Routes
 
@@ -339,8 +339,8 @@ Mindbricks automatically generates verification service routes when the correspo
 
 | Route | HTTP Method | Description | Auth Requirements |
 |-------|-------------|-------------|-------------------|
-| `/verification-services/email-verification/start` | POST | Starts email verification by generating and sending a secret code to the user's email | Public |
-| `/verification-services/email-verification/complete` | POST | Completes email verification using the received code | Public |
+| `/auth-api/verification-services/email-verification/start` | POST | Starts email verification by generating and sending a secret code to the user's email | Public |
+| `/auth-api/verification-services/email-verification/complete` | POST | Completes email verification using the received code | Public |
 
 **Request Body (`/start`):**
 ```json
@@ -371,8 +371,8 @@ Mindbricks automatically generates verification service routes when the correspo
 
 | Route | HTTP Method | Description | Auth Requirements |
 |-------|-------------|-------------|-------------------|
-| `/verification-services/mobile-verification/start` | POST | Starts mobile verification by generating and sending a secret code to the user's mobile number | Public |
-| `/verification-services/mobile-verification/complete` | POST | Completes mobile verification using the received code | Public |
+| `/auth-api/verification-services/mobile-verification/start` | POST | Starts mobile verification by generating and sending a secret code to the user's mobile number | Public |
+| `/auth-api/verification-services/mobile-verification/complete` | POST | Completes mobile verification using the received code | Public |
 
 **Request Body (`/start`):**
 ```json
@@ -403,8 +403,8 @@ Mindbricks automatically generates verification service routes when the correspo
 
 | Route | HTTP Method | Description | Auth Requirements |
 |-------|-------------|-------------|-------------------|
-| `/verification-services/email-2factor-verification/start` | POST | Starts email-based 2FA by generating and sending a secret code | Login required (session context needed) |
-| `/verification-services/email-2factor-verification/complete` | POST | Completes email 2FA verification using the received code | Login required |
+| `/auth-api/verification-services/email-2factor-verification/start` | POST | Starts email-based 2FA by generating and sending a secret code | Login required (session context needed) |
+| `/auth-api/verification-services/email-2factor-verification/complete` | POST | Completes email 2FA verification using the received code | Login required |
 
 **Request Body (`/start`):**
 ```json
@@ -438,8 +438,8 @@ Mindbricks automatically generates verification service routes when the correspo
 
 | Route | HTTP Method | Description | Auth Requirements |
 |-------|-------------|-------------|-------------------|
-| `/verification-services/mobile-2factor-verification/start` | POST | Starts mobile-based 2FA by generating and sending a secret code to the user's mobile | Login required (session context needed, requires mobile to be verified) |
-| `/verification-services/mobile-2factor-verification/complete` | POST | Completes mobile 2FA verification using the received code | Login required |
+| `/auth-api/verification-services/mobile-2factor-verification/start` | POST | Starts mobile-based 2FA by generating and sending a secret code to the user's mobile | Login required (session context needed, requires mobile to be verified) |
+| `/auth-api/verification-services/mobile-2factor-verification/complete` | POST | Completes mobile 2FA verification using the received code | Login required |
 
 **Request Body (`/start`):**
 ```json
@@ -473,8 +473,8 @@ Mindbricks automatically generates verification service routes when the correspo
 
 | Route | HTTP Method | Description | Auth Requirements |
 |-------|-------------|-------------|-------------------|
-| `/verification-services/password-reset-by-email/start` | POST | Initiates password reset by sending a verification code to the user's email | Public |
-| `/verification-services/password-reset-by-email/complete` | POST | Completes password reset by verifying the code and setting a new password | Public |
+| `/auth-api/verification-services/password-reset-by-email/start` | POST | Initiates password reset by sending a verification code to the user's email | Public |
+| `/auth-api/verification-services/password-reset-by-email/complete` | POST | Completes password reset by verifying the code and setting a new password | Public |
 
 **Request Body (`/start`):**
 ```json
@@ -507,8 +507,8 @@ Mindbricks automatically generates verification service routes when the correspo
 
 | Route | HTTP Method | Description | Auth Requirements |
 |-------|-------------|-------------|-------------------|
-| `/verification-services/password-reset-by-mobile/start` | POST | Initiates password reset by sending a verification code to the user's mobile number | Public |
-| `/verification-services/password-reset-by-mobile/complete` | POST | Completes password reset by verifying the code and setting a new password | Public |
+| `/auth-api/verification-services/password-reset-by-mobile/start` | POST | Initiates password reset by sending a verification code to the user's mobile number | Public |
+| `/auth-api/verification-services/password-reset-by-mobile/complete` | POST | Completes password reset by verifying the code and setting a new password | Public |
 
 **Request Body (`/start`):**
 ```json
@@ -611,8 +611,14 @@ Examples:
 
 ### Verification Service Event Topics
 
-When verification services are active, they automatically publish Kafka events on start and complete actions. These topics follow the pattern:
+When verification services are active, they automatically publish Kafka events on start and complete actions. These events are published using the `ServicePublisher` and include the verification data, session (when available), and request ID. These topics follow the pattern:
 `{projectCodeName}-auth-service-{verificationType}-{action}`
+
+**Event Publishing Details:**
+- **Start Events:** Published immediately after a verification process is initiated (when `/start` route is called successfully)
+- **Complete Events:** Published immediately after a verification process is successfully completed (when `/complete` route is called successfully and verification code matches)
+- **Session Attachment:** Session object is automatically attached to the Kafka message when available (for authenticated routes like 2FA)
+- **Message Structure:** Each event includes the full verification data object with user information, timestamps, and verification metadata
 
 #### Email Verification Topics (if `emailVerificationIsActive` is true)
 
