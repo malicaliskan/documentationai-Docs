@@ -327,6 +327,223 @@ For common session routes available in all services, see [General Service Assets
 
 ---
 
+## Automatic Verification Service Routes
+
+Mindbricks automatically generates verification service routes when the corresponding verification features are activated in the `VerificationServices` configuration. These routes are mounted at `/verification-services` (without version prefix) and are only active when their respective `isActive` flags are set to `true` in the pattern design.
+
+**Note:** All verification routes are system routes and therefore are not versioned. They are mounted directly at `/verification-services/`.
+
+### Email Verification Routes
+
+**Activation Condition:** `VerificationServices.emailVerification.emailVerificationIsActive` must be `true`
+
+| Route | HTTP Method | Description | Auth Requirements |
+|-------|-------------|-------------|-------------------|
+| `/verification-services/email-verification/start` | POST | Starts email verification by generating and sending a secret code to the user's email | Public |
+| `/verification-services/email-verification/complete` | POST | Completes email verification using the received code | Public |
+
+**Request Body (`/start`):**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Request Body (`/complete`):**
+```json
+{
+  "email": "user@example.com",
+  "secretCode": "123456"
+}
+```
+
+**Response (`/start`):**
+- Returns `codeIndex`, `timeStamp`, `date`, `expireTime`, `verificationType`
+- In test mode: also returns `secretCode` and `userId`
+
+**Response (`/complete`):**
+- Returns `status: "OK"`, `isVerified: true`, `email`
+- In test mode: also returns `userId`
+
+### Mobile Verification Routes
+
+**Activation Condition:** `VerificationServices.mobileVerification.mobileVerificationIsActive` must be `true`
+
+| Route | HTTP Method | Description | Auth Requirements |
+|-------|-------------|-------------|-------------------|
+| `/verification-services/mobile-verification/start` | POST | Starts mobile verification by generating and sending a secret code to the user's mobile number | Public |
+| `/verification-services/mobile-verification/complete` | POST | Completes mobile verification using the received code | Public |
+
+**Request Body (`/start`):**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Request Body (`/complete`):**
+```json
+{
+  "email": "user@example.com",
+  "secretCode": "123456"
+}
+```
+
+**Response (`/start`):**
+- Returns `codeIndex`, `timeStamp`, `date`, `expireTime`, `verificationType`, masked `mobile`
+- In test mode: also returns `secretCode` and `userId`
+
+**Response (`/complete`):**
+- Returns `status: "OK"`, `isVerified: true`, `email`
+- In test mode: also returns `userId` and `mobile`
+
+### Email 2-Factor Authentication Routes
+
+**Activation Condition:** `VerificationServices.email2Factor.email2FactorIsActive` must be `true`
+
+| Route | HTTP Method | Description | Auth Requirements |
+|-------|-------------|-------------|-------------------|
+| `/verification-services/email-2factor-verification/start` | POST | Starts email-based 2FA by generating and sending a secret code | Login required (session context needed) |
+| `/verification-services/email-2factor-verification/complete` | POST | Completes email 2FA verification using the received code | Login required |
+
+**Request Body (`/start`):**
+```json
+{
+  "userId": "user-uuid",
+  "sessionId": "session-uuid",
+  "reason": "login",
+  "client": "web"
+}
+```
+
+**Request Body (`/complete`):**
+```json
+{
+  "userId": "user-uuid",
+  "sessionId": "session-uuid",
+  "secretCode": "123456"
+}
+```
+
+**Response (`/start`):**
+- Returns `status: "OK"`, `sessionId`, `userId`, `codeIndex`, `timeStamp`, `date`, `expireTime`, `verificationType`
+- In test mode: also returns `secretCode`
+
+**Response (`/complete`):**
+- Returns the updated session object with `sessionNeedsEmail2FA: false`
+
+### Mobile 2-Factor Authentication Routes
+
+**Activation Condition:** `VerificationServices.mobile2Factor.mobile2FactorIsActive` must be `true`
+
+| Route | HTTP Method | Description | Auth Requirements |
+|-------|-------------|-------------|-------------------|
+| `/verification-services/mobile-2factor-verification/start` | POST | Starts mobile-based 2FA by generating and sending a secret code to the user's mobile | Login required (session context needed, requires mobile to be verified) |
+| `/verification-services/mobile-2factor-verification/complete` | POST | Completes mobile 2FA verification using the received code | Login required |
+
+**Request Body (`/start`):**
+```json
+{
+  "userId": "user-uuid",
+  "sessionId": "session-uuid",
+  "reason": "login",
+  "client": "web"
+}
+```
+
+**Request Body (`/complete`):**
+```json
+{
+  "userId": "user-uuid",
+  "sessionId": "session-uuid",
+  "secretCode": "123456"
+}
+```
+
+**Response (`/start`):**
+- Returns `status: "OK"`, `sessionId`, `userId`, `codeIndex`, `timeStamp`, `date`, `expireTime`, `verificationType`
+- In test mode: also returns `secretCode`
+
+**Response (`/complete`):**
+- Returns the updated session object with `sessionNeedsMobile2FA: false`
+
+### Password Reset by Email Routes
+
+**Activation Condition:** `VerificationServices.passwordResetByEmail.passwordResetByEmailIsActive` must be `true`
+
+| Route | HTTP Method | Description | Auth Requirements |
+|-------|-------------|-------------|-------------------|
+| `/verification-services/password-reset-by-email/start` | POST | Initiates password reset by sending a verification code to the user's email | Public |
+| `/verification-services/password-reset-by-email/complete` | POST | Completes password reset by verifying the code and setting a new password | Public |
+
+**Request Body (`/start`):**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Request Body (`/complete`):**
+```json
+{
+  "email": "user@example.com",
+  "secretCode": "123456",
+  "password": "newPassword123"
+}
+```
+
+**Response (`/start`):**
+- Returns `status: "OK"`, `codeIndex`, `timeStamp`, `date`, `expireTime`, `verificationType`
+- In test mode: also returns `secretCode` and `userId`
+
+**Response (`/complete`):**
+- Returns `status: "OK"`, `isVerified: true`, `email`
+- In test mode: also returns `userId`
+- Automatically sets `emailVerified: true` on the user
+
+### Password Reset by Mobile Routes
+
+**Activation Condition:** `VerificationServices.passwordResetByMobile.passwordResetByMobileIsActive` must be `true`
+
+| Route | HTTP Method | Description | Auth Requirements |
+|-------|-------------|-------------|-------------------|
+| `/verification-services/password-reset-by-mobile/start` | POST | Initiates password reset by sending a verification code to the user's mobile number | Public |
+| `/verification-services/password-reset-by-mobile/complete` | POST | Completes password reset by verifying the code and setting a new password | Public |
+
+**Request Body (`/start`):**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Request Body (`/complete`):**
+```json
+{
+  "email": "user@example.com",
+  "secretCode": "123456",
+  "password": "newPassword123"
+}
+```
+
+**Response (`/start`):**
+- Returns `status: "OK"`, `codeIndex`, `timeStamp`, masked `mobile`, `date`, `expireTime`, `verificationType`
+- In test mode: also returns `secretCode` and `userId`
+
+**Response (`/complete`):**
+- Returns `status: "OK"`, `isVerified: true`, `mobile`
+- In test mode: also returns `userId`
+- Automatically sets `mobileVerified: true` on the user
+
+**Important Notes:**
+- All verification routes are rate-limited (typically 60 seconds between requests)
+- Verification codes expire based on the `expireTimeWindow` configuration
+- In test mode (`VerificationSettings.verificationMode: "testMode"`), secret codes are returned in responses for development purposes
+- In live mode (`VerificationSettings.verificationMode: "liveMode"`), secret codes are only sent via email/SMS
+- Each verification service publishes Kafka events on start and complete actions (see Kafka Topics section below)
+
+---
+
 ## Generated Kafka Topics
 
 ### Database Event Topics
@@ -391,6 +608,55 @@ Examples:
 - `updateUserRole` API → `{projectCodeName}-auth-service-userrole-updated` (if resource is "userRole")
 
 **Note:** The exact topic name depends on the API's resource name and action passive form. Not all Business APIs necessarily publish events (depends on `raiseApiEvent` setting).
+
+### Verification Service Event Topics
+
+When verification services are active, they automatically publish Kafka events on start and complete actions. These topics follow the pattern:
+`{projectCodeName}-auth-service-{verificationType}-{action}`
+
+#### Email Verification Topics (if `emailVerificationIsActive` is true)
+
+| Event | Topic Name Pattern | Triggered When | Message Structure |
+|-------|-------------------|----------------|-------------------|
+| `start` | `{projectCodeName}-auth-service-email-verification-start` | Email verification process is initiated | `{ userId, email, codeIndex, timeStamp, date, expireTime, verificationType, user: {...userData} }` |
+| `complete` | `{projectCodeName}-auth-service-email-verification-complete` | Email verification is successfully completed | `{ userId, email, isVerified: true, user: {...userData} }` |
+
+#### Mobile Verification Topics (if `mobileVerificationIsActive` is true)
+
+| Event | Topic Name Pattern | Triggered When | Message Structure |
+|-------|-------------------|----------------|-------------------|
+| `start` | `{projectCodeName}-auth-service-mobile-verification-start` | Mobile verification process is initiated | `{ userId, mobile, codeIndex, timeStamp, date, expireTime, verificationType, user: {...userData} }` |
+| `complete` | `{projectCodeName}-auth-service-mobile-verification-complete` | Mobile verification is successfully completed | `{ userId, mobile, isVerified: true, user: {...userData} }` |
+
+#### Email 2FA Topics (if `email2FactorIsActive` is true)
+
+| Event | Topic Name Pattern | Triggered When | Message Structure |
+|-------|-------------------|----------------|-------------------|
+| `start` | `{projectCodeName}-auth-service-email-2FA-start` | Email 2FA process is initiated | `{ userId, sessionId, email, reason, client, codeIndex, timeStamp, date, expireTime, verificationType, user: {...userData} }` |
+| `complete` | `{projectCodeName}-auth-service-email-2FA-complete` | Email 2FA is successfully completed | `{ userId, sessionId, email, isVerified: true, user: {...userData} }` |
+
+#### Mobile 2FA Topics (if `mobile2FactorIsActive` is true)
+
+| Event | Topic Name Pattern | Triggered When | Message Structure |
+|-------|-------------------|----------------|-------------------|
+| `start` | `{projectCodeName}-auth-service-mobile-2FA-start` | Mobile 2FA process is initiated | `{ userId, sessionId, mobile, reason, client, codeIndex, timeStamp, date, expireTime, verificationType, user: {...userData} }` |
+| `complete` | `{projectCodeName}-auth-service-mobile-2FA-complete` | Mobile 2FA is successfully completed | `{ userId, sessionId, mobile, isVerified: true, user: {...userData} }` |
+
+#### Password Reset by Email Topics (if `passwordResetByEmailIsActive` is true)
+
+| Event | Topic Name Pattern | Triggered When | Message Structure |
+|-------|-------------------|----------------|-------------------|
+| `start` | `{projectCodeName}-auth-service-password-reset-by-email-start` | Password reset by email is initiated | `{ userId, email, codeIndex, timeStamp, date, expireTime, verificationType, user: {...userData} }` |
+| `complete` | `{projectCodeName}-auth-service-password-reset-by-email-complete` | Password reset by email is successfully completed | `{ userId, email, isVerified: true, user: {...userData} }` |
+
+#### Password Reset by Mobile Topics (if `passwordResetByMobileIsActive` is true)
+
+| Event | Topic Name Pattern | Triggered When | Message Structure |
+|-------|-------------------|----------------|-------------------|
+| `start` | `{projectCodeName}-auth-service-password-reset-by-mobile-start` | Password reset by mobile is initiated | `{ userId, mobile, codeIndex, timeStamp, date, expireTime, verificationType, user: {...userData} }` |
+| `complete` | `{projectCodeName}-auth-service-password-reset-by-mobile-complete` | Password reset by mobile is successfully completed | `{ userId, mobile, isVerified: true, user: {...userData} }` |
+
+**Note:** Replace `{projectCodeName}` with your actual project code name. These topics are only created when the corresponding verification service is activated in the `VerificationServices` configuration.
 
 ---
 
