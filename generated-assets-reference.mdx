@@ -1,0 +1,614 @@
+---
+title: Generated Assets Reference
+description: >-
+  Comprehensive reference guide to all automatically generated backend assets
+  in Mindbricks services. This document lists data objects, Business APIs, REST
+  routes, Kafka topics, and other assets that are created based on your pattern
+  definitions, enabling architects to reference these assets in their business
+  logic.
+---
+
+Mindbricks automatically generates a wide range of backend assets based on your pattern definitions. These assets include data objects, Business APIs, REST routes, Kafka topics, database utility functions, and more. Understanding these generated assets is crucial because:
+
+- **They follow naming conventions** that you need to know to reference them in your business logic
+- **They create dependencies** — for example, a Business API generates a REST route and Kafka topics that other APIs or edge controllers may need to consume
+- **They enable integration** — knowing the exact names and structures allows you to connect different parts of your system
+
+This document provides a comprehensive reference for all generated assets, organized by service type. We'll start with the **auth service** assets, then cover assets generated for custom services.
+
+---
+
+## Auth Service Generated Assets
+
+The `auth` service is automatically generated when you configure the Authentication module in your Mindbricks project. This service provides user management, authentication, authorization, and multi-tenancy capabilities.
+
+### Automatic Data Objects
+
+The auth service automatically includes the following data objects:
+
+#### 1. `user` Data Object
+
+The `user` data object is the core entity for user management. It is **always present** in the auth service.
+
+**Naming Convention:**
+- Data Object Name: `user`
+- Model Name: `User` (PascalCase)
+- Service Reference: `auth:user` (when referenced from other services)
+
+**System-Owned Properties:**
+
+| Property Name | Type | Required | Description |
+|--------------|------|----------|-------------|
+| `id` | UUID | Yes | Unique identifier for the user |
+| `email` | String | Yes | User's email address (unique, used for login) |
+| `password` | String | Yes | Hashed password (never stored in plain text) |
+| `emailVerified` | Boolean | Yes | Whether email has been verified |
+| `name` | String | Conditional | First name (when `userNameType` is `"asNamePair"`) |
+| `surname` | String | Conditional | Last name (when `userNameType` is `"asNamePair"`) |
+| `fullname` | String | Conditional | Full name (when `userNameType` is `"asFullname"`) |
+| `avatar` | String | No | URL to user's avatar image |
+| `roleId` | Any/Array | Conditional | User's role(s) (when RBAC is active) |
+| `mobile` | String | Conditional | Mobile phone number (when `userMobileIsActive` is true) |
+| `mobileVerified` | Boolean | Conditional | Whether mobile is verified (when `userMobileIsActive` is true) |
+| `{tenantName}Id` | UUID | Conditional | Tenant ID (when multi-tenancy is active, e.g., `clientId`, `storeId`) |
+
+**Custom Properties:**
+Architects can add custom properties via `ProjectAuthentication.userProperties` array. These properties follow standard `DataProperty` pattern definitions.
+
+**Initial Data:**
+- **Super Admin User**: Automatically created on deployment with credentials defined in `LoginDefUserSettings.superAdminEmail` and `LoginDefUserSettings.superAdminPassword`
+
+---
+
+#### 2. `userGroup` Data Object (Conditional)
+
+The `userGroup` data object is generated when `userGroupsActive` is set to `true` in `LoginDefUserSettings`.
+
+**Naming Convention:**
+- Data Object Name: `userGroup`
+- Model Name: `UserGroup` (PascalCase)
+- Service Reference: `auth:userGroup`
+
+**System-Owned Properties:**
+
+| Property Name | Type | Required | Description |
+|--------------|------|----------|-------------|
+| `id` | UUID | Yes | Unique identifier for the group |
+| `groupName` | String | Yes | Name of the user group |
+| `avatar` | String | No | URL to group's avatar image |
+| `{tenantName}Id` | UUID | Conditional | Tenant ID (when `userGroupsInTenantLevel` is true) |
+
+---
+
+#### 3. `userGroupMember` Data Object (Conditional)
+
+The `userGroupMember` data object is generated when `userGroupsActive` is set to `true`. It manages the many-to-many relationship between users and groups.
+
+**Naming Convention:**
+- Data Object Name: `userGroupMember`
+- Model Name: `UserGroupMember` (PascalCase)
+- Service Reference: `auth:userGroupMember`
+
+**System-Owned Properties:**
+
+| Property Name | Type | Required | Description |
+|--------------|------|----------|-------------|
+| `id` | UUID | Yes | Unique identifier for the membership record |
+| `groupId` | UUID | Yes | Reference to `userGroup.id` |
+| `userId` | UUID | Yes | Reference to `user.id` |
+| `ownerId` | UUID | Yes | ID of admin who created the membership (auto-populated from session) |
+| `{tenantName}Id` | UUID | Conditional | Tenant ID (when `userGroupsInTenantLevel` is true) |
+
+---
+
+#### 4. ROLES System Object
+
+Roles in Mindbricks are not stored as data objects but as a **system object** (constant/enum) that defines available role names and their values. This ROLES object is **always present** in the auth service, regardless of whether RBAC is active.
+
+**System Roles (Always Available):**
+
+**Single-Tenant Projects:**
+- `superAdmin` — Super administrator with full system access
+- `admin` — Administrator with elevated permissions
+- `user` — Standard user role
+
+**Multi-Tenant (SaaS) Projects:**
+- `superAdmin` — Super administrator at SaaS level
+- `saasAdmin` — SaaS-level administrator
+- `saasUser` — SaaS-level user
+- `tenantOwner` — Owner of a tenant
+- `tenantAdmin` — Administrator within a tenant
+- `tenantUser` — Standard user within a tenant
+
+**Custom Roles (When RBAC is Active):**
+
+When `rbacIsActive` is `true`, architects can define additional custom roles via `AccessControl.roleSettings.configuration.rolesObject` array. Each role is defined with:
+- `name` — Display name (used in UIs and documentation)
+- `value` — Role value stored in `user.roleId` and session
+
+**Example Custom Roles Configuration:**
+```json
+{
+  "authentication": {
+    "accessControl": {
+      "roleSettings": {
+        "rbacIsActive": true,
+        "configuration": {
+          "rolesObject": [
+            { "name": "Manager", "value": "manager" },
+            { "name": "Editor", "value": "editor" },
+            { "name": "Viewer", "value": "viewer" }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+**Usage in Business Logic:**
+
+Role names (both system and custom) are **assets** that should be referenced in authorization business logic:
+
+- In MScript expressions: `this.session.roleId === "admin"`
+- In Business API auth options: `requiredRole: "admin"`
+- In permission checks: `PermissionCheckAction` with role-based conditions
+- In access control rules: Role-based where clauses and filters
+
+**Note:** The `user.roleId` property stores the role value (not the role name). When `usersHaveMultipleRoles` is enabled, `roleId` becomes an array of role values.
+
+---
+
+#### 5. `givenPermission` Data Object (Conditional)
+
+The `givenPermission` data object is generated when Permission-Based Access Control (PBAC) is active (`pbacIsActive` is true). This data object stores permission assignments — it records which permissions are granted to roles, user groups, users, or specific objects.
+
+**Naming Convention:**
+- Data Object Name: `givenPermission`
+- Model Name: `GivenPermission` (PascalCase)
+- Service Reference: `auth:givenPermission`
+
+**System-Owned Properties:**
+
+| Property Name | Type | Required | Description |
+|--------------|------|----------|-------------|
+| `id` | UUID | Yes | Unique identifier for the permission assignment record |
+| `permissionName` | String | Yes | Reference to the named permission. Can be formatted as:<br>- `"groupName.permissionName"` (specific permission)<br>- `"permissionName"` (permission without group)<br>- `"groupName.*"` (all permissions in a group) |
+| `roleId` | String | No | Role name to which the permission is assigned (for role-based permissions) |
+| `subjectUserId` | String | No | User ID to whom the permission is assigned (for user-based permissions) |
+| `subjectUserGroupId` | String | No | User group ID to which the permission is assigned (for group-based permissions) |
+| `objectId` | String | No | Object ID for which the permission is given (for object-based permissions/OBAC) |
+| `canDo` | Boolean | Yes | Whether the permission is active. Default: `true`. Can be set to `false` to explicitly deny a permission (overrides more general positive permissions) |
+| `{tenantName}Id` | UUID | Conditional | Tenant ID (when multi-tenancy is active) |
+
+**Note:** Permissions themselves are **hardcoded/defined** in the PBAC configuration via `PermissionGroups` in `AccessControl.permissionSettings.configuration.permissionGroups`. The `givenPermission` data object only stores **assignments** of these predefined permissions to roles, users, groups, or objects.
+
+---
+
+#### 6. `tenant` Data Object (Conditional)
+
+The `tenant` data object is generated when multi-tenancy is active (`useMultiTenantFeature` is true).
+
+**Naming Convention:**
+- Data Object Name: `{tenantName}` (e.g., `client`, `store`, `workspace`)
+- Model Name: `{TenantName}` (PascalCase, e.g., `Client`, `Store`, `Workspace`)
+- Service Reference: `auth:{tenantName}`
+
+**System-Owned Properties:**
+
+| Property Name | Type | Required | Description |
+|--------------|------|----------|-------------|
+| `id` | UUID | Yes | Unique identifier for the tenant |
+| `codename` | String | Yes | Unique codename for the tenant (used in URLs, tokens) |
+| `fullname` | String | Yes | Display name of the tenant |
+| `avatar` | String | No | URL to tenant's avatar image |
+
+**Custom Properties:**
+Architects can add custom properties via `ProjectAuthentication.tenantProperties` array.
+
+**Initial Data:**
+- **Root Tenant**: Automatically created with codename `"root"` for SaaS-level operations
+
+---
+
+### Automatic Business APIs and REST Routes
+
+Mindbricks automatically generates Business APIs for the auth service data objects. The REST routes are generated based on the API `name` and `crudType`, following RESTful conventions.
+
+**Route Path Generation:**
+All routes are prefixed with `/{serviceName}-api/v{apiVersion}/` (e.g., `/auth-api/v1/` for the auth service with API version v1).
+
+The route path is determined by analyzing the API name:
+1. **Name Analysis:** The API name is split into `apiAction` (verb) and `apiResourceName` (resource)
+   - Example: `getUser` → action: `get`, resource: `user`
+   - Example: `updateUserRole` → action: `update`, resource: `userRole`
+   - Example: `registerUser` → action: `register`, resource: `user`
+
+2. **Default RESTful Routes:** If the action is standard (`get`, `list`, `create`, `update`, `delete`) AND the resource matches the data object name:
+   - **Create/List:** `/{serviceName}-api/v{version}/{pluralizedObjectName}` (e.g., `/auth-api/v1/users`)
+   - **Get/Update/Delete:** `/{serviceName}-api/v{version}/{pluralizedObjectName}/:{objectName}Id` (e.g., `/auth-api/v1/users/:userId`)
+
+3. **Non-Standard Routes:** Non-standard routes come in two forms:
+   
+   **a. Standard Action + Non-Standard Resource:** If the action is standard (`get`, `list`, `create`, `update`, `delete`) but the resource name doesn't match the data object name:
+   - **Create/List:** `/{serviceName}-api/v{version}/{resourceName}` (lowercase, no action prefix)
+   - **Get/Update/Delete:** `/{serviceName}-api/v{version}/{resourceName}/:{dataName}Id`
+   - Examples: `updateUserRole` → resource: `userRole` → `/auth-api/v1/userrole/:userId`, `getBriefUser` → resource: `briefUser` → `/auth-api/v1/briefuser/:userId`
+   
+   **b. Non-Standard Action:** If the action is non-standard (e.g., `register`, `remove`, `archive`), the path includes the full resourcePath (action + resource):
+   - **Create/List:** `/{serviceName}-api/v{version}/{action}{resourceName}` (all lowercase, concatenated)
+   - **Get/Update/Delete:** `/{serviceName}-api/v{version}/{action}{resourceName}/:{dataName}Id`
+   - Examples: `registerUser` → `/auth-api/v1/registeruser`, `removeMember` → `/auth-api/v1/removemember`, `archiveProfile` → `/auth-api/v1/archiveprofile/:userId`
+
+4. **Custom Routes:** Some APIs have custom route paths defined in `restSettings.configuration.routePath`:
+   - `get{TenantName}ByCodename` uses custom route: `/auth-api/v1/{tenantName}bycodename/:codename`
+
+#### User Data Object APIs
+
+| Business API Name | CRUD Type | REST Route | HTTP Method | Description | Auth Requirements |
+|------------------|-----------|------------|-------------|-------------|-------------------|
+| `getUser` | `get` | `/auth-api/v1/users/:userId` | GET | Get user profile information (admin or self) | Login required, ownership check or admin roles |
+| `updateProfile` | `update` | `/auth-api/v1/profile/:userId` | PATCH | User updates their own profile | Login required, ownership check (superAdmin can update anyone) |
+| `updateUser` | `update` | `/auth-api/v1/users/:userId` | PATCH | Admin updates user profile | Login required, admin roles (prevents updating higher roles) |
+| `createUser` | `create` | `/auth-api/v1/users` | POST | Admin creates a new user manually | Login required, admin roles |
+| `registerUser` | `create` | `/auth-api/v1/registeruser` | POST | Public user registration (single-tenant only) | Public (if `userRegisterIsPublic` is true and not multi-tenant) |
+| `register{TenantName}Owner` | `create` | `/auth-api/v1/register{tenantName}owner` | POST | Public registration as tenant owner (multi-tenant only) | Public, creates both user and tenant |
+| `register{TenantName}User` | `create` | `/auth-api/v1/register{tenantName}user` | POST | Public registration to existing tenant (multi-tenant only) | Public, creates user with `tenantUser` role |
+| `archiveProfile` | `delete` | `/auth-api/v1/archiveprofile/:userId` | DELETE | User archives their own profile | Login required, ownership check (prevents SuperAdmin deletion) |
+| `deleteUser` | `delete` | `/auth-api/v1/users/:userId` | DELETE | Admin deletes user profile | Login required, admin roles (prevents SuperAdmin deletion) |
+| `listUsers` | `list` | `/auth-api/v1/users` | GET | Admin lists users (paginated, cached) | Login required, admin roles |
+| `searchUsers` | `list` | `/auth-api/v1/searchusers` | GET | Admin searches users by email/fullname | Login required, admin roles, requires `keyword` query param, uses search filter |
+| `updateUserRole` | `update` | `/auth-api/v1/userrole/:userId` | PATCH | Admin updates user role | Login required, admin roles (prevents assigning higher roles), custom `roleId` parameter |
+| `updateUserPassword` | `update` | `/auth-api/v1/userpassword/:userId` | PATCH | User updates their own password | Login required, ownership check (requires `oldPassword` and `newPassword` parameters) |
+| `updateUserPasswordByAdmin` | `update` | `/auth-api/v1/userpasswordbyadmin/:userId` | PATCH | Admin updates any user's password | Login required, admin roles (prevents updating higher roles), custom `password` parameter |
+| `getBriefUser` | `get` | `/auth-api/v1/briefuser/:userId` | GET | Public brief user information | Public, returns only `id`, `name`/`fullname`, `avatar` (via selectClause) |
+
+**Note:** 
+- Replace `{TenantName}` with the actual tenant name (e.g., `Client`, `Store`, `Workspace`)
+- `registerUser` is only generated when `userRegisterIsPublic` is true and multi-tenancy is disabled
+- `register{TenantName}Owner` and `register{TenantName}User` are only generated when multi-tenancy is active
+- All user APIs have gRPC controllers enabled
+
+#### UserGroup Data Object APIs (if `userGroupsActive` is true)
+
+| Business API Name | CRUD Type | REST Route | HTTP Method | Description | Auth Requirements |
+|------------------|-----------|------------|-------------|-------------|-------------------|
+| `createUserGroup` | `create` | `/auth-api/v1/usergroups` | POST | Admin creates a new user group | Login required, admin roles (superAdmin always allowed) |
+| `updateUserGroup` | `update` | `/auth-api/v1/usergroups/:userGroupId` | PATCH | Admin updates user group | Login required, ownership check, admin roles |
+| `deleteUserGroup` | `delete` | `/auth-api/v1/usergroups/:userGroupId` | DELETE | Admin deletes user group | Login required, ownership check, admin roles |
+| `getUserGroup` | `get` | `/auth-api/v1/usergroups/:userGroupId` | GET | Get user group information | Public (no login required) |
+| `listUserGroups` | `list` | `/auth-api/v1/usergroups` | GET | List all user groups | Public (no login required), sorted by `groupName` |
+
+#### UserGroupMember Data Object APIs (if `userGroupsActive` is true)
+
+| Business API Name | CRUD Type | REST Route | HTTP Method | Description | Auth Requirements |
+|------------------|-----------|------------|-------------|-------------|-------------------|
+| `createUserGroupMember` | `create` | `/auth-api/v1/usergroupmembers` | POST | Admin adds user to group | Login required, ownership check, admin roles |
+| `deleteUserGroupMember` | `delete` | `/auth-api/v1/usergroupmembers/:userGroupMemberId` | DELETE | Admin removes user from group | Login required, ownership check, admin roles |
+| `getUserGroupMember` | `get` | `/auth-api/v1/usergroupmembers/:userGroupMemberId` | GET | Get user group member information | Public (no login required) |
+| `listUserGroupMembers` | `list` | `/auth-api/v1/listusergroupmembers/:groupId` | GET | List members of a group (filtered by `groupId`) | Public (no login required), includes joined user data |
+
+#### GivenPermission Data Object APIs (if `pbacIsActive` is true)
+
+| Business API Name | CRUD Type | REST Route | HTTP Method | Description | Auth Requirements |
+|------------------|-----------|------------|-------------|-------------|-------------------|
+| `createGivenPermission` | `create` | `/auth-api/v1/givenpermissions` | POST | Admin creates permission assignment (general) | Login required, admin roles |
+| `createRolePermission` | `create` | `/auth-api/v1/rolepermission` | POST | Admin assigns permission to a role | Login required, admin roles (superAdmin always allowed) |
+| `createUserPermission` | `create` | `/auth-api/v1/userpermission` | POST | Admin assigns permission to a user | Login required, admin roles (superAdmin always allowed) |
+| `createGroupPermission` | `create` | `/auth-api/v1/grouppermission` | POST | Admin assigns permission to a user group | Login required, admin roles (superAdmin always allowed) |
+| `createPermissionForRoleAndGroup` | `create` | `/auth-api/v1/permissionforroleandgroup` | POST | Admin assigns permission to role+group combination | Login required, admin roles (superAdmin always allowed) |
+| `createObjectPermission` | `create` | `/auth-api/v1/objectpermission` | POST | Admin assigns permission to user for specific object | Login required, admin roles (superAdmin always allowed) |
+| `createObjectPermissionForGroup` | `create` | `/auth-api/v1/objectpermissionforgroup` | POST | Admin assigns permission to group for specific object | Login required, admin roles (superAdmin always allowed) |
+| `createObjectPermissionForRole` | `create` | `/auth-api/v1/objectpermissionforrole` | POST | Admin assigns permission to role for specific object | Login required, admin roles (superAdmin always allowed) |
+| `createObjectPermissionForRoleAndGroup` | `create` | `/auth-api/v1/objectpermissionforroleandgroup` | POST | Admin assigns permission to role+group for specific object | Login required, admin roles (superAdmin always allowed) |
+| `updateGivenPermission` | `update` | `/auth-api/v1/givenpermissions/:givenPermissionId` | PATCH | Admin updates permission assignment | Login required, admin roles (superAdmin always allowed) |
+| `deleteGivenPermission` | `delete` | `/auth-api/v1/givenpermissions/:givenPermissionId` | DELETE | Admin deletes permission assignment | Login required, admin roles |
+| `getGivenPermission` | `get` | `/auth-api/v1/givenpermissions/:givenPermissionId` | GET | Get permission assignment information | Public (no login required) |
+| `listGivenPermissions` | `list` | `/auth-api/v1/givenpermissions` | GET | List all permission assignments | Public (no login required), sorted by name |
+
+#### Tenant Data Object APIs (if multi-tenancy is active)
+
+| Business API Name | CRUD Type | REST Route | HTTP Method | Description | Auth Requirements |
+|------------------|-----------|------------|-------------|-------------|-------------------|
+| `create{TenantName}` | `create` | `/auth-api/v1/{tenantName}s` | POST | SaaS admin creates tenant manually | Login required, SaaS-level, superAdmin/saasAdmin only |
+| `get{TenantName}` | `get` | `/auth-api/v1/{tenantName}s/:{tenantName}Id` | GET | Admin gets tenant information | Login required, SaaS-level, ownership check, admin roles |
+| `getBrief{TenantName}` | `get` | `/auth-api/v1/brief{tenantName}/:{tenantName}Id` | GET | Public brief tenant information | Public, returns only `id`, `name`, `codename`, `fullname`, `avatar` |
+| `get{TenantName}ByCodename` | `get` | `/auth-api/v1/{tenantName}bycodename/:codename` | GET | Public get tenant by codename | Public, custom route path (not standard `/auth-api/v1/{tenantName}s/:id`) |
+| `listRegistered{TenantName}s` | `list` | `/auth-api/v1/registered{tenantName}s` | GET | SaaS users list registered tenants | Login required, SaaS-level, saas roles (not paginated) |
+| `listBrief{TenantName}s` | `list` | `/auth-api/v1/brief{tenantName}s` | GET | Public list brief tenant information | Public, returns only `name`, `codename`, `fullname`, `avatar` (not paginated) |
+| `update{TenantName}` | `update` | `/auth-api/v1/{tenantName}s/:{tenantName}Id` | PATCH | Admin updates tenant | Login required, ownership check, admin roles |
+| `delete{TenantName}` | `delete` | `/auth-api/v1/{tenantName}s/:{tenantName}Id` | DELETE | Admin deletes tenant | Login required, ownership check, admin roles |
+
+**Note:** Replace `{TenantName}` with the actual tenant name (e.g., `Client`, `Store`, `Workspace`). The route uses the pluralized form (e.g., `/auth/clients`, `/auth/stores`).
+
+---
+
+### Session and Authentication Routes
+
+All services include a **session router** that provides common session-based routes. The auth service has additional authentication-specific routes.
+
+**Route Prefix:** All session routes are mounted at `/{serviceName}-api` (e.g., `/auth-api`, `/order-api`). This is the main API root of the service that provides the API face (a Swagger-like test panel). Note that session routes do not include the version part (`/v1/`) unlike Business API routes.
+
+#### Common Session Routes (All Services)
+
+These routes are available in all services via the session router:
+
+| Route | HTTP Method | Description | Auth Requirements |
+|-------|-------------|-------------|-------------------|
+| `/currentuser` | GET | Get current user session information | Login required (returns 401 if no session) |
+| `/publickey` | GET | Get RSA public key for encryption/decryption | Public (no login required) |
+| `/permissions` | GET | Get all permissions for the current user | Login required |
+| `/rolepermissions` | GET | Get all permissions for the current user's role | Login required |
+| `/permissions/:permissionName` | GET | Get permission filter for a specific permission name | Login required |
+| `/rawsearch/:index` | POST | Perform raw Elasticsearch search on specified index | Login required, admin roles (superAdmin, admin, saasAdmin, tenantAdmin, tenantOwner) |
+
+**Query Parameters:**
+- `/publickey` accepts optional `keyId` query parameter (defaults to current key ID)
+
+**Path Parameters:**
+- `/permissions/:permissionName` — The permission name to query
+- `/rawsearch/:index` — The Elasticsearch index name to search
+
+#### Auth Service Additional Routes
+
+The auth service includes additional authentication and session management routes:
+
+| Route | HTTP Method | Description | Auth Requirements |
+|-------|-------------|-------------|-------------------|
+| `/login` | GET | Get login page HTML | Public |
+| `/login` | POST | User login (creates session, returns JWT token) | Public |
+| `/relogin` | GET | Refresh/renew existing session | Login required (returns 401 if no valid session) |
+| `/realtimetoken` | GET | Get realtime event token for WebSocket connections | Login required |
+| `/getusersessions` | GET | Get all active sessions for a user | Login required |
+| `/getuserhistory` | GET | Get session history for a user | Login required |
+| `/deleteusersession/:sessionId` | DELETE | Delete a specific user session | Login required |
+| `/deleteallsessions` | DELETE | Delete all sessions for a user | Login required |
+| `/logout` | POST | Logout current user (invalidates session) | Login required |
+
+**Query Parameters:**
+- `/getusersessions` — Optional `userId` query parameter (defaults to current user)
+- `/getuserhistory` — Optional `userId` query parameter (defaults to current user)
+- `/deleteusersession/:sessionId` — Optional `userId` query parameter (defaults to current user)
+- `/deleteallsessions` — Optional `userId` query parameter (defaults to current user)
+
+**Path Parameters:**
+- `/deleteusersession/:sessionId` — The session ID to delete
+
+**Request Body (POST `/login`):**
+```json
+{
+  "username": "user@example.com",  // or "email"
+  "password": "userpassword"
+}
+```
+
+**Response (POST `/login`):**
+- Returns session object with JWT token and user information
+- Sets HTTP-only cookie with access token
+- May include `cookieError` if cookie setting fails
+
+**Note:** 
+- Session routes are not Business APIs — they are direct Express routes
+- These routes handle authentication, session management, and permission queries
+- The `/rawsearch` route allows direct Elasticsearch queries (admin only for security)
+
+---
+
+### Generated Kafka Topics
+
+Mindbricks generates Kafka topics for two types of events:
+
+1. **Business API Events:** When a Business API has `raiseApiEvent` set to `true` (default), it publishes events to a topic following this pattern:
+   - **Topic Pattern:** `{projectCodeName}-{serviceName}-service-{resource}-{actionPassiveForm}`
+   - Example: `clearBasket` API → `babilshop-order-service-basket-cleared`
+
+2. **Database Events:** For all data objects, Kafka topics are automatically generated for database-level events (CRUD operations):
+   - **Topic Pattern:** `{projectCodeName}-{serviceName}-service-dbevent-{dataObjectName}-{crudPassive}`
+   - **Event Types:** Only three types are generated: `created`, `updated`, `deleted`
+   - Example: `babilshop-order-service-dbevent-basketitem-deleted`
+
+**Note:** 
+- `{projectCodeName}` is the project's code name (e.g., `babilshop`)
+- `{serviceName}` is the service name (e.g., `order`, `auth`)
+- `{resource}` is the resource name from the API name analysis (lowercase)
+- `{actionPassiveForm}` is the passive form of the action verb (e.g., `cleared`, `retrieved`, `created`)
+- `{dataObjectName}` is the data object name (lowercase)
+- `{crudPassive}` is the passive form of the CRUD operation (`created`, `updated`, `deleted`)
+
+#### User Data Object Topics
+
+| Event Type | Topic Name | Triggered When | Message Structure |
+|------------|------------|----------------|-------------------|
+| `created` | `auth.user.created` | User is created | `{ user: {...userData} }` |
+| `updated` | `auth.user.updated` | User is updated | `{ user: {...userData} }` |
+| `deleted` | `auth.user.deleted` | User is deleted | `{ user: {...userData} }` |
+
+#### UserGroup Data Object Topics (DB Events, if `userGroupsActive` is true)
+
+| Event Type | Topic Name Pattern | Triggered When |
+|------------|-------------------|----------------|
+| `created` | `{projectCodeName}-auth-service-dbevent-usergroup-created` | User group is created |
+| `updated` | `{projectCodeName}-auth-service-dbevent-usergroup-updated` | User group is updated |
+| `deleted` | `{projectCodeName}-auth-service-dbevent-usergroup-deleted` | User group is deleted |
+
+#### UserGroupMember Data Object Topics (DB Events, if `userGroupsActive` is true)
+
+| Event Type | Topic Name Pattern | Triggered When |
+|------------|-------------------|----------------|
+| `created` | `{projectCodeName}-auth-service-dbevent-usergroupmember-created` | User added to group |
+| `updated` | `{projectCodeName}-auth-service-dbevent-usergroupmember-updated` | Group membership updated |
+| `deleted` | `{projectCodeName}-auth-service-dbevent-usergroupmember-deleted` | User removed from group |
+
+#### GivenPermission Data Object Topics (DB Events, if `pbacIsActive` is true)
+
+| Event Type | Topic Name Pattern | Triggered When |
+|------------|-------------------|----------------|
+| `created` | `{projectCodeName}-auth-service-dbevent-givenpermission-created` | Permission assignment is created |
+| `updated` | `{projectCodeName}-auth-service-dbevent-givenpermission-updated` | Permission assignment is updated |
+| `deleted` | `{projectCodeName}-auth-service-dbevent-givenpermission-deleted` | Permission assignment is deleted |
+
+#### Tenant Data Object Topics (DB Events, if multi-tenancy is active)
+
+| Event Type | Topic Name Pattern | Triggered When |
+|------------|-------------------|----------------|
+| `created` | `{projectCodeName}-auth-service-dbevent-{tenantName}-created` | Tenant is created |
+| `updated` | `{projectCodeName}-auth-service-dbevent-{tenantName}-updated` | Tenant is updated |
+| `deleted` | `{projectCodeName}-auth-service-dbevent-{tenantName}-deleted` | Tenant is deleted |
+
+**Note:** Replace `{tenantName}` with the actual tenant name (e.g., `client`, `store`, `workspace`).
+
+**Business API Event Topics (if `raiseApiEvent` is true):**
+
+Business APIs that have `raiseApiEvent` set to `true` (default) publish events to topics following the pattern:
+`{projectCodeName}-auth-service-{resource}-{actionPassiveForm}`
+
+Examples:
+- `login` API → `{projectCodeName}-auth-service-user-logged-in` (if resource is "user")
+- `registerUser` API → `{projectCodeName}-auth-service-user-registered` (if resource is "user")
+- `updateUserRole` API → `{projectCodeName}-auth-service-userrole-updated` (if resource is "userRole")
+
+**Note:** The exact topic name depends on the API's resource name and action passive form. Not all Business APIs necessarily publish events (depends on `raiseApiEvent` setting).
+
+---
+
+### Database Utility Functions
+
+For each data object in the auth service, Mindbricks generates database utility functions in the `dbLayer` module. These follow the standard naming convention:
+
+**Function Pattern:** `{operation}{ModelName}`
+
+#### User Data Object Functions
+
+```js
+const {
+  createUser,
+  createBulkUser,
+  getUserById,
+  getUserAggById,
+  getUserListByQuery,
+  getUserByQuery,
+  getUserStatsByQuery,
+  getIdListOfUserByField,
+  updateUserById,
+  updateUserByIdList,
+  updateUserByQuery,
+  deleteUserById,
+  deleteUserByQuery
+} = require("dbLayer");
+```
+
+#### UserGroup Data Object Functions (if `userGroupsActive` is true)
+
+```js
+const {
+  createUserGroup,
+  createBulkUserGroup,
+  getUserGroupById,
+  getUserGroupAggById,
+  getUserGroupListByQuery,
+  getUserGroupByQuery,
+  getUserGroupStatsByQuery,
+  getIdListOfUserGroupByField,
+  updateUserGroupById,
+  updateUserGroupByIdList,
+  updateUserGroupByQuery,
+  deleteUserGroupById,
+  deleteUserGroupByQuery
+} = require("dbLayer");
+```
+
+#### GivenPermission Data Object Functions (if `pbacIsActive` is true)
+
+```js
+const {
+  createGivenPermission,
+  createBulkGivenPermission,
+  getGivenPermissionById,
+  getGivenPermissionAggById,
+  getGivenPermissionListByQuery,
+  getGivenPermissionByQuery,
+  getGivenPermissionStatsByQuery,
+  getIdListOfGivenPermissionByField,
+  updateGivenPermissionById,
+  updateGivenPermissionByIdList,
+  updateGivenPermissionByQuery,
+  deleteGivenPermissionById,
+  deleteGivenPermissionByQuery
+} = require("dbLayer");
+```
+
+Similar functions are generated for `userGroupMember` and `tenant` data objects.
+
+**Note:** There are no database utility functions for roles, as roles are system constants, not data objects.
+
+---
+
+### Automatically Populated Initial Data
+
+#### Super Admin User
+
+On deployment, Mindbricks automatically creates a Super Admin user with:
+
+- **Email:** Value from `LoginDefUserSettings.superAdminEmail`
+- **Password:** Value from `LoginDefUserSettings.superAdminPassword`
+- **Role:** `superAdmin` (system role)
+- **Email Verified:** `true`
+- **Full Access:** Complete system access across all services and tenants
+
+#### Root Tenant (Multi-Tenant Only)
+
+When multi-tenancy is active, a root tenant is automatically created:
+
+- **Codename:** `"root"`
+- **Fullname:** `"Root"` (or as configured)
+- **Purpose:** SaaS-level operations and global administration
+
+---
+
+### Naming Conventions Summary
+
+**Data Objects:**
+- Service-scoped reference: `{serviceName}:{dataObjectName}` (e.g., `auth:user`)
+- Model name: PascalCase (e.g., `User`, `UserGroup`)
+
+**Business APIs:**
+- Name: camelCase (e.g., `createUser`, `listUsers`, `updateUserRole`, `registerUser`)
+- REST route prefix: `/{serviceName}-api/v{version}/` (e.g., `/auth-api/v1/`)
+- **Standard RESTful routes** (standard action + matching resource):
+  - Create/List: `/{serviceName}-api/v{version}/{pluralizedObjectName}` (e.g., `/auth-api/v1/users`)
+  - Get/Update/Delete: `/{serviceName}-api/v{version}/{pluralizedObjectName}/:{objectName}Id` (e.g., `/auth-api/v1/users/:userId`)
+- **Non-standard routes** (standard action + non-standard resource):
+  - Create/List: `/{serviceName}-api/v{version}/{resourceName}` (e.g., `/auth-api/v1/userrole`)
+  - Get/Update/Delete: `/{serviceName}-api/v{version}/{resourceName}/:{dataName}Id` (e.g., `/auth-api/v1/userrole/:userId`)
+- **Non-standard routes** (non-standard action):
+  - Create/List: `/{serviceName}-api/v{version}/{action}{resourceName}` (e.g., `/auth-api/v1/registeruser`)
+  - Get/Update/Delete: `/{serviceName}-api/v{version}/{action}{resourceName}/:{dataName}Id` (e.g., `/auth-api/v1/archiveprofile/:userId`)
+
+**Kafka Topics:**
+- **Business API Events** (when `raiseApiEvent` is true):
+  - Pattern: `{projectCodeName}-{serviceName}-service-{resource}-{actionPassiveForm}`
+  - Example: `babilshop-order-service-basket-cleared`
+- **Database Events** (for all data objects):
+  - Pattern: `{projectCodeName}-{serviceName}-service-dbevent-{dataObjectName}-{crudPassive}`
+  - Event types: `created`, `updated`, `deleted` only
+  - Example: `babilshop-order-service-dbevent-basketitem-deleted`
+
+**Database Utility Functions:**
+- Pattern: `{operation}{ModelName}` (e.g., `getUserById`, `createUser`, `listUsersByQuery`)
+- Available via: `require("dbLayer")`
+- Functions: `create${ModelName}`, `createBulk${ModelName}`, `get${ModelName}ById`, `get${ModelName}AggById`, `get${ModelName}ListByQuery`, `get${ModelName}ByQuery`, `get${ModelName}StatsByQuery`, `getIdListOf${ModelName}ByField`, `update${ModelName}ById`, `update${ModelName}ByIdList`, `update${ModelName}ByQuery`, `delete${ModelName}ById`, `delete${ModelName}ByQuery`
+
+---
+
+## Next Steps
+
+This document will be expanded to cover:
+
+1. **Custom Service Assets** — Data objects, Business APIs, and routes generated from your custom service definitions
+2. **Payment Service Assets** — Assets generated when Stripe order patterns are used
+3. **BFF Service Assets** — Assets generated for Backend-for-Frontend services
+4. **Notification Service Assets** — Assets generated for notification workflows
+5. **Bucket Service Assets** — Assets generated for file storage services
+
+Each section will follow the same structure: automatic data objects, Business APIs, REST routes, Kafka topics, database utility functions, and naming conventions.
+
