@@ -415,13 +415,18 @@ Mindbricks generates Kafka topics for two types of events:
 - `{dataObjectName}` is the data object name (lowercase)
 - `{crudPassive}` is the passive form of the CRUD operation (`created`, `updated`, `deleted`)
 
-#### User Data Object Topics
+#### User Data Object Topics (DB Events)
 
-| Event Type | Topic Name | Triggered When | Message Structure |
-|------------|------------|----------------|-------------------|
-| `created` | `auth.user.created` | User is created | `{ user: {...userData} }` |
-| `updated` | `auth.user.updated` | User is updated | `{ user: {...userData} }` |
-| `deleted` | `auth.user.deleted` | User is deleted | `{ user: {...userData} }` |
+| Event Type | Topic Name Pattern | Triggered When | Message Structure |
+|------------|-------------------|----------------|-------------------|
+| `created` | `{projectCodeName}-auth-service-dbevent-user-created` | User is created | `{ user: {...userData} }` |
+| `updated` | `{projectCodeName}-auth-service-dbevent-user-updated` | User is updated | `{ user: {...userData} }` |
+| `deleted` | `{projectCodeName}-auth-service-dbevent-user-deleted` | User is deleted | `{ user: {...userData} }` |
+
+**Example:** If project code name is `myproject`, the topics would be:
+- `myproject-auth-service-dbevent-user-created`
+- `myproject-auth-service-dbevent-user-updated`
+- `myproject-auth-service-dbevent-user-deleted`
 
 #### UserGroup Data Object Topics (DB Events, if `userGroupsActive` is true)
 
