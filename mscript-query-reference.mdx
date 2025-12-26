@@ -20,44 +20,56 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 {
   status: { $eq: "active" }
 }
-
-```
+````
 
 **Shorthand:** You can omit `$eq` for simple equality:
+
 ```javascript
 {
   status: "active"
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ status: "active" } or { status: { [Op.eq]: "active" } }
 
+```javascript
+{
+  status: "active"
+}
+// or
+{
+  status: { [Op.eq]: "active" }
+}
 ```
 
 **MongoDB**
-```javascript
-{ status: "active" }
 
+```javascript
+{
+  status: "active"
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ term: { status: { value: "active" } } }
 
+```javascript
+{
+  term: {
+    status: {
+      value: "active"
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   role: { $eq: "admin" }
 }
-
 ```
 
 ---
@@ -67,40 +79,57 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches values that are not equal to the specified value.
 
 **MScript Query:**
+
 ```javascript
 {
   status: { $ne: "deleted" }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ status: { [Op.ne]: "deleted" } }
 
+```javascript
+{
+  status: {
+    [Op.ne]: "deleted"
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ status: { $ne: "deleted" } }
 
+```javascript
+{
+  status: {
+    $ne: "deleted"
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { term: { status: { value: "deleted" } } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      term: {
+        status: {
+          value: "deleted"
+        }
+      }
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   isActive: { $ne: false }
 }
-
 ```
 
 ---
@@ -110,40 +139,53 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches values that are greater than the specified value.
 
 **MScript Query:**
+
 ```javascript
 {
   age: { $gt: 18 }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ age: { [Op.gt]: 18 } }
 
+```javascript
+{
+  age: {
+    [Op.gt]: 18
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ age: { $gt: 18 } }
 
+```javascript
+{
+  age: {
+    $gt: 18
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ range: { age: { gt: 18 } } }
 
-```
-
-
-**Example:**
 ```javascript
 {
-  price: { $gt: 100.50 }
+  range: {
+    age: {
+      gt: 18
+    }
+  }
 }
+```
 
+**Example:**
+
+```javascript
+{
+  price: { $gt: 100.5 }
+}
 ```
 
 ---
@@ -153,40 +195,53 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches values that are greater than or equal to the specified value.
 
 **MScript Query:**
+
 ```javascript
 {
   age: { $gte: 18 }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ age: { [Op.gte]: 18 } }
 
+```javascript
+{
+  age: {
+    [Op.gte]: 18
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ age: { $gte: 18 } }
 
+```javascript
+{
+  age: {
+    $gte: 18
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ range: { age: { gte: 18 } } }
 
+```javascript
+{
+  range: {
+    age: {
+      gte: 18
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   minimumOrder: { $gte: 50 }
 }
-
 ```
 
 ---
@@ -196,40 +251,53 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches values that are less than the specified value.
 
 **MScript Query:**
+
 ```javascript
 {
   age: { $lt: 65 }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ age: { [Op.lt]: 65 } }
 
+```javascript
+{
+  age: {
+    [Op.lt]: 65
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ age: { $lt: 65 } }
 
+```javascript
+{
+  age: {
+    $lt: 65
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ range: { age: { lt: 65 } } }
 
+```javascript
+{
+  range: {
+    age: {
+      lt: 65
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   discount: { $lt: 0.5 }
 }
-
 ```
 
 ---
@@ -239,40 +307,53 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches values that are less than or equal to the specified value.
 
 **MScript Query:**
+
 ```javascript
 {
   age: { $lte: 65 }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ age: { [Op.lte]: 65 } }
 
+```javascript
+{
+  age: {
+    [Op.lte]: 65
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ age: { $lte: 65 } }
 
+```javascript
+{
+  age: {
+    $lte: 65
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ range: { age: { lte: 65 } } }
 
+```javascript
+{
+  range: {
+    age: {
+      lte: 65
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   maxPrice: { $lte: 1000 }
 }
-
 ```
 
 ---
@@ -282,48 +363,59 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches any of the values specified in an array.
 
 **MScript Query:**
+
 ```javascript
 {
   role: { $in: ["admin", "user", "moderator"] }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ role: { [Op.in]: ["admin", "user", "moderator"] } }
 
+```javascript
+{
+  role: {
+    [Op.in]: ["admin", "user", "moderator"]
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ role: { $in: ["admin", "user", "moderator"] } }
 
+```javascript
+{
+  role: {
+    $in: ["admin", "user", "moderator"]
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ terms: { role: ["admin", "user", "moderator"] } }
 
+```javascript
+{
+  terms: {
+    role: ["admin", "user", "moderator"]
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   status: { $in: ["pending", "processing", "completed"] }
 }
-
 ```
 
 **Note:** You can also use array shorthand:
+
 ```javascript
 {
   role: ["admin", "user"]
 }
-
 ```
 
 ---
@@ -333,40 +425,55 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches none of the values specified in an array.
 
 **MScript Query:**
+
 ```javascript
 {
   role: { $nin: ["guest", "banned"] }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ role: { [Op.notIn]: ["guest", "banned"] } }
 
+```javascript
+{
+  role: {
+    [Op.notIn]: ["guest", "banned"]
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ role: { $nin: ["guest", "banned"] } }
 
+```javascript
+{
+  role: {
+    $nin: ["guest", "banned"]
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { terms: { role: ["guest", "banned"] } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      terms: {
+        role: ["guest", "banned"]
+      }
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   category: { $nin: ["deleted", "archived"] }
 }
-
 ```
 
 ---
@@ -378,42 +485,52 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches strings using SQL LIKE pattern matching (case-sensitive). Use `%` as wildcard.
 
 **MScript Query:**
+
 ```javascript
 {
   name: { $like: "%john%" }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ name: { [Op.like]: "%john%" } }
 
+```javascript
+{
+  name: {
+    [Op.like]: "%john%"
+  }
+}
 ```
 
 **MongoDB** (Note: MongoDB regex is case-insensitive by default)
+
 ```javascript
-{ name: { $regex: /john/, $options: "i" } }
-
+{
+  name: {
+    $regex: /john/,
+    $options: "i"
+  }
+}
 ```
-
 
 **Elasticsearch**
-```javascript
-{ wildcard: { name: "*john*" } }
 
+```javascript
+{
+  wildcard: {
+    name: "*john*"
+  }
+}
 ```
 
-
-
 **Example:**
+
 ```javascript
 {
   email: { $like: "%@gmail.com" }
 }
-
 ```
 
 ---
@@ -423,40 +540,54 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches strings using SQL LIKE pattern matching (case-insensitive). Use `%` as wildcard.
 
 **MScript Query:**
+
 ```javascript
 {
   name: { $ilike: "%john%" }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ name: { [Op.iLike]: "%john%" } }
 
+```javascript
+{
+  name: {
+    [Op.iLike]: "%john%"
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ name: { $regex: /john/i } }
 
+```javascript
+{
+  name: {
+    $regex: /john/i
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ wildcard: { name: { value: "*john*", case_insensitive: true } } }
 
+```javascript
+{
+  wildcard: {
+    name: {
+      value: "*john*",
+      case_insensitive: true
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   company: { $ilike: "%tech%" }
 }
-
 ```
 
 ---
@@ -466,40 +597,57 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches strings that do not match the SQL LIKE pattern (case-sensitive).
 
 **MScript Query:**
+
 ```javascript
 {
   name: { $nlike: "%bot%" }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ name: { [Op.notLike]: "%bot%" } }
 
+```javascript
+{
+  name: {
+    [Op.notLike]: "%bot%"
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ name: { $not: { $regex: /bot/ } } }
 
+```javascript
+{
+  name: {
+    $not: {
+      $regex: /bot/
+    }
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { wildcard: { name: "*bot*" } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      wildcard: {
+        name: "*bot*"
+      }
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   email: { $nlike: "%test%" }
 }
-
 ```
 
 ---
@@ -509,40 +657,60 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches strings that do not match the SQL LIKE pattern (case-insensitive).
 
 **MScript Query:**
+
 ```javascript
 {
   name: { $nilike: "%bot%" }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ name: { [Op.notILike]: "%bot%" } }
 
+```javascript
+{
+  name: {
+    [Op.notILike]: "%bot%"
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ name: { $not: { $regex: /bot/i } } }
 
+```javascript
+{
+  name: {
+    $not: {
+      $regex: /bot/i
+    }
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { wildcard: { name: { value: "*bot*", case_insensitive: true } } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      wildcard: {
+        name: {
+          value: "*bot*",
+          case_insensitive: true
+        }
+      }
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   domain: { $nilike: "%spam%" }
 }
-
 ```
 
 ---
@@ -552,40 +720,51 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches strings using regular expression pattern.
 
 **MScript Query:**
+
 ```javascript
 {
   description: { $match: "sale.*discount" }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ description: { [Op.match]: "sale.*discount" } }
 
+```javascript
+{
+  description: {
+    [Op.match]: "sale.*discount"
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ description: { $regex: "sale.*discount" } }
 
+```javascript
+{
+  description: {
+    $regex: "sale.*discount"
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ match: { description: "sale.*discount" } }
 
+```javascript
+{
+  match: {
+    description: "sale.*discount"
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   phone: { $match: "^\\+1[0-9]{10}$" }
 }
-
 ```
 
 ---
@@ -595,40 +774,57 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches strings that do not match the regular expression pattern.
 
 **MScript Query:**
+
 ```javascript
 {
   description: { $nmatch: "error.*failed" }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ description: { [Op.notMatch]: "error.*failed" } }
 
+```javascript
+{
+  description: {
+    [Op.notMatch]: "error.*failed"
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ description: { $not: { $regex: "error.*failed" } } }
 
+```javascript
+{
+  description: {
+    $not: {
+      $regex: "error.*failed"
+    }
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { match: { description: "error.*failed" } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      match: {
+        description: "error.*failed"
+      }
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   code: { $nmatch: "^ERROR" }
 }
-
 ```
 
 ---
@@ -640,40 +836,55 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches values that fall within the specified range (inclusive).
 
 **MScript Query:**
+
 ```javascript
 {
   price: { $between: [10, 100] }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ price: { [Op.between]: [10, 100] } }
 
+```javascript
+{
+  price: {
+    [Op.between]: [10, 100]
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ price: { $gte: 10, $lte: 100 } }
 
+```javascript
+{
+  price: {
+    $gte: 10,
+    $lte: 100
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ range: { price: { gte: 10, lte: 100 } } }
 
+```javascript
+{
+  range: {
+    price: {
+      gte: 10,
+      lte: 100
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   age: { $between: [18, 65] }
 }
-
 ```
 
 ---
@@ -683,40 +894,59 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches values that fall outside the specified range.
 
 **MScript Query:**
+
 ```javascript
 {
   price: { $nbetween: [10, 100] }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ price: { [Op.notBetween]: [10, 100] } }
 
+```javascript
+{
+  price: {
+    [Op.notBetween]: [10, 100]
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ $or: [{ price: { $lt: 10 } }, { price: { $gt: 100 } }] }
 
+```javascript
+{
+  $or: [
+    { price: { $lt: 10 } },
+    { price: { $gt: 100 } }
+  ]
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { range: { price: { gte: 10, lte: 100 } } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      range: {
+        price: {
+          gte: 10,
+          lte: 100
+        }
+      }
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   score: { $nbetween: [0, 100] }
 }
-
 ```
 
 ---
@@ -726,40 +956,53 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches fields that are null or do not exist.
 
 **MScript Query:**
+
 ```javascript
 {
   deletedAt: { $isnull: true }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ deletedAt: { [Op.is]: null } }
 
+```javascript
+{
+  deletedAt: {
+    [Op.is]: null
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ deletedAt: null }
 
+```javascript
+{
+  deletedAt: null
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { exists: { field: "deletedAt" } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      exists: {
+        field: "deletedAt"
+      }
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   optionalField: { $isnull: true }
 }
-
 ```
 
 ---
@@ -769,40 +1012,51 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches fields that are not null and exist.
 
 **MScript Query:**
+
 ```javascript
 {
   deletedAt: { $notnull: true }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ deletedAt: { [Op.not]: null } }
 
+```javascript
+{
+  deletedAt: {
+    [Op.not]: null
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ deletedAt: { $ne: null } }
 
+```javascript
+{
+  deletedAt: {
+    $ne: null
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ exists: { field: "deletedAt" } }
 
+```javascript
+{
+  exists: {
+    field: "deletedAt"
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   email: { $notnull: true }
 }
-
 ```
 
 ---
@@ -814,43 +1068,53 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches arrays that contain the specified value.
 
 **MScript Query:**
+
 ```javascript
 {
   tags: { $contains: "news" }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize** (PostgreSQL array operator)
+
 ```javascript
-{ tags: { [Op.contains]: ["news"] } }
-
+{
+  tags: {
+    [Op.contains]: ["news"]
+  }
+}
 ```
-
 
 **MongoDB**
+
 ```javascript
-{ tags: { $elemMatch: { $eq: "news" } } }
-
+{
+  tags: {
+    $elemMatch: {
+      $eq: "news"
+    }
+  }
+}
 ```
-
 
 **Elasticsearch**
-```javascript
-{ match: { tags: "news" } }
 
+```javascript
+{
+  match: {
+    tags: "news"
+  }
+}
 ```
 
-
-
 **Example:**
+
 ```javascript
 {
   categories: { $contains: "technology" }
 }
-
 ```
 
 ---
@@ -860,40 +1124,59 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches arrays that do not contain the specified value.
 
 **MScript Query:**
+
 ```javascript
 {
   tags: { $ncontains: "draft" }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ tags: { [Op.notContains]: ["draft"] } }
 
+```javascript
+{
+  tags: {
+    [Op.notContains]: ["draft"]
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ tags: { $not: { $elemMatch: { $eq: "draft" } } } }
 
+```javascript
+{
+  tags: {
+    $not: {
+      $elemMatch: {
+        $eq: "draft"
+      }
+    }
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { match: { tags: "draft" } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      match: {
+        tags: "draft"
+      }
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   excludedTags: { $ncontains: "archived" }
 }
-
 ```
 
 ---
@@ -903,43 +1186,53 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches arrays that have at least one element in common with the specified array.
 
 **MScript Query:**
+
 ```javascript
 {
   tags: { $overlap: ["tech", "ai"] }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize** (PostgreSQL array operator)
+
 ```javascript
-{ tags: { [Op.overlap]: ["tech", "ai"] } }
-
+{
+  tags: {
+    [Op.overlap]: ["tech", "ai"]
+  }
+}
 ```
-
 
 **MongoDB**
+
 ```javascript
-{ tags: { $elemMatch: { $in: ["tech", "ai"] } } }
-
+{
+  tags: {
+    $elemMatch: {
+      $in: ["tech", "ai"]
+    }
+  }
+}
 ```
-
 
 **Elasticsearch**
-```javascript
-{ match: { tags: ["tech", "ai"] } }
 
+```javascript
+{
+  match: {
+    tags: ["tech", "ai"]
+  }
+}
 ```
 
-
-
 **Example:**
+
 ```javascript
 {
   skills: { $overlap: ["javascript", "python"] }
 }
-
 ```
 
 ---
@@ -949,40 +1242,61 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches arrays that have no elements in common with the specified array.
 
 **MScript Query:**
+
 ```javascript
 {
   tags: { $noverlap: ["old", "deprecated"] }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ [Op.not]: { tags: { [Op.overlap]: ["old", "deprecated"] } } }
 
+```javascript
+{
+  [Op.not]: {
+    tags: {
+      [Op.overlap]: ["old", "deprecated"]
+    }
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ tags: { $not: { $elemMatch: { $in: ["old", "deprecated"] } } } }
 
+```javascript
+{
+  tags: {
+    $not: {
+      $elemMatch: {
+        $in: ["old", "deprecated"]
+      }
+    }
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { match: { tags: ["old", "deprecated"] } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      match: {
+        tags: ["old", "deprecated"]
+      }
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   categories: { $noverlap: ["deleted", "archived"] }
 }
-
 ```
 
 ---
@@ -992,40 +1306,51 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches strings that start with the specified value.
 
 **MScript Query:**
+
 ```javascript
 {
   name: { $starts: "Mr." }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ name: { [Op.startsWith]: "Mr." } }
 
+```javascript
+{
+  name: {
+    [Op.startsWith]: "Mr."
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ name: { $regex: /^Mr\./ } }
 
+```javascript
+{
+  name: {
+    $regex: /^Mr\./
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ prefix: { name: "Mr." } }
 
+```javascript
+{
+  prefix: {
+    name: "Mr."
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   email: { $starts: "admin@" }
 }
-
 ```
 
 ---
@@ -1035,40 +1360,57 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches strings that do not start with the specified value.
 
 **MScript Query:**
+
 ```javascript
 {
   name: { $nstarts: "Ms." }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ name: { [Op.notStartsWith]: "Ms." } }
 
+```javascript
+{
+  name: {
+    [Op.notStartsWith]: "Ms."
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ name: { $not: { $regex: /^Ms\./ } } }
 
+```javascript
+{
+  name: {
+    $not: {
+      $regex: /^Ms\./
+    }
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { prefix: { name: "Ms." } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      prefix: {
+        name: "Ms."
+      }
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   path: { $nstarts: "/admin" }
 }
-
 ```
 
 ---
@@ -1078,40 +1420,51 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches strings that end with the specified value.
 
 **MScript Query:**
+
 ```javascript
 {
   email: { $ends: "@gmail.com" }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ email: { [Op.endsWith]: "@gmail.com" } }
 
+```javascript
+{
+  email: {
+    [Op.endsWith]: "@gmail.com"
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ email: { $regex: /@gmail\.com$/ } }
 
+```javascript
+{
+  email: {
+    $regex: /@gmail\.com$/
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ wildcard: { email: "*@gmail.com" } }
 
+```javascript
+{
+  wildcard: {
+    email: "*@gmail.com"
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   filename: { $ends: ".pdf" }
 }
-
 ```
 
 ---
@@ -1121,40 +1474,57 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Matches strings that do not end with the specified value.
 
 **MScript Query:**
+
 ```javascript
 {
   email: { $nends: "@yahoo.com" }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ email: { [Op.notEndsWith]: "@yahoo.com" } }
 
+```javascript
+{
+  email: {
+    [Op.notEndsWith]: "@yahoo.com"
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ email: { $not: { $regex: /@yahoo\.com$/ } } }
 
+```javascript
+{
+  email: {
+    $not: {
+      $regex: /@yahoo\.com$/
+    }
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { wildcard: { email: "*@yahoo.com" } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      wildcard: {
+        email: "*@yahoo.com"
+      }
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   url: { $nends: ".exe" }
 }
-
 ```
 
 ---
@@ -1166,6 +1536,7 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
 **Description:** Combines multiple conditions with AND logic. All conditions must be true.
 
 **MScript Query:**
+
 ```javascript
 {
   $and: [
@@ -1173,31 +1544,67 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
     { age: { $gte: 18 } }
   ]
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ [Op.and]: [{ status: "active" }, { age: { [Op.gte]: 18 } }] }
 
+```javascript
+{
+  [Op.and]: [
+    { status: "active" },
+    {
+      age: {
+        [Op.gte]: 18
+      }
+    }
+  ]
+}
 ```
 
 **MongoDB**
-```javascript
-{ $and: [{ status: "active" }, { age: { $gte: 18 } }] }
 
+```javascript
+{
+  $and: [
+    { status: "active" },
+    {
+      age: {
+        $gte: 18
+      }
+    }
+  ]
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must: [{ term: { status: { value: "active" } } }, { range: { age: { gte: 18 } } }] } }
 
+```javascript
+{
+  bool: {
+    must: [
+      {
+        term: {
+          status: {
+            value: "active"
+          }
+        }
+      },
+      {
+        range: {
+          age: {
+            gte: 18
+          }
+        }
+      }
+    ]
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   $and: [
@@ -1206,17 +1613,17 @@ MScript Query provides a unified query syntax that works across MongoDB, Elastic
     { tags: { $contains: "featured" } }
   ]
 }
-
 ```
 
 **Note:** Multiple fields at the same level are automatically combined with `$and`:
+
 ```javascript
 {
   status: "active",
   age: { $gte: 18 }
 }
-
 ```
+
 This is equivalent to the `$and` example above.
 
 ---
@@ -1226,6 +1633,7 @@ This is equivalent to the `$and` example above.
 **Description:** Combines multiple conditions with OR logic. At least one condition must be true.
 
 **MScript Query:**
+
 ```javascript
 {
   $or: [
@@ -1233,31 +1641,59 @@ This is equivalent to the `$and` example above.
     { status: "processing" }
   ]
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ [Op.or]: [{ status: "pending" }, { status: "processing" }] }
 
+```javascript
+{
+  [Op.or]: [
+    { status: "pending" },
+    { status: "processing" }
+  ]
+}
 ```
 
 **MongoDB**
-```javascript
-{ $or: [{ status: "pending" }, { status: "processing" }] }
 
+```javascript
+{
+  $or: [
+    { status: "pending" },
+    { status: "processing" }
+  ]
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { should: [{ term: { status: { value: "pending" } } }, { term: { status: { value: "processing" } } }] } }
 
+```javascript
+{
+  bool: {
+    should: [
+      {
+        term: {
+          status: {
+            value: "pending"
+          }
+        }
+      },
+      {
+        term: {
+          status: {
+            value: "processing"
+          }
+        }
+      }
+    ]
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   $or: [
@@ -1265,7 +1701,6 @@ This is equivalent to the `$and` example above.
     { likes: { $gte: 500 } }
   ]
 }
-
 ```
 
 ---
@@ -1275,44 +1710,61 @@ This is equivalent to the `$and` example above.
 **Description:** Negates the specified condition.
 
 **MScript Query:**
+
 ```javascript
 {
   $not: {
     status: "deleted"
   }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ [Op.not]: { status: "deleted" } }
 
+```javascript
+{
+  [Op.not]: {
+    status: "deleted"
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ $not: { status: "deleted" } }
 
+```javascript
+{
+  $not: {
+    status: "deleted"
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { term: { status: { value: "deleted" } } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      term: {
+        status: {
+          value: "deleted"
+        }
+      }
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   $not: {
     role: { $in: ["guest", "banned"] }
   }
 }
-
 ```
 
 ---
@@ -1322,6 +1774,7 @@ This is equivalent to the `$and` example above.
 **Description:** Matches documents where none of the specified conditions are true.
 
 **MScript Query:**
+
 ```javascript
 {
   $nor: [
@@ -1329,31 +1782,59 @@ This is equivalent to the `$and` example above.
     { isArchived: true }
   ]
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ [Op.not]: [{ status: "deleted" }, { isArchived: true }] }
 
+```javascript
+{
+  [Op.not]: [
+    { status: "deleted" },
+    { isArchived: true }
+  ]
+}
 ```
 
 **MongoDB**
-```javascript
-{ $nor: [{ status: "deleted" }, { isArchived: true }] }
 
+```javascript
+{
+  $nor: [
+    { status: "deleted" },
+    { isArchived: true }
+  ]
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: [{ term: { status: { value: "deleted" } } }, { term: { isArchived: { value: true } } }] } }
 
+```javascript
+{
+  bool: {
+    must_not: [
+      {
+        term: {
+          status: {
+            value: "deleted"
+          }
+        }
+      },
+      {
+        term: {
+          isArchived: {
+            value: true
+          }
+        }
+      }
+    ]
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   $nor: [
@@ -1361,7 +1842,6 @@ This is equivalent to the `$and` example above.
     { isBanned: true }
   ]
 }
-
 ```
 
 ---
@@ -1375,43 +1855,51 @@ These operators are primarily designed for MongoDB but may have limited support 
 **Description:** Matches documents that have the specified field (MongoDB-specific).
 
 **MScript Query:**
+
 ```javascript
 {
   optionalField: { $exists: true }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize** (similar behavior)
+
 ```javascript
-{ optionalField: { [Op.not]: null } }
-
+{
+  optionalField: {
+    [Op.not]: null
+  }
+}
 ```
-
 
 **MongoDB**
+
 ```javascript
-{ optionalField: { $exists: true } }
-
+{
+  optionalField: {
+    $exists: true
+  }
+}
 ```
-
 
 **Elasticsearch**
-```javascript
-{ exists: { field: "optionalField" } }
 
+```javascript
+{
+  exists: {
+    field: "optionalField"
+  }
+}
 ```
 
-
-
 **Example:**
+
 ```javascript
 {
   metadata: { $exists: true }
 }
-
 ```
 
 ---
@@ -1421,43 +1909,55 @@ These operators are primarily designed for MongoDB but may have limited support 
 **Description:** Matches documents that do not have the specified field (MongoDB-specific).
 
 **MScript Query:**
+
 ```javascript
 {
   deletedAt: { $nexists: true }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize** (similar behavior)
+
 ```javascript
-{ deletedAt: { [Op.is]: null } }
-
+{
+  deletedAt: {
+    [Op.is]: null
+  }
+}
 ```
-
 
 **MongoDB**
+
 ```javascript
-{ deletedAt: { $exists: false } }
-
+{
+  deletedAt: {
+    $exists: false
+  }
+}
 ```
-
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { exists: { field: "deletedAt" } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      exists: {
+        field: "deletedAt"
+      }
+    }
+  }
+}
 ```
 
-
-
 **Example:**
+
 ```javascript
 {
   tempField: { $nexists: true }
 }
-
 ```
 
 ---
@@ -1467,43 +1967,54 @@ These operators are primarily designed for MongoDB but may have limited support 
 **Description:** Matches arrays that contain all of the specified values (MongoDB-specific).
 
 **MScript Query:**
+
 ```javascript
 {
   tags: { $all: ["tech", "ai", "machine-learning"] }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize** (PostgreSQL)
+
 ```javascript
-{ tags: { [Op.contains]: ["tech", "ai", "machine-learning"] } }
-
+{
+  tags: {
+    [Op.contains]: ["tech", "ai", "machine-learning"]
+  }
+}
 ```
-
 
 **MongoDB**
+
 ```javascript
-{ tags: { $all: ["tech", "ai", "machine-learning"] } }
-
+{
+  tags: {
+    $all: ["tech", "ai", "machine-learning"]
+  }
+}
 ```
-
 
 **Elasticsearch**
-```javascript
-{ match: { tags: { query: "tech ai machine-learning", operator: "and" } } }
 
+```javascript
+{
+  match: {
+    tags: {
+      query: "tech ai machine-learning",
+      operator: "and"
+    }
+  }
+}
 ```
 
-
-
 **Example:**
+
 ```javascript
 {
   requiredSkills: { $all: ["javascript", "react", "nodejs"] }
 }
-
 ```
 
 ---
@@ -1513,40 +2024,62 @@ These operators are primarily designed for MongoDB but may have limited support 
 **Description:** Matches arrays that do not contain all of the specified values (MongoDB-specific).
 
 **MScript Query:**
+
 ```javascript
 {
   tags: { $notall: ["premium", "featured"] }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ [Op.not]: { tags: { [Op.contains]: ["premium", "featured"] } } }
 
+```javascript
+{
+  [Op.not]: {
+    tags: {
+      [Op.contains]: ["premium", "featured"]
+    }
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ tags: { $not: { $all: ["premium", "featured"] } } }
 
+```javascript
+{
+  tags: {
+    $not: {
+      $all: ["premium", "featured"]
+    }
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { match: { tags: { query: "premium featured", operator: "and" } } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      match: {
+        tags: {
+          query: "premium featured",
+          operator: "and"
+        }
+      }
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   skills: { $notall: ["expert", "certified"] }
 }
-
 ```
 
 ---
@@ -1556,43 +2089,52 @@ These operators are primarily designed for MongoDB but may have limited support 
 **Description:** Matches arrays with exactly the specified number of elements (MongoDB-specific).
 
 **MScript Query:**
+
 ```javascript
 {
   tags: { $size: 3 }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize** (PostgreSQL)
+
 ```javascript
-Sequelize.where(Sequelize.fn('array_length', Sequelize.col('tags'), 1), 3)
-
+Sequelize.where(
+  Sequelize.fn("array_length", Sequelize.col("tags"), 1),
+  3
+)
 ```
-
 
 **MongoDB**
+
 ```javascript
-{ tags: { $size: 3 } }
-
+{
+  tags: {
+    $size: 3
+  }
+}
 ```
-
 
 **Elasticsearch**
-```javascript
-{ script: { script: { source: "doc['tags'].size() == 3" } } }
 
+```javascript
+{
+  script: {
+    script: {
+      source: "doc['tags'].size() == 3"
+    }
+  }
+}
 ```
 
-
-
 **Example:**
+
 ```javascript
 {
   items: { $size: 5 }
 }
-
 ```
 
 ---
@@ -1602,40 +2144,58 @@ Sequelize.where(Sequelize.fn('array_length', Sequelize.col('tags'), 1), 3)
 **Description:** Matches arrays that do not have the specified number of elements (MongoDB-specific).
 
 **MScript Query:**
+
 ```javascript
 {
   tags: { $notsize: 0 }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-Sequelize.where(Sequelize.fn('array_length', Sequelize.col('tags'), 1), { [Op.ne]: 0 })
 
+```javascript
+Sequelize.where(
+  Sequelize.fn("array_length", Sequelize.col("tags"), 1),
+  { [Op.ne]: 0 }
+)
 ```
 
 **MongoDB**
-```javascript
-{ tags: { $not: { $size: 0 } } }
 
+```javascript
+{
+  tags: {
+    $not: {
+      $size: 0
+    }
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { script: { script: { source: "doc['tags'].size() == 0" } } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      script: {
+        script: {
+          source: "doc['tags'].size() == 0"
+        }
+      }
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   items: { $notsize: 1 }
 }
-
 ```
 
 ---
@@ -1645,43 +2205,53 @@ Sequelize.where(Sequelize.fn('array_length', Sequelize.col('tags'), 1), { [Op.ne
 **Description:** Matches arrays that contain any of the specified values (MongoDB-specific, similar to `$overlap`).
 
 **MScript Query:**
+
 ```javascript
 {
   tags: { $any: ["tech", "ai"] }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize** (Note: `Op.overlap` is `Sequelize.Op.overlap`, PostgreSQL)
+
 ```javascript
-{ tags: { Op.overlap: ["tech", "ai"] } }
-
+{
+  tags: {
+    [Op.overlap]: ["tech", "ai"]
+  }
+}
 ```
-
 
 **MongoDB**
+
 ```javascript
-{ tags: { $elemMatch: { $in: ["tech", "ai"] } } }
-
+{
+  tags: {
+    $elemMatch: {
+      $in: ["tech", "ai"]
+    }
+  }
+}
 ```
-
 
 **Elasticsearch**
-```javascript
-{ match: { tags: ["tech", "ai"] } }
 
+```javascript
+{
+  match: {
+    tags: ["tech", "ai"]
+  }
+}
 ```
 
-
-
 **Example:**
+
 ```javascript
 {
   categories: { $any: ["news", "blog", "article"] }
 }
-
 ```
 
 ---
@@ -1691,40 +2261,61 @@ Sequelize.where(Sequelize.fn('array_length', Sequelize.col('tags'), 1), { [Op.ne
 **Description:** Matches arrays that do not contain any of the specified values (MongoDB-specific).
 
 **MScript Query:**
+
 ```javascript
 {
   tags: { $notany: ["deleted", "archived"] }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-{ [Op.not]: { tags: { [Op.overlap]: ["deleted", "archived"] } } }
 
+```javascript
+{
+  [Op.not]: {
+    tags: {
+      [Op.overlap]: ["deleted", "archived"]
+    }
+  }
+}
 ```
 
 **MongoDB**
-```javascript
-{ tags: { $not: { $elemMatch: { $in: ["deleted", "archived"] } } } }
 
+```javascript
+{
+  tags: {
+    $not: {
+      $elemMatch: {
+        $in: ["deleted", "archived"]
+      }
+    }
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ bool: { must_not: { match: { tags: ["deleted", "archived"] } } } }
 
+```javascript
+{
+  bool: {
+    must_not: {
+      match: {
+        tags: ["deleted", "archived"]
+      }
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   excludedCategories: { $notany: ["spam", "test"] }
 }
-
 ```
 
 ---
@@ -1736,6 +2327,7 @@ Sequelize.where(Sequelize.fn('array_length', Sequelize.col('tags'), 1), { [Op.ne
 **Description:** Finds documents near a geographic point within a specified distance.
 
 **MScript Query:**
+
 ```javascript
 {
   location: {
@@ -1749,31 +2341,59 @@ Sequelize.where(Sequelize.fn('array_length', Sequelize.col('tags'), 1), { [Op.ne
     }
   }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-Sequelize.where(Sequelize.fn('ST_DWithin', Sequelize.col('location'), Sequelize.literal('ST_SetSRID(ST_MakePoint(-122.4194, 37.7749),4326)::geography'), 5000), true)
 
+```javascript
+Sequelize.where(
+  Sequelize.fn(
+    "ST_DWithin",
+    Sequelize.col("location"),
+    Sequelize.literal(
+      "ST_SetSRID(ST_MakePoint(-122.4194, 37.7749),4326)::geography"
+    ),
+    5000
+  ),
+  true
+)
 ```
 
 **MongoDB**
-```javascript
-{ location: { $nearSphere: { $geometry: { type: "Point", coordinates: [-122.4194, 37.7749] }, $maxDistance: 5000, $minDistance: 100 } } }
 
+```javascript
+{
+  location: {
+    $nearSphere: {
+      $geometry: {
+        type: "Point",
+        coordinates: [-122.4194, 37.7749]
+      },
+      $maxDistance: 5000,
+      $minDistance: 100
+    }
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ geo_distance: { distance: "5000m", location: { lon: -122.4194, lat: 37.7749 } } }
 
+```javascript
+{
+  geo_distance: {
+    distance: "5000m",
+    location: {
+      lon: -122.4194,
+      lat: 37.7749
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   coordinates: {
@@ -1786,13 +2406,13 @@ Sequelize.where(Sequelize.fn('ST_DWithin', Sequelize.col('location'), Sequelize.
     }
   }
 }
-
 ```
 
-**Note:** 
-- `point` must be a GeoJSON Point object with `type: "Point"` and `coordinates: [longitude, latitude]`
-- `maxDistance` is required and specified in meters
-- `minDistance` is optional and specified in meters
+**Note:**
+
+* `point` must be a GeoJSON Point object with `type: "Point"` and `coordinates: [longitude, latitude]`
+* `maxDistance` is required and specified in meters
+* `minDistance` is optional and specified in meters
 
 ---
 
@@ -1801,6 +2421,7 @@ Sequelize.where(Sequelize.fn('ST_DWithin', Sequelize.col('location'), Sequelize.
 **Description:** Finds documents within a geographic boundary (polygon or bounding box).
 
 **MScript Query (with bounding box):**
+
 ```javascript
 {
   location: {
@@ -1809,10 +2430,10 @@ Sequelize.where(Sequelize.fn('ST_DWithin', Sequelize.col('location'), Sequelize.
     }
   }
 }
-
 ```
 
 **MScript Query (with GeoJSON shape):**
+
 ```javascript
 {
   location: {
@@ -1830,30 +2451,87 @@ Sequelize.where(Sequelize.fn('ST_DWithin', Sequelize.col('location'), Sequelize.
     }
   }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-Sequelize.where(Sequelize.fn('ST_Within', Sequelize.literal('("location")::geometry'), Sequelize.literal('ST_MakeEnvelope(-122.5, 37.7, -122.3, 37.8, 4326)')), true)
 
+```javascript
+Sequelize.where(
+  Sequelize.fn(
+    "ST_Within",
+    Sequelize.literal('("location")::geometry'),
+    Sequelize.literal("ST_MakeEnvelope(-122.5, 37.7, -122.3, 37.8, 4326)")
+  ),
+  true
+)
 ```
 
 **MongoDB**
-```javascript
-{ location: { $geoWithin: { $box: [[-122.5, 37.7], [-122.3, 37.8]] } } } or { location: { $geoWithin: { $geometry: { type: "Polygon", coordinates: [...] } } } }
 
+```javascript
+// Bounding box
+{
+  location: {
+    $geoWithin: {
+      $box: [
+        [-122.5, 37.7],
+        [-122.3, 37.8]
+      ]
+    }
+  }
+}
+
+// GeoJSON polygon (placeholder coordinates)
+{
+  location: {
+    $geoWithin: {
+      $geometry: {
+        type: "Polygon",
+        coordinates: [
+          /* ... */
+        ]
+      }
+    }
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ geo_bounding_box: { location: { top_left: { lon: -122.5, lat: 37.8 }, bottom_right: { lon: -122.3, lat: 37.7 } } } } or { geo_polygon: { location: { points: [{ lon: -122.5, lat: 37.7 }, ...] } } }
 
+```javascript
+// Bounding box
+{
+  geo_bounding_box: {
+    location: {
+      top_left: {
+        lon: -122.5,
+        lat: 37.8
+      },
+      bottom_right: {
+        lon: -122.3,
+        lat: 37.7
+      }
+    }
+  }
+}
+
+// Polygon (placeholder points)
+{
+  geo_polygon: {
+    location: {
+      points: [
+        { lon: -122.5, lat: 37.7 }
+        /* ... */
+      ]
+    }
+  }
+}
 ```
 
 **Example:**
+
 ```javascript
 {
   coordinates: {
@@ -1862,12 +2540,12 @@ Sequelize.where(Sequelize.fn('ST_Within', Sequelize.literal('("location")::geome
     }
   }
 }
-
 ```
 
 **Note:**
-- `bbox` format: `[minLon, minLat, maxLon, maxLat]`
-- `shape` must be a valid GeoJSON Polygon or MultiPolygon
+
+* `bbox` format: `[minLon, minLat, maxLon, maxLat]`
+* `shape` must be a valid GeoJSON Polygon or MultiPolygon
 
 ---
 
@@ -1876,6 +2554,7 @@ Sequelize.where(Sequelize.fn('ST_Within', Sequelize.literal('("location")::geome
 **Description:** Finds documents where the field (polygon/area) contains the specified point or shape.
 
 **MScript Query:**
+
 ```javascript
 {
   serviceArea: {
@@ -1887,31 +2566,58 @@ Sequelize.where(Sequelize.fn('ST_Within', Sequelize.literal('("location")::geome
     }
   }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-Sequelize.where(Sequelize.fn('ST_Contains', Sequelize.literal('("serviceArea")::geometry'), Sequelize.literal('ST_SetSRID(ST_GeomFromGeoJSON(\'{type:"Point",coordinates:[-122.4194,37.7749]}\'),4326)')), true)
 
+```javascript
+Sequelize.where(
+  Sequelize.fn(
+    "ST_Contains",
+    Sequelize.literal('("serviceArea")::geometry'),
+    Sequelize.literal(
+      "ST_SetSRID(ST_GeomFromGeoJSON('{\"type\":\"Point\",\"coordinates\":[-122.4194,37.7749]}'),4326)"
+    )
+  ),
+  true
+)
 ```
 
 **MongoDB**
-```javascript
-{ serviceArea: { $geoIntersects: { $geometry: { type: "Point", coordinates: [-122.4194, 37.7749] } } } }
 
+```javascript
+{
+  serviceArea: {
+    $geoIntersects: {
+      $geometry: {
+        type: "Point",
+        coordinates: [-122.4194, 37.7749]
+      }
+    }
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ geo_shape: { serviceArea: { shape: { type: "Point", coordinates: [-122.4194, 37.7749] }, relation: "contains" } } }
 
+```javascript
+{
+  geo_shape: {
+    serviceArea: {
+      shape: {
+        type: "Point",
+        coordinates: [-122.4194, 37.7749]
+      },
+      relation: "contains"
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   deliveryZone: {
@@ -1923,7 +2629,6 @@ Sequelize.where(Sequelize.fn('ST_Contains', Sequelize.literal('("serviceArea")::
     }
   }
 }
-
 ```
 
 **Note:** The field must be a geographic polygon/area type. The shape can be a Point, Polygon, or other GeoJSON geometry.
@@ -1935,6 +2640,7 @@ Sequelize.where(Sequelize.fn('ST_Contains', Sequelize.literal('("serviceArea")::
 **Description:** Finds documents where the field intersects with the specified shape.
 
 **MScript Query:**
+
 ```javascript
 {
   route: {
@@ -1952,31 +2658,62 @@ Sequelize.where(Sequelize.fn('ST_Contains', Sequelize.literal('("serviceArea")::
     }
   }
 }
-
 ```
 
 **Platform Equivalents:**
 
 **Sequelize**
-```javascript
-Sequelize.where(Sequelize.fn('ST_Intersects', Sequelize.literal('("route")::geometry'), Sequelize.literal('ST_SetSRID(ST_GeomFromGeoJSON(\'{type:"Polygon",...}\'),4326)')), true)
 
+```javascript
+Sequelize.where(
+  Sequelize.fn(
+    "ST_Intersects",
+    Sequelize.literal('("route")::geometry'),
+    Sequelize.literal(
+      "ST_SetSRID(ST_GeomFromGeoJSON('{\"type\":\"Polygon\",\"coordinates\":[/* ... */]}'),4326)"
+    )
+  ),
+  true
+)
 ```
 
 **MongoDB**
-```javascript
-{ route: { $geoIntersects: { $geometry: { type: "Polygon", coordinates: [...] } } } }
 
+```javascript
+{
+  route: {
+    $geoIntersects: {
+      $geometry: {
+        type: "Polygon",
+        coordinates: [
+          /* ... */
+        ]
+      }
+    }
+  }
+}
 ```
 
 **Elasticsearch**
-```javascript
-{ geo_shape: { route: { shape: { type: "Polygon", coordinates: [...] }, relation: "intersects" } } }
 
+```javascript
+{
+  geo_shape: {
+    route: {
+      shape: {
+        type: "Polygon",
+        coordinates: [
+          /* ... */
+        ]
+      },
+      relation: "intersects"
+    }
+  }
+}
 ```
 
-
 **Example:**
+
 ```javascript
 {
   boundary: {
@@ -1988,7 +2725,6 @@ Sequelize.where(Sequelize.fn('ST_Intersects', Sequelize.literal('("route")::geom
     }
   }
 }
-
 ```
 
 **Note:** The shape can be any GeoJSON geometry type (Point, LineString, Polygon, etc.).
@@ -2013,7 +2749,6 @@ Sequelize.where(Sequelize.fn('ST_Intersects', Sequelize.literal('("route")::geom
     { email: { $ilike: "%@gmail.com" } }
   ]
 }
-
 ```
 
 ### Nested Logical Operators
@@ -2036,7 +2771,6 @@ Sequelize.where(Sequelize.fn('ST_Intersects', Sequelize.literal('("route")::geom
     { deletedAt: { $isnull: true } }
   ]
 }
-
 ```
 
 ### Geographic Search with Filters
@@ -2059,7 +2793,6 @@ Sequelize.where(Sequelize.fn('ST_Intersects', Sequelize.literal('("route")::geom
     { category: { $in: ["restaurant", "cafe"] } }
   ]
 }
-
 ```
 
 ---
@@ -2068,24 +2801,24 @@ Sequelize.where(Sequelize.fn('ST_Intersects', Sequelize.literal('("route")::geom
 
 ### Sequelize (PostgreSQL/MySQL)
 
-- Array operators (`$contains`, `$overlap`) work best with PostgreSQL array columns
-- Geographic operators require PostGIS extension for PostgreSQL
-- `$ilike` is PostgreSQL-specific; MySQL uses case-insensitive collation
-- `$match` uses database-specific regex syntax
+* Array operators (`$contains`, `$overlap`) work best with PostgreSQL array columns
+* Geographic operators require PostGIS extension for PostgreSQL
+* `$ilike` is PostgreSQL-specific; MySQL uses case-insensitive collation
+* `$match` uses database-specific regex syntax
 
 ### MongoDB
 
-- Native support for all operators
-- Geographic operators require geospatial indexes
-- Array operators work with MongoDB arrays
-- `$exists` and `$nexists` are MongoDB-native concepts
+* Native support for all operators
+* Geographic operators require geospatial indexes
+* Array operators work with MongoDB arrays
+* `$exists` and `$nexists` are MongoDB-native concepts
 
 ### Elasticsearch
 
-- Uses Elasticsearch Query DSL
-- Geographic queries require geo_point or geo_shape field mappings
-- Array fields are typically analyzed as text, so array operators may behave differently
-- Pattern matching uses Elasticsearch wildcard or match queries
+* Uses Elasticsearch Query DSL
+* Geographic queries require geo_point or geo_shape field mappings
+* Array fields are typically analyzed as text, so array operators may behave differently
+* Pattern matching uses Elasticsearch wildcard or match queries
 
 ---
 
@@ -2103,4 +2836,4 @@ Sequelize.where(Sequelize.fn('ST_Intersects', Sequelize.literal('("route")::geom
 
 ## Related Documentation
 
-- [MScript Syntax Guide](./mscript-syntax) — Complete MScript syntax reference
+* [MScript Syntax Guide](./mscript-syntax) — Complete MScript syntax reference
