@@ -1,0 +1,1099 @@
+{
+  "patternsVersion": "1.3.0",
+  "projectSettings": {
+    "projectName": "CoffeeBreak",
+    "projectCodeName": "coffeebreak",
+    "projectDescription": "Multi-tenant loyalty platform for coffee shops with coin-based rewards system",
+    "databaseType": "postgresql",
+    "searchEngineType": "elasticsearch"
+  },
+  "authentication": {
+    "authenticationEssentials": {
+      "JWTAuthentication": {
+        "useJWTForAuthentication": true,
+        "configuration": {
+          "tokenPeriodInDays": 30,
+          "keyRefreshPeriodInDays": 150
+        }
+      }
+    },
+    "loginDefinition": {
+      "tenantSettings": {
+        "useMultiTenantFeature": true,
+        "configuration": {
+          "tenantName": "shop"
+        }
+      },
+      "userSettings": {
+        "userNameType": "asFullname",
+        "userMobileIsActive": false,
+        "userRegisterIsPublic": true,
+        "emailVerificationRequiredForLogin": false,
+        "mobileVerificationRequiredForLogin": false,
+        "email2FARequiredForLogin": false,
+        "mobile2FARequiredForLogin": false,
+        "userGroupsActive": false
+      },
+      "roleSettings": {
+        "rbacIsActive": true,
+        "configuration": {
+          "usersHaveMultipleRoles": false,
+          "rolesObject": [
+            {
+              "name": "Shop Owner",
+              "value": "tenantOwner"
+            },
+            {
+              "name": "Shop Admin",
+              "value": "tenantAdmin"
+            },
+            {
+              "name": "Shop Staff",
+              "value": "tenantStaff"
+            },
+            {
+              "name": "Loyalty Customer",
+              "value": "tenantUser"
+            }
+          ]
+        }
+      }
+    },
+    "accessControl": {
+      "pbacIsActive": false
+    },
+    "userProperties": [
+      {
+        "propertyName": "walletBalance",
+        "dataType": "Integer",
+        "description": "Total coin balance in user's wallet",
+        "basicSettings": {
+          "isRequired": true,
+          "allowUpdate": true,
+          "defaultValues": {
+            "default": 0
+          }
+        }
+      }
+    ],
+    "tenantProperties": [
+      {
+        "propertyName": "address",
+        "dataType": "String",
+        "description": "Shop address",
+        "basicSettings": {
+          "isRequired": false,
+          "allowUpdate": true
+        }
+      },
+      {
+        "propertyName": "phone",
+        "dataType": "String",
+        "description": "Shop contact phone",
+        "basicSettings": {
+          "isRequired": false,
+          "allowUpdate": true
+        }
+      }
+    ]
+  },
+  "notificationService": {
+    "serviceSettings": {
+      "serviceOptions": {
+        "storedNotice": true,
+        "emailProvider": "smtp",
+        "smsProvider": "fake",
+        "pushProvider": "fake"
+      }
+    },
+    "eventNotifications": [
+      {
+        "eventNotificationBasics": {
+          "name": "coinPackPurchased",
+          "description": "Notify user when coin pack purchase is completed",
+          "isStored": true,
+          "jobType": "email",
+          "fromUser": "\"CoffeeBreak Platform\""
+        },
+        "eventDataSettings": {
+          "channel": "coffeebreak-loyalty-service-coinpack-purchased",
+          "condition": "this.dataSource.coinPack && this.dataSource.coinPack.status === 'completed'"
+        },
+        "targets": [
+          {
+            "targetName": "purchaser",
+            "targetPathInData": "coinPack.ownerId",
+            "isArray": false
+          }
+        ],
+        "template": {
+          "name": "coinPackPurchaseTemplate",
+          "parser": "ejs",
+          "description": "Email template for coin pack purchase confirmation",
+          "subjectTemplate": "Coin Pack Purchase Confirmation",
+          "bodyTemplate": "Dear <%= dataSource.user.fullname %>,\n\nYou have successfully purchased <%= dataSource.coinPack.quantity %> coin packs for <%= dataSource.coinPack.totalAmount %> <%= dataSource.coinPack.currency %>.\n\nThank you for your purchase!"
+        }
+      },
+      {
+        "eventNotificationBasics": {
+          "name": "lowBalance",
+          "description": "Notify user when wallet balance is low",
+          "isStored": true,
+          "jobType": "inApp",
+          "fromUser": "\"CoffeeBreak System\""
+        },
+        "eventDataSettings": {
+          "channel": "coffeebreak-loyalty-service-user-updated",
+          "condition": "this.dataSource.user && this.dataSource.user.walletBalance < 10"
+        },
+        "targets": [
+          {
+            "targetName": "user",
+            "targetPathInData": "user.id",
+            "isArray": false
+          }
+        ],
+        "template": {
+          "name": "lowBalanceTemplate",
+          "parser": "ejs",
+          "description": "In-app notification for low balance",
+          "subjectTemplate": "Low Balance Alert",
+          "bodyTemplate": "You have <%= dataSource.user.walletBalance %> coins remaining. Consider purchasing more coin packs!"
+        }
+      },
+      {
+        "eventNotificationBasics": {
+          "name": "newUserJoined",
+          "description": "Notify shop admins when a new user joins",
+          "isStored": true,
+          "jobType": "inApp",
+          "fromUser": "\"CoffeeBreak System\""
+        },
+        "eventDataSettings": {
+          "channel": "coffeebreak-auth-service-user-created",
+          "condition": "this.dataSource.user && this.dataSource.user.roleId === 'tenantUser'"
+        },
+        "targets": [
+          {
+            "targetName": "shopAdmins",
+            "targetPathInData": "shopId",
+            "isArray": false,
+            "condition": "target.roleId === 'tenantAdmin' || target.roleId === 'tenantOwner'"
+          }
+        ],
+        "template": {
+          "name": "newUserTemplate",
+          "parser": "ejs",
+          "description": "Notification for new user registration",
+          "subjectTemplate": "New User Joined",
+          "bodyTemplate": "New user <%= dataSource.user.fullname %> (<%= dataSource.user.email %>) has joined your shop!"
+        }
+      },
+      {
+        "eventNotificationBasics": {
+          "name": "coinsPurchased",
+          "description": "Notify shop admins when coins are purchased",
+          "isStored": true,
+          "jobType": "inApp",
+          "fromUser": "\"CoffeeBreak System\""
+        },
+        "eventDataSettings": {
+          "channel": "coffeebreak-loyalty-service-coinpack-purchased",
+          "condition": "this.dataSource.coinPack && this.dataSource.coinPack.status === 'completed'"
+        },
+        "targets": [
+          {
+            "targetName": "shopAdmins",
+            "targetPathInData": "shopId",
+            "isArray": false,
+            "condition": "target.roleId === 'tenantAdmin' || target.roleId === 'tenantOwner'"
+          }
+        ],
+        "template": {
+          "name": "coinsPurchasedTemplate",
+          "parser": "ejs",
+          "description": "Notification for coin purchases",
+          "subjectTemplate": "Coins Purchased",
+          "bodyTemplate": "<%= dataSource.coinPack.quantity %> coin packs were purchased by <%= dataSource.user.fullname %>"
+        }
+      }
+    ]
+  },
+  "bffService": {
+    "dataViews": [
+      {
+        "viewBasics": {
+          "name": "shopAnalytics",
+          "isStored": true,
+          "mainObject": "loyalty:coinPack",
+          "properties": [
+            "id",
+            "quantity",
+            "totalAmount",
+            "currency",
+            "status",
+            "createdAt",
+            "coinTypeId",
+            "shopId"
+          ]
+        },
+        "aggregates": [
+          {
+            "name": "user",
+            "childObject": "auth:user",
+            "parentKey": "ownerId",
+            "childKey": "id",
+            "oneToMany": false,
+            "properties": [
+              "fullname",
+              "email"
+            ]
+          },
+          {
+            "name": "coinType",
+            "childObject": "loyalty:coinType",
+            "parentKey": "coinTypeId",
+            "childKey": "id",
+            "oneToMany": false,
+            "properties": [
+              "name",
+              "price"
+            ]
+          }
+        ],
+        "stats": [
+          {
+            "name": "totalCoinsSold",
+            "childObject": "loyalty:coinPack",
+            "parentKey": "coinTypeId",
+            "childKey": "coinTypeId",
+            "select": "this.coinPack.status === 'completed'",
+            "aggList": [
+              {
+                "name": "totalCoinsSold",
+                "aggType": "sum",
+                "aggField": "quantity",
+                "dataType": "Integer"
+              }
+            ]
+          },
+          {
+            "name": "totalRevenue",
+            "childObject": "loyalty:coinPack",
+            "parentKey": "coinTypeId",
+            "childKey": "coinTypeId",
+            "select": "this.coinPack.status === 'completed'",
+            "aggList": [
+              {
+                "name": "totalRevenue",
+                "aggType": "sum",
+                "aggField": "totalAmount",
+                "dataType": "Double"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "viewBasics": {
+          "name": "redemptionAnalytics",
+          "isStored": true,
+          "mainObject": "loyalty:redemption",
+          "properties": [
+            "id",
+            "createdAt",
+            "coinId",
+            "branchId",
+            "shopId"
+          ]
+        },
+        "aggregates": [
+          {
+            "name": "coin",
+            "childObject": "loyalty:coin",
+            "parentKey": "coinId",
+            "childKey": "id",
+            "oneToMany": false,
+            "properties": [
+              "coinTypeId"
+            ]
+          },
+          {
+            "name": "coinType",
+            "childObject": "loyalty:coinType",
+            "parentKey": "coin.coinTypeId",
+            "childKey": "id",
+            "oneToMany": false,
+            "properties": [
+              "name",
+              "price"
+            ]
+          },
+          {
+            "name": "branch",
+            "childObject": "loyalty:branch",
+            "parentKey": "branchId",
+            "childKey": "id",
+            "oneToMany": false,
+            "properties": [
+              "name",
+              "address"
+            ]
+          },
+          {
+            "name": "user",
+            "childObject": "auth:user",
+            "parentKey": "userId",
+            "childKey": "id",
+            "oneToMany": false,
+            "properties": [
+              "fullname"
+            ]
+          }
+        ],
+        "stats": [
+          {
+            "name": "totalRedemptions",
+            "childObject": "loyalty:redemption",
+            "parentKey": "coinTypeId",
+            "childKey": "coin.coinTypeId",
+            "aggList": [
+              {
+                "name": "totalRedemptions",
+                "aggType": "value_count",
+                "aggField": "id",
+                "dataType": "Integer"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "viewBasics": {
+          "name": "userTransactionHistory",
+          "isStored": false,
+          "mainObject": "loyalty:purchase",
+          "properties": [
+            "id",
+            "quantity",
+            "totalAmount",
+            "currency",
+            "createdAt",
+            "coinPackId",
+            "coinTypeId"
+          ]
+        },
+        "aggregates": [
+          {
+            "name": "coinPack",
+            "childObject": "loyalty:coinPack",
+            "parentKey": "coinPackId",
+            "childKey": "id",
+            "oneToMany": false,
+            "properties": [
+              "status"
+            ]
+          },
+          {
+            "name": "coinType",
+            "childObject": "loyalty:coinType",
+            "parentKey": "coinTypeId",
+            "childKey": "id",
+            "oneToMany": false,
+            "properties": [
+              "name"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "services": [
+    {
+      "serviceSettings": {
+        "serviceName": "loyalty",
+        "serviceDescription": "Loyalty service managing coins, purchases, and redemptions for CoffeeBreak platform"
+      },
+      "dataObjects": [
+        {
+          "objectSettings": {
+            "basicSettings": {
+              "name": "branch",
+              "description": "Physical branch location of a coffee shop with geolocation"
+            },
+            "authorization": {
+              "dataObjectAccess": "accessPrivate",
+              "objectDataIsInTenantLevel": true
+            },
+            "belongsToTenant": true
+          },
+          "properties": [
+            {
+              "propertyName": "name",
+              "dataType": "String",
+              "description": "Branch name",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": true
+              }
+            },
+            {
+              "propertyName": "address",
+              "dataType": "String",
+              "description": "Branch street address",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": true
+              }
+            },
+            {
+              "propertyName": "latitude",
+              "dataType": "Double",
+              "description": "Branch latitude coordinate",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": true
+              }
+            },
+            {
+              "propertyName": "longitude",
+              "dataType": "Double",
+              "description": "Branch longitude coordinate",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": true
+              }
+            },
+            {
+              "propertyName": "phone",
+              "dataType": "String",
+              "description": "Branch contact phone",
+              "basicSettings": {
+                "isRequired": false,
+                "allowUpdate": true
+              }
+            }
+          ]
+        },
+        {
+          "objectSettings": {
+            "basicSettings": {
+              "name": "coinType",
+              "description": "Type of coin (e.g., black coffee, espresso, sandwich)"
+            },
+            "authorization": {
+              "dataObjectAccess": "accessPrivate",
+              "objectDataIsInTenantLevel": true
+            },
+            "belongsToTenant": true
+          },
+          "properties": [
+            {
+              "propertyName": "name",
+              "dataType": "String",
+              "description": "Coin type name (e.g., 'Black Coffee', 'Espresso')",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": true
+              },
+              "indexSettings": {
+                "indexedInDb": true,
+                "unique": false
+              }
+            },
+            {
+              "propertyName": "price",
+              "dataType": "Double",
+              "description": "Price per coin pack of 10",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": true
+              }
+            },
+            {
+              "propertyName": "currency",
+              "dataType": "String",
+              "description": "Currency code (e.g., USD, EUR)",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": true,
+                "defaultValues": {
+                  "default": "USD"
+                }
+              }
+            },
+            {
+              "propertyName": "description",
+              "dataType": "Text",
+              "description": "Description of the coin type",
+              "basicSettings": {
+                "isRequired": false,
+                "allowUpdate": true
+              }
+            },
+            {
+              "propertyName": "isDefault",
+              "dataType": "Boolean",
+              "description": "Whether this is the default coin type (black coffee)",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": true,
+                "defaultValues": {
+                  "default": false
+                }
+              }
+            }
+          ]
+        },
+        {
+          "objectSettings": {
+            "basicSettings": {
+              "name": "coinPack",
+              "description": "Order for purchasing a pack of 10 coins via Stripe"
+            },
+            "authorization": {
+              "dataObjectAccess": "accessPrivate",
+              "objectDataIsInTenantLevel": true
+            },
+            "belongsToTenant": true,
+            "stripeOrder": {
+              "objectIsAnOrderObject": true,
+              "configuration": {
+                "orderName": "CoinPack",
+                "orderId": "this.coinPack.id",
+                "amount": "this.coinPack.totalAmount",
+                "currency": "this.coinPack.currency",
+                "description": "`Coin pack purchase: ${this.coinPack.quantity} ${this.coinPack.coinType.name} coins`",
+                "orderStatusProperty": "status",
+                "orderStatusUpdateDateProperty": "statusUpdatedAt",
+                "orderOwnerIdProperty": "ownerId",
+                "mapPaymentResultToOrderStatus": {
+                  "paymentResultStarted": "\"pending\"",
+                  "paymentResultCanceled": "\"canceled\"",
+                  "paymentResultFailed": "\"failed\"",
+                  "paymentResultSuccess": "\"completed\""
+                },
+                "onCheckoutError": "continueRoute",
+                "edgeFunctionOnStatusChange": "handleCoinPackPaymentStatusChange"
+              }
+            }
+          },
+          "properties": [
+            {
+              "propertyName": "ownerId",
+              "dataType": "ID",
+              "description": "User who purchased the coin pack",
+              "sessionSettings": {
+                "isSessionData": true,
+                "sessionParam": "userId",
+                "isOwnerField": true
+              },
+              "relationSettings": {
+                "hasRelation": true,
+                "targetDataObject": "auth:user",
+                "relationType": "manyToOne"
+              }
+            },
+            {
+              "propertyName": "coinTypeId",
+              "dataType": "ID",
+              "description": "Type of coin being purchased",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              },
+              "relationSettings": {
+                "hasRelation": true,
+                "targetDataObject": "coinType",
+                "relationType": "manyToOne"
+              }
+            },
+            {
+              "propertyName": "quantity",
+              "dataType": "Integer",
+              "description": "Number of coin packs (each pack = 10 coins)",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false,
+                "defaultValues": {
+                  "default": 1
+                }
+              }
+            },
+            {
+              "propertyName": "totalAmount",
+              "dataType": "Double",
+              "description": "Total purchase amount (quantity * coinType.price)",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              }
+            },
+            {
+              "propertyName": "currency",
+              "dataType": "String",
+              "description": "Currency code",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              }
+            },
+            {
+              "propertyName": "status",
+              "dataType": "String",
+              "description": "Order status (pending, completed, failed, canceled)",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": true,
+                "defaultValues": {
+                  "default": "pending"
+                }
+              }
+            },
+            {
+              "propertyName": "statusUpdatedAt",
+              "dataType": "Date",
+              "description": "Timestamp of last status update",
+              "basicSettings": {
+                "isRequired": false,
+                "allowUpdate": true
+              }
+            }
+          ]
+        },
+        {
+          "objectSettings": {
+            "basicSettings": {
+              "name": "coin",
+              "description": "Individual coin with unique secret for redemption"
+            },
+            "authorization": {
+              "dataObjectAccess": "accessPrivate",
+              "objectDataIsInTenantLevel": true
+            },
+            "belongsToTenant": true
+          },
+          "properties": [
+            {
+              "propertyName": "userId",
+              "dataType": "ID",
+              "description": "User who owns this coin",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              },
+              "relationSettings": {
+                "hasRelation": true,
+                "targetDataObject": "auth:user",
+                "relationType": "manyToOne"
+              },
+              "indexSettings": {
+                "indexedInDb": true,
+                "unique": false
+              }
+            },
+            {
+              "propertyName": "coinTypeId",
+              "dataType": "ID",
+              "description": "Type of coin",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              },
+              "relationSettings": {
+                "hasRelation": true,
+                "targetDataObject": "coinType",
+                "relationType": "manyToOne"
+              }
+            },
+            {
+              "propertyName": "coinPackId",
+              "dataType": "ID",
+              "description": "Coin pack this coin was generated from",
+              "basicSettings": {
+                "isRequired": false,
+                "allowUpdate": false
+              },
+              "relationSettings": {
+                "hasRelation": true,
+                "targetDataObject": "coinPack",
+                "relationType": "manyToOne"
+              }
+            },
+            {
+              "propertyName": "secret",
+              "dataType": "String",
+              "description": "Unique secret code for barcode scanning and redemption",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              },
+              "indexSettings": {
+                "indexedInDb": true,
+                "unique": true,
+                "isSecondaryKey": true
+              }
+            },
+            {
+              "propertyName": "isRedeemed",
+              "dataType": "Boolean",
+              "description": "Whether this coin has been redeemed",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": true,
+                "defaultValues": {
+                  "default": false
+                }
+              },
+              "indexSettings": {
+                "indexedInDb": true,
+                "unique": false
+              }
+            },
+            {
+              "propertyName": "redeemedAt",
+              "dataType": "Date",
+              "description": "Timestamp when coin was redeemed",
+              "basicSettings": {
+                "isRequired": false,
+                "allowUpdate": true
+              }
+            }
+          ]
+        },
+        {
+          "objectSettings": {
+            "basicSettings": {
+              "name": "purchase",
+              "description": "Transaction record for coin pack purchase"
+            },
+            "authorization": {
+              "dataObjectAccess": "accessPrivate",
+              "objectDataIsInTenantLevel": true
+            },
+            "belongsToTenant": true
+          },
+          "properties": [
+            {
+              "propertyName": "userId",
+              "dataType": "ID",
+              "description": "User who made the purchase",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              },
+              "relationSettings": {
+                "hasRelation": true,
+                "targetDataObject": "auth:user",
+                "relationType": "manyToOne"
+              },
+              "indexSettings": {
+                "indexedInDb": true,
+                "unique": false
+              }
+            },
+            {
+              "propertyName": "coinPackId",
+              "dataType": "ID",
+              "description": "Coin pack that was purchased",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              },
+              "relationSettings": {
+                "hasRelation": true,
+                "targetDataObject": "coinPack",
+                "relationType": "manyToOne"
+              }
+            },
+            {
+              "propertyName": "coinTypeId",
+              "dataType": "ID",
+              "description": "Type of coins purchased",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              },
+              "relationSettings": {
+                "hasRelation": true,
+                "targetDataObject": "coinType",
+                "relationType": "manyToOne"
+              }
+            },
+            {
+              "propertyName": "quantity",
+              "dataType": "Integer",
+              "description": "Number of coin packs purchased",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              }
+            },
+            {
+              "propertyName": "totalAmount",
+              "dataType": "Double",
+              "description": "Total purchase amount",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              }
+            },
+            {
+              "propertyName": "currency",
+              "dataType": "String",
+              "description": "Currency code",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              }
+            }
+          ]
+        },
+        {
+          "objectSettings": {
+            "basicSettings": {
+              "name": "redemption",
+              "description": "Record of coin redemption at a shop branch"
+            },
+            "authorization": {
+              "dataObjectAccess": "accessPrivate",
+              "objectDataIsInTenantLevel": true
+            },
+            "belongsToTenant": true
+          },
+          "properties": [
+            {
+              "propertyName": "userId",
+              "dataType": "ID",
+              "description": "User who redeemed the coin",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              },
+              "relationSettings": {
+                "hasRelation": true,
+                "targetDataObject": "auth:user",
+                "relationType": "manyToOne"
+              },
+              "indexSettings": {
+                "indexedInDb": true,
+                "unique": false
+              }
+            },
+            {
+              "propertyName": "coinId",
+              "dataType": "ID",
+              "description": "Coin that was redeemed",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              },
+              "relationSettings": {
+                "hasRelation": true,
+                "targetDataObject": "coin",
+                "relationType": "manyToOne"
+              }
+            },
+            {
+              "propertyName": "branchId",
+              "dataType": "ID",
+              "description": "Branch where redemption occurred",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              },
+              "relationSettings": {
+                "hasRelation": true,
+                "targetDataObject": "branch",
+                "relationType": "manyToOne"
+              }
+            },
+            {
+              "propertyName": "redeemedByStaffId",
+              "dataType": "ID",
+              "description": "Staff member who processed the redemption",
+              "basicSettings": {
+                "isRequired": false,
+                "allowUpdate": false
+              },
+              "relationSettings": {
+                "hasRelation": true,
+                "targetDataObject": "auth:user",
+                "relationType": "manyToOne"
+              }
+            },
+            {
+              "propertyName": "secret",
+              "dataType": "String",
+              "description": "Coin secret that was scanned",
+              "basicSettings": {
+                "isRequired": true,
+                "allowUpdate": false
+              },
+              "indexSettings": {
+                "indexedInDb": true,
+                "unique": false
+              }
+            }
+          ]
+        }
+      ],
+      "businessLogic": [
+        {
+          "apiOptions": {
+            "name": "createCoinPack",
+            "dataObjectName": "coinPack",
+            "apiDescription": "Create a new coin pack order for purchase",
+            "crudType": "create"
+          },
+          "authOptions": {
+            "loginRequired": true
+          },
+          "actions": [
+            {
+              "actionType": "SetContextAction",
+              "name": "setCoinType",
+              "contextPropertyName": "coinType",
+              "source": "dataObject",
+              "sourceDataObjectName": "coinType",
+              "whereClause": {
+                "selectBy": ["id"],
+                "condition": "this.coinType.id === this.bodyParams.coinTypeId"
+              }
+            },
+            {
+              "actionType": "SetContextAction",
+              "name": "calculateTotal",
+              "contextPropertyName": "totalAmount",
+              "source": "mscript",
+              "mscript": "this.coinType.price * this.bodyParams.quantity"
+            },
+            {
+              "actionType": "SetContextAction",
+              "name": "setCurrency",
+              "contextPropertyName": "currency",
+              "source": "mscript",
+              "mscript": "this.coinType.currency"
+            },
+            {
+              "actionType": "CreateAction",
+              "name": "createCoinPack",
+              "targetDataObjectName": "coinPack"
+            }
+          ]
+        },
+        {
+          "apiOptions": {
+            "name": "redeemCoin",
+            "dataObjectName": "redemption",
+            "apiDescription": "Redeem a coin by scanning its secret barcode",
+            "crudType": "create"
+          },
+          "authOptions": {
+            "loginRequired": true,
+            "requiredRole": "tenantStaff"
+          },
+          "actions": [
+            {
+              "actionType": "SetContextAction",
+              "name": "findCoin",
+              "contextPropertyName": "coin",
+              "source": "dataObject",
+              "sourceDataObjectName": "coin",
+              "whereClause": {
+                "selectBy": ["secret"],
+                "condition": "this.coin.secret === this.bodyParams.secret && this.coin.isRedeemed === false && this.coin.shopId === this.session.shopId"
+              }
+            },
+            {
+              "actionType": "ConditionalAction",
+              "name": "validateCoin",
+              "condition": "this.coin && this.coin.id",
+              "trueActions": [
+                {
+                  "actionType": "UpdateAction",
+                  "name": "markCoinRedeemed",
+                  "targetDataObjectName": "coin",
+                  "targetId": "this.coin.id",
+                  "updateFields": {
+                    "isRedeemed": true,
+                    "redeemedAt": "new Date()"
+                  }
+                },
+                {
+                  "actionType": "SetContextAction",
+                  "name": "setRedemptionData",
+                  "contextPropertyName": "redemptionData",
+                  "source": "mscript",
+                  "mscript": "{ userId: this.coin.userId, coinId: this.coin.id, branchId: this.bodyParams.branchId, redeemedByStaffId: this.session.userId, secret: this.coin.secret }"
+                },
+                {
+                  "actionType": "CreateAction",
+                  "name": "createRedemption",
+                  "targetDataObjectName": "redemption"
+                },
+                {
+                  "actionType": "UpdateAction",
+                  "name": "updateUserWallet",
+                  "targetDataObjectName": "auth:user",
+                  "targetId": "this.coin.userId",
+                  "updateFields": {
+                    "walletBalance": "this.user.walletBalance - 1"
+                  }
+                }
+              ],
+              "falseActions": [
+                {
+                  "actionType": "ThrowErrorAction",
+                  "name": "invalidCoin",
+                  "errorMessage": "Invalid or already redeemed coin"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "apiOptions": {
+            "name": "getUserTransactionHistory",
+            "dataObjectName": "purchase",
+            "apiDescription": "Get user's purchase and redemption history",
+            "crudType": "list"
+          },
+          "authOptions": {
+            "loginRequired": true
+          },
+          "whereClause": {
+            "selectBy": ["userId", "shopId"],
+            "condition": "this.purchase.userId === this.session.userId && this.purchase.shopId === this.session.shopId"
+          }
+        },
+        {
+          "apiOptions": {
+            "name": "getShopAnalytics",
+            "dataObjectName": "coinPack",
+            "apiDescription": "Get analytics data for shop admins",
+            "crudType": "list"
+          },
+          "authOptions": {
+            "loginRequired": true,
+            "requiredRole": "tenantAdmin"
+          },
+          "whereClause": {
+            "selectBy": ["shopId"],
+            "condition": "this.coinPack.shopId === this.session.shopId"
+          }
+        }
+      ],
+      "library": {
+        "edgeFunctions": [
+          {
+            "moduleName": "handleCoinPackPaymentStatusChange",
+            "moduleExtension": "js",
+            "moduleBody": "module.exports = async (request) => {\n  const coinPack = request.coinPack;\n  \n  if (coinPack.status === 'completed') {\n    // Generate coins for the purchased pack\n    const { createCoin, createBulkCoin } = require('dbLayer');\n    const { v4: uuidv4 } = require('uuid');\n    \n    const coins = [];\n    const totalCoins = coinPack.quantity * 10; // Each pack = 10 coins\n    \n    for (let i = 0; i < totalCoins; i++) {\n      coins.push({\n        userId: coinPack.ownerId,\n        coinTypeId: coinPack.coinTypeId,\n        coinPackId: coinPack.id,\n        secret: uuidv4().replace(/-/g, '').substring(0, 16),\n        isRedeemed: false,\n        shopId: coinPack.shopId\n      });\n    }\n    \n    await createBulkCoin(coins);\n    \n    // Create purchase record\n    const { createPurchase } = require('dbLayer');\n    await createPurchase({\n      userId: coinPack.ownerId,\n      coinPackId: coinPack.id,\n      coinTypeId: coinPack.coinTypeId,\n      quantity: coinPack.quantity,\n      totalAmount: coinPack.totalAmount,\n      currency: coinPack.currency,\n      shopId: coinPack.shopId\n    });\n    \n    // Update user wallet balance\n    const { getUserById, updateUserById } = require('dbLayer');\n    const user = await getUserById(coinPack.ownerId);\n    await updateUserById(coinPack.ownerId, {\n      walletBalance: user.walletBalance + totalCoins\n    });\n  }\n  \n  return { status: 200, message: 'Payment status change processed' };\n};"
+          }
+        ]
+      }
+    }
+  ]
+}
+
