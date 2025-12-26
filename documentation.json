@@ -170,10 +170,6 @@
                 "path": "geography-features"
               },
               {
-                "title": "MScript Query",
-                "path": "mscript-query"
-              },
-              {
                 "title": "GRPC Controllers",
                 "path": "grpc-controllers"
               },
@@ -354,6 +350,10 @@
             "group": "References",
             "icon": "zap",
             "pages": [
+              {
+                "title": "MScript Query Reference",
+                "path": "mscript-query-reference"
+              },
               {
                 "group": "Generated Assets Reference",
                 "pages": [
