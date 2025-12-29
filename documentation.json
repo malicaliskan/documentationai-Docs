@@ -355,10 +355,6 @@
             "icon": "zap",
             "pages": [
               {
-                "title": "MScript Query Reference",
-                "path": "mscript-query-reference"
-              },
-              {
                 "group": "Generated Assets Reference",
                 "pages": [
                   {
@@ -563,23 +559,10 @@
               {
                 "title": "MScript Syntax",
                 "path": "mscript-syntax"
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API Reference",
-        "icon": "code",
-        "groups": [
-          {
-            "group": "Endpoints",
-            "icon": "terminal",
-            "openapi": "openapi.yaml",
-            "pages": [
+              },
               {
-                "title": "Sample Auth Service Api",
-                "path": "sample-auth-service-api"
+                "title": "MScript Query Reference",
+                "path": "mscript-query-reference"
               }
             ]
           }
