@@ -550,7 +550,421 @@ This allows you to:
 
 # **5. Subscription Plan**
 
-Comming soon...
+Mindbricks uses a **workspace-based subscription model**.\
+Each workspace has its own subscription, limits, billing lifecycle, and usage tracking.
+
+> **Important rule**
+>
+> - ✅ The **first workspace** created for a user is **always Free**
+>
+> - 💳 **All additional workspaces** require selecting a **paid subscription plan**
+
+---
+
+## Default Subscription Behavior
+
+### First Workspace (Free by default)
+
+When you create your Mindbricks account:
+
+- A **personal workspace** is automatically created
+
+- This workspace is assigned the **Free plan**
+
+- No payment is required
+
+The Free plan includes predefined limits such as:
+
+- Code generation (LOC)
+
+- AI credits
+
+- Seat count
+
+- Integrations
+
+- Deployment availability
+
+- Monitoring and documentation access
+
+These limits are enforced immediately and apply across all projects in the workspace.
+
+---
+
+### Additional Workspaces (Paid required)
+
+When you create **any additional workspace**:
+
+- The workspace **does not start with a Free plan**
+
+- You must **select and activate a paid subscription**
+
+- Access is limited until a plan is chosen
+
+This ensures:
+
+- One Free workspace per user
+
+- Clear separation of billing per organization
+
+- Predictable usage and cost control
+
+---
+
+## Subscription Plan → Overview
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1767016673497-9z04hiryjet-pasted-image-1767016673563.png?q=85&fm=auto&auto=compress%2Cformat" width="1917" height="930" alt="" />
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1767016711759-bv5e69wogkc-pasted-image-1767016711395.png?q=85&fm=auto&auto=compress%2Cformat" width="1915" height="978" alt="" />
+
+### What this screen is for
+
+The Subscription Plan Overview page shows:
+
+- Your **current subscription plan**
+
+- Available **upgrade options**
+
+- Feature and quota summaries
+
+- Billing cycle information
+
+This page is the main entry point for managing subscriptions.
+
+---
+
+---
+
+## Subscription Plan → Compare Plans
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1767016782680-jxlfw9wkeel-pasted-image-1767016782848.png?q=85&fm=auto&auto=compress%2Cformat" width="1913" height="972" alt="" />
+
+### What this section is for
+
+The Compare Plans table helps you understand the differences between subscription tiers before upgrading.
+
+It compares:
+
+- Free
+
+- Launch Promo (50% OFF)
+
+- Pro
+
+- Scale
+
+- Enterprise+
+
+---
+
+### Compared features include
+
+- Integrations per project
+
+- AI message credits
+
+- Code generation (LOC per month)
+
+- Deployment availability
+
+- Code takeout
+
+- Seat limits
+
+- Support level
+
+- Monitoring and documentation
+
+- Custom domain usage
+
+- Project capacity
+
+Values may be numeric, `Yes / No`, `N/A`, or `Custom`.
+
+This table is informational and does not trigger billing actions.
+
+---
+## Available Subscription Plans
+
+Mindbricks offers multiple subscription plans designed to support different usage levels — from individual experimentation to enterprise-scale production systems.
+
+Each plan defines **feature availability, usage quotas, and support level** for the workspace.
+
+---
+
+### Free Plan
+
+**Best for individuals and hobbyists getting started**
+
+- **Price:** Free
+- **Billing:** No payment required
+- **Intended use:** Personal experimentation and learning
+
+**Included capabilities**
+
+- Limited code generation (LOC)
+- Limited AI credits
+- Single seat
+- Basic integrations
+- No deployment or code takeout
+- Community support
+- Monitoring and documentation access (limited)
+
+This plan is automatically assigned to the **first workspace** created by a user.
+
+---
+
+### Launch Promo (50% OFF)
+
+**Best for early-stage builders and MVP development**
+
+- **Price:** **$35 / month**
+- **Billing:** Monthly (promo pricing)
+- **Intended use:** MVPs, early production testing, small teams
+
+**Included capabilities**
+
+- Multiple projects per workspace
+- Increased AI credits
+- AI-powered architecture assistance
+- Up to **1,000,000 LOC per month**
+- Full backend generation with microservices
+- Documentation and monitoring enabled
+- Community support
+
+This plan is often the first upgrade from the Free plan.
+
+---
+
+### Pro Plan
+
+**Best for professional developers shipping real products**
+
+- **Price:** **$199 / month**
+- **Billing:** Monthly or annual
+- **Intended use:** Production-ready applications and growing teams
+
+**Included capabilities**
+
+- Higher project capacity
+- Increased AI generations
+- Advanced AI architecture design
+- Up to **1,000,000 LOC per month**
+- Production-scale microservice output
+- Email support
+- Direct technical assistance
+
+This plan is recommended for teams actively building and maintaining live systems.
+
+---
+
+### Scale Plan
+
+**Best for growing teams and complex systems**
+
+- **Price:** **$499 / month**
+- **Billing:** Monthly or annual
+- **Intended use:** Large applications and multi-product platforms
+
+**Included capabilities**
+
+- Multiple product lines
+- High AI credit limits
+- Unlimited architectural flexibility
+- Up to **3,000,000 LOC per month**
+- Large-scale application support
+- Priority support (24h response)
+- Dedicated technical guidance
+
+This plan is designed for teams scaling both usage and complexity.
+
+---
+
+### Enterprise+ Plan
+
+**Custom infrastructure for organizations with advanced needs**
+
+- **Price:** Custom
+- **Billing:** Contract-based
+- **Intended use:** Enterprise-grade deployments and custom workflows
+
+**Included capabilities**
+
+- No predefined limits
+- Custom AI and LOC allocations
+- Tailored workflows and integrations
+- Unlimited code generation
+- Enterprise-scale infrastructure
+- 24/7 support with SLA
+- Dedicated success and technical teams
+
+Enterprise+ plans are configured through direct contact with the Mindbricks team.
+
+---
+
+### Notes on Plan Selection
+
+- Only **one subscription plan** can be active per workspace
+- Upgrading applies **immediately after successful payment**
+- Downgrades take effect at the **next billing cycle**
+- Feature availability and quotas are enforced automatically
+- Add-on packages can be purchased separately to extend limits
+
+---
+
+## Subscription Plan → Upgrade Flow
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1767016880582-tznsfeq7dis-pasted-image-1767016880630.png?q=85&fm=auto&auto=compress%2Cformat" width="1913" height="917" alt="" />
+
+### Starting an upgrade
+
+When you click **Upgrade** on a paid plan:
+
+1. A checkout session is created
+
+2. The subscription enters a **waiting** state
+
+3. You are redirected to the payment page
+
+No plan limits change at this stage.
+
+---
+
+### Payment success
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1767016928233-y2ln782tif-pasted-image-1767016927873.png?q=85&fm=auto&auto=compress%2Cformat" width="1370" height="930" alt="" />
+
+If payment is successful:
+
+- The subscription becomes **active**
+
+- The selected plan is applied immediately
+
+- New feature limits take effect
+
+- Usage counters reset according to the new plan
+
+A confirmation screen is shown before returning to the app.
+
+---
+
+### Payment failure or cancellation
+
+If payment fails or is canceled:
+
+- The subscription remains unchanged
+
+- No limits are modified
+
+- You can retry the upgrade at any time
+
+The system does not partially apply upgrades.
+
+---
+
+## Subscription Plan → Current Plan View
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1767017096562-a1jh87eqmhf-pasted-image-1767017096977.png?q=85&fm=auto&auto=compress%2Cformat" width="1916" height="922" alt="" />
+
+### What this screen shows
+
+After activation, the overview displays:
+
+- Active plan name
+
+- Next payment date
+
+- Monthly charge
+
+- Remaining time in the billing cycle
+
+This reflects the **currently active subscription** for the workspace.
+
+---
+
+## Subscription Plan → Plan Management
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1767017303826-vfd9jalexxq-pasted-image-1767017303946.png?q=85&fm=auto&auto=compress%2Cformat" width="1917" height="919" alt="" />
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1767017279416-3rfh5mzbv0b-pasted-image-1767017275554.png?q=85&fm=auto&auto=compress%2Cformat" width="1913" height="923" alt="" />
+
+### What this screen is for
+
+The Plan Management page provides detailed operational insight into:
+
+- Subscription status
+
+- Usage quotas
+
+- Additional packages
+
+- Remaining limits
+
+This page focuses on **usage and control**, not plan comparison.
+
+---
+
+## Quota Usage
+
+## What this section shows
+
+Quota Usage visualizes how much of your plan limits you have consumed.
+
+Common quotas include:
+
+- Code Generation (LOC per month)
+
+- AI message credits
+
+Usage updates in real time and resets based on the billing cycle.
+
+---
+
+## Additional Packages
+
+### What this section is for
+
+Additional Packages allow you to extend your plan limits **without changing your base subscription**.
+
+Examples include:
+
+- Extra LOC packs
+
+- Extra AI credit packs
+
+---
+
+### Buying an add-on
+
+When you purchase an add-on:
+
+- Payment is processed immediately
+
+- The quota is added to your workspace
+
+- The base plan remains unchanged
+
+Add-ons stack and apply to the current billing period.
+
+---
+
+## Usage Information
+
+### What this section shows
+
+Usage Information provides detailed breakdowns such as:
+
+- Integrations per project
+
+- Seat usage
+
+- Other plan-specific limits
+
+This helps you monitor consumption and avoid hitting limits.
+
+---
+
+---
 
 ---
 
