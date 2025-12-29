@@ -1,0 +1,547 @@
+---
+title: Filter Parameters
+description: Complete guide to filtering list APIs with query parameters, operators, and examples
+---
+
+# Filter Parameters Guide
+
+Filter parameters allow you to filter list API results using URL query parameters. This guide covers all supported filter types, operators, and syntax with practical examples.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Basic Usage](#basic-usage)
+- [Filter Types](#filter-types)
+- [Array Property Filters](#array-property-filters)
+- [Quick Reference Sheet](#quick-reference-sheet)
+
+## Overview
+
+When calling list APIs (GET requests that return collections), you can filter results by adding query parameters to the URL. Each filter parameter corresponds to a property of the data object being queried.
+
+**Basic Syntax:**
+```
+GET /api/v1/users?status=active&age=25
+```
+
+**Multiple Values:**
+
+Array values are sent as multiple query parameters with the same name. Express middleware automatically combines them into an array:
+
+```
+GET /api/v1/users?status=pending&status=processing&role=admin&role=user
+```
+
+This will be parsed as:
+- `status`: `["pending", "processing"]`
+- `role`: `["admin", "user"]`
+
+**Null Checks:**
+```
+GET /api/v1/users?email=null
+```
+
+## Basic Usage
+
+### Simple Equality Filter
+
+Filter by exact value match:
+
+```javascript
+// Get all users with status "active"
+GET /api/v1/users?status=active
+
+// Get all orders with status "pending" or "processing"
+// Use multiple parameters with the same name
+GET /api/v1/orders?status=pending&status=processing
+```
+
+### Array Parameters
+
+When you provide multiple values using the same parameter name, Express middleware automatically combines them into an array. The filter uses `$in` (for non-array properties) or `$overlap` (for array properties with `_op=overlap`):
+
+```javascript
+// Get users with IDs in the list
+// Use multiple parameters with the same name
+GET /api/v1/users?id=123&id=456&id=789
+
+// Get products with tags that overlap with the provided list
+GET /api/v1/products?tags=electronics&tags=smartphone&tags_op=overlap
+```
+
+**Note:** Array values must be sent as multiple query parameters (`?param=value1&param=value2`), not as comma-separated values (`?param=value1,value2`). Express middleware automatically combines multiple parameters with the same name into an array.
+
+## Filter Types
+
+### ID Filters
+
+Filter by ID values (UUID or ObjectId depending on database).
+
+**Syntax:**
+- Single value: `?id=123`
+- Multiple values: `?id=123&id=456&id=789`
+- Null check: `?id=null`
+
+**Examples:**
+
+```javascript
+// Get a specific user
+GET /api/v1/users?id=550e8400-e29b-41d4-a716-446655440000
+
+// Get multiple users (use multiple parameters)
+GET /api/v1/users?id=550e8400-e29b-41d4-a716-446655440000&id=660e8400-e29b-41d4-a716-446655440001
+
+// Get users without an assigned manager
+GET /api/v1/users?managerId=null
+```
+
+**Array Properties:**
+
+For array ID properties, use the operator parameter to choose between `contains` and `overlap`:
+
+```javascript
+// Check if array contains a specific ID (default)
+GET /api/v1/groups?memberIds=123&memberIds_op=contains
+
+// Check if arrays have overlapping IDs (use multiple parameters)
+GET /api/v1/groups?memberIds=123&memberIds=456&memberIds_op=overlap
+```
+
+---
+
+### String Filters
+
+Filter by string values. String filters perform case-insensitive partial matching (LIKE search).
+
+**Syntax:**
+- Single value: `?name=john`
+- Multiple values: `?name=john&name=jane`
+- Null check: `?name=null`
+
+**Examples:**
+
+```javascript
+// Find users with "john" in their name (case-insensitive)
+GET /api/v1/users?name=john
+// Matches: "John", "Johnny", "johnson", etc.
+
+// Find products with specific names (use multiple parameters)
+GET /api/v1/products?name=laptop&name=phone&name=tablet
+
+// Find users without an email
+GET /api/v1/users?email=null
+```
+
+**Array Properties:**
+
+For array string properties, use the operator parameter:
+
+```javascript
+// Check if array contains a string (default)
+GET /api/v1/articles?tags=javascript&tags_op=contains
+
+// Check if arrays have overlapping strings (use multiple parameters)
+GET /api/v1/articles?tags=javascript&tags=react&tags_op=overlap
+```
+
+---
+
+### Number Filters
+
+Filter by numeric values (Integer, Double, Float, Short). Supports equality, range operators, and multiple values.
+
+**Syntax:**
+- Single value: `?age=25`
+- Multiple values: `?age=25&age=30&age=35`
+- Range operators: `?age=$lt-30`, `?age=$gte-18`, `?age=$btw-20-30`
+- Null check: `?age=null`
+
+**Range Operators:**
+
+| Operator | Description | Example |
+|----------|-------------|---------|
+| `$lt-{value}` | Less than | `?age=$lt-30` |
+| `$lte-{value}` | Less than or equal | `?age=$lte-30` |
+| `$gt-{value}` | Greater than | `?age=$gt-18` |
+| `$gte-{value}` | Greater than or equal | `?age=$gte-18` |
+| `$btw-{min}-{max}` | Between (inclusive) | `?price=$btw-100-500` |
+
+**Examples:**
+
+```javascript
+// Get users aged 25
+GET /api/v1/users?age=25
+
+// Get users aged 25, 30, or 35 (use multiple parameters)
+GET /api/v1/users?age=25&age=30&age=35
+
+// Get users under 30
+GET /api/v1/users?age=$lt-30
+
+// Get users 18 or older
+GET /api/v1/users?age=$gte-18
+
+// Get products priced between $100 and $500
+GET /api/v1/products?price=$btw-100-500
+
+// Get orders without a discount amount
+GET /api/v1/orders?discountAmount=null
+```
+
+**Array Properties:**
+
+For array number properties, range operators are not supported. Use `contains` or `overlap`:
+
+```javascript
+// Check if array contains a number (default)
+GET /api/v1/products?scores=85&scores_op=contains
+
+// Check if arrays have overlapping numbers (use multiple parameters)
+GET /api/v1/products?scores=85&scores=90&scores_op=overlap
+```
+
+---
+
+### Date Filters
+
+Filter by date values. Supports exact dates, date arrays, and special date operators. Date filters match records where the date falls within the specified day (ignoring time portion).
+
+**Syntax:**
+- Single date: `?createdAt=2024-01-15`
+- Multiple dates: `?createdAt=2024-01-15&createdAt=2024-01-20`
+- Special operators: `?createdAt=$today`, `?createdAt=$week`, `?createdAt=$month`
+- Local timezone: `?createdAt=$ltoday`, `?createdAt=$lweek`, `?createdAt=$leq-2024-01-15`
+- Null check: `?createdAt=null`
+
+**Special Date Operators:**
+
+| Operator | Description | Example |
+|----------|-------------|---------|
+| `$today` | Today (server timezone) | `?createdAt=$today` |
+| `$ltoday` | Today (user's local timezone) | `?createdAt=$ltoday` |
+| `$week` | This week (server timezone) | `?createdAt=$week` |
+| `$lweek` | This week (user's local timezone) | `?createdAt=$lweek` |
+| `$month` | This month (server timezone) | `?createdAt=$month` |
+| `$leq-{date}` | Specific date (user's local timezone) | `?createdAt=$leq-2024-01-15` |
+| `$lin-{date}` | Date in array (user's local timezone) | `?createdAt=$lin-2024-01-15&createdAt=$lin-2024-01-20` |
+
+**Date Formats:**
+
+Dates can be provided in ISO 8601 format or as timestamps:
+- ISO: `2024-01-15`, `2024-01-15T10:30:00Z`
+- Timestamp: `1705324800000`
+
+**Examples:**
+
+```javascript
+// Get records created on a specific date
+GET /api/v1/orders?createdAt=2024-01-15
+
+// Get records created on multiple dates (use multiple parameters)
+GET /api/v1/orders?createdAt=2024-01-15&createdAt=2024-01-20
+
+// Get records created today (server timezone)
+GET /api/v1/orders?createdAt=$today
+
+// Get records created today (user's local timezone)
+GET /api/v1/orders?createdAt=$ltoday
+
+// Get records created this week (server timezone)
+GET /api/v1/orders?createdAt=$week
+
+// Get records created this week (user's local timezone)
+GET /api/v1/orders?createdAt=$lweek
+
+// Get records created this month
+GET /api/v1/orders?createdAt=$month
+
+// Get records created on a specific date (user's local timezone)
+GET /api/v1/orders?createdAt=$leq-2024-01-15
+
+// Get records created on multiple dates (user's local timezone)
+// Use multiple parameters with $lin- prefix
+GET /api/v1/orders?createdAt=$lin-2024-01-15&createdAt=$lin-2024-01-20
+
+// Get records without a completion date
+GET /api/v1/orders?completedAt=null
+```
+
+**Note:** Date filtering on array date properties is not supported. Always use single date values or date arrays for filtering.
+
+---
+
+### Boolean Filters
+
+Filter by boolean values (true/false). Boolean filters do not support arrays.
+
+**Syntax:**
+- True: `?isActive=true`
+- False: `?isActive=false`
+- Null check: `?isActive=null`
+
+**Examples:**
+
+```javascript
+// Get active users
+GET /api/v1/users?isActive=true
+
+// Get inactive users (or users where isActive is null)
+GET /api/v1/users?isActive=false
+
+// Get users without an isActive value
+GET /api/v1/users?isActive=null
+```
+
+**Note:** When filtering by `false`, the query also includes records where the boolean field is `null`.
+
+---
+
+### Enum Filters
+
+Filter by enum values. Enum matching is case-insensitive.
+
+**Syntax:**
+- Single value: `?status=active`
+- Multiple values: `?status=active&status=pending`
+- Null check: `?status=null`
+
+**Examples:**
+
+```javascript
+// Get orders with "active" status
+GET /api/v1/orders?status=active
+
+// Get orders with "active" or "pending" status (use multiple parameters)
+GET /api/v1/orders?status=active&status=pending
+
+// Get orders without a status
+GET /api/v1/orders?status=null
+```
+
+**Array Properties:**
+
+For array enum properties, use the operator parameter:
+
+```javascript
+// Check if array contains an enum value (default)
+GET /api/v1/products?categories=electronics&categories_op=contains
+
+// Check if arrays have overlapping enum values (use multiple parameters)
+GET /api/v1/products?categories=electronics&categories=clothing&categories_op=overlap
+```
+
+---
+
+### GeoPoint Filters
+
+Filter by geographic location using bounding box, circle, or polygon filters.
+
+**Syntax:**
+- Bounding box: `?location=$bbox-{minLat},{minLon},{maxLat},{maxLon}`
+- Circle: `?location=$circle-{lat},{lon},{radiusMeters}`
+- Polygon: `?location=$polygon-{lat1},{lon1},{lat2},{lon2},...`
+- Null check: `?location=null`
+
+**Geo Operators:**
+
+| Operator | Description | Format |
+|----------|-------------|--------|
+| `$bbox-{coords}` | Bounding box | `$bbox-minLat,minLon,maxLat,maxLon` |
+| `$circle-{coords}` | Circle (radius in meters) | `$circle-lat,lon,radiusMeters` |
+| `$polygon-{coords}` | Polygon (even number of coordinates) | `$polygon-lat1,lon1,lat2,lon2,...` |
+
+**Examples:**
+
+```javascript
+// Get locations within a bounding box (New York area)
+GET /api/v1/stores?location=$bbox-40.5,-74.3,40.9,-73.7
+
+// Get locations within 1000 meters of a point (Times Square)
+GET /api/v1/stores?location=$circle-40.7580,-73.9855,1000
+
+// Get locations within a polygon (custom shape)
+GET /api/v1/stores?location=$polygon-40.7,-74.0,40.8,-74.0,40.8,-73.9,40.7,-73.9
+
+// Get stores without a location
+GET /api/v1/stores?location=null
+```
+
+**Notes:**
+- Bounding box requires exactly 4 coordinates
+- Circle requires 3 values (lat, lon, radius in meters)
+- Polygon requires an even number of coordinates (at least 6 for a triangle)
+- Radius must be positive
+- All coordinates must be valid numbers
+
+---
+
+## Array Property Filters
+
+When filtering array properties (properties that store arrays in the database), you need to specify an operator parameter to control how the filter works.
+
+### Operator Parameter
+
+For array properties, add `_{propertyName}_op` parameter to choose the operation:
+
+| Operator | Description | Use Case |
+|----------|-------------|----------|
+| `contains` (default) | Array contains the value | Check if array includes a specific value |
+| `overlap` | Arrays have common elements | Check if arrays share any values |
+
+**Syntax:**
+```
+?{propertyName}={value}&{propertyName}_op={operator}
+```
+
+**Examples:**
+
+```javascript
+// Check if tags array contains "javascript" (default behavior)
+GET /api/v1/articles?tags=javascript
+// or explicitly:
+GET /api/v1/articles?tags=javascript&tags_op=contains
+
+// Check if tags array overlaps with ["javascript", "react"]
+// Use multiple parameters for array values
+GET /api/v1/articles?tags=javascript&tags=react&tags_op=overlap
+
+// Check if memberIds array contains a specific ID
+GET /api/v1/groups?memberIds=123&memberIds_op=contains
+
+// Check if memberIds array overlaps with [123, 456]
+// Use multiple parameters for array values
+GET /api/v1/groups?memberIds=123&memberIds=456&memberIds_op=overlap
+```
+
+**Supported Types:**
+- ID arrays
+- String arrays
+- Number arrays (range operators not supported)
+- Enum arrays
+
+**Not Supported:**
+- Date arrays (always uses non-array logic)
+- Boolean arrays (not supported)
+
+---
+
+## Quick Reference Sheet
+
+### Basic Syntax
+
+```
+GET /api/v1/{resource}?{property}={value}
+GET /api/v1/{resource}?{property}={value1}&{property}={value2}
+GET /api/v1/{resource}?{property}=null
+```
+
+**Note:** Multiple values are sent as repeated query parameters (`?param=value1&param=value2`), not comma-separated. Express middleware automatically combines them into an array.
+
+### Filter Types
+
+| Type | Single Value | Multiple Values | Special Operators |
+|------|--------------|-----------------|-------------------|
+| **ID** | `?id=123` | `?id=123&id=456` | None |
+| **String** | `?name=john` | `?name=john&name=jane` | None (case-insensitive LIKE) |
+| **Number** | `?age=25` | `?age=25&age=30` | `$lt-`, `$lte-`, `$gt-`, `$gte-`, `$btw-` |
+| **Date** | `?date=2024-01-15` | `?date=2024-01-15&date=2024-01-20` | `$today`, `$ltoday`, `$week`, `$lweek`, `$month`, `$leq-`, `$lin-` |
+| **Boolean** | `?active=true` | Not supported | None |
+| **Enum** | `?status=active` | `?status=active&status=pending` | None |
+| **GeoPoint** | Not supported | Not supported | `$bbox-`, `$circle-`, `$polygon-` |
+
+### Number Range Operators
+
+```
+$lt-{value}     Less than
+$lte-{value}    Less than or equal
+$gt-{value}     Greater than
+$gte-{value}    Greater than or equal
+$btw-{min}-{max} Between (inclusive)
+```
+
+### Date Operators
+
+```
+$today          Today (server timezone)
+$ltoday         Today (user's local timezone)
+$week           This week (server timezone)
+$lweek          This week (user's local timezone)
+$month          This month (server timezone)
+$leq-{date}     Specific date (user's local timezone)
+$lin-{date}     Date in array (user's local timezone)
+```
+
+### GeoPoint Operators
+
+```
+$bbox-{minLat},{minLon},{maxLat},{maxLon}
+$circle-{lat},{lon},{radiusMeters}
+$polygon-{lat1},{lon1},{lat2},{lon2},...
+```
+
+### Array Property Operators
+
+```
+{property}_op=contains    Array contains value (default)
+{property}_op=overlap      Arrays have common elements
+```
+
+### Common Patterns
+
+**Filter by multiple conditions:**
+```
+GET /api/v1/users?status=active&age=$gte-18&city=newyork
+```
+
+**Filter with null check:**
+```
+GET /api/v1/users?managerId=null
+```
+
+**Filter array property (use multiple parameters):**
+```
+GET /api/v1/articles?tags=javascript&tags=react&tags_op=overlap
+```
+
+**Filter with date range:**
+```
+GET /api/v1/orders?createdAt=$week&status=pending
+```
+
+**Filter with number range:**
+```
+GET /api/v1/products?price=$btw-100-500&category=electronics
+```
+
+**Filter with geo location:**
+```
+GET /api/v1/stores?location=$circle-40.7580,-73.9855,1000
+```
+
+---
+
+## Best Practices
+
+1. **Use specific filters**: Combine multiple filters to narrow down results
+2. **Use null checks**: Filter for records with missing values when needed
+3. **Array operators**: Always specify `_op` parameter for array properties when using `overlap`
+4. **Date timezones**: Use `$ltoday`, `$lweek`, `$leq-` for user-facing date filters
+5. **Number ranges**: Use range operators (`$lt-`, `$gte-`, `$btw-`) for numeric comparisons
+6. **Geo filters**: Use appropriate geo operator based on your use case (bbox for rectangular areas, circle for radius-based, polygon for custom shapes)
+
+---
+
+## Error Handling
+
+If a filter parameter is invalid, the API will return a `400 Bad Request` error with a descriptive message:
+
+- Invalid ID format
+- Invalid number format
+- Invalid date format
+- Invalid enum value
+- Invalid geo coordinates
+- Invalid operator parameter for array properties
+- Range operators used on array properties (not supported)
+
+Always validate filter parameters on the frontend before sending requests to provide better user experience.
+

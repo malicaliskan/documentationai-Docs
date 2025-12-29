@@ -209,6 +209,10 @@
               {
                 "title": "User Management",
                 "path": "user-management"
+              },
+              {
+                "title": "Filter Parameters",
+                "path": "filter-parameters"
               }
             ]
           },
