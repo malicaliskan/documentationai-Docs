@@ -4,5 +4,5 @@ patterns.json
 *.js
 # EJS files
 *.ejs
-
-
+/inherits
+/actiontemplates

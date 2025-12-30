@@ -1,0 +1,848 @@
+---
+title: Bulk CRUD Operations in Mindbricks
+description: Guide to handling bulk create, update, and delete operations using actions and job object strategy
+---
+
+# Bulk CRUD Operations in Mindbricks
+
+Mindbricks follows RESTful principles where each API endpoint represents a **single operation** on a **single resource**. However, real-world applications often need to perform bulk operations—creating, updating, or deleting multiple records at once. This guide explains how to handle bulk CRUD operations in Mindbricks using actions and strategic patterns.
+
+## Table of Contents
+
+- [Understanding the Philosophy](#understanding-the-philosophy)
+- [Using Bulk CRUD Actions](#using-bulk-crud-actions)
+- [Bulk Operations as Sub-Operations](#bulk-operations-as-sub-operations)
+- [Bulk Operations as Main Operations](#bulk-operations-as-main-operations)
+- [Real-World Examples](#real-world-examples)
+- [Best Practices](#best-practices)
+
+## Understanding the Philosophy
+
+### RESTful Single-Operation Principle
+
+In Mindbricks, each Business API represents a **single CRUD operation** on a **single resource**:
+
+- **Create API**: Creates one record
+- **Update API**: Updates one record
+- **Delete API**: Deletes one record
+- **Get API**: Retrieves one record
+- **List API**: Retrieves multiple records (but doesn't modify them)
+
+This design aligns with REST principles and ensures:
+- **Clear semantics**: Each endpoint has a single, well-defined purpose
+- **Predictable behavior**: Operations are atomic and transactional
+- **Better error handling**: Failures are isolated to single operations
+- **Simpler authorization**: Permissions are checked per operation
+
+### Why Not Direct Bulk APIs?
+
+While you might want endpoints like `POST /api/v1/users/bulk` or `PUT /api/v1/orders/bulk`, Mindbricks intentionally doesn't provide these as direct API types because:
+
+1. **REST Anti-pattern**: Bulk operations violate REST principles where each resource should be addressed individually
+2. **Complexity**: Bulk operations introduce partial failure scenarios, transaction boundaries, and rollback complexity
+3. **Authorization**: Bulk operations make it harder to enforce fine-grained permissions
+4. **Observability**: Single operations provide clearer audit trails and debugging
+
+### The Solution: Actions and Job Object Strategy
+
+Instead of direct bulk APIs, Mindbricks provides:
+
+1. **Bulk CRUD Actions**: For bulk operations as **sub-operations** within a single API
+2. **Job Object Strategy**: For bulk operations as **main operations** via a job/task object
+
+## Using Bulk CRUD Actions
+
+Bulk CRUD actions allow you to create, update, or delete multiple related records as part of a single API's workflow. These are **sub-operations** that execute after the main operation completes.
+
+### Available Bulk Actions
+
+Currently, Mindbricks provides:
+
+- **`CreateBulkCrudAction`**: Creates multiple child records in bulk
+- **`UpdateCrudAction`**: Updates multiple records (uses query-based updates)
+- **`DeleteCrudAction`**: Deletes multiple records (uses query-based deletes)
+
+**Note**: `UpdateCrudAction` and `DeleteCrudAction` already support bulk operations through query-based matching. `CreateBulkCrudAction` is specifically designed for bulk creation scenarios.
+
+### CreateBulkCrudAction Structure
+
+```json
+{
+  "id": "a100-bulk-create-logs",
+  "name": "createBulkAuditLogs",
+  "extendClassName": "CreateBulkCrudAction",
+  "childObject": "auditLog",
+  "objects": "this.logEntries.map(entry => ({ objectId: this.project.id, message: entry.message, userId: this.session.userId, timestamp: new Date() }))",
+  "contextPropertyName": "createdLogs",
+  "writeToResponse": false,
+  "onActionError": "throwError"
+}
+```
+
+**Key Fields:**
+
+- **`childObject`**: The data object to create records in (e.g., `auditLog`, `task`, `attachment`)
+- **`objects`**: An MScript expression that evaluates to an array of objects. Each object contains property-value mappings for a single record
+- **`contextPropertyName`**: (Optional) Store the created records in `this.<name>` for later use
+- **`writeToResponse`**: (Optional) Include created records in the API response
+
+### When to Use Bulk Actions
+
+Use bulk CRUD actions when:
+
+- ✅ Creating multiple **child records** related to a parent (e.g., tasks for a project, items for an order)
+- ✅ Creating multiple **dependent records** (e.g., audit logs, notifications, attachments)
+- ✅ The bulk operation is a **side effect** of the main operation
+- ✅ All records share common context from the main operation
+
+**Example Scenarios:**
+
+- Creating multiple tasks when a project is created
+- Creating audit logs for each action in a workflow
+- Creating notifications for multiple users
+- Creating attachments for a document
+
+## Bulk Operations as Sub-Operations
+
+The most common use case for bulk operations is as **sub-operations** within a single API workflow. This follows the pattern where the main API operates on one resource, and bulk operations handle related child resources.
+
+### Example 1: Creating Project with Multiple Tasks
+
+**Scenario**: When a project is created, automatically create multiple initial tasks.
+
+**Data Model:**
+- `Project` (main object)
+- `Task` (child object with `projectId`)
+
+**API Definition:**
+
+```json
+{
+  "name": "createProject",
+  "crudType": "create",
+  "dataObject": "project",
+  "workflow": {
+    "create": {
+      "afterMainCreateOperation": ["a100-create-initial-tasks"]
+    }
+  },
+  "actions": {
+    "createBulkCrudActions": [
+      {
+        "id": "a100-create-initial-tasks",
+        "name": "createInitialTasks",
+        "extendClassName": "CreateBulkCrudAction",
+        "childObject": "task",
+        "objects": "this.initialTasks.map(task => ({ projectId: this.project.id, title: task.title, description: task.description, assigneeId: task.assigneeId, status: 'pending', priority: task.priority || 'medium' }))",
+        "contextPropertyName": "createdTasks",
+        "writeToResponse": true
+      }
+    ]
+  }
+}
+```
+
+**Request Body:**
+
+```json
+{
+  "name": "Website Redesign",
+  "description": "Complete redesign of company website",
+  "initialTasks": [
+    { "title": "Design mockups", "assigneeId": "user-123", "priority": "high" },
+    { "title": "Setup development environment", "assigneeId": "user-456" },
+    { "title": "Create project documentation", "assigneeId": "user-789" }
+  ]
+}
+```
+
+**What Happens:**
+
+1. Main API creates the `Project` record
+2. After creation, `CreateBulkCrudAction` executes
+3. The `objects` MScript evaluates to an array of task objects
+4. All tasks are created in bulk using `createBulkTask()`
+5. Created tasks are stored in `this.createdTasks` and optionally returned in the response
+
+### Example 2: Order Creation with Multiple Line Items
+
+**Scenario**: When an order is created, create all order line items in bulk.
+
+**Data Model:**
+- `Order` (main object)
+- `OrderItem` (child object with `orderId`)
+
+**API Definition:**
+
+```json
+{
+  "name": "createOrder",
+  "crudType": "create",
+  "dataObject": "order",
+  "workflow": {
+    "create": {
+      "afterMainCreateOperation": ["a100-create-order-items"]
+    }
+  },
+  "actions": {
+    "createBulkCrudActions": [
+      {
+        "id": "a100-create-order-items",
+        "name": "createOrderItems",
+        "extendClassName": "CreateBulkCrudAction",
+        "childObject": "orderItem",
+        "objects": "this.input.items.map(item => ({ orderId: this.order.id, productId: item.productId, quantity: item.quantity, unitPrice: item.unitPrice, totalPrice: item.quantity * item.unitPrice }))",
+        "contextPropertyName": "orderItems",
+        "writeToResponse": true
+      }
+    ]
+  }
+}
+```
+
+**Request Body:**
+
+```json
+{
+  "customerId": "customer-123",
+  "shippingAddress": "123 Main St",
+  "items": [
+    { "productId": "prod-1", "quantity": 2, "unitPrice": 29.99 },
+    { "productId": "prod-2", "quantity": 1, "unitPrice": 49.99 },
+    { "productId": "prod-3", "quantity": 3, "unitPrice": 9.99 }
+  ]
+}
+```
+
+### Example 3: Bulk Audit Logging
+
+**Scenario**: Create audit logs for multiple actions in a workflow.
+
+**Data Model:**
+- `WorkflowExecution` (main object)
+- `AuditLog` (child object with `executionId`)
+
+**API Definition:**
+
+```json
+{
+  "name": "executeWorkflow",
+  "crudType": "create",
+  "dataObject": "workflowExecution",
+  "workflow": {
+    "create": {
+      "afterMainCreateOperation": ["a100-log-workflow-steps"]
+    }
+  },
+  "actions": {
+    "createBulkCrudActions": [
+      {
+        "id": "a100-log-workflow-steps",
+        "name": "logWorkflowSteps",
+        "extendClassName": "CreateBulkCrudAction",
+        "childObject": "auditLog",
+        "objects": "this.input.steps.map((step, index) => ({ executionId: this.workflowExecution.id, stepNumber: index + 1, action: step.action, timestamp: new Date(), userId: this.session.userId, status: 'completed' }))",
+        "contextPropertyName": "auditLogs"
+      }
+    ]
+  }
+}
+```
+
+### Example 4: Creating Notifications for Multiple Users
+
+**Scenario**: When an announcement is created, notify multiple users.
+
+**Data Model:**
+- `Announcement` (main object)
+- `Notification` (child object with `announcementId` and `userId`)
+
+**API Definition:**
+
+```json
+{
+  "name": "createAnnouncement",
+  "crudType": "create",
+  "dataObject": "announcement",
+  "workflow": {
+    "create": {
+      "afterMainCreateOperation": ["a100-notify-users"]
+    }
+  },
+  "actions": {
+    "createBulkCrudActions": [
+      {
+        "id": "a100-notify-users",
+        "name": "notifyUsers",
+        "extendClassName": "CreateBulkCrudAction",
+        "childObject": "notification",
+        "objects": "this.targetUserIds.map(userId => ({ announcementId: this.announcement.id, userId: userId, type: 'announcement', read: false, createdAt: new Date() }))",
+        "contextPropertyName": "notifications"
+      }
+    ]
+  }
+}
+```
+
+## Bulk Operations as Main Operations
+
+Sometimes you need bulk operations to be the **main operation** of an API, not just a sub-operation. For example:
+
+- Bulk importing users from a CSV
+- Bulk deleting expired records
+- Bulk updating product prices
+- Bulk archiving old documents
+
+### The Job Object Strategy
+
+Since Mindbricks APIs are designed for single operations, the recommended approach is to use a **Job Object** that represents the bulk operation request, then execute the actual bulk operation as an action.
+
+**Strategy Structure:**
+
+1. **Create a Job Object**: The API creates a single job record (e.g., `BulkImportJob`, `BulkDeleteJob`)
+2. **Execute Bulk Operation**: An action processes the job and performs the bulk operation
+3. **Update Job Status**: The job record tracks the status and results
+
+### Example 1: Bulk User Import
+
+**Scenario**: Import multiple users from a CSV or JSON array.
+
+**Data Model:**
+- `BulkImportJob` (job object)
+  - `status`: "pending" | "processing" | "completed" | "failed"
+  - `userData`: JSON array of user objects
+  - `totalCount`: number
+  - `successCount`: number
+  - `failureCount`: number
+  - `errors`: JSON array of error messages
+- `User` (target object)
+
+**API Definition:**
+
+```json
+{
+  "name": "createBulkImportJob",
+  "crudType": "create",
+  "dataObject": "bulkImportJob",
+  "workflow": {
+    "create": {
+      "afterMainCreateOperation": ["a100-process-import"]
+    }
+  },
+  "actions": {
+    "createBulkCrudActions": [
+      {
+        "id": "a100-process-import",
+        "name": "processBulkImport",
+        "extendClassName": "CreateBulkCrudAction",
+        "childObject": "user",
+        "objects": "this.bulkImportJob.userData.map(userData => ({ email: userData.email, fullName: userData.fullName, role: userData.role || 'user', isActive: true, createdAt: new Date() }))",
+        "contextPropertyName": "importedUsers",
+        "onActionError": "completeApi"
+      }
+    ],
+    "updateCrudActions": [
+      {
+        "id": "a200-update-job-status",
+        "name": "updateJobStatus",
+        "extendClassName": "UpdateCrudAction",
+        "childObject": "bulkImportJob",
+        "whereClause": "{ id: this.bulkImportJob.id }",
+        "dataClause": [
+          { "dataProperty": "status", "dataValue": "this.importedUsers && this.importedUsers.length > 0 ? 'completed' : 'failed'" },
+          { "dataProperty": "successCount", "dataValue": "this.importedUsers ? this.importedUsers.length : 0" },
+          { "dataProperty": "completedAt", "dataValue": "new Date()" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Request Body:**
+
+```json
+{
+  "userData": [
+    { "email": "user1@example.com", "fullName": "User One", "role": "admin" },
+    { "email": "user2@example.com", "fullName": "User Two", "role": "user" },
+    { "email": "user3@example.com", "fullName": "User Three" }
+  ]
+}
+```
+
+**Response:**
+
+```json
+{
+  "bulkImportJob": {
+    "id": "job-123",
+    "status": "completed",
+    "totalCount": 3,
+    "successCount": 3,
+    "failureCount": 0
+  },
+  "importedUsers": [
+    { "id": "user-1", "email": "user1@example.com", ... },
+    { "id": "user-2", "email": "user2@example.com", ... },
+    { "id": "user-3", "email": "user3@example.com", ... }
+  ]
+}
+```
+
+### Example 2: Bulk Delete with Job Tracking
+
+**Scenario**: Delete multiple expired records with tracking.
+
+**Data Model:**
+- `BulkDeleteJob` (job object)
+  - `status`: "pending" | "processing" | "completed" | "failed"
+  - `targetObject`: "order" | "session" | "log"
+  - `whereClause`: MScript query
+  - `deletedCount`: number
+- Target objects (e.g., `Order`, `Session`, `Log`)
+
+**API Definition:**
+
+```json
+{
+  "name": "createBulkDeleteJob",
+  "crudType": "create",
+  "dataObject": "bulkDeleteJob",
+  "workflow": {
+    "create": {
+      "afterMainCreateOperation": ["a100-execute-bulk-delete"]
+    }
+  },
+  "actions": {
+    "deleteCrudActions": [
+      {
+        "id": "a100-execute-bulk-delete",
+        "name": "executeBulkDelete",
+        "extendClassName": "DeleteCrudAction",
+        "childObject": "this.bulkDeleteJob.targetObject",
+        "whereClause": "this.bulkDeleteJob.whereClause"
+      }
+    ],
+    "fetchStatsActions": [
+      {
+        "id": "a200-count-deleted",
+        "name": "countDeletedRecords",
+        "extendClassName": "FetchStatsAction",
+        "targetObject": "this.bulkDeleteJob.targetObject",
+        "whereClause": "this.bulkDeleteJob.whereClause",
+        "aggregation": "count",
+        "contextPropertyName": "deletedCount"
+      }
+    ],
+    "updateCrudActions": [
+      {
+        "id": "a300-update-job-status",
+        "name": "updateJobStatus",
+        "extendClassName": "UpdateCrudAction",
+        "childObject": "bulkDeleteJob",
+        "whereClause": "{ id: this.bulkDeleteJob.id }",
+        "dataClause": [
+          { "dataProperty": "status", "dataValue": "'completed'" },
+          { "dataProperty": "deletedCount", "dataValue": "this.deletedCount || 0" },
+          { "dataProperty": "completedAt", "dataValue": "new Date()" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Request Body:**
+
+```json
+{
+  "targetObject": "session",
+  "whereClause": "{ expiresAt: { $lt: new Date() } }"
+}
+```
+
+### Example 3: Bulk Price Update
+
+**Scenario**: Update prices for multiple products based on a percentage or fixed amount.
+
+**Data Model:**
+- `BulkPriceUpdateJob` (job object)
+  - `status`: "pending" | "processing" | "completed" | "failed"
+  - `categoryId`: ID (optional filter)
+  - `updateType`: "percentage" | "fixed"
+  - `updateValue`: number
+  - `updatedCount`: number
+- `Product` (target object)
+
+**API Definition:**
+
+```json
+{
+  "name": "createBulkPriceUpdateJob",
+  "crudType": "create",
+  "dataObject": "bulkPriceUpdateJob",
+  "workflow": {
+    "create": {
+      "afterMainCreateOperation": ["a100-update-prices"]
+    }
+  },
+  "actions": {
+    "updateCrudActions": [
+      {
+        "id": "a100-update-prices",
+        "name": "updateProductPrices",
+        "extendClassName": "UpdateCrudAction",
+        "childObject": "product",
+        "whereClause": "this.bulkPriceUpdateJob.categoryId ? { categoryId: this.bulkPriceUpdateJob.categoryId } : {}",
+        "dataClause": [
+          { 
+            "dataProperty": "price", 
+            "dataValue": "this.bulkPriceUpdateJob.updateType == 'percentage' ? this.price * (1 + this.bulkPriceUpdateJob.updateValue / 100) : this.price + this.bulkPriceUpdateJob.updateValue" 
+          },
+          { "dataProperty": "lastPriceUpdate", "dataValue": "new Date()" }
+        ]
+      }
+    ],
+    "fetchStatsActions": [
+      {
+        "id": "a200-count-updated",
+        "name": "countUpdatedProducts",
+        "extendClassName": "FetchStatsAction",
+        "targetObject": "product",
+        "whereClause": "this.bulkPriceUpdateJob.categoryId ? { categoryId: this.bulkPriceUpdateJob.categoryId } : {}",
+        "aggregation": "count",
+        "contextPropertyName": "updatedCount"
+      }
+    ],
+    "updateCrudActions": [
+      {
+        "id": "a300-update-job-status",
+        "name": "updateJobStatus",
+        "extendClassName": "UpdateCrudAction",
+        "childObject": "bulkPriceUpdateJob",
+        "whereClause": "{ id: this.bulkPriceUpdateJob.id }",
+        "dataClause": [
+          { "dataProperty": "status", "dataValue": "'completed'" },
+          { "dataProperty": "updatedCount", "dataValue": "this.updatedCount || 0" },
+          { "dataProperty": "completedAt", "dataValue": "new Date()" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Request Body:**
+
+```json
+{
+  "categoryId": "cat-electronics",
+  "updateType": "percentage",
+  "updateValue": 10
+}
+```
+
+### Example 4: Bulk Archive with Async Processing
+
+**Scenario**: Archive old documents, but process asynchronously for large batches.
+
+**Data Model:**
+- `BulkArchiveJob` (job object)
+  - `status`: "pending" | "processing" | "completed" | "failed"
+  - `targetDate`: Date
+  - `archivedCount`: number
+- `Document` (target object with `isArchived` boolean)
+
+**API Definition:**
+
+```json
+{
+  "name": "createBulkArchiveJob",
+  "crudType": "create",
+  "dataObject": "bulkArchiveJob",
+  "workflow": {
+    "create": {
+      "afterMainCreateOperation": ["a100-archive-documents"]
+    }
+  },
+  "actions": {
+    "updateCrudActions": [
+      {
+        "id": "a100-archive-documents",
+        "name": "archiveDocuments",
+        "extendClassName": "UpdateCrudAction",
+        "childObject": "document",
+        "whereClause": "{ createdAt: { $lt: this.bulkArchiveJob.targetDate }, isArchived: false }",
+        "dataClause": [
+          { "dataProperty": "isArchived", "dataValue": "true" },
+          { "dataProperty": "archivedAt", "dataValue": "new Date()" },
+          { "dataProperty": "archivedBy", "dataValue": "this.session.userId" }
+        ]
+      }
+    ],
+    "fetchStatsActions": [
+      {
+        "id": "a200-count-archived",
+        "name": "countArchivedDocuments",
+        "extendClassName": "FetchStatsAction",
+        "targetObject": "document",
+        "whereClause": "{ createdAt: { $lt: this.bulkArchiveJob.targetDate }, isArchived: true }",
+        "aggregation": "count",
+        "contextPropertyName": "archivedCount"
+      }
+    ],
+    "updateCrudActions": [
+      {
+        "id": "a300-update-job-status",
+        "name": "updateJobStatus",
+        "extendClassName": "UpdateCrudAction",
+        "childObject": "bulkArchiveJob",
+        "whereClause": "{ id: this.bulkArchiveJob.id }",
+        "dataClause": [
+          { "dataProperty": "status", "dataValue": "'completed'" },
+          { "dataProperty": "archivedCount", "dataValue": "this.archivedCount || 0" },
+          { "dataProperty": "completedAt", "dataValue": "new Date()" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Real-World Examples
+
+### E-Commerce: Order Processing
+
+**Scenario**: When an order is placed, create order items, generate invoices, and send notifications.
+
+```json
+{
+  "name": "createOrder",
+  "crudType": "create",
+  "dataObject": "order",
+  "workflow": {
+    "create": {
+      "afterMainCreateOperation": [
+        "a100-create-order-items",
+        "a200-create-invoice",
+        "a300-notify-customer"
+      ]
+    }
+  },
+  "actions": {
+    "createBulkCrudActions": [
+      {
+        "id": "a100-create-order-items",
+        "name": "createOrderItems",
+        "extendClassName": "CreateBulkCrudAction",
+        "childObject": "orderItem",
+        "objects": "this.input.items.map(item => ({ orderId: this.order.id, productId: item.productId, quantity: item.quantity, unitPrice: item.unitPrice, totalPrice: item.quantity * item.unitPrice }))"
+      }
+    ],
+    "createCrudActions": [
+      {
+        "id": "a200-create-invoice",
+        "name": "createInvoice",
+        "extendClassName": "CreateCrudAction",
+        "childObject": "invoice",
+        "dataClause": [
+          { "dataProperty": "orderId", "dataValue": "this.order.id" },
+          { "dataProperty": "totalAmount", "dataValue": "this.order.totalAmount" },
+          { "dataProperty": "status", "dataValue": "'pending'" }
+        ]
+      },
+      {
+        "id": "a300-notify-customer",
+        "name": "notifyCustomer",
+        "extendClassName": "CreateCrudAction",
+        "childObject": "notification",
+        "dataClause": [
+          { "dataProperty": "userId", "dataValue": "this.order.customerId" },
+          { "dataProperty": "type", "dataValue": "'order_placed'" },
+          { "dataProperty": "message", "dataValue": "`Your order #${this.order.id} has been placed`" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Project Management: Task Assignment
+
+**Scenario**: When a project milestone is reached, create tasks for team members.
+
+```json
+{
+  "name": "completeMilestone",
+  "crudType": "update",
+  "dataObject": "milestone",
+  "workflow": {
+    "update": {
+      "afterMainUpdateOperation": ["a100-assign-next-phase-tasks"]
+    }
+  },
+  "actions": {
+    "createBulkCrudActions": [
+      {
+        "id": "a100-assign-next-phase-tasks",
+        "name": "assignNextPhaseTasks",
+        "extendClassName": "CreateBulkCrudAction",
+        "childObject": "task",
+        "objects": "this.input.nextPhaseTasks.map(task => ({ projectId: this.milestone.projectId, milestoneId: this.milestone.id, title: task.title, assigneeId: task.assigneeId, dueDate: task.dueDate, priority: task.priority || 'medium', status: 'assigned' }))",
+        "condition": "this.milestone.status == 'completed'"
+      }
+    ]
+  }
+}
+```
+
+### Content Management: Bulk Publishing
+
+**Scenario**: Publish multiple articles at once using a job object strategy.
+
+```json
+{
+  "name": "createBulkPublishJob",
+  "crudType": "create",
+  "dataObject": "bulkPublishJob",
+  "workflow": {
+    "create": {
+      "afterMainCreateOperation": ["a100-publish-articles"]
+    }
+  },
+  "actions": {
+    "updateCrudActions": [
+      {
+        "id": "a100-publish-articles",
+        "name": "publishArticles",
+        "extendClassName": "UpdateCrudAction",
+        "childObject": "article",
+        "whereClause": "{ id: { $in: this.bulkPublishJob.articleIds } }",
+        "dataClause": [
+          { "dataProperty": "status", "dataValue": "'published'" },
+          { "dataProperty": "publishedAt", "dataValue": "new Date()" },
+          { "dataProperty": "publishedBy", "dataValue": "this.session.userId" }
+        ]
+      }
+    ],
+    "updateCrudActions": [
+      {
+        "id": "a200-update-job-status",
+        "name": "updateJobStatus",
+        "extendClassName": "UpdateCrudAction",
+        "childObject": "bulkPublishJob",
+        "whereClause": "{ id: this.bulkPublishJob.id }",
+        "dataClause": [
+          { "dataProperty": "status", "dataValue": "'completed'" },
+          { "dataProperty": "completedAt", "dataValue": "new Date()" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Best Practices
+
+### 1. Use Bulk Actions for Sub-Operations
+
+✅ **Do**: Use `CreateBulkCrudAction` when creating multiple child records as part of a parent operation.
+
+```json
+// Creating order items when order is created
+"afterMainCreateOperation": ["a100-create-order-items"]
+```
+
+❌ **Don't**: Try to create a bulk create API directly.
+
+### 2. Use Job Object Strategy for Main Bulk Operations
+
+✅ **Do**: Create a job object and execute bulk operation as an action.
+
+```json
+// Bulk import via job
+"createBulkImportJob" → "afterMainCreateOperation" → "processBulkImport"
+```
+
+❌ **Don't**: Create APIs that accept arrays directly for bulk operations.
+
+### 3. Handle Errors Gracefully
+
+✅ **Do**: Use `onActionError: "completeApi"` for non-critical bulk operations.
+
+```json
+{
+  "onActionError": "completeApi",
+  "contextPropertyName": "createdItems"
+}
+```
+
+❌ **Don't**: Let bulk operation failures crash the entire API.
+
+### 4. Track Job Status
+
+✅ **Do**: Update job status and track counts for bulk operations.
+
+```json
+{
+  "dataClause": [
+    { "dataProperty": "status", "dataValue": "'completed'" },
+    { "dataProperty": "successCount", "dataValue": "this.createdItems.length" }
+  ]
+}
+```
+
+### 5. Validate Input Data
+
+✅ **Do**: Validate the objects array before bulk creation.
+
+```json
+{
+  "validationActions": [
+    {
+      "id": "a50-validate-items",
+      "name": "validateItems",
+      "condition": "Array.isArray(this.input.items) && this.input.items.length > 0"
+    }
+  ]
+}
+```
+
+### 6. Use Conditions for Conditional Bulk Operations
+
+✅ **Do**: Use action conditions to control when bulk operations execute.
+
+```json
+{
+  "condition": "this.order.status == 'confirmed' && this.input.items.length > 0"
+}
+```
+
+### 7. Consider Performance for Large Batches
+
+✅ **Do**: For very large batches (1000+ records), consider:
+- Processing in chunks
+- Using async job processing
+- Implementing pagination in the job object strategy
+
+### 8. Return Created Records When Useful
+
+✅ **Do**: Store and return created records when the client needs them.
+
+```json
+{
+  "contextPropertyName": "createdTasks",
+  "writeToResponse": true
+}
+```
+
+## Summary
+
+Mindbricks follows RESTful principles where each API represents a single operation. For bulk operations:
+
+- **Sub-operations**: Use `CreateBulkCrudAction` to create multiple child records as part of a parent operation
+- **Main operations**: Use the Job Object Strategy—create a job record, then execute the bulk operation as an action
+
+This approach maintains RESTful semantics while providing the flexibility to handle real-world bulk operation scenarios. The job object strategy also provides benefits like status tracking, error handling, and auditability that direct bulk APIs would lack.
+

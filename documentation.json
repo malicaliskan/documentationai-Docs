@@ -64,6 +64,10 @@
               {
                 "title": "Actions and Workflow",
                 "path": "actions-and-workflow"
+              },
+              {
+                "title": "Bulk CRUD Operations",
+                "path": "bulk-crud-actions"
               }
             ]
           },
