@@ -111,22 +111,27 @@ GET /api/v1/groups?memberIds=123&memberIds=456&memberIds_op=overlap
 
 ### String Filters
 
-Filter by string values. String filters perform case-insensitive partial matching (LIKE search).
+Filter by string values. **For non-array string properties**, filters perform **case-insensitive partial matching** using the `ilike` operator (similar to SQL `LIKE` with `%value%`). This means the filter will match any string that contains the search value, regardless of case.
+
+**For array string properties**, filters use **exact matching** with `$contains` or `$overlap` operators.
 
 **Syntax:**
 - Single value: `?name=john`
 - Multiple values: `?name=john&name=jane`
 - Null check: `?name=null`
 
-**Examples:**
+**Examples (Non-Array Properties):**
 
 ```javascript
-// Find users with "john" in their name (case-insensitive)
+// Find users with "john" in their name (case-insensitive partial match)
 GET /api/v1/users?name=john
-// Matches: "John", "Johnny", "johnson", etc.
+// Matches: "John", "Johnny", "johnson", "McJohn", etc.
+// Uses: WHERE name ILIKE '%john%'
 
 // Find products with specific names (use multiple parameters)
+// Each value is matched separately with partial matching
 GET /api/v1/products?name=laptop&name=phone&name=tablet
+// Matches products with "laptop", "phone", or "tablet" anywhere in the name
 
 // Find users without an email
 GET /api/v1/users?email=null
@@ -134,15 +139,19 @@ GET /api/v1/users?email=null
 
 **Array Properties:**
 
-For array string properties, use the operator parameter:
+For array string properties, use the operator parameter. **Array properties use exact matching**, not partial matching:
 
 ```javascript
-// Check if array contains a string (default)
+// Check if array contains an exact string match (default)
 GET /api/v1/articles?tags=javascript&tags_op=contains
+// Matches arrays that contain exactly "javascript" (case-sensitive)
 
-// Check if arrays have overlapping strings (use multiple parameters)
+// Check if arrays have overlapping exact strings (use multiple parameters)
 GET /api/v1/articles?tags=javascript&tags=react&tags_op=overlap
+// Matches arrays that contain exactly "javascript" OR "react" (case-sensitive)
 ```
+
+**Note:** The partial matching behavior (`ilike`) only applies to non-array string properties. Array string properties always use exact matching for performance and clarity.
 
 ---
 
@@ -442,7 +451,7 @@ GET /api/v1/{resource}?{property}=null
 | Type | Single Value | Multiple Values | Special Operators |
 |------|--------------|-----------------|-------------------|
 | **ID** | `?id=123` | `?id=123&id=456` | None |
-| **String** | `?name=john` | `?name=john&name=jane` | None (case-insensitive LIKE) |
+| **String** | `?name=john` | `?name=john&name=jane` | None (case-insensitive partial match with `ilike`) |
 | **Number** | `?age=25` | `?age=25&age=30` | `$lt-`, `$lte-`, `$gt-`, `$gte-`, `$btw-` |
 | **Date** | `?date=2024-01-15` | `?date=2024-01-15&date=2024-01-20` | `$today`, `$ltoday`, `$week`, `$lweek`, `$month`, `$leq-`, `$lin-` |
 | **Boolean** | `?active=true` | Not supported | None |
