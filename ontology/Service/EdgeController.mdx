@@ -29,14 +29,16 @@ Options that define the execution behavior of the edge controller, including the
 ```typescript
 interface EdgeControllerOptions = {
   functionName : String;
+  M2MAllowed : Boolean;
   loginRequired : Boolean;
 }
 ```
 
-| Field         | Description                                                                                                                                                                                                             |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| functionName  | The name of the function defined in the service library that will handle this controller's logic. The function must be an async module under 'edgeFunctions' and should return an object or throw an error as response. |
-| loginRequired | Whether the caller must be logged in to access this edge route. If true, Mindbricks will enforce authentication using session or token checks before invoking the function.                                             |
+| Field         | Description                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| functionName  | The name of the function defined in the service library that will handle this controller's logic. The function must be an async module under 'edgeFunctions' and should return an object or throw an error as response.                                                                                                                                                                                                          |
+| M2MAllowed    | If true, this edge controller can be accessed using machine-to-machine (M2M) tokens without requiring a user session. When enabled, services can call this controller using M2M tokens in addition to (or instead of) user session tokens. This allows for secure inter-service communication. Can be combined with loginRequired to allow both M2M tokens and user sessions, or set loginRequired to false for M2M-only access. |
+| loginRequired | Whether the caller must be logged in to access this edge route. If true, Mindbricks will enforce authentication using session or token checks before invoking the function.                                                                                                                                                                                                                                                      |
 
 ## EdgeRestSettings
 

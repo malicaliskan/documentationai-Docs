@@ -7,6 +7,9 @@ title: PublishEventAction
 Publish a domain event to a topic/queue (e.g., Kafka).
 Use for decoupled orchestration beyond the built-in **API events**.
 
+**M2M Token Support**
+When publishing events via `PublishEventAction`, an M2M (Machine-to-Machine) token is automatically generated and included in the Kafka message payload. The token includes a hash of the message payload to prevent token reuse and expires after 15 minutes. This enables secure inter-service communication when consuming events in other services.
+
 **When to use it**
 
 * After main op (`afterMainCreate/Update/DeleteOperation`)

@@ -150,6 +150,10 @@
                 "path": "mscript-cookbook"
               },
               {
+                "title": "Machine-to-Machine Communication",
+                "path": "machine-to-machine-communication"
+              },
+              {
                 "title": "BFF Service",
                 "path": "bff-service"
               },

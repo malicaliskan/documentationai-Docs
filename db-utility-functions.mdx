@@ -17,6 +17,8 @@ Mindbricks automatically generates a comprehensive set of database utility funct
 
 **Always use these utility functions instead of directly accessing models** to ensure data consistency across your system.
 
+**Important:** All create, update, and delete functions accept an optional `context` parameter as the last argument. When calling these functions from Business API actions, pass `this` as the context to automatically include session and requestId information in events. See the [Context Parameter](#context-parameter) section for details.
+
 ---
 
 ## Importing dbLayer
@@ -35,17 +37,18 @@ All functions follow the naming pattern: `<operation>${ModelName}`, where `Model
 
 ## Create Functions
 
-### `create${ModelName}(data)`
+### `create${ModelName}(data, context)`
 
 Creates a single record. If an `id` is provided and the record already exists, it will update the existing record instead.
 
 **Signature:**
 ```typescript
-create${ModelName}(data: Object): Promise<Object>
+create${ModelName}(data: Object, context?: Object): Promise<Object>
 ```
 
 **Parameters:**
 - `data` (Object) — The data object to create. Must contain all required fields as defined in your data object schema.
+- `context` (Object, optional) — Context object containing `session` and `requestId` for event tracking. When called from Business API actions, pass `this` to provide session and request context.
 
 **Returns:**
 - Object — The created/updated record data (normalized via `getData()`)
@@ -55,13 +58,13 @@ create${ModelName}(data: Object): Promise<Object>
 - Generates `codename` automatically if the data object has codename support and a base name field is provided
 - If `id` exists in database, updates the existing record (useful for upsert scenarios)
 - Automatically indexes the record in Elasticsearch
-- Publishes Kafka events for the creation/update
+- Publishes Kafka events for the creation/update (includes session and requestId from context if provided)
 
 **Example:**
 ```js
 const { createOrder } = require("dbLayer");
 
-// Create a new order
+// Create a new order (without context)
 const order = await createOrder({
   userId: "user-123",
   totalAmount: 5000,
@@ -69,46 +72,64 @@ const order = await createOrder({
   status: "pending"
 });
 
+// Create with context (from Business API action)
+const order = await createOrder({
+  userId: "user-123",
+  totalAmount: 5000,
+  currency: "USD",
+  status: "pending"
+}, this); // Pass 'this' to include session and requestId
+
 // If order with this ID exists, it will update instead
 const updated = await createOrder({
   id: order.id,
   status: "paid"
-});
+}, this);
 ```
 
 ---
 
-### `createBulk${ModelName}(dataList)`
+### `createBulk${ModelName}(dataList, context)`
 
-Creates multiple records in bulk. Processes each item sequentially to ensure proper event handling.
+Creates multiple records in bulk. Uses optimized bulk operations for better performance.
 
 **Signature:**
 ```typescript
-createBulk${ModelName}(dataList: Array<Object>): Promise<Array<Object>>
+createBulk${ModelName}(dataList: Array<Object>, context?: Object): Promise<Array<Object>>
 ```
 
 **Parameters:**
 - `dataList` (Array) — Array of data objects to create. Must be a non-empty array.
+- `context` (Object, optional) — Context object containing `session` and `requestId` for event tracking. When called from Business API actions, pass `this`.
 
 **Returns:**
 - Array — Array of created/updated record data objects
 
 **Behavior:**
 - Validates that `dataList` is a non-empty array
-- Processes each item sequentially (not in parallel) to ensure proper event handling
+- Uses bulk database operations for optimal performance
+- Handles existing records (updates) and new records (creates) separately
 - Each item follows the same rules as `create${ModelName}`
-- Automatically indexes all records in Elasticsearch
-- Publishes Kafka events for each creation
+- Automatically indexes all records in Elasticsearch (in parallel)
+- Publishes Kafka events for each creation/update (includes session and requestId from context if provided)
 
 **Example:**
 ```js
 const { createBulkOrder } = require("dbLayer");
 
+// Without context
 const orders = await createBulkOrder([
   { userId: "user-1", totalAmount: 1000, status: "pending" },
   { userId: "user-2", totalAmount: 2000, status: "pending" },
   { userId: "user-3", totalAmount: 3000, status: "pending" }
 ]);
+
+// With context (from Business API action)
+const orders = await createBulkOrder([
+  { userId: "user-1", totalAmount: 1000, status: "pending" },
+  { userId: "user-2", totalAmount: 2000, status: "pending" },
+  { userId: "user-3", totalAmount: 3000, status: "pending" }
+], this); // Pass 'this' to include session and requestId
 ```
 
 ---
@@ -370,7 +391,7 @@ const taggedOrderIds = await getIdListOfOrderByField("tags", "urgent", true);
 
 ## Update Functions
 
-### `update${ModelName}ById(id, dataClause)`
+### `update${ModelName}ById(id, dataClause, context)`
 
 Updates a record by its ID.
 
@@ -378,13 +399,15 @@ Updates a record by its ID.
 ```typescript
 update${ModelName}ById(
   id: string | Object,
-  dataClause?: Object
+  dataClause?: Object,
+  context?: Object
 ): Promise<Object>
 ```
 
 **Parameters:**
 - `id` (String|Object) — Record ID string, or object with `id` property (if object, `dataClause` can be omitted and data included in the object)
 - `dataClause` (Object, optional) — Fields to update (only required if `id` is a string)
+- `context` (Object, optional) — Context object containing `session` and `requestId` for event tracking. When called from Business API actions, pass `this`.
 
 **Returns:**
 - Object — Updated record data (normalized via `getData()`)
@@ -393,30 +416,36 @@ update${ModelName}ById(
 - Throws `NotFoundError` if record doesn't exist
 - Respects soft delete settings (only updates active records)
 - Automatically indexes updated record in Elasticsearch
-- Publishes Kafka events for the update
+- Publishes Kafka events for the update (includes session and requestId from context if provided)
 - If `id` is an object, extracts `id` and uses remaining properties as `dataClause`
 
 **Example:**
 ```js
 const { updateOrderById } = require("dbLayer");
 
-// Standard usage
+// Standard usage (without context)
 const updated = await updateOrderById("order-123", {
   status: "shipped",
   shippedAt: new Date()
 });
+
+// With context (from Business API action)
+const updated = await updateOrderById("order-123", {
+  status: "shipped",
+  shippedAt: new Date()
+}, this); // Pass 'this' to include session and requestId
 
 // Using object form
 const updated = await updateOrderById({
   id: "order-123",
   status: "shipped",
   shippedAt: new Date()
-});
+}, null, this);
 ```
 
 ---
 
-### `update${ModelName}ByIdList(idList, dataClause)`
+### `update${ModelName}ByIdList(idList, dataClause, context)`
 
 Updates multiple records by a list of IDs. All records receive the same update.
 
@@ -424,13 +453,15 @@ Updates multiple records by a list of IDs. All records receive the same update.
 ```typescript
 update${ModelName}ByIdList(
   idList: Array<string>,
-  dataClause: Object
+  dataClause: Object,
+  context?: Object
 ): Promise<Array<string>>
 ```
 
 **Parameters:**
 - `idList` (Array) — Array of record IDs to update
 - `dataClause` (Object) — Fields to update (applied to all records)
+- `context` (Object, optional) — Context object containing `session` and `requestId` for event tracking. When called from Business API actions, pass `this`.
 
 **Returns:**
 - Array — Array of updated record IDs
@@ -439,14 +470,14 @@ update${ModelName}ByIdList(
 - Updates all records in the list with the same data
 - Respects soft delete settings (only updates active records)
 - Automatically indexes all updated records in Elasticsearch
-- Publishes Kafka events for each update
+- Publishes Kafka events for each update (includes session and requestId from context if provided)
 - Returns IDs (not full records) for performance
 
 **Example:**
 ```js
 const { updateOrderByIdList } = require("dbLayer");
 
-// Mark multiple orders as shipped
+// Mark multiple orders as shipped (without context)
 const updatedIds = await updateOrderByIdList(
   ["order-1", "order-2", "order-3"],
   {
@@ -454,11 +485,21 @@ const updatedIds = await updateOrderByIdList(
     shippedAt: new Date()
   }
 );
+
+// With context (from Business API action)
+const updatedIds = await updateOrderByIdList(
+  ["order-1", "order-2", "order-3"],
+  {
+    status: "shipped",
+    shippedAt: new Date()
+  },
+  this // Pass 'this' to include session and requestId
+);
 ```
 
 ---
 
-### `update${ModelName}ByQuery(query, dataClause)`
+### `update${ModelName}ByQuery(query, dataClause, context)`
 
 Updates all records matching a query.
 
@@ -466,13 +507,15 @@ Updates all records matching a query.
 ```typescript
 update${ModelName}ByQuery(
   query: Object,
-  dataClause: Object
+  dataClause: Object,
+  context?: Object
 ): Promise<Array<Object>>
 ```
 
 **Parameters:**
 - `query` (Object) — Sequelize or MongoDB query object
 - `dataClause` (Object) — Fields to update
+- `context` (Object, optional) — Context object containing `session` and `requestId` for event tracking. When called from Business API actions, pass `this`.
 
 **Returns:**
 - Array — Array of updated record data (normalized via `getData()`)
@@ -481,7 +524,7 @@ update${ModelName}ByQuery(
 - Updates all records matching the query
 - Respects soft delete settings (only updates active records)
 - Automatically indexes all updated records in Elasticsearch
-- Publishes Kafka events for each update
+- Publishes Kafka events for each update (includes session and requestId from context if provided)
 - Returns empty array if no records match
 
 **Example:**
@@ -489,7 +532,7 @@ update${ModelName}ByQuery(
 const { Op } = require("sequelize");
 const { updateOrderByQuery } = require("dbLayer");
 
-// Mark all pending orders older than 7 days as expired
+// Mark all pending orders older than 7 days as expired (without context)
 const expired = await updateOrderByQuery(
   {
     status: "pending",
@@ -500,23 +543,37 @@ const expired = await updateOrderByQuery(
     expiredAt: new Date()
   }
 );
+
+// With context (from Business API action)
+const expired = await updateOrderByQuery(
+  {
+    status: "pending",
+    createdAt: { [Op.lt]: sevenDaysAgo }
+  },
+  {
+    status: "expired",
+    expiredAt: new Date()
+  },
+  this // Pass 'this' to include session and requestId
+);
 ```
 
 ---
 
 ## Delete Functions
 
-### `delete${ModelName}ById(id)`
+### `delete${ModelName}ById(id, context)`
 
 Deletes a record by its ID. Uses soft delete if enabled, otherwise hard delete.
 
 **Signature:**
 ```typescript
-delete${ModelName}ById(id: string | Object): Promise<Object>
+delete${ModelName}ById(id: string | Object, context?: Object): Promise<Object>
 ```
 
 **Parameters:**
 - `id` (String|Object) — Record ID string or object with `id` property
+- `context` (Object, optional) — Context object containing `session` and `requestId` for event tracking. When called from Business API actions, pass `this`.
 
 **Returns:**
 - Object — Deleted record data (normalized via `getData()`)
@@ -526,29 +583,33 @@ delete${ModelName}ById(id: string | Object): Promise<Object>
 - If soft delete is enabled: sets `isActive: false` and `_archivedAt: timestamp`
 - If soft delete is disabled: permanently deletes from database
 - Automatically removes record from Elasticsearch
-- Publishes Kafka events for the deletion
+- Publishes Kafka events for the deletion (includes session and requestId from context if provided)
 
 **Example:**
 ```js
 const { deleteOrderById } = require("dbLayer");
 
-// Delete an order
+// Delete an order (without context)
 const deleted = await deleteOrderById("order-123");
+
+// With context (from Business API action)
+const deleted = await deleteOrderById("order-123", this); // Pass 'this' to include session and requestId
 ```
 
 ---
 
-### `delete${ModelName}ByQuery(query)`
+### `delete${ModelName}ByQuery(query, context)`
 
 Deletes all records matching a query. Uses soft delete if enabled, otherwise hard delete.
 
 **Signature:**
 ```typescript
-delete${ModelName}ByQuery(query: Object): Promise<Array<Object>>
+delete${ModelName}ByQuery(query: Object, context?: Object): Promise<Array<Object>>
 ```
 
 **Parameters:**
 - `query` (Object) — Sequelize or MongoDB query object
+- `context` (Object, optional) — Context object containing `session` and `requestId` for event tracking. When called from Business API actions, pass `this`.
 
 **Returns:**
 - Array — Array of deleted record data (normalized via `getData()`)
@@ -558,7 +619,7 @@ delete${ModelName}ByQuery(query: Object): Promise<Array<Object>>
 - If soft delete is enabled: sets `isActive: false` and `_archivedAt: timestamp` for all matching records
 - If soft delete is disabled: permanently deletes all matching records
 - Automatically removes all records from Elasticsearch
-- Publishes Kafka events for each deletion
+- Publishes Kafka events for each deletion (includes session and requestId from context if provided)
 - Returns empty array if no records match
 
 **Example:**
@@ -566,11 +627,17 @@ delete${ModelName}ByQuery(query: Object): Promise<Array<Object>>
 const { Op } = require("sequelize");
 const { deleteOrderByQuery } = require("dbLayer");
 
-// Delete all expired orders
+// Delete all expired orders (without context)
 const deleted = await deleteOrderByQuery({
   status: "expired",
   expiredAt: { [Op.lt]: oneYearAgo }
 });
+
+// With context (from Business API action)
+const deleted = await deleteOrderByQuery({
+  status: "expired",
+  expiredAt: { [Op.lt]: oneYearAgo }
+}, this); // Pass 'this' to include session and requestId
 ```
 
 ---
@@ -647,16 +714,47 @@ Use MongoDB query syntax:
 
 ---
 
+## Context Parameter
+
+All create, update, and delete functions accept an optional `context` parameter as the last argument. The context object should contain:
+- `session` (Object, optional) — Current user session data
+- `requestId` (String, optional) — Unique identifier for the current request
+
+**When to use context:**
+- **In Business API actions**: Always pass `this` as the context argument. This automatically provides `this.session` and `this.requestId` to the utility functions.
+- **In library functions**: If you have access to the Business API context, pass it through. Otherwise, you can omit it or pass `null`.
+
+**Benefits of providing context:**
+- Kafka events will include session and requestId information
+- Better traceability and debugging
+- Enables session-aware event processing in downstream services
+
+**Example from Business API action:**
+```js
+// Inside a Business API action method
+async myAction() {
+  const { createOrder, updateOrderById } = require("dbLayer");
+  
+  // Pass 'this' to include session and requestId
+  const order = await createOrder({
+    userId: this.session.userId,
+    totalAmount: 1000
+  }, this);
+  
+  await updateOrderById(order.id, { status: "paid" }, this);
+}
+```
+
 ## Best Practices
 
-### ✅ Do: Use dbLayer Functions
+### ✅ Do: Use dbLayer Functions with Context
 
 ```js
 const { getOrderById, updateOrderById } = require("dbLayer");
 
-// Good: Uses utility function
+// Good: Uses utility function with context (from Business API action)
 const order = await getOrderById(orderId);
-await updateOrderById(orderId, { status: "paid" });
+await updateOrderById(orderId, { status: "paid" }, this); // Pass 'this' for context
 ```
 
 ### ❌ Don't: Access Models Directly
@@ -693,7 +791,9 @@ const {
   getIdListOfOrderByField
 } = require("dbLayer");
 
-module.exports = async function processUserOrders(userId) {
+// Example 1: Library function called from Business API action
+// If called from a Business API action, receive context and pass it through
+module.exports = async function processUserOrders(userId, context = null) {
   // Get all active orders for user
   const orders = await getOrderListByQuery({
     userId: userId,
@@ -710,12 +810,12 @@ module.exports = async function processUserOrders(userId) {
     ["count", "sum(totalAmount)"]
   );
 
-  // Update all pending orders to processing
+  // Update all pending orders to processing (with context if provided)
   const orderIds = orders.map(o => o.id);
   await updateOrderByIdList(orderIds, {
     status: "processing",
     processedAt: new Date()
-  });
+  }, context); // Pass context through
 
   // Get order IDs for a specific status
   const paidOrderIds = await getIdListOfOrderByField("status", "paid");
@@ -726,6 +826,10 @@ module.exports = async function processUserOrders(userId) {
     paidOrders: paidOrderIds.length
   };
 };
+
+// Example 2: Called from Business API action
+// In a Business API action, you would call it like:
+// LIB.processUserOrders(this.userId, this)
 ```
 
 ---

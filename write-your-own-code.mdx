@@ -833,15 +833,19 @@ For each data object in your service, Mindbricks automatically generates the fol
 
 #### **Create Functions**
 
-- **`create${ModelName}(data)`** — Creates a single record
-  - **Parameters:** `data` (Object) — The data object to create. If `id` is provided and exists, it will update the existing record instead.
+- **`create${ModelName}(data, context)`** — Creates a single record
+  - **Parameters:** 
+    - `data` (Object) — The data object to create. If `id` is provided and exists, it will update the existing record instead.
+    - `context` (Object, optional) — Context object with `session` and `requestId`. When called from Business API actions, pass `this`.
   - **Returns:** Object — The created/updated record data
   - **Auto-handles:** ID generation (if not provided), codename generation (if applicable), Elasticsearch indexing, Kafka events
 
-- **`createBulk${ModelName}(dataList)`** — Creates multiple records in bulk
-  - **Parameters:** `dataList` (Array) — Array of data objects to create
+- **`createBulk${ModelName}(dataList, context)`** — Creates multiple records in bulk
+  - **Parameters:** 
+    - `dataList` (Array) — Array of data objects to create
+    - `context` (Object, optional) — Context object with `session` and `requestId`. When called from Business API actions, pass `this`.
   - **Returns:** Array — Array of created/updated record data
-  - **Auto-handles:** Same as single create, processes each item sequentially
+  - **Auto-handles:** Same as single create, uses optimized bulk operations
 
 #### **Read Functions**
 
@@ -882,36 +886,43 @@ For each data object in your service, Mindbricks automatically generates the fol
 
 #### **Update Functions**
 
-- **`update${ModelName}ById(id, dataClause)`** — Updates a record by ID
+- **`update${ModelName}ById(id, dataClause, context)`** — Updates a record by ID
   - **Parameters:**
     - `id` (String|Object) — Record ID or object with `id` property
     - `dataClause` (Object) — Fields to update (if `id` is object, can be omitted)
+    - `context` (Object, optional) — Context object with `session` and `requestId`. When called from Business API actions, pass `this`.
   - **Returns:** Object — Updated record data
   - **Auto-handles:** Elasticsearch indexing, Kafka events, soft delete checks
 
-- **`update${ModelName}ByIdList(idList, dataClause)`** — Updates multiple records by ID list
+- **`update${ModelName}ByIdList(idList, dataClause, context)`** — Updates multiple records by ID list
   - **Parameters:**
     - `idList` (Array) — Array of IDs to update
     - `dataClause` (Object) — Fields to update for all records
+    - `context` (Object, optional) — Context object with `session` and `requestId`. When called from Business API actions, pass `this`.
   - **Returns:** Array — Array of updated record IDs
   - **Auto-handles:** Elasticsearch indexing for all updated records
 
-- **`update${ModelName}ByQuery(query, dataClause)`** — Updates all records matching a query
+- **`update${ModelName}ByQuery(query, dataClause, context)`** — Updates all records matching a query
   - **Parameters:**
     - `query` (Object) — Sequelize or MongoDB query object
     - `dataClause` (Object) — Fields to update
+    - `context` (Object, optional) — Context object with `session` and `requestId`. When called from Business API actions, pass `this`.
   - **Returns:** Array — Array of updated record data
   - **Auto-handles:** Elasticsearch indexing for all updated records
 
 #### **Delete Functions**
 
-- **`delete${ModelName}ById(id)`** — Deletes a record by ID
-  - **Parameters:** `id` (String|Object) — Record ID or object with `id` property
+- **`delete${ModelName}ById(id, context)`** — Deletes a record by ID
+  - **Parameters:** 
+    - `id` (String|Object) — Record ID or object with `id` property
+    - `context` (Object, optional) — Context object with `session` and `requestId`. When called from Business API actions, pass `this`.
   - **Returns:** Object — Deleted record data
   - **Auto-handles:** Soft delete (if enabled), Elasticsearch deletion, Kafka events
 
-- **`delete${ModelName}ByQuery(query)`** — Deletes all records matching a query
-  - **Parameters:** `query` (Object) — Sequelize or MongoDB query object
+- **`delete${ModelName}ByQuery(query, context)`** — Deletes all records matching a query
+  - **Parameters:** 
+    - `query` (Object) — Sequelize or MongoDB query object
+    - `context` (Object, optional) — Context object with `session` and `requestId`. When called from Business API actions, pass `this`.
   - **Returns:** Array — Array of deleted record data
   - **Auto-handles:** Soft delete (if enabled), Elasticsearch deletion for all records
 
@@ -945,13 +956,14 @@ These functions provide a **safe, typed, generated repository layer** that:
 ```js
 const { getOrderAggById, updateOrderById, getItemListByQuery, getOrderStatsByQuery } = require("dbLayer");
 
-module.exports = async function processOrder(orderId) {
+// If called from Business API action, receive context and pass it through
+module.exports = async function processOrder(orderId, context = null) {
   // Get order with aggregated data
   const order = await getOrderAggById(orderId);
   if (!order) throw new Error("Order not found");
   
-  // Update order status
-  await updateOrderById(orderId, { status: "processed" });
+  // Update order status (pass context for event tracking)
+  await updateOrderById(orderId, { status: "processed" }, context);
   
   // Get related items
   const items = await getItemListByQuery({ orderId: orderId });
@@ -964,6 +976,9 @@ module.exports = async function processOrder(orderId) {
   
   return { order, items, total: stats["sum-amount"] };
 };
+
+// When called from a Business API action:
+// LIB.processOrder(this.orderId, this)
 ```
 
 ### **4.&#x20;****`models`****&#x20;— Raw ORM Models (Advanced Only)**

@@ -78,6 +78,7 @@ interface ServiceOptions = {
   dbType : DbTypes;
   useSoftDelete : Boolean;
   machineToMachineBlockList : String[];
+  allowedM2MClients : String[];
 }
 ```
 
@@ -91,6 +92,7 @@ interface ServiceOptions = {
 | dbType                    | Specifies the type of database engine used for storing the service's data. It must be one of the values in the DbTypes enum. Currently, PostgreSQL is fully supported; MongoDB is in beta.                                                                                                                                                                                                                                                                                                          |
 | useSoftDelete             | Indicates whether records are soft-deleted (i.e., marked inactive using an 'isActive' flag) instead of being physically removed from the database. This setting applies globally unless overridden at the data object level.                                                                                                                                                                                                                                                                        |
 | machineToMachineBlockList | An array of service names that are blocked from accessing this service using machine-to-machine tokens. Services listed here cannot call this service's APIs with machine tokens. However, blocked services can still access public APIs (loginRequired: false) and can trigger event-based functions on behalf of users when using user tokens. This provides fine-grained control over inter-service communication while maintaining flexibility for public endpoints and user-initiated actions. |
+| allowedM2MClients         | An array of service names that are allowed to access this service using machine-to-machine tokens. Only services listed here will be able to call this service's APIs with M2M tokens in stage and production environments. This list is written to the ALLOWED_M2M_CLIENTS environment variable as a comma-separated string. In test and dev environments, this control is not enforced.                                                                                                           |
 
 ### DbTypes
 

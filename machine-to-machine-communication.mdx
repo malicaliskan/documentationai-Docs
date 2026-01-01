@@ -1,0 +1,454 @@
+---
+title: Machine-to-Machine (M2M) Communication
+description: >-
+  Comprehensive guide to M2M authentication and authorization in Mindbricks,
+  covering REST, gRPC, and Kafka communication patterns for secure inter-service
+  communication.
+---
+
+## Overview
+
+Mindbricks provides **Machine-to-Machine (M2M) authentication** to enable secure communication between microservices without requiring user session tokens. M2M tokens use **Ed25519 cryptographic signatures** and include request payload hashing to prevent token reuse attacks.
+
+M2M authentication is ideal for:
+- **Inter-service API calls** (e.g., service A calling service B's Business API)
+- **Event-driven communication** (Kafka message publishing between services)
+- **Background job orchestration** (services triggering workflows in other services)
+- **Service-to-service integrations** (automated processes that don't involve user sessions)
+
+---
+
+## M2M Token Architecture
+
+### Token Format
+
+M2M tokens are **JWT tokens** signed using the **Ed25519** algorithm. Each token includes:
+
+- **Sender**: The service name in format `{SERVICE_SHORT_NAME}-service` (e.g., `user-service`, `order-service`)
+- **Request Hash**: MD5 hash of the request payload to prevent token reuse
+- **Expiration**: 15 minutes from issuance
+- **Issuer**: The sender service name
+
+### Token Lifecycle
+
+1. **Token Creation**: Service creates M2M token with sender identity and request payload hash
+2. **Token Transmission**: Token is sent via HTTP headers (REST/gRPC) or message payload (Kafka)
+3. **Token Validation**: Receiving service validates signature using JWKS (JSON Web Key Set) from sender service
+4. **Access Control**: Receiving service checks block/allowed lists (in staging/production environments)
+5. **Request Processing**: If valid, request is processed; otherwise, authentication error is returned
+
+---
+
+## Configuration
+
+### Environment Variables
+
+Each service must have the following environment variables configured:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `SERVICE_SHORT_NAME` | Short name of the service (used in sender identity) | `user`, `order`, `payment` |
+| `SERVICE_SECRET_KEY` | Ed25519 private key (PKCS8 format) for signing tokens | `-----BEGIN PRIVATE KEY-----...` |
+| `JWKS_URL` | Template URL for fetching public keys (use `$service` placeholder) | `https://api.example.com/$service/.well-known/jwks.json` |
+| `M2M_BLOCK_LIST` | Comma-separated list of blocked service names (staging/prod only) | `malicious-service,untrusted-service` |
+| `ALLOWED_M2M_CLIENTS` | Comma-separated list of allowed service names (staging/prod only) | `user-service,order-service` |
+
+### Service Settings
+
+Configure M2M access control at the service level using `ServiceOptions`:
+
+```json
+{
+  "serviceSettings": {
+    "serviceOptions": {
+      "machineToMachineBlockList": ["blocked-service-1", "blocked-service-2"],
+      "allowedM2MClients": ["allowed-service-1", "allowed-service-2"]
+    }
+  }
+}
+```
+
+**Access Control Logic:**
+- If `machineToMachineBlockList` is defined (has at least one entry), **only** services NOT in the block list can access
+- If `machineToMachineBlockList` is empty/undefined but `allowedM2MClients` is defined, **only** services in the allowed list can access
+- Block list takes priority over allowed list (if block list exists, allowed list is ignored)
+- Access control is **only enforced in staging and production** environments
+
+---
+
+## REST API M2M Communication
+
+### Enabling M2M on Business APIs
+
+To allow a Business API to accept M2M tokens, set `M2MAllowed: true` in `ApiAuthOptions`:
+
+```json
+{
+  "authOptions": {
+    "loginRequired": false,
+    "M2MAllowed": true
+  }
+}
+```
+
+**Authentication Strategy:**
+1. If `M2MAllowed: true` and M2M token is present → Validate M2M token
+2. If `M2MAllowed: true` but no M2M token:
+   - If `loginRequired: false` → **Error**: M2M token required
+   - If `loginRequired: true` → Fall back to user session validation
+3. If `M2MAllowed: false` and `loginRequired: true` → Validate user session
+4. If both are `false` → No authentication required
+
+### Sending M2M Tokens in REST Requests
+
+When making HTTP requests via `ApiCallAction`, M2M tokens are **automatically added** to request headers:
+
+```javascript
+// Automatically generated in ApiCallAction
+headers["x-m2m-token"] = m2mToken;
+```
+
+The token is created with:
+- Sender: `{SERVICE_SHORT_NAME}-service`
+- Request hash: MD5 hash of `{ method, url, params, data }`
+- Expiration: 15 minutes
+
+### Receiving M2M Tokens in REST Controllers
+
+M2M tokens are extracted from HTTP headers (not from `Authorization` header):
+
+- `x-m2m-token`
+- `X-M2M-Token`
+- `m2m-token`
+- `M2M-Token`
+
+The token is validated and the sender identity is stored in `request.m2mPayload`.
+
+---
+
+## gRPC M2M Communication
+
+### Enabling M2M on Business APIs
+
+Same as REST: set `M2MAllowed: true` in `ApiAuthOptions`.
+
+### Sending M2M Tokens in gRPC Requests
+
+M2M tokens should be included in gRPC metadata:
+
+```javascript
+metadata.set("m2m-token", m2mToken);
+// or
+metadata.set("x-m2m-token", m2mToken);
+```
+
+### Receiving M2M Tokens in gRPC Controllers
+
+M2M tokens are extracted from gRPC metadata:
+
+- `m2m-token`
+- `x-m2m-token`
+
+The token is validated and the sender identity is stored in `request.m2mPayload`.
+
+---
+
+## Kafka M2M Communication
+
+### Enabling M2M on Business APIs
+
+Same as REST/gRPC: set `M2MAllowed: true` in `ApiAuthOptions`.
+
+### Publishing Events with M2M Tokens
+
+When using `PublishEventAction` or `ServicePublisher`, M2M tokens are **automatically added** to the Kafka message payload:
+
+```javascript
+// Automatically added in ServicePublisher.publish()
+message.M2MToken = m2mToken;
+```
+
+The token is created with:
+- Sender: `{SERVICE_SHORT_NAME}-service`
+- Request hash: MD5 hash of the message payload
+- Expiration: 15 minutes
+
+### Receiving M2M Tokens in Kafka Controllers
+
+M2M tokens are extracted from the Kafka message payload:
+
+```javascript
+const m2mToken = message?.M2MToken || message?.m2mToken || null;
+```
+
+The token is validated and the sender identity is stored in `message.m2mPayload`.
+
+---
+
+## Edge Controllers M2M Support
+
+Edge controllers (custom functions) also support M2M authentication.
+
+### Enabling M2M on Edge Controllers
+
+Set `M2MAllowed: true` in `EdgeControllerOptions`:
+
+```json
+{
+  "edgeControllerOptions": {
+    "functionName": "myCustomFunction",
+    "loginRequired": false,
+    "M2MAllowed": true
+  }
+}
+```
+
+### REST Edge Controllers
+
+- M2M tokens are extracted from HTTP headers (same as Business APIs)
+- Session management is automatically handled (if `loginRequired: true`)
+- Tenant handling is supported for multi-tenant services
+
+### Kafka Edge Controllers
+
+- M2M tokens are extracted from message payload
+- Session is already provided by Kafka handler (no session manager needed)
+
+---
+
+## Automatic M2M Token Generation
+
+### ApiCallAction
+
+When using `ApiCallAction` to make HTTP requests, M2M tokens are **automatically generated and added**:
+
+```json
+{
+  "name": "callExternalService",
+  "apiCallRequest": {
+    "method": "POST",
+    "url": "https://api.example.com/endpoint",
+    "body": "{ data: this.someData }"
+  }
+}
+```
+
+The generated code automatically:
+1. Creates MD5 hash of request payload (`method`, `url`, `params`, `data`)
+2. Generates M2M token with sender and request hash
+3. Adds token to `x-m2m-token` header
+
+### ServicePublisher (Kafka)
+
+When publishing events via `PublishEventAction` or using `ServicePublisher` directly, M2M tokens are **automatically generated and added**:
+
+```json
+{
+  "name": "publishOrderCreated",
+  "topic": "orders.created",
+  "message": "{ orderId: this.orderId, userId: this.userId }"
+}
+```
+
+The generated code automatically:
+1. Creates MD5 hash of message payload
+2. Generates M2M token with sender and request hash
+3. Adds token to `message.M2MToken`
+
+---
+
+## Security Considerations
+
+### Request Payload Hashing
+
+Each M2M token includes a hash of the request payload to prevent:
+- **Token reuse attacks**: A token cannot be used with a different request
+- **Replay attacks**: The token is bound to the specific request content
+
+The hash is computed as:
+```javascript
+const requestHash = md5(JSON.stringify({ method, url, params, data }));
+```
+
+### Token Expiration
+
+M2M tokens expire after **15 minutes** to limit the window of vulnerability if a token is compromised.
+
+### Access Control Lists
+
+In staging and production environments:
+- **Block list**: Explicitly deny access from specific services
+- **Allowed list**: Whitelist approach (only listed services can access)
+- Block list takes priority over allowed list
+
+### Key Management
+
+- Private keys (`SERVICE_SECRET_KEY`) are stored in Kubernetes secrets
+- Public keys are exposed via JWKS endpoints
+- Keys are rotated during deployment by the deployment layer
+
+---
+
+## Examples
+
+### Example 1: Service A calls Service B's Business API
+
+**Service A (Order Service)** - Making the call:
+```json
+{
+  "name": "updateInventory",
+  "targetService": "inventory",
+  "targetApi": "decreaseStock",
+  "apiParameters": [
+    { "name": "productId", "value": "this.productId" },
+    { "name": "quantity", "value": "this.quantity" }
+  ]
+}
+```
+
+**Service B (Inventory Service)** - Receiving the call:
+```json
+{
+  "authOptions": {
+    "M2MAllowed": true,
+    "loginRequired": false
+  }
+}
+```
+
+Service A's `InterserviceCallAction` will automatically include M2M token in the request.
+
+### Example 2: Publishing Kafka Event with M2M Token
+
+**Service A (Order Service)** - Publishing event:
+```json
+{
+  "name": "publishOrderCreated",
+  "topic": "orders.created",
+  "message": "{ orderId: this.orderId, total: this.total }"
+}
+```
+
+**Service B (Notification Service)** - Consuming event:
+```json
+{
+  "kafkaSettings": {
+    "hasKafkaController": true,
+    "requestTopic": "orders.created"
+  },
+  "authOptions": {
+    "M2MAllowed": true,
+    "loginRequired": false
+  }
+}
+```
+
+Service A's `PublishEventAction` will automatically include M2M token in the message.
+
+### Example 3: Edge Controller with M2M Support
+
+**Edge Controller Definition:**
+```json
+{
+  "edgeControllerOptions": {
+    "functionName": "processPaymentWebhook",
+    "loginRequired": false,
+    "M2MAllowed": true
+  },
+  "edgeRestSettings": {
+    "restEnabled": true,
+    "path": "/webhooks/payment",
+    "method": "POST"
+  }
+}
+```
+
+**Edge Function:**
+```javascript
+async function processPaymentWebhook(req) {
+  // req.m2mPayload contains validated sender information
+  const sender = req.m2mPayload?.sender;
+  
+  // Process webhook...
+  return { status: "processed" };
+}
+```
+
+---
+
+## Troubleshooting
+
+### Token Validation Fails
+
+**Error**: `InvalidM2MToken`
+
+**Possible causes:**
+1. `SERVICE_SECRET_KEY` not set or invalid
+2. `JWKS_URL` incorrect or unreachable
+3. Token expired (15 minutes)
+4. Request payload hash mismatch (token bound to different request)
+
+**Solutions:**
+- Verify environment variables are set correctly
+- Check JWKS endpoint is accessible: `curl https://api.example.com/{sender-service}/.well-known/jwks.json`
+- Ensure token is used with the exact same request payload
+
+### Access Denied
+
+**Error**: `M2M token sender 'X' is in the M2M block list` or `M2M token sender 'X' is not in the allowed M2M clients list`
+
+**Solutions:**
+- Check service settings: `machineToMachineBlockList` and `allowedM2MClients`
+- Verify sender service name matches expected format: `{SERVICE_SHORT_NAME}-service`
+- Ensure access control lists are configured correctly in service options
+
+### Token Not Found
+
+**Error**: `RequiresM2MToken`
+
+**Possible causes:**
+- `M2MAllowed: true` but no M2M token provided
+- `loginRequired: false` so M2M token is required
+
+**Solutions:**
+- Ensure M2M token is included in request (header for REST/gRPC, payload for Kafka)
+- Verify `M2MAllowed` and `loginRequired` settings match your use case
+
+---
+
+## Best Practices
+
+1. **Use M2M for service-to-service communication only**
+   - Don't use M2M tokens for user-facing APIs
+   - Use user session tokens for authenticated user requests
+
+2. **Configure access control lists**
+   - Use block lists to explicitly deny untrusted services
+   - Use allowed lists for strict whitelisting (if block list not needed)
+
+3. **Monitor token usage**
+   - Log M2M token validations for security auditing
+   - Track failed validations to detect potential attacks
+
+4. **Rotate keys regularly**
+   - Deploy new keys during scheduled maintenance
+   - Ensure JWKS endpoints are updated before key rotation
+
+5. **Use appropriate expiration**
+   - 15 minutes is the default and recommended expiration
+   - Don't increase expiration time unless absolutely necessary
+
+---
+
+## Summary
+
+Mindbricks M2M authentication provides:
+- ✅ Secure inter-service communication without user sessions
+- ✅ Automatic token generation in `ApiCallAction` and `ServicePublisher`
+- ✅ Request payload hashing to prevent token reuse
+- ✅ Configurable access control (block/allowed lists)
+- ✅ Support for REST, gRPC, and Kafka communication patterns
+- ✅ Integration with Business APIs and Edge Controllers
+
+By enabling `M2MAllowed: true` on your APIs and edge controllers, you can build secure, decoupled microservice architectures with automatic authentication handling.
+

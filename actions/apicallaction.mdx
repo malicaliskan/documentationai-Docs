@@ -7,6 +7,9 @@ title: ApiCallAction
 Makes an **HTTP request** to an external or internal endpoint.
 Used for webhooks, REST integrations, or third-party APIs.
 
+**M2M Token Support**
+When making HTTP requests, `ApiCallAction` automatically generates and includes an M2M (Machine-to-Machine) token in the request headers. The token includes a hash of the request payload to prevent token reuse and expires after 15 minutes. This enables secure inter-service communication without requiring user session tokens.
+
 **When to use it**
 
 * `afterMainOperation` (any CRUD type)

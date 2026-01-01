@@ -125,10 +125,10 @@ interface RoleItem = {
 }
 ```
 
-| Field | Description                                                                                                                                                                           |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| name  | The display name of the role (e.g., 'Admin', 'Editor'). This name will be used for reference and documentation purposes.                                                              |
-| value | The internal value of the role, which will be stored in the `roleId` field of the user or session data. This value is used during authorization checks and can be a string or number. |
+| Field | Description                                                                                                                                                                                                                                                                                                                                                  |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| name  | The display name of the role (e.g., 'grpAdmin', 'editor'). This name will be used for reference in the code and documentation purposes. Please ensure that it is one word with no special characters. For multiple words use camleCase.                                                                                                                      |
+| value | The internal value of the role, which will be stored in the `roleId` field of the user or session data. This value is used during authorization checks and should be a string. Make it same as the name to prevent confusion unless you have a reason. When you use a role reference in any authorization configuration, write donw this value not the name. |
 
 ## PermissionTypes
 

@@ -1691,3 +1691,57 @@ Implementation details for such feature-flag-like behaviors can be modeled using
 
 - Tenant-based permission logic toggled via `tenantBasedPermissionsIsActive`
 
+---
+
+## Machine-to-Machine (M2M) Authentication
+
+Mindbricks supports **Machine-to-Machine (M2M) authentication** for secure inter-service communication without requiring user session tokens. M2M tokens use Ed25519 cryptographic signatures and include request payload hashing to prevent token reuse attacks.
+
+### Enabling M2M on Business APIs
+
+To allow a Business API to accept M2M tokens, set `M2MAllowed: true` in the API's `authOptions`:
+
+```json
+{
+  "authOptions": {
+    "M2MAllowed": true,
+    "loginRequired": false
+  }
+}
+```
+
+When `M2MAllowed: true`:
+- Services can call the API using M2M tokens (sent via HTTP headers for REST/gRPC, or in message payload for Kafka)
+- If `loginRequired: false`, M2M token is required (no user session fallback)
+- If `loginRequired: true`, either M2M token or user session is acceptable
+
+### Automatic M2M Token Generation
+
+M2M tokens are automatically generated and included when:
+- Using `ApiCallAction` to make HTTP requests (token added to headers)
+- Using `PublishEventAction` or `ServicePublisher` to publish Kafka events (token added to message payload)
+
+Each token includes:
+- Sender identity: `{SERVICE_SHORT_NAME}-service`
+- Request payload hash (MD5) to prevent token reuse
+- 15-minute expiration
+
+### Service-Level Access Control
+
+Configure M2M access control at the service level using `ServiceOptions`:
+
+```json
+{
+  "serviceSettings": {
+    "serviceOptions": {
+      "machineToMachineBlockList": ["blocked-service"],
+      "allowedM2MClients": ["allowed-service-1", "allowed-service-2"]
+    }
+  }
+}
+```
+
+Access control is enforced in staging and production environments only.
+
+For comprehensive M2M documentation, including REST, gRPC, and Kafka communication patterns, see the [Machine-to-Machine Communication](/machine-to-machine-communication) guide.
+
