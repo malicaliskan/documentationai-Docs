@@ -396,12 +396,20 @@ Commonly used to summarize, rephrase, or tone-adjust text generated during workf
 Creates related (child or dependent) records inside another Data Object as part of the current API execution.
 Used for cascading inserts such as creating audit logs, attachments, or dependent tasks when a parent record is created or updated.
 
+**Inter-Service Support:** The `childObject` can be a local data object (same service) or a remote data object (different service). For remote objects, the action automatically routes to the target service's M2M edge function (`m2mCreate{ObjectName}`) using secure machine-to-machine authentication. The tenant codename is automatically propagated for multi-tenant scenarios.
+
 ### **12. UpdateCrudAction**
+
+Updates related or child records based on a query. Used for propagating state changes or syncing dependent records after the main record is updated.
+
+**Inter-Service Support:** The `childObject` can be a local data object (same service) or a remote data object (different service). For remote objects, the action automatically routes to the target service's M2M edge function (`m2mUpdate{ObjectName}ByQuery`) using secure machine-to-machine authentication. The tenant codename is automatically propagated for multi-tenant scenarios.
 
 ### **13. DeleteCrudAction**
 
 Deletes or soft-deletes related child entities conditionally.
 Used for clean-ups (e.g., remove orphaned records) or enforcing cascading deletions.
+
+**Inter-Service Support:** The `childObject` can be a local data object (same service) or a remote data object (different service). For remote objects, the action automatically routes to the target service's M2M edge function (`m2mDelete{ObjectName}ByQuery`) using secure machine-to-machine authentication. The tenant codename is automatically propagated for multi-tenant scenarios.
 
 ### **14. InterserviceCallAction**
 

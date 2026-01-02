@@ -16,9 +16,18 @@ Used for propagating state changes or syncing dependent records after the main r
 
 | Field         | Type                | Description                                            |
 | ------------- | ------------------- | ------------------------------------------------------ |
-| `childObject` | DataObjectName      | Target object to update.                               |
+| `childObject` | DataObjectName      | Target object to update. Can be a local data object (same service) or a remote data object (different service). For remote objects, the action automatically routes to the target service's M2M edge function (`m2mUpdate{ObjectName}ByQuery`) using secure machine-to-machine authentication. The tenant codename is automatically included in request headers for multi-tenant scenarios. |
 | `whereClause` | MScript             | Query that selects which records to update.            |
 | `dataClause`  | \[ApiAggregateData] | Property–value assignments applied to matched records. |
+
+**Inter-Service Support**
+
+`UpdateCrudAction` supports both local and remote data objects:
+
+* **Local objects**: The action calls the service's dbLayer utility function directly (`update{ObjectName}ByQuery`)
+* **Remote objects**: The action automatically routes to the target service's M2M edge function (`m2mUpdate{ObjectName}ByQuery`) using secure machine-to-machine authentication. This enables seamless inter-service CRUD operations without manual API calls.
+
+For multi-tenant services, the tenant codename is automatically propagated to the remote service via the `mbx-{tenantName}-codename` header.
 
 **Example**
 

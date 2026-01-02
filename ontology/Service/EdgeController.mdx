@@ -4,6 +4,20 @@
 
 An edge controller defines a fully customized route handled by a developer-defined function. Unlike standard Busines APIs, it gives full control over the request processing by directly calling a function from the service library. This allows advanced operations like database queries, external API calls, or dynamic responses without following the CRUD cycle. Edge controllers are ideal for building special-purpose APIs or custom flows outside Mindbricks' automatic route generation.
 
+**Automatic M2M Edge Functions:**
+
+Mindbricks automatically generates M2M-enabled edge functions and their corresponding REST and Kafka controllers for all `dbLayer` utility functions that perform create, update, or delete operations. These automatic edge functions are generated for each data object and include:
+
+- `m2mCreate{ObjectName}` - Create single record
+- `m2mBulkCreate{ObjectName}` - Create multiple records in bulk
+- `m2mUpdate{ObjectName}ById` - Update record by ID
+- `m2mUpdate{ObjectName}ByQuery` - Update records by query
+- `m2mUpdate{ObjectName}ByIdList` - Update multiple records by ID list
+- `m2mDelete{ObjectName}ById` - Delete record by ID
+- `m2mDelete{ObjectName}ByQuery` - Delete records by query
+
+These automatic edge functions are configured with `M2MAllowed: true` and `loginRequired: false`, allowing secure inter-service communication via machine-to-machine tokens. They enable other services to call your service's database operations directly without requiring user session tokens.
+
 ```typescript
 interface EdgeController = {
   edgeControllerOptions : EdgeControllerOptions;

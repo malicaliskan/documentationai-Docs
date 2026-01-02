@@ -81,10 +81,19 @@ Currently, Mindbricks provides:
 
 **Key Fields:**
 
-- **`childObject`**: The data object to create records in (e.g., `auditLog`, `task`, `attachment`)
+- **`childObject`**: The data object to create records in (e.g., `auditLog`, `task`, `attachment`). Can be a local data object (same service) or a remote data object (different service). For remote objects, the action automatically routes to the target service's M2M edge function (`m2mBulkCreate{ObjectName}`) using secure machine-to-machine authentication. The tenant codename is automatically included in request headers for multi-tenant scenarios.
 - **`objects`**: An MScript expression that evaluates to an array of objects. Each object contains property-value mappings for a single record
 - **`contextPropertyName`**: (Optional) Store the created records in `this.<name>` for later use
 - **`writeToResponse`**: (Optional) Include created records in the API response
+
+**Inter-Service Support:**
+
+`CreateBulkCrudAction` supports both local and remote data objects:
+
+* **Local objects**: The action calls the service's dbLayer bulk create utility function directly (`createBulk{ObjectName}`)
+* **Remote objects**: The action automatically routes to the target service's M2M edge function (`m2mBulkCreate{ObjectName}`) using secure machine-to-machine authentication. This enables seamless inter-service bulk CRUD operations without manual API calls.
+
+For multi-tenant services, the tenant codename is automatically propagated to the remote service via the `mbx-{tenantName}-codename` header.
 
 ### When to Use Bulk Actions
 

@@ -16,9 +16,18 @@ Used for cascading inserts such as creating audit logs, attachments, or dependen
 
 | Field                 | Type                | Description                                                                                                            |
 | --------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `childObject`         | DataObjectName      | The Data Object where the new record(s) will be created.                                                               |
+| `childObject`         | DataObjectName      | The Data Object where the new record(s) will be created. Can be a local data object (same service) or a remote data object (different service). For remote objects, the action automatically routes to the target service's M2M edge function (`m2mCreate{ObjectName}`) using secure machine-to-machine authentication. The tenant codename is automatically included in request headers for multi-tenant scenarios. |
 | `dataClause`          | \[ApiAggregateData] | Array of property–value pairs to populate the new record. Each value is evaluated with MScript in the current context. |
 | `contextPropertyName` | String              | Optional – store the newly created record in `this.<name>` for later use.                                              |
+
+**Inter-Service Support**
+
+`CreateCrudAction` supports both local and remote data objects:
+
+* **Local objects**: The action calls the service's dbLayer utility function directly (`create{ObjectName}`)
+* **Remote objects**: The action automatically routes to the target service's M2M edge function (`m2mCreate{ObjectName}`) using secure machine-to-machine authentication. This enables seamless inter-service CRUD operations without manual API calls.
+
+For multi-tenant services, the tenant codename is automatically propagated to the remote service via the `mbx-{tenantName}-codename` header.
 
 **Example**
 

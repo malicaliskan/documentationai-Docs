@@ -1,0 +1,40 @@
+---
+title: DeleteCrudAction
+---
+## **DeleteCrudAction**
+
+**Purpose**
+Deletes or soft-deletes related child entities conditionally.
+Used for clean-ups (e.g., remove orphaned records) or enforcing cascading deletions.
+
+**When to use it**
+
+* After parent delete (`afterMainDeleteOperation`)
+* After an update that logically removes ownership
+
+**Key fields**
+
+| Field         | Type           | Description                             |
+| ------------- | -------------- | --------------------------------------- |
+| `childObject` | DataObjectName | Object to delete from. Can be a local data object (same service) or a remote data object (different service). For remote objects, the action automatically routes to the target service's M2M edge function (`m2mDelete{ObjectName}ByQuery`) using secure machine-to-machine authentication. The tenant codename is automatically included in request headers for multi-tenant scenarios. |
+| `whereClause` | MScript        | Query defining which records to remove. |
+
+**Inter-Service Support**
+
+`DeleteCrudAction` supports both local and remote data objects:
+
+* **Local objects**: The action calls the service's dbLayer utility function directly (`delete{ObjectName}ByQuery`)
+* **Remote objects**: The action automatically routes to the target service's M2M edge function (`m2mDelete{ObjectName}ByQuery`) using secure machine-to-machine authentication. This enables seamless inter-service CRUD operations without manual API calls.
+
+For multi-tenant services, the tenant codename is automatically propagated to the remote service via the `mbx-{tenantName}-codename` header.
+
+**Example**
+
+```json
+{
+  "id": "a130-delete-files",
+  "name": "deleteProjectFiles",
+  "childObject": "file",
+  "whereClause": "{ projectId: this.projectId }"
+}
+```

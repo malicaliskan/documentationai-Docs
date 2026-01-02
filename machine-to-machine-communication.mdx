@@ -216,6 +216,80 @@ Set `M2MAllowed: true` in `EdgeControllerOptions`:
 
 ---
 
+## Automatic M2M Edge Functions for Database Operations
+
+Mindbricks automatically generates M2M-enabled edge functions and their corresponding REST and Kafka controllers for all `dbLayer` utility functions that perform create, update, or delete operations. These automatic edge functions enable secure inter-service database operations without requiring manual API definitions.
+
+### Generated Edge Functions
+
+For each data object in your service, the following M2M edge functions are automatically generated:
+
+| Function | Purpose | REST Path | Kafka Topic |
+|----------|---------|-----------|-------------|
+| `m2mCreate{ObjectName}` | Create single record | `POST /m2m/{objectName}/create` | `{serviceCodename}-m2m-{objectName}-create` |
+| `m2mBulkCreate{ObjectName}` | Create multiple records | `POST /m2m/{objectName}/bulk-create` | `{serviceCodename}-m2m-{objectName}-bulk-create` |
+| `m2mUpdate{ObjectName}ById` | Update record by ID | `PUT /m2m/{objectName}/update-by-id` | `{serviceCodename}-m2m-{objectName}-update-by-id` |
+| `m2mUpdate{ObjectName}ByQuery` | Update records by query | `PUT /m2m/{objectName}/update-by-query` | `{serviceCodename}-m2m-{objectName}-update-by-query` |
+| `m2mUpdate{ObjectName}ByIdList` | Update multiple records by ID list | `PUT /m2m/{objectName}/update-by-id-list` | `{serviceCodename}-m2m-{objectName}-update-by-id-list` |
+| `m2mDelete{ObjectName}ById` | Delete record by ID | `DELETE /m2m/{objectName}/delete-by-id` | `{serviceCodename}-m2m-{objectName}-delete-by-id` |
+| `m2mDelete{ObjectName}ByQuery` | Delete records by query | `DELETE /m2m/{objectName}/delete-by-query` | `{serviceCodename}-m2m-{objectName}-delete-by-query` |
+
+### Configuration
+
+All automatic M2M edge functions are configured with:
+- `M2MAllowed: true` - Enables M2M token authentication
+- `loginRequired: false` - No user session required
+- Both REST and Kafka endpoints are automatically enabled
+
+### Usage in CRUD Actions
+
+When using `CreateCrudAction`, `CreateBulkCrudAction`, `UpdateCrudAction`, or `DeleteCrudAction` with a remote data object (belonging to another service), the action automatically routes to the appropriate M2M edge function of the target service:
+
+```json
+{
+  "name": "createOrder",
+  "crudType": "create",
+  "dataObject": "order",
+  "workflow": {
+    "create": {
+      "afterMainCreateOperation": ["a100-create-inventory-record"]
+    }
+  },
+  "actions": {
+    "createCrudActions": [
+      {
+        "id": "a100-create-inventory-record",
+        "name": "createInventoryRecord",
+        "extendClassName": "CreateCrudAction",
+        "childObject": "inventoryRecord",  // Remote object in inventory service
+        "dataClause": [
+          { "dataProperty": "productId", "dataValue": "this.productId" },
+          { "dataProperty": "quantity", "dataValue": "this.quantity" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+If `inventoryRecord` belongs to the `inventory` service, the action will automatically:
+1. Call `InterService.callInventoryServicem2mCreateInventoryRecord()`
+2. Include M2M token in the request
+3. Propagate tenant codename (if multi-tenant)
+4. Return the created record
+
+### Multi-Tenant Support
+
+For multi-tenant services, the tenant codename is automatically included in the request headers when calling remote M2M edge functions:
+
+```
+mbx-{tenantName}-codename: {tenantCodename}
+```
+
+This ensures that remote services process requests in the correct tenant context.
+
+---
+
 ## Automatic M2M Token Generation
 
 ### ApiCallAction

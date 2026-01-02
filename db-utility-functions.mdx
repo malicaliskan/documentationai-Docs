@@ -834,6 +834,78 @@ module.exports = async function processUserOrders(userId, context = null) {
 
 ---
 
+## Automatic M2M Edge Functions
+
+All `dbLayer` utility functions that perform create, update, or delete operations are automatically exposed as M2M-enabled edge functions. This enables other services to call your service's database operations directly using machine-to-machine authentication.
+
+### Generated Edge Functions
+
+For each data object, the following M2M edge functions are automatically generated:
+
+- **`m2mCreate{ObjectName}`** - Wraps `create{ObjectName}()`
+- **`m2mBulkCreate{ObjectName}`** - Wraps `createBulk{ObjectName}()`
+- **`m2mUpdate{ObjectName}ById`** - Wraps `update{ObjectName}ById()`
+- **`m2mUpdate{ObjectName}ByQuery`** - Wraps `update{ObjectName}ByQuery()`
+- **`m2mUpdate{ObjectName}ByIdList`** - Wraps `update{ObjectName}ByIdList()`
+- **`m2mDelete{ObjectName}ById`** - Wraps `delete{ObjectName}ById()`
+- **`m2mDelete{ObjectName}ByQuery`** - Wraps `delete{ObjectName}ByQuery()`
+
+### Access Methods
+
+Each edge function is accessible via:
+
+1. **REST API**: `POST/PUT/DELETE /m2m/{objectName}/{operation}`
+2. **Kafka Topic**: `{serviceCodename}-m2m-{objectName}-{operation}`
+
+### Configuration
+
+All automatic M2M edge functions are configured with:
+- `M2MAllowed: true` - Requires M2M token authentication
+- `loginRequired: false` - No user session required
+- Both REST and Kafka endpoints enabled
+
+### Usage from Other Services
+
+Other services can call these edge functions using the `InterService` helper module, which is automatically generated for each service:
+
+```javascript
+const { InterService } = require("common-service");
+
+// Create a record in another service
+const result = await InterService.callInventoryServicem2mCreateInventoryRecord({
+  body: {
+    data: {
+      productId: "prod-123",
+      quantity: 10
+    }
+  }
+});
+
+// Update records by query
+const updated = await InterService.callInventoryServicem2mUpdateInventoryRecordByQuery({
+  body: {
+    dataClause: { status: "in_stock" },
+    query: { productId: "prod-123" }
+  }
+});
+```
+
+### Multi-Tenant Support
+
+For multi-tenant services, the tenant codename is automatically included in request headers when calling remote M2M edge functions:
+
+```
+mbx-{tenantName}-codename: {tenantCodename}
+```
+
+This ensures that remote services process requests in the correct tenant context.
+
+### CRUD Actions Integration
+
+When using `CreateCrudAction`, `CreateBulkCrudAction`, `UpdateCrudAction`, or `DeleteCrudAction` with a remote data object, the action automatically routes to the appropriate M2M edge function. No manual API calls are required—the inter-service communication is handled transparently.
+
+---
+
 ## Summary
 
 | Function | Purpose | Returns |
