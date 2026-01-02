@@ -4,104 +4,7 @@ description: >-
   A Human-Readable Guide to the Mindbricks Platform UI with Pattern-Aware
   Explanations.
 ---
-
-
-# **1. Introduction**
-
-<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765393537814-kivabeaxx4n-main.png?q=85&fm=auto&auto=compress%2Cformat" width="3382" height="1908" alt="" />
-
-Mindbricks is a visual architectural studio for designing **AI-assisted** and **pattern-based** microservices.
-Every page of the GUI is a representation of a portion of **patterns.json** — the semantic ontology that defines how Mindbricks generates backend code.
-
-This guide explains:
-
-- **Where to navigate** in the GUI
-
-- **What each page does**
-
-- **Which pattern is being configured**
-
-- **How architects are expected to use each screen**
-
-- **When AI assistance is helpful (Agent Ada)**
-
-It is a hybrid guide: intuitive for beginners, but also precise for advanced architects.
-
----
-
-# **2. Workspace Level**
-
-The **Workspace Level** is your top layer: where you organize projects, teams, and infrastructure.
-
-Mindbricks supports:
-
-- **Personal Workspaces** — for individual development
-
-- **Organizational Workspaces** — team collaboration with members and roles
-
-These screens do not correspond directly to patterns.json, but they form the environment where projects live.
-
----
-
-<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765393892015-vo6cj7unmdr-workspace-projects-.png?q=85&fm=auto&auto=compress%2Cformat" width="3382" height="1908" alt="" />
-
-## **2.1 Workspace → Projects**
-
-**What you use this page for:**
-
-- Create new Mindbricks projects
-
-- Open existing projects
-
-- Filter by “Your Projects”
-
-- Manage project metadata (rename, delete, change avatar)
-
-**How it relates to pattern ontology:**
-No direct pattern, but every project created will contain a **root MindbricksApplication pattern** behind the scenes.
-
-**How to perform key actions:**
-
-- Click **New Project** → fill in project name and short name
-
-- Click a project row → enter the **Project Home** screen
-
-- Use search bar for filtering
-
----
-
-<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765393833936-x3fyz9hc1w-workspace-members-.png?q=85&fm=auto&auto=compress%2Cformat" width="3382" height="1908" alt="" />
-
-## **2.2 Workspace → Members**
-
-Used to:
-
-- Invite team members
-
-- Assign workspace roles (Admin, Architect, DevOps, Tester, Viewer)
-
-No patterns are updated here — Mindbricks manages workspace-level security internally.
-
----
-
-<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1765394016201-loso3fvc8o-workspace-settings.png?q=85&fm=auto&auto=compress%2Cformat" width="2650" height="2270" alt="" />
-
-## **2.3 Workspace → Settings**
-
-For organizational workspaces:
-
-- Configure GitLab / GitHub integrations
-
-- Control default code publishing destinations
-
-- Manage cloud servers
-
-Patterns affected:
-None — this config applies to Mindbricks orchestration, not project patterns.
-
----
-
-# **3. Project Level**
+# **1. Project Level**
 
 Entering a project brings you to the **Project Home**.
 
@@ -121,7 +24,7 @@ Agent Ada (the AI architect) remains available in the sidebar to help update or 
 
 ---
 
-# **4. Project Home**
+# **2. Project Home**
 
 Shows:
 
@@ -137,7 +40,9 @@ This page is conceptual — it does not directly write patterns, but is the cent
 
 ---
 
-# **5. Project Settings Page**
+# **3. Project Settings Page**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1767358148751-709foojm2vn-pasted-image-1767358146123.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="977" alt="" />
 
 **Maps to:**
 `MindbricksApplication.projectSettings` pattern
@@ -165,7 +70,9 @@ Use this page to define:
 
 ---
 
-# **6. Authentication Module**
+# **4. Authentication Module**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1767358195984-p1qa1rp2xc-pasted-image-1767358193789.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="976" alt="" />
 
 The Authentication module is one of the most important UI sections.
 It configures the `ProjectAuthentication` pattern:
@@ -186,7 +93,7 @@ Below is the user-friendly version of how everything connects visually.
 
 ---
 
-## **6.1 Authentication → Authentication Essentials**
+## **4.1 Authentication → Authentication Essentials**
 
 **Maps to:**
 `authenticationEssentials`
@@ -226,7 +133,7 @@ Below is the user-friendly version of how everything connects visually.
 
 ---
 
-## **6.2 Authentication → Login Definition**
+## **4.2 Authentication → Login Definition**
 
 **Maps to:**
 `loginDefinition` pattern.
@@ -261,7 +168,7 @@ UI field → pattern
 
 ---
 
-## **6.3 Authentication → Verification Services**
+## **4.3 Authentication → Verification Services**
 
 **Maps to:**
 `verificationServices` and all nested verification subpatterns.
@@ -284,7 +191,7 @@ You define `verificationTemplate` which formats body and link variables.
 
 ---
 
-## **6.4 Authentication → Access Control**
+## **4.4 Authentication → Access Control**
 
 **Maps to:**
 `accessControl`, `permissionBasics`, `roleSettings`, `permissionTypes`,
@@ -310,7 +217,7 @@ This page configures the *entire platform authorization model*.
 
 ---
 
-## **6.5 Authentication → User / Tenant Properties**
+## **4.5 Authentication → User / Tenant Properties**
 
 **Maps to:**
 `ProjectAuthentication.userProperties`
@@ -340,20 +247,22 @@ All property patterns apply, including:
 
 ---
 
-# **7. BFF Service**
+# **5. BFF Service**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1767358263878-rdyibe2p9-pasted-image-1767358260378.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="981" alt="" />
 
 **Maps to:**
 `BFFService` + `DataView[]`.
 
 ---
 
-## **7.1 BFF Service → Main Page**
+## **5.1 BFF Service → Main Page**
 
 Shows documentation and generated code for your BFF Service.
 
 ---
 
-## **7.2 BFF Service → Data Views**
+## **5.2 BFF Service → Data Views**
 
 This is a UI for designing `DataView` patterns.
 The most powerful read-model builder of Mindbricks.
@@ -387,7 +296,9 @@ This page is the GUI equivalent of building a *stored materialized read model*.
 
 ---
 
-# **8. Notification Service**
+# **6. Notification Service**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1767358344189-jr22imv2j3k-pasted-image-1767358342328.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="978" alt="" />
 
 Maps to:
 
@@ -399,7 +310,7 @@ Maps to:
 
 ---
 
-## **8.1 Notification Service → Service Settings**
+## **6.1 Notification Service → Service Settings**
 
 Configures:
 
@@ -411,7 +322,7 @@ Configures:
 
 ---
 
-## **8.2 Notification Service → Event Notifications**
+## **6.2 Notification Service → Event Notifications**
 
 Maps to:
 `EventNotification` pattern.
@@ -442,7 +353,9 @@ The GUI directly aligns with:
 
 ---
 
-# **9. Services Module**
+# **7. Services Module**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1767358393039-k8isd17zloq-pasted-image-1767358391082.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="972" alt="" />
 
 This is one of the most important GUI areas, representing your **microservices**.
 
@@ -454,7 +367,7 @@ Maps to:
 
 ---
 
-## **9.1 Services → Main Page**
+## **7.1 Services → Main Page**
 
 You can:
 
@@ -466,7 +379,9 @@ You can:
 
 ---
 
-# **10. Inside a Service**
+# **8. Inside a Service**
+
+<Image src="https://blob-cdn.documentation.ai/org-39f2f004-5620-4ad2-9ba7-4e591d7735f7/doc-49f7ea0f-3aad-4d21-b3bf-699b5905ffea/1767358459022-hi7zh0t4524-pasted-image-1767358456714.png?q=85&fm=auto&auto=compress%2Cformat" width="1919" height="980" alt="" />
 
 A service contains:
 
@@ -484,7 +399,7 @@ Each section maps cleanly to pattern elements.
 
 ---
 
-# **11. Service → Service Settings**
+# **9. Service → Service Settings**
 
 **Maps to:**
 `serviceSettings`
@@ -511,7 +426,7 @@ This page defines how the microservice functions as a whole.
 
 ---
 
-# **12. Service → Data Objects**
+# **10. Service → Data Objects**
 
 Maps to:
 `dataObjects[]` pattern
@@ -522,7 +437,7 @@ Lets you create/remove DataObjects.
 
 ---
 
-## **12.1 Inside a Data Object**
+## **10.1 Inside a Data Object**
 
 Navigation:
 
@@ -532,7 +447,7 @@ Navigation:
 
 ---
 
-## **12.2 Data Object → Object Settings**
+## **10.2 Data Object → Object Settings**
 
 Maps to:
 
@@ -568,7 +483,7 @@ The UI accordion structure matches the pattern structure exactly.
 
 ---
 
-## **12.3 Data Object → Properties**
+## **10.3 Data Object → Properties**
 
 Maps to:
 `DataProperty` pattern
@@ -616,7 +531,7 @@ The UI precisely matches the pattern structure.
 
 ---
 
-# **13. Business Logic**
+# **11. Business Logic**
 
 Maps to:
 
@@ -664,7 +579,7 @@ This is where you design **service behavior**.
 
 ---
 
-# **14. Service → Library**
+# **12. Service → Library**
 
 Maps to:
 
@@ -694,7 +609,7 @@ Agent Ada can help generate these files.
 
 ---
 
-# **15. Service → Edge Controllers**
+# **13. Service → Edge Controllers**
 
 Maps to:
 
@@ -716,7 +631,7 @@ Edge Controllers give you the escape hatch for advanced logic.
 
 ---
 
-# **16. Summary**
+# **14. Summary**
 
 This GUI guide helps you navigate Mindbricks as both:
 
