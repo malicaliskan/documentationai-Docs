@@ -1,0 +1,85 @@
+---
+title: AiCallAction
+description: >-
+  Call an LLM (OpenAI, Anthropic, …) with a structured prompt to get text or
+  JSON.Use it to generate labels, summaries, entity extraction, validation
+  suggestions, or decision scaffolds used by later actions.
+---
+**Purpose**
+Call an LLM (OpenAI, Anthropic, …) with a structured prompt to get **text** or **JSON**.
+Use it to generate labels, summaries, entity extraction, validation suggestions, or decision scaffolds used by later actions.
+
+**When to use it (milestones)**
+
+- `afterBuildDataClause` (pre-persist checks, computed fields)
+
+- `afterMainCreateOperation` / `afterMainUpdateOperation` (post-write summaries, notifications)
+
+- `afterMainGetOperation` / `afterMainListOperation` (enrichment)
+
+- `afterBuildOutput` (final phrasing/formatting)
+
+**Key fields**
+
+| Field                 | Type               | Notes                                                         |
+| --------------------- | ------------------ | ------------------------------------------------------------- |
+| `promptTemplate`      | `AIPromptTemplate` | Defines **system** and **user** parts; user supports MScript. |
+| `model`               | `String`           | Provider’s model ID (e.g., `"gpt-4o"`, `"claude-3-opus"`).    |
+| `responseFormat`      | `String`           | `"text"` or `"json"` — guide downstream handling.             |
+| `aiFetchProperty`     | `String`           | If model returns an object and you want a single property.    |
+| `isArray`             | `Boolean`          | Set `true` if you expect a list of items.                     |
+| `contextPropertyName` | `String`           | Where result is stored (`this.<name>`).                       |
+
+**Behavior**
+
+- Composes the prompt at runtime using `AIPromptTemplate`.
+
+- Awaits response; if `responseFormat:"json"`, the runtime expects valid JSON (handle errors with `onActionError` or pre-validate with another step).
+
+- Writes result to `this.<contextPropertyName>`; set `writeToResponse:true` to expose it.
+
+**Example — extract product tags as JSON**
+
+```json
+{
+  "id": "a180-ai-extract-tags",
+  "extendClassName": "AiCallAction",
+  "name": "extractProductTags",
+  "model": "gpt-4o",
+  "responseFormat": "json",
+  "promptTemplate": {
+    "systemPrompt": "You are a tagging engine that outputs strict JSON.",
+    "userPrompt": "`{ name: ${this.product.name}, desc: ${this.product.description} }`"
+  },
+  "aiFetchProperty": null,
+  "isArray": false,
+  "contextPropertyName": "extractedTags",
+  "writeToResponse": false
+}
+```
+
+---
+
+### **AIPromptTemplate**
+
+**Purpose**
+Separates **system** and **user** instructions cleanly. The user portion can be built with MScript using `this` values (parameters, session, previous actions).
+
+**Fields**
+
+| Field          | Type      | Description                                                        |
+| -------------- | --------- | ------------------------------------------------------------------ |
+| `systemPrompt` | `Text`    | Stable role/instructions (behavioral guardrails).                  |
+| `userPrompt`   | `MScript` | Dynamic content referencing context (e.g., `${this.description}`). |
+
+**Example (used above)**
+
+```json
+"promptTemplate": {
+  "systemPrompt": "You are a tagging engine that outputs strict JSON.",
+  "userPrompt": "`{ name: ${this.product.name}, desc: ${this.product.description} }`"
+}
+```
+
+---
+

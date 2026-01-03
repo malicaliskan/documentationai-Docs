@@ -1,0 +1,39 @@
+---
+title: IntegrationAction
+---
+## **IntegrationAction**
+
+**Purpose**
+Triggers a **native integration** provided by Mindbricks (e.g., AWS S3 file upload, Airtable record creation, Stripe charge).
+Integrations are pre-coded, so you only supply parameters.
+
+**When to use it**
+
+* After main operation to push or sync data externally
+* After list/get for pull-type integrations (e.g., reading from Airtable)
+
+**Key fields**
+
+| Field                 | Type                    | Description                                                              |
+| --------------------- | ----------------------- | ------------------------------------------------------------------------ |
+| `provider`            | String                  | Integration provider ID (`aws`, `airtable`, `salesforce`, etc.).         |
+| `action`              | String                  | Operation name exposed by provider (`uploadFile`, `createRecord`, etc.). |
+| `parameters`          | \[IntegrationParameter] | Array of name/value MScript parameters to pass.                          |
+| `contextPropertyName` | String                  | Where to store result in context.                                        |
+
+**Example**
+
+```json
+{
+  "id": "a160-upload-s3",
+  "name": "uploadFileToS3",
+  "provider": "aws",
+  "action": "uploadFile",
+  "parameters": [
+    { "parameterName": "bucketName", "parameterValue": "`project-${this.projectId}`" },
+    { "parameterName": "filePath", "parameterValue": "this.filePath" },
+    { "parameterName": "content", "parameterValue": "this.renderedReport" }
+  ],
+  "contextPropertyName": "s3UploadResult"
+}
+```

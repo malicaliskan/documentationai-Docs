@@ -396,6 +396,175 @@
                 ]
               },
               {
+                "group": "Action References",
+                "pages": [
+                  {
+                    "title": "AddToContextAction",
+                    "path": "references/actions/addtocontextaction"
+                  },
+                  {
+                    "title": "AddToResponseAction",
+                    "path": "references/actions/addtoresponseaction"
+                  },
+                  {
+                    "title": "AiCallAction",
+                    "path": "references/actions/aicallaction"
+                  },
+                  {
+                    "title": "ApiCallAction",
+                    "path": "references/actions/apicallaction"
+                  },
+                  {
+                    "title": "ArrowFunctionAction",
+                    "path": "references/actions/arrowfunctionaction"
+                  },
+                  {
+                    "title": "CheckoutAction",
+                    "path": "references/actions/checkoutaction"
+                  },
+                  {
+                    "title": "CollateListsAction",
+                    "path": "references/actions/collatelistsaction"
+                  },
+                  {
+                    "title": "CreateBucketTokenAction",
+                    "path": "references/actions/createbuckettokenaction"
+                  },
+                  {
+                    "title": "CreateCrudAction",
+                    "path": "references/actions/createcrudaction"
+                  },
+                  {
+                    "title": "CreateJWTTokenAction",
+                    "path": "references/actions/createjwttokenaction"
+                  },
+                  {
+                    "title": "CreateObjectAction",
+                    "path": "references/actions/createobjectaction"
+                  },
+                  {
+                    "title": "DataToFileAction",
+                    "path": "references/actions/datatofileaction"
+                  },
+                  {
+                    "title": "DeleteCrudAction",
+                    "path": "references/actions/deletecrudaction"
+                  },
+                  {
+                    "title": "FetchFromElasticAction",
+                    "path": "references/actions/fetchfromelasticaction"
+                  },
+                  {
+                    "title": "FetchObjectAction",
+                    "path": "references/actions/fetchobjectaction"
+                  },
+                  {
+                    "title": "FetchParentAction",
+                    "path": "references/actions/fetchparentaction"
+                  },
+                  {
+                    "title": "FetchStatsAction",
+                    "path": "references/actions/fetchstatsaction"
+                  },
+                  {
+                    "title": "FunctionCallAction",
+                    "path": "references/actions/functioncallaction"
+                  },
+                  {
+                    "title": "IntegrationAction",
+                    "path": "references/actions/integrationaction"
+                  },
+                  {
+                    "title": "InterserviceCallAction",
+                    "path": "references/actions/interservicecallaction"
+                  },
+                  {
+                    "title": "ListMapAction",
+                    "path": "references/actions/listmapaction"
+                  },
+                  {
+                    "title": "LoopAction",
+                    "path": "references/actions/loopaction"
+                  },
+                  {
+                    "title": "MembershipCheckAction",
+                    "path": "references/actions/membershipcheckaction"
+                  },
+                  {
+                    "title": "ObjectPermissionCheckAction",
+                    "path": "references/actions/objectpermissioncheckaction"
+                  },
+                  {
+                    "title": "ParallelAction",
+                    "path": "references/actions/parallelaction"
+                  },
+                  {
+                    "title": "PermissionCheckAction",
+                    "path": "references/actions/permissioncheckaction"
+                  },
+                  {
+                    "title": "PublishEventAction",
+                    "path": "references/actions/publisheventaction"
+                  },
+                  {
+                    "title": "ReadFromRedisAction",
+                    "path": "references/actions/readfromredisaction"
+                  },
+                  {
+                    "title": "ReadJwtTokenAction",
+                    "path": "references/actions/readjwttokenaction"
+                  },
+                  {
+                    "title": "RedirectAction",
+                    "path": "references/actions/redirectaction"
+                  },
+                  {
+                    "title": "RefineByAiAction",
+                    "path": "references/actions/refinebyaiaction"
+                  },
+                  {
+                    "title": "RemoveFromResponseAction",
+                    "path": "references/actions/removefromresponseaction"
+                  },
+                  {
+                    "title": "RenderDataAction",
+                    "path": "references/actions/renderdataaction"
+                  },
+                  {
+                    "title": "SearchObjectAction",
+                    "path": "references/actions/searchobjectaction"
+                  },
+                  {
+                    "title": "SendMailAction",
+                    "path": "references/actions/sendmailaction"
+                  },
+                  {
+                    "title": "SendPushNotificationAction",
+                    "path": "references/actions/sendpushnotificationaction"
+                  },
+                  {
+                    "title": "SendSmsAction",
+                    "path": "references/actions/sendsmsaction"
+                  },
+                  {
+                    "title": "UpdateCrudAction",
+                    "path": "references/actions/updatecrudaction"
+                  },
+                  {
+                    "title": "ValidationAction",
+                    "path": "references/actions/validationaction"
+                  },
+                  {
+                    "title": "VerifyWebhookAction",
+                    "path": "references/actions/verifywebhookaction"
+                  },
+                  {
+                    "title": "WriteToRedisAction",
+                    "path": "references/actions/writetoredisaction"
+                  }
+                ]
+              },
+              {
                 "title": "MScript Syntax",
                 "path": "mscript-syntax"
               },

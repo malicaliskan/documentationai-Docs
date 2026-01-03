@@ -1,0 +1,39 @@
+---
+title: CollateListsAction
+---
+## **CollateListsAction**
+
+**Purpose**
+Merges data from one list (source) into another (target) by matching keys.
+Example: attaching each user’s address list to its corresponding user object.
+
+**When to use it**
+
+* Usually after main list operation (`afterMainListOperation`)
+* Also used in complex enrichments after `fetchObjectActions` or `fetchStatsActions`.
+
+**Key fields**
+
+| Field           | Type    | Description                                            |
+| --------------- | ------- | ------------------------------------------------------ |
+| `sourceList`    | MScript | Expression evaluating to the source array.             |
+| `targetList`    | MScript | Expression evaluating to the target array.             |
+| `sourceKey`     | String  | Property in source objects to match.                   |
+| `targetKey`     | String  | Property in target objects to match.                   |
+| `nameInTarget`  | String  | Name of property added to target for collated data.    |
+| `targetIsArray` | Boolean | Whether to store multiple matched sources as an array. |
+
+**Example**
+
+```json
+{
+  "id": "a40-collate-addresses",
+  "name": "collateAddresses",
+  "sourceList": "this.addressList",
+  "targetList": "this.userList",
+  "sourceKey": "userId",
+  "targetKey": "id",
+  "nameInTarget": "addresses",
+  "targetIsArray": true
+}
+```

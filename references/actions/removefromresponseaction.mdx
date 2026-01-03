@@ -1,0 +1,27 @@
+---
+title: RemoveFromResponseAction
+---
+## **RemoveFromResponseAction**
+
+**Purpose**
+Strip properties from the response before sending (privacy, cleanup).
+
+**When to use it**
+
+* `afterBuildOutput`
+
+**Key fields**
+
+| Field        | Type      | Description                         |
+| ------------ | --------- | ----------------------------------- |
+| `properties` | \[String] | Path names to remove from response. |
+
+**Example**
+
+```json
+{
+  "id": "a310-strip-internals",
+  "name": "removeInternalFields",
+  "properties": ["internalNotes", "debugInfo"]
+}
+```

@@ -1,0 +1,36 @@
+---
+title: AddToContextAction
+---
+**Purpose**
+Adds one or more computed values to the API runtime context (`this`), making them available to later actions.
+Use it to define temporary or derived variables such as totals, flags, or enriched fields.
+
+**When to use it**
+
+- After parameter transformations
+
+- Before CRUD operations (e.g., injecting computed fields)
+
+- Before response shaping
+
+**Key fields**
+
+| Field     | Type           | Description                                                                                                |
+| --------- | -------------- | ---------------------------------------------------------------------------------------------------------- |
+| `context` | \[ContextData] | Array of key–value pairs (context name + MScript value). Each item defines one variable to set in context. |
+
+**Example**
+
+```json
+{
+  "id": "a60-add-context",
+  "extendClassName": "AddToContextAction",
+  "name": "addComputedContext",
+  "context": [
+    { "contextName": "discountRate", "contextValue": "this.customer?.isVip ? 0.2 : 0.0" },
+    { "contextName": "grandTotal", "contextValue": "this.invoiceTotal * (1 - this.discountRate)" }
+  ]
+}
+```
+
+After execution, `this.discountRate` and `this.grandTotal` become available for later steps.

@@ -1,0 +1,39 @@
+---
+title: CreateObjectAction
+---
+## **CreateObjectAction**
+
+**Purpose**
+Creates an in-memory JavaScript object from key–value pairs and writes it to the context.
+It doesn’t persist data — it’s for constructing structured objects to be used later (e.g., for email bodies, API calls, or file rendering).
+
+**When to use it**
+
+* Before calling integrations (`ApiCallAction`, `SendMailAction`, etc.)
+* Before `RenderDataAction` to feed template data
+* For internal state preparation after a create/update operation
+
+**Key fields**
+
+| Field                 | Type          | Description                                                                         |
+| --------------------- | ------------- | ----------------------------------------------------------------------------------- |
+| `payload`             | \[ObjectData] | Base key–value pairs to form the object.                                            |
+| `mergeObject`         | MScript       | Optional – merges another object into the base one (useful for dynamic structures). |
+| `contextPropertyName` | String        | Where to store the created object in context.                                       |
+
+**Example**
+
+```json
+{
+  "id": "a70-create-object",
+  "name": "prepareEmailPayload",
+  "payload": [
+    { "key": "recipient", "value": "this.customer.email" },
+    { "key": "subject", "value": "`Invoice #${this.invoiceId}`" },
+    { "key": "amountDue", "value": "this.grandTotal" }
+  ],
+  "contextPropertyName": "emailPayload"
+}
+```
+
+The result becomes `this.emailPayload`, which can be used by a later `SendMailAction`.

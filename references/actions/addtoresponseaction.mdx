@@ -1,0 +1,30 @@
+---
+title: AddToResponseAction
+---
+**Purpose**
+Copy selected context values into the final response.
+
+**When to use it**
+
+- `afterBuildOutput` (before send)
+
+**Key fields**
+
+| Field     | Type           | Description                                        |
+| --------- | -------------- | -------------------------------------------------- |
+| `context` | \[ContextData] | Names and MScript values to project into response. |
+
+**Example**
+
+```json
+{
+  "id": "a300-add-response",
+  "extendClassName": "AddToResponseAction",
+  "name": "exposeTotals",
+  "context": [
+    { "contextName": "grandTotal", "contextValue": "this.grandTotal" },
+    { "contextName": "discountRate", "contextValue": "this.discountRate" }
+  ]
+}
+```
+

@@ -1,0 +1,36 @@
+---
+title: PublishEventAction
+---
+## **PublishEventAction**
+
+**Purpose**
+Publish a domain event to a topic/queue (e.g., Kafka).
+Use for decoupled orchestration beyond the built-in **API events**.
+
+**M2M Token Support**
+When publishing events via `PublishEventAction`, an M2M (Machine-to-Machine) token is automatically generated and included in the Kafka message payload. The token includes a hash of the message payload to prevent token reuse and expires after 15 minutes. This enables secure inter-service communication when consuming events in other services.
+
+**When to use it**
+
+* After main op (`afterMainCreate/Update/DeleteOperation`)
+* After `afterApiEvent` for custom streams
+
+**Key fields**
+
+| Field     | Type    | Description                    |
+| --------- | ------- | ------------------------------ |
+| `topic`   | String  | Destination topic/channel.     |
+| `message` | MScript | Payload object/string to send. |
+
+**Example**
+
+```json
+{
+  "id": "a270-publish-campaign",
+  "name": "emitCampaignCreated",
+  "topic": "marketing.campaign.created",
+  "message": "{ id: this.campaign.id, createdBy: this.session.userId }"
+}
+```
+
+> Note: If `ApiOptions.raiseApiEvent=true`, Mindbricks already emits the **standard API event**; use `PublishEventAction` for **additional** custom events.
