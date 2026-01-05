@@ -856,8 +856,12 @@ For each data object in your service, Mindbricks automatically generates the fol
 
 - **`get${ModelName}AggById(id)`** — Retrieves a record with aggregated/joined data
   - **Parameters:** `id` (String|Array) — Single ID or array of IDs
-  - **Returns:** Object|Array|null — Record(s) with joined relations populated via CQRS joins
-  - **Use case:** When you need related data from other services
+  - **Returns:** Object|Array|null — Record(s) with joined relations populated
+  - **Use case:** When you need related data from both local database relations and remote services
+  - **How it works:** 
+    - For **local relations** (same service): Fetches related data directly from the database
+    - For **remote relations** (other services): Fetches related data from Elasticsearch indices
+    - Automatically populates all defined relations on the data object, whether local or remote
 
 - **`get${ModelName}ListByQuery(query)`** — Retrieves multiple records matching a query
   - **Parameters:** `query` (Object) — Sequelize or MongoDB query object (depending on your DB type)
@@ -1018,6 +1022,219 @@ But note:
 - It may break invariants if misused
 
 **Please check common libraries reference document to get complete information for  all importable function and class.**
+
+### **5. Fetching Data from Other Services**
+
+In a microservices architecture, services often need to access data from other services. Mindbricks provides utility functions in `serviceCommon` to fetch remote objects from Elasticsearch indices, which are automatically indexed when data is created or updated in other services.
+
+#### **Why Fetch from Elasticsearch Instead of Direct Database Access?**
+
+- **Service Independence**: Services don't need direct database access to other services
+- **Performance**: Elasticsearch provides fast, indexed queries across services
+- **Consistency**: Data is automatically indexed when changes occur in the source service
+- **Multi-tenant Support**: Elasticsearch indices are properly scoped per tenant
+
+#### **Available Functions**
+
+All remote fetch functions are available from `serviceCommon`:
+
+```js
+const { 
+  fetchRemoteObjectByMQuery,
+  fetchRemoteObjectByElasticQuery,
+  fetchRemoteListByMQuery,
+  fetchRemoteListByElasticQuery
+} = require("serviceCommon");
+```
+
+#### **1. Fetching a Single Remote Object**
+
+##### **Using MQuery (Recommended)**
+
+MQuery is Mindbricks' query format that works across database types. Use this when you want to write queries in a database-agnostic way:
+
+```js
+const { fetchRemoteObjectByMQuery } = require("serviceCommon");
+
+// Fetch a user by email from the auth service
+const user = await fetchRemoteObjectByMQuery("User", {
+  email: "user@example.com"
+});
+
+if (user) {
+  console.log(`Found user: ${user.name}`);
+}
+```
+
+##### **Using Elasticsearch Query**
+
+For advanced queries or when you need Elasticsearch-specific features:
+
+```js
+const { fetchRemoteObjectByElasticQuery } = require("serviceCommon");
+
+// Fetch a user using Elasticsearch query syntax
+const user = await fetchRemoteObjectByElasticQuery("User", {
+  match: {
+    email: "user@example.com"
+  }
+});
+```
+
+#### **2. Fetching a List of Remote Objects**
+
+##### **Using MQuery with Pagination**
+
+```js
+const { fetchRemoteListByMQuery } = require("serviceCommon");
+
+// Fetch first 20 active orders from the order service
+const orders = await fetchRemoteListByMQuery(
+  "Order",
+  { status: "active" },
+  0,    // from (starting index)
+  20,   // size (number of results)
+  [{ createdAt: { order: "desc" } }]  // sort (optional)
+);
+
+orders.forEach(order => {
+  console.log(`Order ${order.id}: ${order.totalAmount}`);
+});
+```
+
+##### **Using Elasticsearch Query with Pagination**
+
+```js
+const { fetchRemoteListByElasticQuery } = require("serviceCommon");
+
+// Fetch orders using Elasticsearch query with pagination
+const orders = await fetchRemoteListByElasticQuery(
+  "Order",
+  {
+    bool: {
+      must: [
+        { match: { status: "active" } },
+        { range: { totalAmount: { gte: 100 } } }
+      ]
+    }
+  },
+  0,    // from
+  50,   // size
+  [{ createdAt: { order: "desc" } }]  // sort
+);
+```
+
+#### **3. Using in MScript**
+
+You can call these functions directly in MScript expressions within patterns:
+
+```json
+{
+  "action": {
+    "patternName": "FunctionCallAction",
+    "callScript": "await LIB.fetchUserFromAuthService(this.userEmail)",
+    "contextPropertyName": "remoteUser"
+  }
+}
+```
+
+Then in your service library function:
+
+```js
+// In service library function
+const { fetchRemoteObjectByMQuery } = require("serviceCommon");
+
+module.exports = async function fetchUserFromAuthService(email) {
+  return await fetchRemoteObjectByMQuery("User", { email });
+};
+```
+
+#### **4. Using in Service Library Functions**
+
+Service library functions are ideal for encapsulating remote data fetching logic:
+
+```js
+const { fetchRemoteListByMQuery } = require("serviceCommon");
+
+module.exports = async function getActiveOrdersForUser(userId, context = null) {
+  // Fetch orders from order service
+  const orders = await fetchRemoteListByMQuery(
+    "Order",
+    { 
+      userId: userId,
+      status: "active"
+    },
+    0,
+    100,
+    [{ createdAt: { order: "desc" } }]
+  );
+  
+  return orders;
+};
+```
+
+#### **5. Error Handling**
+
+All fetch functions include built-in error handling:
+
+- **Returns `null`** for single object queries if not found or on error
+- **Returns `[]`** (empty array) for list queries if none found or on error
+- **Logs errors** to console with `console.error`
+- **Never throws** - always returns a safe default value
+
+```js
+const { fetchRemoteObjectByMQuery } = require("serviceCommon");
+
+const user = await fetchRemoteObjectByMQuery("User", { email: "test@example.com" });
+
+// Safe to use - will be null if not found or on error
+if (user) {
+  // Process user data
+} else {
+  // Handle not found case
+}
+```
+
+#### **6. Real-World Example: Order Service Fetching User Data**
+
+```js
+// In order service library function
+const { fetchRemoteObjectByMQuery } = require("serviceCommon");
+
+module.exports = async function enrichOrderWithUserData(order, context = null) {
+  if (!order.userId) return order;
+  
+  // Fetch user from auth service
+  const user = await fetchRemoteObjectByMQuery("User", { id: order.userId });
+  
+  if (user) {
+    order.userName = user.name;
+    order.userEmail = user.email;
+    order.userCompany = user.companyName;
+  }
+  
+  return order;
+};
+```
+
+#### **7. Performance Considerations**
+
+- **Caching**: Elasticsearch queries are fast, but consider caching frequently accessed remote data
+- **Pagination**: Always use pagination for list queries to avoid fetching too much data
+- **Indexing**: Ensure the remote service has properly indexed the fields you're querying
+- **Batch Operations**: For multiple fetches, consider batching or using aggregation queries
+
+#### **8. Multi-Tenant Support**
+
+Remote fetch functions automatically respect multi-tenant boundaries. The Elasticsearch indices are scoped per tenant, so queries will only return data for the current tenant context.
+
+```js
+// In a multi-tenant environment, this automatically filters by tenant
+const orders = await fetchRemoteListByMQuery("Order", { status: "active" });
+// Only returns orders for the current tenant
+```
+
+---
 
 ## 6. Pattern + Code: Always a Solution
 
