@@ -573,7 +573,7 @@
                   "paymentResultFailed": "\"failed\"",
                   "paymentResultSuccess": "\"completed\""
                 },
-                "onCheckoutError": "continueRoute",
+                "onPaymentError": "continueRoute",
                 "edgeFunctionOnStatusChange": "handleCoinPackPaymentStatusChange"
               }
             }

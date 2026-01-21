@@ -64,7 +64,7 @@ Examples of per-type arrays (non-exhaustive):
   `createCrudActions`, `updateCrudActions`, `deleteCrudActions`
 
 - **Service / API / Integrations**
-  `interserviceCallActions`, `apiCallActions`, `integrationActions`, `checkoutActions`
+  `interserviceCallActions`, `apiCallActions`, `integrationActions`, `paymentActions`
 
 - **Auth & access**
   `membershipCheckActions`, `permissionCheckActions`, `objectPermissionActions`, `readJwtTokenActions`, `validationActions`
@@ -426,10 +426,12 @@ Used for webhooks, REST integrations, or third-party APIs.
 Triggers a **native integration** provided by Mindbricks (e.g., AWS S3 file upload, Airtable record creation, Stripe charge).
 Integrations are pre-coded, so you only supply parameters.
 
-### **17. CheckoutAction**
+### **17. PaymentAction**
 
 Handles a **payment lifecycle** using a native gateway integration (currently Stripe).
-It can start, complete, refresh, or accept webhooks for checkout sessions.
+It can start, complete, refresh, or accept webhooks for payment sessions.
+
+**Note:** **Payment** refers to processing payment through a gateway (Stripe, etc.) using `PaymentAction` and `PaymentManager`. This is distinct from **Checkout**, which refers to converting a shopping cart into an order using `CartCheckoutAction` and the shopping cart's `checkoutSettings`.
 
 ### **18. AiCallAction**
 

@@ -1,0 +1,1515 @@
+---
+title: Build E-Commerce Shopping Carts
+description: >-
+  Mindbricks provides a comprehensive, auto-generated shopping cart system with Redis-first
+  architecture for hyper-scalable cart management. Enable full e-commerce capabilities with
+  a single configuration flag - cart management, promotions, coupons, checkout, and more.
+---
+
+## **Overview**
+
+Mindbricks provides a fully auto-generated shopping cart system that handles all common e-commerce requirements out of the box. Unlike traditional development where you manually create cart tables, item tables, promotion logic, and APIs, Mindbricks generates everything automatically based on your configuration.
+
+The shopping cart pattern is designed with a **Redis-first architecture** for sub-millisecond response times, with asynchronous database persistence for durability. This makes it suitable for high-traffic e-commerce applications handling thousands of concurrent cart operations.
+
+This document is a guide for:
+
+- Mindbricks architects or AI agents developing e-commerce applications
+- Software architects integrating with Mindbricks-built services
+- Frontend/mobile developers building shopping cart interfaces
+
+### **Key Concepts**
+
+**Shopping Cart** is a Service-level feature in Mindbricks. Each service can have at most one shopping cart configuration. When enabled, the system automatically generates:
+
+- **Data Objects**: Cart, CartItem, Campaign, Coupon, and usage tracking objects
+- **System APIs**: High-performance REST endpoints for cart operations (add/remove items, apply coupons)
+- **Business APIs**: Workflow-based APIs for checkout, campaign management, and coupon management
+- **Redis Integration**: Automatic caching and session management
+- **Promotion Engine**: Both static (hardcoded) and dynamic (database-driven) promotions
+
+### **Checkout vs Payment: Terminology Clarification**
+
+These are distinct concepts in Mindbricks:
+
+**Checkout** refers to converting a shopping cart into an order using the `CartCheckoutAction`. This is the process of finalizing a shopping cart - validating items, applying promotions, recording usage, and creating an order record.
+
+**Payment** refers to charging money through a payment gateway (like Stripe) using `PaymentAction` and `PaymentManager`. This processes the actual financial transaction.
+
+In most e-commerce flows:
+1. **Checkout** happens first (cart → order)
+2. **Payment** happens second (order → charge)
+
+However, they can also be configured as a single combined workflow.
+
+---
+
+## **Single Task for E-Commerce Cart Feature**
+
+To add a complete shopping cart system to your application, there is only one task: **enable the shopping cart feature on your service and configure it**. Mindbricks handles everything else - data objects, APIs, Redis integration, and promotion logic.
+
+```json
+{
+  "shoppingCartConfig": {
+    "basicSettings": {
+      "useShoppingCartFeature": true,
+      "cartObjectName": "cart",
+      "currency": "USD"
+    }
+  }
+}
+```
+
+That's it. With this minimal configuration, Mindbricks generates:
+
+- `sys_cart` DataObject with all pricing fields
+- `sys_cartItem` DataObject with line item fields
+- REST APIs at `/cart/*` for all cart operations
+- Redis caching with automatic persistence
+- Checkout workflow with validation
+
+---
+
+## **What Gets Auto-Generated**
+
+When you enable `useShoppingCartFeature`, the following objects are automatically created:
+
+| Generated Object | Naming Pattern | When Created | Description |
+|-----------------|----------------|--------------|-------------|
+| **Cart** | `sys_{cartObjectName}` | Always | Main cart with pricing, status, totals |
+| **CartItem** | `sys_{cartObjectName}Item` | Always | Line items with pricing and discounts |
+| **Campaign** | `sys_{cartObjectName}Campaign` | `dynamicPromotionsEnabled` | Promotion campaigns with rules |
+| **Coupon** | `sys_{cartObjectName}Coupon` | `couponsEnabled` | Coupon codes linked to campaigns |
+| **CampaignUsageLog** | `sys_{cartObjectName}CampaignUsageLog` | `dynamicPromotionsEnabled` | Usage tracking for limits |
+
+For example, if your `cartObjectName` is "shoppingCart", the system creates:
+- `sys_shoppingCart`
+- `sys_shoppingCartItem`
+- `sys_shoppingCartCampaign`
+- `sys_shoppingCartCoupon`
+- `sys_shoppingCartCampaignUsageLog`
+
+---
+
+## **Configuration Reference**
+
+### **Basic Settings**
+
+The fundamental configuration for your shopping cart:
+
+```json
+{
+  "basicSettings": {
+    "useShoppingCartFeature": true,
+    "cartObjectName": "cart",
+    "currency": "USD",
+    "requireLogin": true,
+    "guestCartEnabled": false,
+    "supportNotes": true,
+    "supportMetadata": true,
+    "cartStatusValues": ["active", "abandoned", "checkedOut", "convertedToOrder"]
+  }
+}
+```
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `useShoppingCartFeature` | Boolean | `false` | **Activation flag** - enables the entire shopping cart system |
+| `cartObjectName` | String | `"cart"` | Base name for generated objects (sys_cart, sys_cartItem, etc.) |
+| `currency` | String | `"USD"` | Fixed currency for this cart type |
+| `requireLogin` | Boolean | `true` | Require user authentication for cart operations |
+| `guestCartEnabled` | Boolean | `false` | Allow anonymous/guest shopping carts |
+| `supportNotes` | Boolean | `true` | Add notes field for customer instructions |
+| `supportMetadata` | Boolean | `true` | Add JSON metadata field for extensibility |
+| `cartStatusValues` | Array | See above | Valid status values for the cart |
+
+### **Pricing Settings**
+
+Configure how prices, discounts, and VAT are calculated:
+
+```json
+{
+  "pricingSettings": {
+    "catalogPricesIncludeVat": false,
+    "defaultVatRate": 0.20,
+    "roundingStrategy": "perLine",
+    "roundingPrecision": 2,
+    
+    "discountSettings": {
+      "supportType": "bothLevels",
+      "allocationMode": "proportional"
+    },
+    
+    "shipmentSettings": {
+      "enabled": true,
+      "defaultShipmentVatRate": 0.20
+    },
+    
+    "extraChargeSettings": {
+      "enabled": false,
+      "storeBreakdown": true
+    }
+  }
+}
+```
+
+| Setting | Type | Options | Description |
+|---------|------|---------|-------------|
+| `catalogPricesIncludeVat` | Boolean | - | Whether product prices include VAT |
+| `defaultVatRate` | Number | - | Default VAT rate (0.20 = 20%) |
+| `roundingStrategy` | Enum | `perItem`, `perLine`, `atTotal` | When to apply rounding |
+| `discountSettings.supportType` | Enum | `none`, `cartLevel`, `itemLevel`, `bothLevels` | Which discount types to support |
+| `discountSettings.allocationMode` | Enum | `proportional`, `byQuantity`, `lastItem` | How to allocate cart discounts to items |
+
+### **Item Settings**
+
+Configure what fields are available on cart items:
+
+```json
+{
+  "itemSettings": {
+    "itemObjectSuffix": "Item",
+    "supportCategory": true,
+    "supportBrand": true,
+    "supportProductGroup": true,
+    "supportVendor": false,
+    "supportGiftItems": true,
+    "supportItemMetadata": false
+  }
+}
+```
+
+| Setting | Description | Generated Field |
+|---------|-------------|-----------------|
+| `supportCategory` | Enable category tracking | `category` on CartItem |
+| `supportBrand` | Enable brand tracking | `brand` on CartItem |
+| `supportProductGroup` | Enable variant grouping | `productGroup` on CartItem |
+| `supportVendor` | Enable marketplace vendor tracking | `vendor` on CartItem |
+| `supportGiftItems` | Enable promotional gift items | `isGift` on CartItem |
+
+### **Loyalty Settings**
+
+Enable loyalty points earning and redemption:
+
+```json
+{
+  "loyaltySettings": {
+    "enabled": true,
+    "supportPointsEarning": true,
+    "supportPointsRedemption": true,
+    "pointsToMoneyRate": 100
+  }
+}
+```
+
+| Setting | Description |
+|---------|-------------|
+| `supportPointsEarning` | Track points earned from purchases |
+| `supportPointsRedemption` | Allow using points as payment |
+| `pointsToMoneyRate` | Conversion rate (100 = 100 points equals 1 currency unit) |
+
+### **Logistics Settings**
+
+Track weight and dimensions for shipping calculations:
+
+```json
+{
+  "logisticsSettings": {
+    "enabled": true,
+    "trackWeight": true,
+    "trackDimensions": true,
+    "calculateDimensionalWeight": true,
+    "dimFactor": 5000
+  }
+}
+```
+
+### **Promotion Settings**
+
+Mindbricks supports a **two-tier promotion system**:
+
+1. **Static Promotions**: Hardcoded rules for zero database overhead
+2. **Dynamic Promotions**: Database-driven campaigns with full CRUD
+
+```json
+{
+  "promotionSettings": {
+    "staticPromotions": {
+      "freeShippingThreshold": {
+        "enabled": true,
+        "minCartTotal": 100,
+        "customerMessage": "Free shipping on orders over $100!"
+      },
+      
+      "cartTotalDiscount": {
+        "enabled": true,
+        "tiers": [
+          { "minCartTotal": 100, "discountPercent": 5 },
+          { "minCartTotal": 250, "discountPercent": 10 },
+          { "minCartTotal": 500, "discountPercent": 15 }
+        ],
+        "maxDiscountAmount": 200
+      },
+      
+      "membershipDiscounts": {
+        "enabled": true,
+        "membershipProperty": "membershipLevel",
+        "levels": [
+          { "membershipLevel": "silver", "discountPercent": 5 },
+          { "membershipLevel": "gold", "discountPercent": 10 },
+          { "membershipLevel": "platinum", "discountPercent": 15 }
+        ]
+      }
+    },
+    
+    "dynamicPromotionsEnabled": true,
+    "couponsEnabled": true,
+    "supportMultipleCoupons": false,
+    "maxCouponsPerCart": 1,
+    
+    "campaignSettings": {
+      "supportBudgetLimits": true,
+      "supportUsageLimits": true,
+      "supportCustomerLimits": true,
+      "supportScheduling": true
+    }
+  }
+}
+```
+
+#### Static Promotions
+
+Static promotions are defined in configuration and compiled directly into the CartManager code. They execute with zero database queries, providing maximum performance.
+
+| Static Promotion Type | Description |
+|-----------------------|-------------|
+| **Free Shipping Threshold** | Free shipping when cart total exceeds a threshold |
+| **Cart Total Discount Tiers** | Percentage discounts based on cart value tiers |
+| **Membership Discounts** | Special pricing for different membership levels |
+
+#### Dynamic Promotions
+
+When `dynamicPromotionsEnabled` is true, Mindbricks generates:
+
+- `sys_{cartObjectName}Campaign` DataObject for storing promotion rules
+- `sys_{cartObjectName}Coupon` DataObject for coupon codes
+- `sys_{cartObjectName}CampaignUsageLog` DataObject for tracking
+- Business APIs for campaign and coupon CRUD operations
+
+### **Redis Settings**
+
+Configure Redis-first caching:
+
+```json
+{
+  "redisSettings": {
+    "keyPrefix": "cart:",
+    "cartTtlSeconds": 86400,
+    "persistStrategy": "onEveryChange"
+  }
+}
+```
+
+| Setting | Options | Description |
+|---------|---------|-------------|
+| `persistStrategy` | `onEveryChange`, `onCheckout`, `periodic`, `never` | When to write cart to database |
+| `cartTtlSeconds` | Number | Redis TTL in seconds (86400 = 24 hours) |
+
+### **API Settings**
+
+Configure API behavior:
+
+```json
+{
+  "apiSettings": {
+    "routePrefix": "/cart",
+    "grpcEnabled": false
+  }
+}
+```
+
+---
+
+## **System Data Objects**
+
+### **Cart DataObject**
+
+The main cart object stores all cart-level data:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | ID | Auto-generated UUID |
+| `userId` | ID | Owner user (nullable for guest carts) |
+| `sessionId` | String | Guest session ID (if guest carts enabled) |
+| `status` | Enum | `active`, `abandoned`, `checkedOut`, `convertedToOrder` |
+| `currency` | String | Cart currency code |
+| `itemCount` | Integer | Number of unique line items |
+| `totalQuantity` | Integer | Total quantity of all items |
+| `subtotal` | Decimal | Sum of all item totals before discounts |
+| `discountTotal` | Decimal | Total discount amount applied |
+| `vatTotal` | Decimal | Total VAT/tax amount |
+| `grandTotal` | Decimal | Final total including all charges |
+| `shipmentCost` | Decimal | Shipping cost (if enabled) |
+| `couponCode` | String | Applied coupon code (if coupons enabled) |
+| `appliedCampaignIds` | Array | IDs of applied campaigns |
+| `pointsToEarn` | Integer | Loyalty points to earn (if enabled) |
+| `pointsRedeemed` | Integer | Loyalty points used (if enabled) |
+| `notes` | Text | Customer notes (if enabled) |
+| `metadata` | Object | Custom metadata (if enabled) |
+| `lastActivityAt` | DateTime | Last cart activity timestamp |
+| `checkedOutAt` | DateTime | Checkout timestamp |
+
+### **CartItem DataObject**
+
+Line items in the cart:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | ID | Auto-generated UUID |
+| `cartId` | ID | Foreign key to Cart |
+| `barcode` | String | Product SKU/barcode |
+| `productId` | ID | Product reference (if using catalog) |
+| `productName` | String | Display name |
+| `productImage` | String | Image URL |
+| `quantity` | Integer | Item quantity |
+| `unitPrice` | Decimal | Price per unit |
+| `vatRate` | Decimal | VAT rate for this item |
+| `discountAmount` | Decimal | Item-level discount |
+| `lineTotal` | Decimal | Total for this line |
+| `category` | String | Product category (if enabled) |
+| `brand` | String | Product brand (if enabled) |
+| `isGift` | Boolean | Whether this is a promotional gift |
+| `appliedPromotionIds` | Array | IDs of promotions applied to this item |
+
+### **Campaign DataObject**
+
+Promotional campaigns (when dynamic promotions enabled):
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | ID | Campaign ID |
+| `name` | String | Display name |
+| `code` | String | Internal reference code (unique) |
+| `description` | Text | Campaign description |
+| `isActive` | Boolean | Whether campaign is active |
+| `startDate` | Date | Campaign start date |
+| `endDate` | Date | Campaign end date |
+| `priority` | Integer | Priority for conflict resolution |
+| `isStackable` | Boolean | Can combine with other promotions |
+| `rules` | Object | Rule definitions (JSON) |
+| `reward` | Object | Reward definition (JSON) |
+| `usageLimitTotal` | Integer | Maximum total uses |
+| `usageLimitPerCustomer` | Integer | Maximum uses per customer |
+| `usageCount` | Integer | Current usage count |
+| `budgetLimit` | Decimal | Maximum discount budget |
+| `budgetUsed` | Decimal | Current budget used |
+
+### **Coupon DataObject**
+
+Coupon codes (when coupons enabled):
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | ID | Coupon ID |
+| `code` | String | Customer-entered code (unique) |
+| `campaignId` | ID | Links to Campaign |
+| `isActive` | Boolean | Whether coupon is active |
+| `startDate` | Date | Validity start date |
+| `endDate` | Date | Validity end date |
+| `usageLimitTotal` | Integer | Maximum total uses |
+| `usageLimitPerCustomer` | Integer | Maximum uses per customer |
+| `usageCount` | Integer | Current usage count |
+| `minCartTotal` | Decimal | Minimum cart value required |
+
+---
+
+## **System APIs**
+
+System APIs are high-performance endpoints that work directly with the `ShoppingCartManager`. They provide sub-millisecond Redis-first operations for cart manipulation.
+
+### **Get Cart**
+
+Retrieves the current user's shopping cart with all items and calculated totals.
+
+**REST**: `GET /{cartObjectName}`
+
+```javascript
+const response = await fetch(`${serviceUrl}/cart`, {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${accessToken}`
+  }
+});
+```
+
+**Response:**
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "userId": "user-123",
+  "status": "active",
+  "currency": "USD",
+  "itemCount": 3,
+  "totalQuantity": 5,
+  "subtotal": 299.97,
+  "discountTotal": 29.99,
+  "vatTotal": 53.99,
+  "grandTotal": 323.97,
+  "items": [
+    {
+      "id": "item-1",
+      "barcode": "SKU-001",
+      "productName": "Wireless Headphones",
+      "quantity": 2,
+      "unitPrice": 99.99,
+      "lineTotal": 199.98
+    },
+    {
+      "id": "item-2",
+      "barcode": "SKU-002",
+      "productName": "Phone Case",
+      "quantity": 3,
+      "unitPrice": 33.33,
+      "lineTotal": 99.99
+    }
+  ],
+  "appliedCampaignIds": ["campaign-summer-2024"],
+  "couponCode": "SAVE10"
+}
+```
+
+### **Add Item**
+
+Adds an item to the shopping cart.
+
+**REST**: `POST /{cartObjectName}/items`
+
+```javascript
+const response = await fetch(`${serviceUrl}/cart/items`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${accessToken}`
+  },
+  body: JSON.stringify({
+    barcode: "SKU-001",
+    quantity: 2,
+    productName: "Wireless Headphones",
+    unitPrice: 99.99
+  })
+});
+```
+
+**Request Body:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `barcode` | String | Yes | Product SKU or barcode |
+| `quantity` | Integer | Yes | Quantity to add |
+| `productName` | String | No | Product display name |
+| `unitPrice` | Number | No | Unit price (auto-fetched if product catalog configured) |
+| `productId` | ID | No | Product ID for catalog lookup |
+| `metadata` | Object | No | Custom item metadata |
+
+### **Update Item**
+
+Updates the quantity of an existing item.
+
+**REST**: `PUT /{cartObjectName}/items/:barcode`
+
+```javascript
+const response = await fetch(`${serviceUrl}/cart/items/SKU-001`, {
+  method: "PUT",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${accessToken}`
+  },
+  body: JSON.stringify({
+    quantity: 5
+  })
+});
+```
+
+### **Remove Item**
+
+Removes an item from the cart.
+
+**REST**: `DELETE /{cartObjectName}/items/:barcode`
+
+```javascript
+await fetch(`${serviceUrl}/cart/items/SKU-001`, {
+  method: "DELETE",
+  headers: {
+    "Authorization": `Bearer ${accessToken}`
+  }
+});
+```
+
+### **Clear Cart**
+
+Removes all items from the cart.
+
+**REST**: `DELETE /{cartObjectName}/items`
+
+```javascript
+await fetch(`${serviceUrl}/cart/items`, {
+  method: "DELETE",
+  headers: {
+    "Authorization": `Bearer ${accessToken}`
+  }
+});
+```
+
+### **Apply Coupon**
+
+Applies a coupon code to the cart. Only available when coupons are enabled.
+
+**REST**: `POST /{cartObjectName}/coupons`
+
+```javascript
+const response = await fetch(`${serviceUrl}/cart/coupons`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${accessToken}`
+  },
+  body: JSON.stringify({
+    couponCode: "SUMMER20"
+  })
+});
+```
+
+**Response (Success):**
+
+```json
+{
+  "success": true,
+  "couponCode": "SUMMER20",
+  "discountAmount": 50.00,
+  "message": "Coupon applied successfully! You saved $50.00",
+  "cart": { /* updated cart object */ }
+}
+```
+
+**Response (Invalid Coupon):**
+
+```json
+{
+  "success": false,
+  "error": "COUPON_EXPIRED",
+  "message": "This coupon has expired"
+}
+```
+
+### **Remove Coupon**
+
+Removes an applied coupon from the cart.
+
+**REST**: `DELETE /{cartObjectName}/coupons/:code`
+
+```javascript
+await fetch(`${serviceUrl}/cart/coupons/SUMMER20`, {
+  method: "DELETE",
+  headers: {
+    "Authorization": `Bearer ${accessToken}`
+  }
+});
+```
+
+---
+
+## **Business APIs**
+
+Business APIs are workflow-based APIs that provide more complex operations with full ecosystem integration (REST, gRPC, Kafka events).
+
+### **Checkout API**
+
+The checkout API converts a cart into an order through a multi-step workflow.
+
+**REST**: `POST /v1/checkout{CartObjectName}/:id` (e.g., `POST /v1/checkoutcart/:id`)
+
+```javascript
+const response = await fetch(`${serviceUrl}/v1/checkoutcart/${cartId}`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${accessToken}`
+  },
+  body: JSON.stringify({
+    shippingAddress: {
+      street: "123 Main St",
+      city: "New York",
+      state: "NY",
+      postalCode: "10001",
+      country: "US"
+    },
+    billingAddress: {
+      street: "123 Main St",
+      city: "New York",
+      state: "NY",
+      postalCode: "10001",
+      country: "US"
+    },
+    paymentMethod: "pm_card_visa",
+    notes: "Please leave at door"
+  })
+});
+```
+
+**Checkout Workflow:**
+
+1. **Validate Cart** - Ensures cart has items, stock is available, prices are valid
+2. **Process Checkout** - Records promotion usage, reserves inventory, creates order
+3. **Update Cart Status** - Sets status to `checkedOut`, records timestamp
+4. **Publish Event** - Automatically publishes to Kafka topic
+
+**Response:**
+
+```json
+{
+  "status": "OK",
+  "statusCode": "200",
+  "sys_cart": {
+    "id": "cart-123",
+    "status": "checkedOut",
+    "checkedOutAt": "2024-01-15T10:30:00Z",
+    "grandTotal": 323.97
+  },
+  "checkoutResult": {
+    "success": true,
+    "orderId": "order-456",
+    "orderNumber": "ORD-2024-0001",
+    "totalAmount": 323.97,
+    "itemsCount": 5,
+    "promotionsApplied": ["SUMMER20"],
+    "pointsEarned": 324
+  }
+}
+```
+
+### **Campaign CRUD APIs**
+
+When dynamic promotions are enabled, full CRUD APIs are generated for campaigns:
+
+| API | Method | Path | Description |
+|-----|--------|------|-------------|
+| Create Campaign | POST | `/v1/create{CartObjectName}campaign` | Create a new campaign |
+| Get Campaign | GET | `/v1/get{CartObjectName}campaign/:id` | Get campaign by ID |
+| List Campaigns | GET | `/v1/list{CartObjectName}campaigns` | List all campaigns |
+| List Active | GET | `/{cartObjectName}campaigns/active` | List active campaigns (public) |
+| Update Campaign | PATCH | `/v1/update{CartObjectName}campaign/:id` | Update a campaign |
+| Delete Campaign | DELETE | `/v1/delete{CartObjectName}campaign/:id` | Delete a campaign |
+
+**Create Campaign Example:**
+
+```javascript
+const response = await fetch(`${serviceUrl}/v1/createcartcampaign`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${adminToken}`
+  },
+  body: JSON.stringify({
+    name: "Summer Sale 2024",
+    code: "SUMMER2024",
+    description: "20% off all summer items",
+    startDate: "2024-06-01T00:00:00Z",
+    endDate: "2024-08-31T23:59:59Z",
+    priority: 10,
+    isStackable: false,
+    rules: {
+      type: "cartTotal",
+      minCartTotal: 50
+    },
+    reward: {
+      type: "percentageDiscount",
+      value: 20,
+      maxAmount: 100
+    },
+    usageLimitTotal: 10000,
+    usageLimitPerCustomer: 1,
+    budgetLimit: 50000
+  })
+});
+```
+
+### **Coupon CRUD APIs**
+
+When coupons are enabled:
+
+| API | Method | Path | Description |
+|-----|--------|------|-------------|
+| Create Coupon | POST | `/v1/create{CartObjectName}coupon` | Create a new coupon |
+| Get Coupon | GET | `/v1/get{CartObjectName}coupon/:id` | Get coupon by ID |
+| Get by Code | GET | `/{cartObjectName}coupons/code/:code` | Get coupon by code |
+| Validate Coupon | GET | `/{cartObjectName}coupons/validate` | Validate coupon eligibility |
+| List Coupons | GET | `/v1/list{CartObjectName}coupons` | List all coupons |
+| Update Coupon | PATCH | `/v1/update{CartObjectName}coupon/:id` | Update a coupon |
+| Delete Coupon | DELETE | `/v1/delete{CartObjectName}coupon/:id` | Delete a coupon |
+
+**Validate Coupon Example:**
+
+```javascript
+const response = await fetch(
+  `${serviceUrl}/cartcoupons/validate?code=SUMMER20&cartTotal=150`,
+  {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${accessToken}`
+    }
+  }
+);
+```
+
+**Response:**
+
+```json
+{
+  "isValid": true,
+  "message": "Coupon is valid! You'll save $30.00",
+  "discount": {
+    "type": "percentage",
+    "value": 20,
+    "calculatedAmount": 30.00
+  },
+  "coupon": {
+    "code": "SUMMER20",
+    "campaignId": "campaign-123",
+    "endDate": "2024-08-31T23:59:59Z",
+    "remainingUses": 4999
+  }
+}
+```
+
+---
+
+## **Event System**
+
+The event system allows you to hook into cart operations with custom business logic. Events are configured in `eventSettings` and linked to functions in your Service Library.
+
+### **Lifecycle Events**
+
+| Event | Trigger | Can Modify | Can Reject |
+|-------|---------|------------|------------|
+| `onCartCreate` | New cart created | Yes | Yes |
+| `onCartLoad` | Cart loaded from Redis/DB | Yes | No |
+| `onCartAbandon` | Cart marked as abandoned | No | No |
+| `onCartMerge` | Guest cart merges with user cart | Yes | Yes |
+
+### **Item Events**
+
+| Event | Trigger | Can Modify | Can Reject |
+|-------|---------|------------|------------|
+| `onBeforeAddItem` | Before item added | Yes | Yes |
+| `onAfterAddItem` | After item added | No | No |
+| `onBeforeUpdateItem` | Before quantity change | Yes | Yes |
+| `onAfterUpdateItem` | After item updated | No | No |
+| `onBeforeRemoveItem` | Before item removed | No | Yes |
+| `onStockValidation` | Stock check requested | Yes | Yes |
+
+### **Pricing Events**
+
+| Event | Trigger | Can Modify | Can Reject |
+|-------|---------|------------|------------|
+| `onCalculateDiscount` | Discount calculation | Yes | No |
+| `onCalculateVAT` | VAT calculation | Yes | No |
+| `onCalculateShipping` | Shipping calculation | Yes | No |
+
+### **Checkout Events**
+
+| Event | Trigger | Can Modify | Can Reject |
+|-------|---------|------------|------------|
+| `onBeforeCheckout` | Before checkout starts | Yes | Yes |
+| `onReserveStock` | Stock reservation | Yes | Yes |
+| `onCreateOrder` | Order creation | Yes | Yes |
+| `onAfterCheckout` | After checkout complete | No | No |
+
+### **Event Handler Example**
+
+Define event handlers in your Service Library:
+
+```javascript
+// In your service library
+async function validateItemBeforeAdd(context) {
+  const { cart, item, session, services } = context;
+  
+  // Check if item is available in user's region
+  const regionCheck = await services.productService.checkRegionAvailability(
+    item.productId,
+    session.region
+  );
+  
+  if (!regionCheck.available) {
+    throw new CartEventError(
+      'ITEM_NOT_AVAILABLE',
+      'This item is not available in your region'
+    );
+  }
+  
+  // Modify the item if needed
+  return {
+    item: {
+      ...item,
+      regionPrice: regionCheck.regionalPrice
+    }
+  };
+}
+
+async function calculateShippingByZone(context) {
+  const { cart, session, services } = context;
+  
+  const shippingZone = await services.shippingService.getZone(
+    session.shippingAddress.postalCode
+  );
+  
+  const shippingCost = calculateZonedShipping(
+    cart.totalWeight,
+    shippingZone
+  );
+  
+  return {
+    shipping: {
+      cost: shippingCost,
+      vatRate: 0.20,
+      method: shippingZone.defaultMethod
+    }
+  };
+}
+```
+
+**Configuration:**
+
+```json
+{
+  "eventSettings": {
+    "itemEvents": {
+      "onBeforeAddItem": "validateItemBeforeAdd"
+    },
+    "pricingEvents": {
+      "onCalculateShipping": "calculateShippingByZone"
+    }
+  }
+}
+```
+
+---
+
+## **Real-Life Scenarios**
+
+### **Scenario 1: Basic E-Commerce Store**
+
+A simple online store with cart, checkout, and basic promotions.
+
+**Configuration:**
+
+```json
+{
+  "shoppingCartConfig": {
+    "basicSettings": {
+      "useShoppingCartFeature": true,
+      "cartObjectName": "cart",
+      "currency": "USD",
+      "requireLogin": false,
+      "guestCartEnabled": true
+    },
+    "pricingSettings": {
+      "defaultVatRate": 0.08,
+      "discountSettings": {
+        "supportType": "cartLevel"
+      },
+      "shipmentSettings": {
+        "enabled": true
+      }
+    },
+    "promotionSettings": {
+      "staticPromotions": {
+        "freeShippingThreshold": {
+          "enabled": true,
+          "minCartTotal": 50,
+          "customerMessage": "Free shipping on orders over $50!"
+        }
+      }
+    }
+  }
+}
+```
+
+**Generated:**
+- Guest cart support with session binding
+- Free shipping when cart exceeds $50
+- Standard checkout flow
+
+---
+
+### **Scenario 2: Subscription Box Service**
+
+A monthly subscription box with loyalty points and member discounts.
+
+**Configuration:**
+
+```json
+{
+  "shoppingCartConfig": {
+    "basicSettings": {
+      "useShoppingCartFeature": true,
+      "cartObjectName": "subscriptionCart",
+      "currency": "USD",
+      "requireLogin": true
+    },
+    "loyaltySettings": {
+      "enabled": true,
+      "supportPointsEarning": true,
+      "supportPointsRedemption": true,
+      "pointsToMoneyRate": 100
+    },
+    "promotionSettings": {
+      "staticPromotions": {
+        "membershipDiscounts": {
+          "enabled": true,
+          "membershipProperty": "subscriptionTier",
+          "levels": [
+            { "membershipLevel": "basic", "discountPercent": 5 },
+            { "membershipLevel": "premium", "discountPercent": 15 },
+            { "membershipLevel": "vip", "discountPercent": 25 }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+**Generated:**
+- `sys_subscriptionCart`, `sys_subscriptionCartItem`
+- Loyalty points on every purchase
+- Points redemption at checkout
+- Automatic tier-based discounts
+
+---
+
+### **Scenario 3: Marketplace with Dynamic Coupons**
+
+A multi-vendor marketplace with vendor tracking and promotional campaigns.
+
+**Configuration:**
+
+```json
+{
+  "shoppingCartConfig": {
+    "basicSettings": {
+      "useShoppingCartFeature": true,
+      "cartObjectName": "marketplaceCart",
+      "currency": "USD"
+    },
+    "itemSettings": {
+      "supportVendor": true,
+      "supportCategory": true,
+      "supportBrand": true
+    },
+    "promotionSettings": {
+      "staticPromotions": {
+        "cartTotalDiscount": {
+          "enabled": true,
+          "tiers": [
+            { "minCartTotal": 100, "discountPercent": 5 },
+            { "minCartTotal": 250, "discountPercent": 10 },
+            { "minCartTotal": 500, "discountPercent": 15 }
+          ]
+        }
+      },
+      "dynamicPromotionsEnabled": true,
+      "couponsEnabled": true,
+      "campaignSettings": {
+        "supportBudgetLimits": true,
+        "supportUsageLimits": true,
+        "supportScheduling": true
+      }
+    }
+  }
+}
+```
+
+**Generated:**
+- Full Campaign and Coupon management
+- Vendor tracking per item
+- Tiered cart discounts
+- Campaign budget tracking
+
+---
+
+### **Scenario 4: B2B Wholesale with Weight-Based Shipping**
+
+A wholesale platform with logistics tracking and custom shipping calculations.
+
+**Configuration:**
+
+```json
+{
+  "shoppingCartConfig": {
+    "basicSettings": {
+      "useShoppingCartFeature": true,
+      "cartObjectName": "wholesaleCart",
+      "currency": "USD",
+      "requireLogin": true
+    },
+    "pricingSettings": {
+      "catalogPricesIncludeVat": false,
+      "defaultVatRate": 0,
+      "shipmentSettings": {
+        "enabled": true
+      }
+    },
+    "logisticsSettings": {
+      "enabled": true,
+      "trackWeight": true,
+      "trackDimensions": true,
+      "calculateDimensionalWeight": true,
+      "dimFactor": 5000
+    },
+    "eventSettings": {
+      "pricingEvents": {
+        "onCalculateShipping": "calculateFreightShipping",
+        "onCalculateVAT": "handleB2BTaxExemption"
+      }
+    }
+  }
+}
+```
+
+**Generated:**
+- Weight and dimension tracking
+- Dimensional weight calculation
+- Custom shipping calculation hook
+- B2B tax exemption support
+
+---
+
+### **Scenario 5: Flash Sale Platform**
+
+An event-driven platform with time-limited promotions and inventory reservation.
+
+**Configuration:**
+
+```json
+{
+  "shoppingCartConfig": {
+    "basicSettings": {
+      "useShoppingCartFeature": true,
+      "cartObjectName": "flashCart",
+      "currency": "USD"
+    },
+    "redisSettings": {
+      "keyPrefix": "flash:",
+      "cartTtlSeconds": 900,
+      "persistStrategy": "onCheckout"
+    },
+    "promotionSettings": {
+      "dynamicPromotionsEnabled": true,
+      "couponsEnabled": true,
+      "campaignSettings": {
+        "supportScheduling": true,
+        "supportUsageLimits": true,
+        "supportDailyLimits": true
+      }
+    },
+    "eventSettings": {
+      "itemEvents": {
+        "onBeforeAddItem": "reserveFlashInventory",
+        "onStockValidation": "checkFlashStock"
+      },
+      "lifecycleEvents": {
+        "onCartExpire": "releaseFlashReservation"
+      }
+    }
+  }
+}
+```
+
+**Generated:**
+- Short TTL carts (15 minutes)
+- Scheduled flash campaigns
+- Daily usage limits
+- Inventory reservation on add
+- Automatic release on expiration
+
+---
+
+## **Frontend Integration Guide**
+
+### **Cart State Management**
+
+For React/Vue/Angular applications, here's a recommended pattern:
+
+```javascript
+// Cart service/store
+class CartService {
+  constructor(apiBaseUrl) {
+    this.apiBaseUrl = apiBaseUrl;
+  }
+
+  async getCart() {
+    const response = await fetch(`${this.apiBaseUrl}/cart`, {
+      headers: this.getAuthHeaders()
+    });
+    return response.json();
+  }
+
+  async addItem(barcode, quantity, metadata = {}) {
+    const response = await fetch(`${this.apiBaseUrl}/cart/items`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ barcode, quantity, ...metadata })
+    });
+    return response.json();
+  }
+
+  async updateItemQuantity(barcode, quantity) {
+    const response = await fetch(`${this.apiBaseUrl}/cart/items/${barcode}`, {
+      method: 'PUT',
+      headers: {
+        ...this.getAuthHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ quantity })
+    });
+    return response.json();
+  }
+
+  async removeItem(barcode) {
+    await fetch(`${this.apiBaseUrl}/cart/items/${barcode}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders()
+    });
+    return this.getCart();
+  }
+
+  async applyCoupon(couponCode) {
+    const response = await fetch(`${this.apiBaseUrl}/cart/coupons`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ couponCode })
+    });
+    return response.json();
+  }
+
+  async removeCoupon(couponCode) {
+    await fetch(`${this.apiBaseUrl}/cart/coupons/${couponCode}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders()
+    });
+    return this.getCart();
+  }
+
+  async checkout(checkoutData) {
+    const cart = await this.getCart();
+    const response = await fetch(
+      `${this.apiBaseUrl}/v1/checkoutcart/${cart.id}`,
+      {
+        method: 'POST',
+        headers: {
+          ...this.getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(checkoutData)
+      }
+    );
+    return response.json();
+  }
+
+  getAuthHeaders() {
+    const token = localStorage.getItem('accessToken');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  }
+}
+```
+
+### **Handling Guest Carts**
+
+When `guestCartEnabled` is true, carts are bound to session IDs:
+
+```javascript
+// Generate or retrieve session ID for guest users
+function getGuestSessionId() {
+  let sessionId = localStorage.getItem('guestSessionId');
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem('guestSessionId', sessionId);
+  }
+  return sessionId;
+}
+
+// Include session ID in requests for guest users
+async function getCartForGuest() {
+  const sessionId = getGuestSessionId();
+  const response = await fetch(`${apiBaseUrl}/cart`, {
+    headers: {
+      'X-Session-Id': sessionId
+    }
+  });
+  return response.json();
+}
+
+// Merge guest cart after login
+async function mergeGuestCart(accessToken) {
+  const sessionId = localStorage.getItem('guestSessionId');
+  if (sessionId) {
+    await fetch(`${apiBaseUrl}/cart/merge`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ sessionId })
+    });
+    localStorage.removeItem('guestSessionId');
+  }
+}
+```
+
+### **Real-Time Cart Updates**
+
+For WebSocket-enabled services, subscribe to cart events:
+
+```javascript
+// WebSocket connection for real-time updates
+const ws = new WebSocket(`wss://${serviceUrl}/ws`);
+
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data);
+  
+  switch (message.type) {
+    case 'cart.updated':
+      // Refresh cart display
+      updateCartUI(message.cart);
+      break;
+    case 'promotion.applied':
+      // Show promotion notification
+      showNotification(`Promotion applied: ${message.promotion.name}`);
+      break;
+    case 'item.outOfStock':
+      // Alert user about stock issue
+      showAlert(`${message.item.productName} is now out of stock`);
+      break;
+  }
+};
+```
+
+---
+
+## **Checkout and Payment Integration**
+
+The shopping cart checkout creates an order. After checkout, you can trigger payment using the Stripe integration.
+
+### **Complete Checkout Flow**
+
+```javascript
+async function completeCheckoutWithPayment(checkoutData, paymentMethodId) {
+  // Step 1: Checkout the cart (cart → order)
+  const checkoutResponse = await fetch(
+    `${serviceUrl}/v1/checkoutcart/${cartId}`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(checkoutData)
+    }
+  );
+  
+  const { checkoutResult } = await checkoutResponse.json();
+  
+  if (!checkoutResult.success) {
+    throw new Error(checkoutResult.message);
+  }
+  
+  // Step 2: Start payment for the order (order → charge)
+  const paymentResponse = await fetch(
+    `${serviceUrl}/v1/startorderpayment/${checkoutResult.orderId}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        paymentUserParams: {
+          paymentMethodId,
+          return_url: `${window.location.origin}/payment-result`
+        }
+      })
+    }
+  );
+  
+  const { paymentResult } = await paymentResponse.json();
+  
+  // Step 3: Handle payment result
+  if (paymentResult.paymentIntentInfo.status === 'succeeded') {
+    // Payment complete - show success
+    navigateToOrderConfirmation(checkoutResult.orderId);
+  } else if (paymentResult.paymentIntentInfo.status === 'requires_action') {
+    // 3D Secure required
+    await handleStripe3DSecure(paymentResult.paymentIntentInfo);
+  } else {
+    // Payment failed
+    showPaymentError(paymentResult);
+  }
+}
+```
+
+### **Order Data Object Configuration**
+
+To enable payment on orders created from cart checkout, configure your order DataObject with Stripe settings:
+
+```json
+{
+  "objectSettings": {
+    "stripeOrder": {
+      "objectIsAnOrderObject": true,
+      "configuration": {
+        "orderName": "CartOrder",
+        "orderId": "this.order.id",
+        "amount": "this.order.grandTotal",
+        "currency": "this.order.currency",
+        "description": "`Order #${this.order.orderNumber} - ${this.order.itemCount} items`",
+        "orderStatusProperty": "status",
+        "orderStatusUpdateDateProperty": "statusUpdatedAt",
+        "orderOwnerIdProperty": "userId",
+        "mapPaymentResultToOrderStatus": {
+          "paymentResultStarted": "\"paymentPending\"",
+          "paymentResultCanceled": "\"paymentFailed\"",
+          "paymentResultFailed": "\"paymentFailed\"",
+          "paymentResultSuccess": "\"paid\""
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
+## **Price Calculation Reference**
+
+Understanding how prices are calculated helps with frontend display and debugging.
+
+### **Item-Level Calculation**
+
+```
+For each line item:
+┌──────────────────────────────────────────────────────────────┐
+│  unitPriceExVat                        (base price)          │
+│       │                                                       │
+│       ▼                                                       │
+│  - itemDiscountAmount                  (item-level discount) │
+│       │                                                       │
+│       ▼                                                       │
+│  - cartDiscountAllocated               (allocated cart discount) │
+│       │                                                       │
+│       ▼                                                       │
+│  = netUnitPriceExVat                   (final unit price)    │
+│       │                                                       │
+│       ├──────────────────────────────────────────────────────│
+│       │                                  │                    │
+│       ▼                                  ▼                    │
+│  × quantity                          × vatRate               │
+│       │                                  │                    │
+│       ▼                                  ▼                    │
+│  = lineTotalExVat                   = lineVatAmount          │
+│       │                                  │                    │
+│       └──────────────┬───────────────────┘                    │
+│                      │                                        │
+│                      ▼                                        │
+│              = lineTotalIncVat                                │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### **Cart-Level Aggregation**
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  Σ lineTotalExVat                   → subtotal               │
+│                                                               │
+│  subtotal - discountTotal           → discountedSubtotal     │
+│                                                               │
+│  discountedSubtotal + shipmentCost + extraCharges → totalExVat │
+│                                                               │
+│  Σ lineVatAmount + shipmentVat + extraChargesVat → totalVat  │
+│                                                               │
+│  totalExVat + totalVat              → grandTotal             │
+└──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## **Troubleshooting**
+
+### **Cart Not Found**
+
+If cart operations return 404:
+- Check if `requireLogin` is true and user is authenticated
+- For guest carts, ensure `guestCartEnabled` is true and session ID is included
+- Verify the cart hasn't expired (check `cartTtlSeconds` in Redis settings)
+
+### **Coupon Not Applying**
+
+Common reasons coupons fail:
+- Coupon code is expired (check `startDate` and `endDate`)
+- Usage limit reached (check `usageCount` vs `usageLimitTotal`)
+- Customer already used it (check `usageLimitPerCustomer`)
+- Minimum cart total not met (check `minCartTotal`)
+- Coupon is inactive (check `isActive`)
+
+### **Price Discrepancies**
+
+If totals don't match expectations:
+- Check `catalogPricesIncludeVat` setting matches your product data
+- Verify `roundingStrategy` and `roundingPrecision` settings
+- Review discount allocation mode for multi-item carts
+- Check if multiple promotions are being stacked when they shouldn't
+
+### **Checkout Failures**
+
+Common checkout issues:
+- Cart is empty (no items)
+- Stock validation failed (items out of stock)
+- Price validation failed (prices changed since items were added)
+- Minimum order not met
+- Required shipping address missing
+
+---
+
+## **Best Practices**
+
+### **Performance**
+
+1. **Use Redis persistence strategy wisely** - `onEveryChange` is safe but slower; `onCheckout` is faster but risks data loss
+2. **Set appropriate TTLs** - Balance between user experience and resource usage
+3. **Use static promotions** - For simple rules, static promotions have zero database overhead
+
+### **Security**
+
+1. **Always validate on server** - Don't trust client-provided prices
+2. **Use ownership checks** - Ensure users can only access their own carts
+3. **Implement rate limiting** - Protect against coupon brute-forcing
+
+### **User Experience**
+
+1. **Show real-time updates** - Use WebSocket for instant cart changes
+2. **Handle errors gracefully** - Show clear messages for failed operations
+3. **Persist guest carts** - Merge with user cart after login
+4. **Display savings** - Show original price vs discounted price
+
+### **Operations**
+
+1. **Monitor campaign budgets** - Set alerts before budget exhaustion
+2. **Track abandoned carts** - Use `onCartAbandon` event for recovery emails
+3. **Log checkout failures** - Debug issues with detailed logging

@@ -1,0 +1,45 @@
+---
+title: PaymentAction
+---
+## **PaymentAction**
+
+**Purpose**
+Handles a **payment lifecycle** using a native gateway integration (currently Stripe).
+It can start, complete, refresh, or accept webhooks for payment sessions.
+
+**When to use it**
+
+* During transactional flows (`afterMainCreateOperation` for orders)
+* On scheduled sync (`afterApiEvent` for refresh/callback)
+
+**Key fields**
+
+| Field                 | Type                | Description                                                  |
+| --------------------- | ------------------- | ------------------------------------------------------------ |
+| `gateway`             | String              | Payment gateway (`Stripe`). Default: "Stripe"               |
+| `stage`               | Enum(PaymentStage) | One of `simple`, `start`, `complete`, `refresh`, `callback`. Default: "start" |
+| `contextPropertyName` | String              | Where to store the payment response or token.               |
+
+**PaymentStage Enum**
+
+| Stage      | Description                                                                 |
+| ---------- | --------------------------------------------------------------------------- |
+| `simple`   | One synchronous call to create charge immediately                           |
+| `start`    | Start payment operation, create payment intent                               |
+| `complete` | Complete payment, convert intent to charge                                  |
+| `refresh`  | Fetch payment status from gateway                                           |
+| `callback` | Handle gateway webhook callback                                             |
+
+**Example**
+
+```json
+{
+  "id": "a170-start-payment",
+  "name": "startStripePayment",
+  "gateway": "Stripe",
+  "stage": "start",
+  "contextPropertyName": "paymentSession"
+}
+```
+
+**Note:** **Payment** refers to processing payment through a gateway (Stripe, etc.) using `PaymentAction` and `PaymentManager`. This is distinct from **Checkout**, which refers to converting a shopping cart into an order using `CartCheckoutAction` and the shopping cart's `checkoutSettings`.

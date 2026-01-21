@@ -803,7 +803,7 @@ interface BusinessApiActionStore = {
   sendSmsActions : SendSmsAction[];
   sendPushNotificationActions : SendPushNotificationAction[];
   refineByAiActions : RefineByAiAction[];
-  checkoutActions : CheckoutAction[];
+  paymentActions : PaymentAction[];
   verifyWebhookActions : VerifyWebhookAction[];
   integrationActions : IntegrationAction[];
   loopActions : LoopAction[];
@@ -850,7 +850,7 @@ interface BusinessApiActionStore = {
 | sendSmsActions              | Actions that send an SMS message to a target phone number with a given body and sender info.                                                                                                                                                                                                                                                               |
 | sendPushNotificationActions | Actions that send push notifications to mobile or web clients with title and content.                                                                                                                                                                                                                                                                      |
 | refineByAiActions           | Actions that refine or transform a plain text value using an AI model. Common use cases include phrasing suggestions, tone adjustment, or summarization.                                                                                                                                                                                                   |
-| checkoutActions             | Actions to start, to complete or to refresh a checkout operation using the native integrated payment systems. Currently `Stripe` is supported. For other payment gateways use integration actions.                                                                                                                                                         |
+| paymentActions             | Actions to start, to complete or to refresh a payment operation using the native integrated payment systems. Currently `Stripe` is supported. For other payment gateways use integration actions. **Payment** refers to processing payment through a gateway (Stripe, etc.) using `PaymentAction` and `PaymentManager`. This is distinct from **Checkout**, which refers to converting a shopping cart into an order using `CartCheckoutAction`.                                                                                                                                                         |
 | verifyWebhookActions        | Actions to verify a webhook call of a provider using the webhook secret signature key. Currently `Stripe` is supported.                                                                                                                                                                                                                                    |
 | integrationActions          | Actions that call native API provider integrations (e.g., AWS S3, Airtable, Salesforce). These integrations are pre-coded inside Mindbricks and abstract provider-specific logic.                                                                                                                                                                          |
 | loopActions                 | Actions that repeat a sequence of workflow steps for each item in a list (defined by an MScript expression).                                                                                                                                                                                                                                               |
@@ -1864,30 +1864,34 @@ interface RefineByAiAction extends BusinessApiAction = {
 | temperature  | A value between 0 and 1 indicating how much variation the model should apply. Use low values (~0.2) for subtle fixes, and higher values (~0.7) for more creative rewrites.                                                  |
 | mode         | Optional label representing the level or style of refinement. Common values might include `preserve`, `light`, `reword`, `rewrite`, `summarize`. This can be interpreted by your backend to choose a prompt template.       |
 
-### CheckoutAction
+### PaymentAction
 
 **MPO Version:** 1.3.0
 
-Calls the proper native payment gateway functions according to the current stage of checkout lifecyle. Currentlu `Stripe`is supported natively, for other gateways use integrations.
+Calls the proper native payment gateway functions according to the current stage of payment lifecycle. Currently `Stripe` is supported natively, for other gateways use integrations.
+
+**Note:** **Payment** refers to processing payment through a gateway (Stripe, etc.) using `PaymentAction` and `PaymentManager`. This is distinct from **Checkout**, which refers to converting a shopping cart into an order using `CartCheckoutAction` and the shopping cart's `checkoutSettings`.
 
 ```typescript
-interface CheckoutAction extends BusinessApiAction = {
+interface PaymentAction extends BusinessApiAction = {
   gateway : String;
-  stage : CheckoutStage;
+  stage : PaymentStage;
+  contextPropertyName : String;
 }
 ```
 
-| Field   | Description                                                                                                                          |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| gateway | The name of thepayment gateway that is supported natively. Current support is only for Stripe, so this value should be `Stripe`.     |
-| stage   | The type of the stage call that the action will make. It can start, complete or refresh a checkout, it can accept a gateway webhook. |
+| Field                 | Description                                                                                                                          |
+| -------               | ------------------------------------------------------------------------------------------------------------------------------------ |
+| gateway               | The name of the payment gateway that is supported natively. Current support is only for Stripe, so this value should be `Stripe`. Default: "Stripe" |
+| stage                 | The type of the stage call that the action will make. It can start, complete or refresh a payment, it can accept a gateway webhook. Default: "start" |
+| contextPropertyName   | Where to store the payment response or token in the API context.                                                                     |
 
-#### CheckoutStage
+#### PaymentStage
 
-The target stage of the payment lifecyle on which the action's decision for next step to be executed is based.
+The target stage of the payment lifecycle on which the action's decision for next step to be executed is based.
 
 ```js
-const CheckoutStage = {
+const PaymentStage = {
   simple: "simple",
   start: "start",
   complete: "complete",
@@ -1898,11 +1902,11 @@ const CheckoutStage = {
 
 | Enum     | Description                                                                                                                                                                                                  |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| simple   | The lifecycle is simple it is just one sync call to handle everything, creating the charge immedeatly.                                                                                                       |
-| start    | The payment operation is wanted to be started, mostly an intent is created on the frontend side, but also it can be started in the server side.                                                              |
-| complete | The payment operation is wanted to be completed, the intent will be a real charge.                                                                                                                           |
-| refresh  | The payment operation data in the gateway server will be fetched and the application payment tickets and order status will be refreshed according to the server. Use this if you dont want to use a webhook. |
-| callback | The api is called by the gateway webhook, so the refresh operation will be held asyncronously. Use this option if you provide your api as a webhook to the provider.                                         |
+| simple   | One synchronous call to create charge immediately. The lifecycle is simple - it is just one sync call to handle everything, creating the charge immediately.                                                                                                       |
+| start    | Start payment operation, create payment intent. The payment operation is wanted to be started, mostly an intent is created on the frontend side, but also it can be started in the server side.                                                              |
+| complete | Complete payment, convert intent to charge. The payment operation is wanted to be completed, the intent will be a real charge.                                                                                                                           |
+| refresh  | Fetch payment status from gateway. The payment operation data in the gateway server will be fetched and the application payment tickets and order status will be refreshed according to the server. Use this if you don't want to use a webhook. |
+| callback | Handle gateway webhook callback. The api is called by the gateway webhook, so the refresh operation will be held asynchronously. Use this option if you provide your api as a webhook to the provider.                                         |
 
 ### VerifyWebhookAction
 

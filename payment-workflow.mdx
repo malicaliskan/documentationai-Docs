@@ -21,6 +21,18 @@ In this document, all aspects of payment logic will be explained. This document 
 
 - Frontend/mobile application developers or AI agents that build frontend for the Mindbricks-built payment application.
 
+### **Payment vs Checkout: Terminology Clarification**
+
+**Payment** refers to processing payment through a gateway (Stripe, etc.) using `PaymentAction` and `PaymentManager`. This is the process of charging a user's payment method for an order or transaction.
+
+**Checkout** refers to converting a shopping cart into an order using `CartCheckoutAction` and the shopping cart's `checkoutSettings`. This is the process of finalizing a shopping cart and creating an order record.
+
+These are distinct concepts:
+- **Payment** = Charging money via payment gateway (Stripe)
+- **Checkout** = Converting cart to order (shopping cart workflow)
+
+In many applications, checkout happens first (cart → order), then payment happens (order → charge). However, they can also be separate workflows.
+
 ## Single task for having a payment feature in your application
 
 To be able to integrate Stripe payment to your application, there is only one single task for the architect or AI agent to do. Define your "order" data object and set it's Stripe settings. Assuming you alrady have a Stripe account with your test and live keys, there are no more tasks to do in Mindbricks, just joining your order data object with Stripe feature.
@@ -898,7 +910,7 @@ Manager performs instance-level validations, including ownership, existence, loc
 
 ### \[9] Action : doStartPayment
 
-**Action Type**: `CheckoutAction`
+**Action Type**: `PaymentAction`
 
 Start a payment on Stripe platform
 
@@ -908,47 +920,47 @@ class Api {
     return this.orderId;
   }
 
-  async checkoutUpdated(statusLiteral) {
+  async paymentUpdated(statusLiteral) {
     switch (statusLiteral) {
       case "started":
-        await this.checkoutStarted();
+        await this.paymentStarted();
         break;
       case "canceled":
-        await this.checkoutCanceled();
+        await this.paymentCanceled();
         break;
       case "failed":
-        await this.checkoutFailed();
+        await this.paymentFailed();
         break;
       case "success":
-        await this.checkoutDone();
+        await this.paymentDone();
         break;
       default:
-        await this.checkoutFailed();
+        await this.paymentFailed();
         break;
     }
   }
 
-  async checkoutStarted() {
+  async paymentStarted() {
     this.status = "pending";
     this._paymentConfirmation = "processing";
   }
 
-  async checkoutCanceled() {
+  async paymentCanceled() {
     this.status = "pending";
     this._paymentConfirmation = "cenceled";
   }
 
-  async checkoutFailed() {
+  async paymentFailed() {
     this.status = "pending";
     this._paymentConfirmation = "cenceled";
   }
 
-  async checkoutDone() {
+  async paymentDone() {
     this.status = "paid";
     this._paymentConfirmation = "paid";
   }
 
-  getCheckoutParameters(userParams) {
+  getPaymentParameters(userParams) {
     const description = `Order for buyer ${this.order.buyerId} with total $${(this.order.totalAmount / 100).toFixed(2)}`;
 
     return {
@@ -971,15 +983,15 @@ class Api {
   }
 
   async doStartPayment() {
-    // Handle Checkout Action
+    // Handle Payment Action
 
     try {
-      if (!this.checkoutManager) {
+      if (!this.paymentManager) {
         throw new Error(
-          "This dboject is not an order object. So auto-checkout process can not be started.",
+          "This dboject is not an order object. So auto-payment process can not be started.",
         );
       }
-      this.paymentResult = await this.checkoutManager.startCheckout(
+      this.paymentResult = await this.paymentManager.startPayment(
         this.paymentUserParams,
       );
     } catch (err) {
