@@ -498,8 +498,6 @@ DataViews and BFF can also reference `this.session` in MScript (for dynamic view
 
 - Filter by user
 
-- Localize lookups based on `this.session.language.code`
-
 ---
 
 ## 10. Session in MScript Formulas & Context
@@ -536,19 +534,19 @@ Example AddToContextAction:
 
 To use session effectively:
 
-1. **Always treat&#x20;****`this.session`****&#x20;as the canonical source of identity & tenancy.**
+1. **Always treat&#x20;********`this.session`********&#x20;as the canonical source of identity & tenancy.**
 
    - Use `this.session.userId` instead of trusting client-submitted `userId`.
 
    - Use `this.session._tenantId` to scope tenant-level data.
 
-2. **Use&#x20;****`PropertySessionSettings`****&#x20;for identity fields on DataObjects.**
+2. **Use&#x20;********`PropertySessionSettings`********&#x20;for identity fields on DataObjects.**
 
    - e.g., `ownerId`, `createdBy`, `updatedBy`.
 
    - Mark `isOwnerField = true` when appropriate.
 
-3. **Use&#x20;****`ApiAuthOptions`****&#x20;for API-level protections.**
+3. **Use&#x20;********`ApiAuthOptions`********&#x20;for API-level protections.**
 
    - `loginRequired`, `ownershipCheck`, `absoluteRoles`, `defaultPermissions`.
 
@@ -560,7 +558,7 @@ To use session effectively:
 
    - `ListPermissionFilter`.
 
-5. **Use&#x20;****`ValidationAction`****&#x20;for business-level session rules.**
+5. **Use&#x20;********`ValidationAction`********&#x20;for business-level session rules.**
 
    - E.g., restricting certain operations to specific roles or regions.
 

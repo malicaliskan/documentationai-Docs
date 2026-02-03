@@ -2,13 +2,12 @@
 
 **MPO Version:** 1.3.0
 
-A DataView defines an aggregated projection of data for the BFF service in Mindbricks. It serves as a unified structure that collects and combines information from multiple microservices. DataViews can be configured as either _stored_ or _dynamic_. Stored DataViews persist their results in Elasticsearch and are optimal for queries requiring filtering, sorting, or cross-service joins. Dynamic DataViews are assembled at runtime during the request cycle and are suitable for lightweight, user-specific, or real-time scenarios. Both types aim to simplify frontend development by consolidating distributed data into a single, queryable view.
+A DataView defines an aggregated projection of data for the BFF service in Mindbricks. It serves as a unified structure that collects and combines information from multiple microservices. DataViews can be configured as either *stored* or *dynamic*. Stored DataViews persist their results in Elasticsearch and are optimal for queries requiring filtering, sorting, or cross-service joins. Dynamic DataViews are assembled at runtime during the request cycle and are suitable for lightweight, user-specific, or real-time scenarios. Both types aim to simplify frontend development by consolidating distributed data into a single, queryable view.
 
 ```typescript
 interface DataView = {
   viewBasics : ViewBasics;
   aggregates : ViewAggregate[];
-  lookups : ViewLookup[];
   stats : ViewStat[];
 }
 ```
@@ -17,7 +16,6 @@ interface DataView = {
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | viewBasics | Basic metadata and configuration for the DataView, including its name, storage strategy, source object, and selected properties. This section determines the fundamental structure and behavior of the view.                                    |
 | aggregates | A list of aggregate definitions that perform data joins from related objects, similar to SQL joins. These are used to enrich the DataView with related datasets, such as joining orders into a customer view.                                   |
-| lookups    | A list of lightweight lookup definitions used to fetch reference values, typically for UI display purposes (e.g., converting a userType ID into a localized label like 'Administrator'). These join single values from dictionary-like sources. |
 | stats      | A list of statistical calculations performed within the view to enrich it with precomputed analytics.                                                                                                                                           |
 
 ## ViewBasics
@@ -71,30 +69,6 @@ interface ViewAggregate = {
 | condition   | An MScript condition evaluated on the main object to decide whether this aggregation should be executed.                                                                    |
 | properties  | The list of property names to extract from the child object. Only these fields will be included in the aggregated result.                                                   |
 | checkIn     | An MScript condition evaluated on each child record to determine whether it should be included in the final aggregation result.                                             |
-
-## ViewLookup
-
-**MPO Version:** 1.3.0
-
-Defines a lookup operation in a DataView, typically used to enrich an object with a human-readable label or translated text from a dictionary index. Lookups are similar to aggregates but are optimized for fetching a single value, such as a label, for UI rendering. They are especially useful for localization (e.g., converting 'userType: 0' to 'Administrator') or enriching records with descriptive names from static dictionaries like country, city, or status lists. Multi-language lookups automatically resolve language-specific values based on the user's locale if the view is dynamic; if stored, all language variants are stored with suffixes.
-
-```typescript
-interface ViewLookup = {
-  name : String;
-  lookupDict : String;
-  multiLang : Boolean;
-  lookupKey : String;
-  lookupValue : String;
-}
-```
-
-| Field       | Description                                                                                                                                                                                                                                                                                                                            |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| name        | The name of the lookup field in the DataView output. This is the property that will hold the resolved value, such as 'userRoleName'. For stored DataViews, Mindbricks stores multilingual variants using suffixes like 'userRoleName_en', 'userRoleName_tr'. When returned to the client, only the relevant language value is exposed. |
-| lookupDict  | The name of the dictionary index where the lookup value resides. This can be any dictionary-like dataset, such as countries, roles, or labels. For multilingual dictionaries, Mindbricks automatically appends the language suffix (e.g., '\_en', '\_tr') to the index name during lookup.                                             |
-| multiLang   | Whether the lookup dictionary is multilingual. If true, Mindbricks will automatically manage language-specific fields and suffixes. If false, a single language-independent value is returned.                                                                                                                                         |
-| lookupKey   | The key field in the main object (or its aggregates) used to match against the dictionary index. This is typically a reference like 'roleId' or 'countryId'. The dictionary index's target key is always assumed to be 'id'.                                                                                                           |
-| lookupValue | The field in the dictionary index whose value will be returned. For example, 'name' or 'label'. This is what will appear in the DataView as the resolved text.                                                                                                                                                                         |
 
 ## ViewStat
 
@@ -160,10 +134,11 @@ const AggTypes = {
 };
 ```
 
-| Enum        | Description                            |
-| ----------- | -------------------------------------- |
-| value_count | Count the number of records.           |
-| sum         | Sum the values of the records.         |
-| avg         | Average the values of the records.     |
-| min         | Find the minimum value of the records. |
-| max         | Find the maximum value of the records. |
+| Enum         | Description                            |
+| ------------ | -------------------------------------- |
+| value\_count | Count the number of records.           |
+| sum          | Sum the values of the records.         |
+| avg          | Average the values of the records.     |
+| min          | Find the minimum value of the records. |
+| max          | Find the maximum value of the records. |
+

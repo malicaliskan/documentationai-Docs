@@ -16,13 +16,13 @@ Instead of forcing your UI to call many backend services and stitch results toge
 
 - Optionally **stored in Elasticsearch** for fast querying and filtering.
 
-- Enriched at runtime via joins, lookups, and stats across services.
+- Enriched at runtime via joins and stats across services.
 
 This document explains:
 
-- The **`BFFService`****&#x20;pattern**
+- The **`BFFService`****\*\*\*\*\*\*\*\* pattern**
 
-- The **`DataView`****&#x20;family** (`ViewBasics`, `ViewAggregate`, `ViewLookup`, `ViewStat`, `AggregateItem`)
+- The **`DataView`****\*\*\*\*\*\*\*\* family** (`ViewBasics`, `ViewAggregate`,`ViewStat`, `AggregateItem`)
 
 - How these relate to **Elasticsearch** and **CQRS**
 
@@ -88,7 +88,7 @@ Mindbricks uses a **CQRS-like approach**:
 
 Each **stored DataView** (`isStored = true`) is an **Elasticsearch index or sub-index** that:
 
-- Is built based on `viewBasics`, `aggregates`, `lookups`, `stats`.
+- Is built based on `viewBasics`, `aggregates`, `stats`.
 
 - Can be queried efficiently for list/get operations.
 
@@ -119,7 +119,6 @@ Here are the core patterns involved. (Simplified for reading.)
   "DataView": {
     "viewBasics": "ViewBasics",
     "aggregates": ["ViewAggregate"],
-    "lookups": ["ViewLookup"],
     "stats": ["ViewStat"],
   }
 }
@@ -159,21 +158,7 @@ Here are the core patterns involved. (Simplified for reading.)
 }
 ```
 
-### 3.5 ViewLookup (dictionary / label joins)
-
-```json
-{
-  "ViewLookup": {
-    "name": "String",
-    "lookupDict": "String",
-    "multiLang": "Boolean",
-    "lookupKey": "String",
-    "lookupValue": "String"
-  }
-}
-```
-
-### 3.6 ViewStat & AggregateItem (stats = ES aggregations)
+### 3.5 ViewStat & AggregateItem (stats = ES aggregations)
 
 ```json
 {
@@ -295,47 +280,7 @@ Example: only join items for “completed” orders:
 }
 ```
 
-### 4.3 Lookups – Human-Friendly Labels, Multi-Language
-
-`lookups` are like light-weight dictionary joins.
-
-Example: attach `categoryName` to products using a dictionary index:
-
-```json
-{
-  "lookups": [
-    {
-      "name": "categoryName",
-      "lookupDict": "productCategoryIndex",
-      "multiLang": true,
-      "lookupKey": "categoryId",
-      "lookupValue": "name"
-    }
-  ]
-}
-```
-
-- `lookupKey`: field on the DataView (or aggregates) that maps to dictionary `id`.
-
-- `lookupValue`: which dictionary field to read (`name`, `label`, etc.).
-
-- `multiLang`:
-
-  - `true` → BFF manages multi-language variants and exposes only the appropriate one.
-
-  - `false` → single language.
-
-Use cases:
-
-- Category labels
-
-- Status labels
-
-- Country / city names
-
-- Role names, dictionary-driven enums
-
-### 4.4 Stats – ES Aggregations on Related Data
+### 4.3 Stats – ES Aggregations on Related Data
 
 `stats` define **statistical aggregations** on child objects (conceptually: **ES aggregations**).
 
@@ -568,21 +513,7 @@ Now, let’s make it concrete with three realistic examples.
 }
 ```
 
-#### 7.1.3 Lookups
-
-Category label lookup via dictionary:
-
-```json
-{
-  "name": "categoryName",
-  "lookupDict": "productCategoryIndex",
-  "multiLang": true,
-  "lookupKey": "categoryId",
-  "lookupValue": "name"
-}
-```
-
-#### 7.1.4 Stats
+#### 7.1.3 Stats
 
 Average rating and rating counts:
 
@@ -889,8 +820,6 @@ The frontend can now:
 The **BFF Service** and **DataViews** are where Mindbricks’ ontology, CQRS design, and Elasticsearch integration all meet:
 
 - **Aggregates** are your **joins**.
-
-- **Lookups** are your **dictionary/label joins**.
 
 - **Stats** are your **ES aggregations**.
 
