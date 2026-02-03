@@ -3,8 +3,6 @@ title: "DataView (BFF Service Ontology)"
 description: "Definition of the DataView ontology element in the BFF Service, including stored and dynamic views, aggregates, and statistical projections."
 ---
 
-# DataView
-
 **MPO Version:** 1.3.0
 
 A DataView defines an aggregated projection of data for the BFF service in Mindbricks. It serves as a unified structure that collects and combines information from multiple microservices. DataViews can be configured as either *stored* or *dynamic*. Stored DataViews persist their results in Elasticsearch and are optimal for queries requiring filtering, sorting, or cross-service joins. Dynamic DataViews are assembled at runtime during the request cycle and are suitable for lightweight, user-specific, or real-time scenarios. Both types aim to simplify frontend development by consolidating distributed data into a single, queryable view.
