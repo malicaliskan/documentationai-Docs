@@ -1,4 +1,769 @@
 ---
 title: Realtime Service
-description: Comming soon..
+description: >-
+  Master the Mindbricks Realtime Service: topic-based authorization, rights
+  tokens, logic filters, public vs private topics, HTTP API, and Socket
+  contract for secure realtime delivery.
 ---
+# Mastering the Realtime Service
+
+## Real-Time Message Delivery & Topic-Based Authorization
+
+The Realtime Service is a specialized microservice that exists to answer a very specific question:
+
+> Instead of forcing your UI to poll backend services for updates, the Realtime Service lets you define **Rights** — structured, token-based permission rules that determine which real-time messages reach which client, optionally filtered by conditions evaluated against message content.
+
+---
+
+## 1. Scope
+
+In a microservice architecture, many services produce events: a user is created, an order is updated, a document is deleted. These events flow through a message broker (Kafka). But **the client has no direct access to Kafka** — and shouldn't.
+
+The Realtime Service solves this by:
+
+- Providing a **WebSocket (Socket.IO) bridge** between the message broker and the client.
+- Using **JWT tokens** to encode what each client is allowed to hear.
+- Evaluating **logic conditions** at delivery time, so a client only receives messages relevant to them.
+- Supporting **public topics** that require no authentication at all.
+
+This document explains:
+
+- The **Realtime Service** pattern and its role in the architecture
+- The **Token & Rights** system (authorization model)
+- The **Logic** condition engine (message-level filtering)
+- **Public vs Private Topics** and **Wildcard Patterns**
+- The **HTTP API** for token management
+- The **Socket Contract** (events and payloads)
+- Several **real-life scenarios**
+
+---
+
+## 2. What Is the Realtime Service?
+
+### 2.1 Conceptual Role
+
+In a microservice world, data changes happen across many services:
+
+- **auth** – user registered, role updated
+- **orders** – order created, payment processed
+- **inventory** – stock updated, product added
+- **documents** – document uploaded, document deleted
+
+Letting a frontend poll these services individually leads to:
+
+- Wasted bandwidth and latency
+- Complex state synchronization in the UI
+- No true real-time experience
+
+The Realtime Service solves this by acting as a **smart message router**:
+
+- It consumes events from Kafka topics.
+- It evaluates each connected client's **rights** (permissions) and **logic** (conditions).
+- It delivers only the messages each client is authorized and interested to receive.
+- It does all of this over a persistent WebSocket connection.
+
+### 2.2 Architectural Position
+
+```
+┌─────────────────┐     ┌─────────────────────┐     ┌───────────────┐
+│  Microservices   │     │   Realtime Service   │     │    Clients    │
+│                  │     │                      │     │               │
+│  auth-service   ─┼────►│  ┌────────────────┐ │     │  Browser      │
+│  order-service  ─┼────►│  │ Kafka Consumer  │ │     │  Mobile App   │
+│  doc-service    ─┼────►│  └───────┬────────┘ │     │  Desktop App  │
+│  ...            ─┼────►│          │          │     │  ...          │
+│                  │ K   │  ┌───────▼────────┐ │ WS  │               │
+│  (produce to     │ a   │  │ Rights Engine  │─┼────►│  (receive      │
+│   Kafka topics)  │ f   │  │ + Logic Filter │ │     │   filtered     │
+│                  │ k   │  └────────────────┘ │     │   messages)    │
+│                  │ a   │                      │     │               │
+└─────────────────┘     └─────────────────────┘     └───────────────┘
+```
+
+The Realtime Service sits between **producers** (your microservices writing to Kafka) and **consumers** (your client applications). It never modifies messages — it only **routes and filters** them.
+
+### 2.3 The Two-Layer Authorization Model
+
+The service uses a two-layer model to decide what a client hears:
+
+| Layer | Defined By | Purpose |
+|-------|------------|---------|
+| **Rights** (Token) | JWT token, `rights` field | **Permission**: Which topics is this client *allowed* to access? |
+| **Topics** (Query) | Socket connection, `topics` query param | **Subscription**: Which topics does this client *want* to listen to? |
+
+A message is delivered only when both layers agree: the client **wants** the topic *and* is **allowed** to receive it. Public topics bypass the permission layer entirely.
+
+---
+
+## 3. Core Concepts
+
+### 3.1 Token
+
+A JWT token that encodes the client's permissions. It contains:
+
+```json
+{
+  "rights": ["Right"],
+  "iat": "Number (Unix timestamp)"
+}
+```
+
+- `rights` is an array of `Right` objects (see 3.2).
+- `iat` is the issued-at timestamp, set automatically.
+- Token validity is controlled by standard JWT mechanisms (`exp` claim).
+
+### 3.2 Right
+
+A single permission rule. Each Right defines which topics the client can access, and optionally, a logic condition for message-level filtering.
+
+```json
+{
+  "Right": {
+    "topics": ["String"],
+    "logic": "Logic (optional)"
+  }
+}
+```
+
+- `topics`: Array of topic names or wildcard patterns.
+- `logic`: Optional condition evaluated against each incoming message.
+
+A token can contain **multiple Rights**. They are evaluated independently — if *any* Right matches a given topic, the client has permission.
+
+### 3.3 Logic (Condition Engine)
+
+An optional filter attached to a Right. When present, the service evaluates the incoming message against this condition **before** delivery.
+
+```json
+{
+  "Logic": {
+    "type": "String (eq | in | && | ||)",
+    "key": "String (message field path)",
+    "value": "Any (comparison value)",
+    "conditions": ["Logic (for && and || types)"]
+  }
+}
+```
+
+If the condition is not satisfied, the message is silently dropped for that client — even though they have topic-level permission.
+
+### 3.4 Topic
+
+A named channel in the message broker. Topics follow a naming convention that typically includes the service name and event type:
+
+```
+<service-name>-<object>-<action>
+```
+
+Examples: `auth-service-user-registered`, `order-service-order-created`, `doc-service-document-updated`
+
+### 3.5 Public Topic
+
+A topic designated by the service administrator as publicly accessible. Public topics:
+
+- Bypass **all** token and rights checks.
+- Bypass **all** logic condition evaluation.
+- Only require the client to list them in their subscription.
+
+### 3.6 Wildcard Pattern
+
+A topic pattern ending with `*` that matches multiple topics by prefix:
+
+```
+pattern = "order-service*"
+matches = ["order-service-order-created", "order-service-order-updated", "order-service-payment-processed"]
+```
+
+Wildcards are used in the `topics` field of a Right to grant permission to a group of related topics without listing each one individually.
+
+---
+
+## 4. Pattern Reference
+
+### 4.1 Token
+
+```json
+{
+  "Token": {
+    "rights": ["Right"],
+    "iat": "Number"
+  }
+}
+```
+
+### 4.2 Right
+
+```json
+{
+  "Right": {
+    "topics": ["String | WildcardPattern"],
+    "logic": "Logic | null"
+  }
+}
+```
+
+### 4.3 Logic — `eq` (Equality)
+
+```json
+{
+  "type": "eq",
+  "key": "String",
+  "value": "Any"
+}
+```
+
+Checks: `message[key] === value`
+
+### 4.4 Logic — `in` (Inclusion)
+
+```json
+{
+  "type": "in",
+  "key": "String",
+  "value": ["Any"]
+}
+```
+
+Checks: `value.includes(message[key])`
+
+### 4.5 Logic — `&&` (AND — all must pass)
+
+```json
+{
+  "type": "&&",
+  "conditions": ["Logic"]
+}
+```
+
+Checks: every condition in the array evaluates to `true`.
+
+### 4.6 Logic — `||` (OR — at least one must pass)
+
+```json
+{
+  "type": "||",
+  "conditions": ["Logic"]
+}
+```
+
+Checks: at least one condition in the array evaluates to `true`.
+
+> `&&` and `||` can be **nested** to build arbitrarily complex filter trees.
+
+---
+
+## 5. How Message Delivery Works
+
+When a message arrives from the broker on a given topic, the Realtime Service runs the following decision flow **for every connected client**:
+
+```
+Message arrives on topic "order-service-order-created"
+                │
+                ▼
+┌───────────────────────────────┐
+│  Is this a Public Topic?      │
+│  (defined by administrator)   │
+└──────┬────────────────┬───────┘
+       │ YES            │ NO
+       ▼                ▼
+┌──────────────┐  ┌─────────────────────────────┐
+│ Does client  │  │ Does client's token contain  │
+│ subscribe to │  │ a Right whose topics match?  │
+│ this topic?  │  │ (exact or wildcard)          │
+└──────┬───────┘  └──────┬──────────────┬────────┘
+       │ YES             │ YES          │ NO
+       ▼                 ▼              ▼
+┌──────────────┐  ┌──────────────┐   ╔══════════╗
+│  DELIVER     │  │ Does client  │   ║  DROP    ║
+│  (no filter) │  │ subscribe to │   ║          ║
+└──────────────┘  │ this topic?  │   ╚══════════╝
+                  └──────┬───┬───┘
+                    YES  │   │ NO
+                         ▼   ▼
+                  ┌──────────────┐   ╔══════════╗
+                  │ Does the     │   ║  DROP    ║
+                  │ Right have   │   ╚══════════╝
+                  │ a Logic?     │
+                  └──┬───────┬───┘
+                YES  │       │ NO
+                     ▼       ▼
+              ┌────────────┐ ┌──────────────┐
+              │ Evaluate   │ │  DELIVER     │
+              │ Logic vs   │ │  (no filter) │
+              │ message    │ └──────────────┘
+              └──┬─────┬───┘
+            PASS │     │ FAIL
+                 ▼     ▼
+          ┌──────────┐ ╔══════════╗
+          │ DELIVER  │ ║  DROP    ║
+          └──────────┘ ╚══════════╝
+```
+
+### Key Rules
+
+1. **Public topics** bypass all authorization — no token check, no logic evaluation.
+2. **Private topics** require both a matching Right in the token *and* the topic listed in the client's subscription.
+3. **Logic conditions** are the final gate — even if the topic matches, a failed logic check means no delivery.
+4. **Wildcard patterns** in Rights grant broad permissions, but the client still decides which specific topics to subscribe to.
+5. **Multiple Rights** are evaluated independently. If any Right matches and its logic passes (or has no logic), the message is delivered.
+
+---
+
+## 6. Designing Token Rights
+
+### 6.1 Simple — Unconditional Access to Specific Topics
+
+The most basic pattern: grant access to a fixed list of topics with no filtering.
+
+```json
+{
+  "rights": [
+    {
+      "topics": [
+        "order-service-order-created",
+        "order-service-order-updated"
+      ]
+    }
+  ]
+}
+```
+
+**Result:** The client receives *every* message from these topics (assuming they subscribe to them).
+
+### 6.2 Owner-Based Filtering
+
+A very common pattern: the client should only see messages that belong to them.
+
+```json
+{
+  "rights": [
+    {
+      "topics": ["order-service-order-created", "order-service-order-updated"],
+      "logic": {
+        "type": "eq",
+        "key": "_ownerId",
+        "value": "user-456"
+      }
+    }
+  ]
+}
+```
+
+**Result:** Messages are delivered only when `message._ownerId === "user-456"`. All other messages on these topics are silently dropped.
+
+### 6.3 Wildcard — Service-Wide Permission
+
+When you want a client to access everything from a particular service:
+
+```json
+{
+  "rights": [
+    {
+      "topics": ["order-service*"]
+    }
+  ]
+}
+```
+
+**Result:** The client is *permitted* to subscribe to any topic starting with `order-service`. They still choose which specific topics to subscribe to at connection time.
+
+### 6.4 Wildcard + Logic — Service-Wide with Owner Filter
+
+Combining the two: broad topic access, narrow message delivery.
+
+```json
+{
+  "rights": [
+    {
+      "topics": ["order-service*"],
+      "logic": {
+        "type": "eq",
+        "key": "_ownerId",
+        "value": "user-456"
+      }
+    }
+  ]
+}
+```
+
+**Result:** Any `order-service*` topic is accessible, but only messages belonging to `user-456` are delivered.
+
+### 6.5 Complex Logic — AND Conditions
+
+When multiple fields must match simultaneously:
+
+```json
+{
+  "rights": [
+    {
+      "topics": ["order-service-order-updated"],
+      "logic": {
+        "type": "&&",
+        "conditions": [
+          { "type": "eq", "key": "_ownerId", "value": "user-456" },
+          { "type": "in", "key": "status", "value": ["confirmed", "shipped"] }
+        ]
+      }
+    }
+  ]
+}
+```
+
+**Result:** Only messages where `_ownerId` is `user-456` **AND** `status` is either `confirmed` or `shipped` are delivered.
+
+### 6.6 Complex Logic — OR Conditions
+
+When the client should receive messages matching any of several criteria:
+
+```json
+{
+  "rights": [
+    {
+      "topics": ["notification-service-alert-created"],
+      "logic": {
+        "type": "||",
+        "conditions": [
+          { "type": "eq", "key": "targetUserId", "value": "user-456" },
+          { "type": "eq", "key": "scope", "value": "global" }
+        ]
+      }
+    }
+  ]
+}
+```
+
+**Result:** Messages are delivered if they target the specific user **OR** have a global scope.
+
+### 6.7 Mixed Rights — Different Rules for Different Topics
+
+A single token can contain multiple Rights with different topic/logic combinations:
+
+```json
+{
+  "rights": [
+    {
+      "topics": ["order-service*"],
+      "logic": {
+        "type": "eq",
+        "key": "_ownerId",
+        "value": "user-456"
+      }
+    },
+    {
+      "topics": ["system-broadcast"],
+    },
+    {
+      "topics": ["team-service-task*"],
+      "logic": {
+        "type": "in",
+        "key": "teamId",
+        "value": ["team-A", "team-B"]
+      }
+    }
+  ]
+}
+```
+
+**Result:**
+- Order events: only user-456's messages.
+- System broadcasts: all messages (no logic).
+- Team tasks: only for team-A and team-B.
+
+---
+
+## 7. Wildcard Pattern Matching
+
+Wildcard patterns use a **starts-with** strategy:
+
+| Pattern | Matches | Does Not Match |
+|---------|---------|----------------|
+| `order-created` | `order-created` (exact only) | `order-updated` |
+| `order*` | `order-created`, `order-updated`, `order-deleted` | `my-order-created` |
+| `auth-service-user*` | `auth-service-user-registered`, `auth-service-user-deleted` | `auth-service-role-updated` |
+
+**Important distinctions:**
+
+- Wildcards in the **token** (`rights[].topics`) define **permissions**. They determine what the client is *allowed* to hear.
+- The **subscription** (`topics` query parameter) defines **intent**. It lists the specific topics the client *wants* to hear.
+- A message is delivered only when both align.
+
+For example, a token with `"topics": ["order*"]` allows the client to subscribe to `order-created` and `order-updated`, but the client must explicitly request those topics in their subscription.
+
+---
+
+## 8. Public Topics
+
+Public topics are designated by the service administrator. They represent data that is freely accessible to any connected client without authentication.
+
+**Behavior:**
+
+| Aspect | Private Topic | Public Topic |
+|--------|--------------|--------------|
+| Token required? | Yes | No |
+| Rights check? | Yes | No |
+| Logic evaluation? | Yes (if defined) | No |
+| Subscription required? | Yes | Yes |
+
+The only requirement for a public topic is that the client lists it in their subscription. No token, no rights, no conditions.
+
+> Contact the service administrator to learn which topics are designated as public.
+
+---
+
+## 9. HTTP API
+
+The Realtime Service exposes two HTTP endpoints for token management.
+
+### 9.1 `POST /token` — Create Token
+
+Creates a new JWT token encoding the specified rights.
+
+**Request:**
+
+```json
+{
+  "socketId": "String — the socket ID to associate with this token",
+  "data": "Array<Right> — array of Right objects",
+  "userKey": "String — the signing key (provided by the service administrator)"
+}
+```
+
+**Response:** Plain text JWT token string.
+
+**Notes:**
+- The `data` field must be an array, even for a single Right.
+- The `iat` field is set automatically.
+- This endpoint is intended for **server-to-server** calls, not direct browser use, because it requires the signing key.
+
+### 9.2 `GET /addTokenToSocket` — Attach Token to Existing Connection
+
+Updates the rights of an already-connected socket without requiring a reconnection.
+
+**Request:**
+
+```
+Authorization: Bearer <JWT_TOKEN>
+```
+
+**Response:**
+- `"Token added to socket"` — success.
+- `"Token is not valid"` — the token could not be verified.
+
+**Use case:** When a user's permissions change mid-session (e.g., role upgrade), your backend can generate a new token and call this endpoint to update the socket's rights in place.
+
+---
+
+## 10. Socket Contract
+
+### 10.1 Connection Parameters
+
+The client connects via Socket.IO with two query parameters:
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `token` | Conditional | JWT token. Required for private topics. Accepts `Bearer <token>` or plain `<token>`. |
+| `topics` | **Yes** | Comma-separated list of topics to subscribe to. |
+
+### 10.2 Events Emitted to Client
+
+#### `socketId`
+
+Emitted immediately upon successful connection. Contains the client's unique socket identifier.
+
+```json
+{
+  "socketId": "String"
+}
+```
+
+This ID can be used in subsequent `POST /token` calls to associate tokens with this connection.
+
+#### `topic`
+
+Emitted when a message passes all authorization and logic checks. This is the primary data event.
+
+```json
+{
+  "type": "message",
+  "topic": "String — the topic name",
+  "message": "Object — the original message payload from the broker",
+  "date": "String — ISO-8601 timestamp"
+}
+```
+
+The `message` field contains the exact payload produced by the originating microservice. The Realtime Service does not transform it.
+
+#### `error`
+
+Emitted when authentication fails. The socket is **disconnected immediately** after this event.
+
+```json
+{
+  "type": "error",
+  "topic": null,
+  "message": "String — error code",
+  "date": "String — ISO-8601 timestamp"
+}
+```
+
+### 10.3 Error Codes
+
+| Code | Meaning |
+|------|---------|
+| `tokenNotValid` | Token is missing, malformed, or signature verification failed. |
+| `tokenExpired` | Token's `exp` claim has passed. |
+| `socketIdIsNecessary` | Socket ID is required for the operation but was not provided. |
+
+---
+
+## 11. Real-Life Scenarios
+
+### 11.1 E-Commerce: Order Tracking Dashboard
+
+**Goal:** A customer dashboard that shows live updates for the user's orders.
+
+**Token:**
+
+```json
+{
+  "rights": [
+    {
+      "topics": [
+        "order-service-order-created",
+        "order-service-order-updated",
+        "order-service-order-shipped",
+        "order-service-order-delivered"
+      ],
+      "logic": {
+        "type": "eq",
+        "key": "_ownerId",
+        "value": "customer-789"
+      }
+    }
+  ]
+}
+```
+
+**Subscription:** `order-service-order-created,order-service-order-updated,order-service-order-shipped,order-service-order-delivered`
+
+**Result:** The dashboard receives real-time updates for all order lifecycle events, but only those belonging to `customer-789`. Other customers' order events are never delivered.
+
+### 11.2 SaaS Platform: Team Notification Feed
+
+**Goal:** A team workspace where members see real-time notifications for their teams.
+
+**Token:**
+
+```json
+{
+  "rights": [
+    {
+      "topics": ["notification-service*"],
+      "logic": {
+        "type": "||",
+        "conditions": [
+          { "type": "eq", "key": "targetUserId", "value": "user-42" },
+          {
+            "type": "in",
+            "key": "teamId",
+            "value": ["team-engineering", "team-design"]
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+**Subscription:** `notification-service-alert-created,notification-service-mention-created,notification-service-task-assigned`
+
+**Result:** The feed shows notifications that are either targeted directly at user-42, or addressed to the engineering/design teams. All other notifications are filtered out.
+
+### 11.3 Admin Panel: Global Monitoring with Mixed Access
+
+**Goal:** An admin panel monitoring multiple services with different access levels.
+
+**Token:**
+
+```json
+{
+  "rights": [
+    {
+      "topics": ["auth-service*"]
+    },
+    {
+      "topics": ["order-service*"]
+    },
+    {
+      "topics": ["payment-service*"],
+      "logic": {
+        "type": "&&",
+        "conditions": [
+          { "type": "eq", "key": "environment", "value": "production" },
+          { "type": "in", "key": "severity", "value": ["high", "critical"] }
+        ]
+      }
+    }
+  ]
+}
+```
+
+**Subscription:** `auth-service-user-registered,auth-service-user-deleted,order-service-order-created,payment-service-payment-failed`
+
+**Result:**
+- **Auth events:** All user registrations and deletions — no filtering.
+- **Order events:** All order creations — no filtering.
+- **Payment events:** Only production failures with high/critical severity.
+
+### 11.4 Public Announcement Board
+
+**Goal:** A landing page showing live system announcements to all visitors (no login required).
+
+**Token:** *None.*
+
+**Subscription:** `system-announcements`
+
+**Result:** Every message on the `system-announcements` topic is delivered to all connected clients. No token, no rights, no logic — just the subscription.
+
+### 11.5 Document Collaboration: Multi-Service Events with Wildcards
+
+**Goal:** A document editor receiving real-time events from the document service.
+
+**Token:**
+
+```json
+{
+  "rights": [
+    {
+      "topics": ["doc-service-document*"],
+      "logic": {
+        "type": "eq",
+        "key": "documentId",
+        "value": "doc-555"
+      }
+    }
+  ]
+}
+```
+
+**Subscription:** `doc-service-document-updated,doc-service-document-comment-added,doc-service-document-collaborator-joined`
+
+**Result:** The editor receives updates, comments, and collaborator events — but only for `doc-555`. Events for other documents are filtered out by the logic condition.
+
+---
+
+## 12. Closing Thoughts
+
+The Realtime Service is where the event-driven architecture meets the client:
+
+- **Rights** are your permissions — they define the boundaries.
+- **Logic** is your filter — it narrows delivery to exactly what matters.
+- **Wildcards** give you broad, maintainable permission patterns.
+- **Public Topics** give you open channels for unauthenticated data.
+- **The HTTP API** lets your backend manage tokens and permissions dynamically.
+
+The mental model is simple:
+
+> *"The token says what you **can** hear. The subscription says what you **want** to hear. The logic says what you **should** hear."*
+
+All three must align for a message to be delivered.
