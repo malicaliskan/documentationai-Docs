@@ -82,6 +82,11 @@
           "title": "Service Settings",
           "path": "ServiceSettings.mdx"
         },
+        {
+          "type": "file",
+          "title": "Shopping Cart Config",
+          "path": "ShoppingCartConfig.mdx"
+        },
         { "type": "file", "title": "Data Object", "path": "DataObject.mdx" },
         { "type": "file", "title": "Business Api", "path": "BusinessApi.mdx" },
         {

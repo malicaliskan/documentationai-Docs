@@ -1,27 +1,30 @@
----
-title: Social Login Settings
-description: Configuration reference for enabling social login providers (Google, Apple, GitLab, GitHub) in a Mindbricks project.
----
+# SocialLoginSettings
 
 **MPO Version:** 1.3.0
 
-Configuration for enabling social login support within the project. This object defines integration settings for third-party authentication providers, such as Google and Apple, allowing users to sign in or register using their existing accounts. Each provider must be configured with its credentials and registration behavior.
+Configuration for enabling social login support within the project. This object defines integration settings for third-party authentication providers, such as Google, Apple, Facebook, Microsoft, LinkedIn, GitHub, and GitLab, allowing users to sign in or register using their existing accounts. Each provider must be configured with its credentials and registration behavior.
 
 ```typescript
 interface SocialLoginSettings = {
   google : GoogleLoginSetting;
   apple : AppleLoginSetting;
+  facebook : FacebookLoginSetting;
+  microsoft : MicrosoftLoginSetting;
+  linkedin : LinkedinLoginSetting;
   gitlab : GitlabLoginSetting;
   github : GithubLoginSetting;
 }
 ```
 
-| Field  | Description                                                                                                      |
-| ------ | ---------------------------------------------------------------------------------------------------------------- |
-| google | Settings for enabling Google OAuth login and optional user registration. Defined as a GoogleLoginSetting object. |
-| apple  | Settings for enabling Apple OAuth login and optional user registration. Defined as an AppleLoginSetting object.  |
-| gitlab | Settings for enabling GitLab OAuth login and optional user registration. Defined as a GitlabLoginSetting object. |
-| github | Settings for enabling GitHub OAuth login and optional user registration. Defined as a GithubLoginSetting object. |
+| Field     | Description                                                                                                                                                                                                                    |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| google    | Settings for enabling Google OAuth login and optional user registration. Defined as a GoogleLoginSetting object.                                                                                                               |
+| apple     | Settings for enabling Apple OAuth login and optional user registration. Defined as an AppleLoginSetting object.                                                                                                                |
+| facebook  | Settings for enabling Facebook OAuth login and optional user registration. This also covers Instagram accounts since Meta uses a unified login system. Defined as a FacebookLoginSetting object.                               |
+| microsoft | Settings for enabling Microsoft Azure AD / Microsoft Entra ID login and optional user registration. Supports personal Microsoft accounts, work/school (Azure AD) accounts, or both. Defined as a MicrosoftLoginSetting object. |
+| linkedin  | Settings for enabling LinkedIn OAuth login and optional user registration. Defined as a LinkedinLoginSetting object.                                                                                                           |
+| gitlab    | Settings for enabling GitLab OAuth login and optional user registration. Defined as a GitlabLoginSetting object.                                                                                                               |
+| github    | Settings for enabling GitHub OAuth login and optional user registration. Defined as a GithubLoginSetting object.                                                                                                               |
 
 ## GoogleLoginSetting
 
@@ -45,27 +48,25 @@ interface GoogleLoginSetting = {
 
 **MPO Version:** 1.3.0
 
-Configuration details for Google OAuth login, including client ID, secret, and registration behavior. This object is used when Google login is enabled.
+Configuration details for Google OAuth login, including client ID and secret. This object is used when Google login is enabled. Registration is always allowed via social login.
 
 ```typescript
 interface GoogleLoginConfig = {
   clientId : String;
   clientSecret : String;
-  useForRegister : Boolean;
 }
 ```
 
-| Field          | Description                                                                                                                           |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| clientId       | The Google OAuth client ID. This should match the identifier registered in your Google Developer Console.                             |
-| clientSecret   | The Google OAuth client secret. This is a confidential key issued by Google, stored securely in the Mindbricks secret store.          |
-| useForRegister | If true, users can register with their Google account. If false, Google login is permitted only for authentication of existing users. |
+| Field        | Description                                                                                                                  |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| clientId     | The Google OAuth client ID. This should match the identifier registered in your Google Developer Console.                    |
+| clientSecret | The Google OAuth client secret. This is a confidential key issued by Google, stored securely in the Mindbricks secret store. |
 
 ## AppleLoginSetting
 
 **MPO Version:** 1.3.0
 
-Configuration for Apple OAuth login. This section defines whether Apple login is enabled, the client ID, and whether users can register using their Apple accounts.
+Configuration for Apple Sign In with Apple. This section defines whether Apple login is enabled and its configuration. Apple OAuth requires a Service ID, Team ID, Key ID, and a private key (.p8 file contents) — all obtained from the Apple Developer portal.
 
 ```typescript
 interface AppleLoginSetting = {
@@ -83,19 +84,133 @@ interface AppleLoginSetting = {
 
 **MPO Version:** 1.3.0
 
-Configuration details for Apple OAuth login, including client ID and registration behavior. This object is used when Apple login is enabled.
+Configuration details for Apple Sign In. Apple uses a JWT-based client secret generated from a private key, unlike other providers that use a static client secret. Registration is always allowed via social login.
 
 ```typescript
 interface AppleLoginConfig = {
   clientId : String;
-  useForRegister : Boolean;
+  teamId : String;
+  keyId : String;
+  privateKey : String;
 }
 ```
 
-| Field          | Description                                                                                                                           |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| clientId       | The Apple OAuth client ID, also known as the Service ID. This should match the identifier registered in your Apple Developer account. |
-| useForRegister | If true, users can register with their Apple ID. If false, Apple login is permitted only for authentication of existing users.        |
+| Field      | Description                                                                                                                                                                                         |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| clientId   | The Apple Service ID (not the App ID). This is the identifier you create under 'Services IDs' in the Apple Developer portal (e.g., com.yourapp.web.signin).                                         |
+| teamId     | Your Apple Developer Team ID. A 10-character alphanumeric string found in your Apple Developer account membership details.                                                                          |
+| keyId      | The Key ID of the Sign In with Apple private key. Found in the Apple Developer portal under 'Keys' after creating a Sign In with Apple key.                                                         |
+| privateKey | The contents of the .p8 private key file downloaded from Apple. This key is used to generate a JWT client secret for token exchange. Store securely — use \n for newlines in environment variables. |
+
+## FacebookLoginSetting
+
+**MPO Version:** 1.3.0
+
+Configuration for Facebook OAuth login. This section defines whether Facebook login is enabled, the App ID and App Secret, and whether users can register using their Facebook accounts. This also covers Instagram accounts since Meta uses a unified login system (Facebook Login).
+
+```typescript
+interface FacebookLoginSetting = {
+  useFacebookLogin : Boolean;
+  configuration : FacebookLoginConfig;
+}
+```
+
+| Field            | Description                                                                                                                           |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| useFacebookLogin | A boolean value to enable or disable Facebook OAuth login. When true, users can sign in using their Facebook (or Instagram) accounts. |
+| configuration    | The configuration object for Facebook OAuth login. Leave it null if useFacebookLogin is false.                                        |
+
+### FacebookLoginConfig
+
+**MPO Version:** 1.3.0
+
+Configuration details for Facebook OAuth login, including App ID and App Secret. These are obtained from the Meta Developer portal (developers.facebook.com). The Facebook Login product must be added to the app, and 'email' and 'public_profile' permissions are required. Registration is always allowed via social login.
+
+```typescript
+interface FacebookLoginConfig = {
+  clientId : String;
+  clientSecret : String;
+}
+```
+
+| Field        | Description                                                                                                          |
+| ------------ | -------------------------------------------------------------------------------------------------------------------- |
+| clientId     | The Facebook App ID. This should match the identifier registered in your Meta Developer portal application settings. |
+| clientSecret | The Facebook App Secret. This is a confidential key issued by Meta, stored securely in the Mindbricks secret store.  |
+
+## MicrosoftLoginSetting
+
+**MPO Version:** 1.3.0
+
+Configuration for Microsoft Azure AD / Microsoft Entra ID OAuth login. Supports personal Microsoft accounts (Outlook, Hotmail, Xbox), work/school accounts (Azure AD / Microsoft 365), or both — controlled by the tenant setting. Uses OpenID Connect with the Microsoft identity platform v2.0 endpoints.
+
+```typescript
+interface MicrosoftLoginSetting = {
+  useMicrosoftLogin : Boolean;
+  configuration : MicrosoftLoginConfig;
+}
+```
+
+| Field             | Description                                                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| useMicrosoftLogin | A boolean value to enable or disable Microsoft OAuth login. When true, users can sign in using their Microsoft accounts. |
+| configuration     | The configuration object for Microsoft OAuth login. Leave it null if useMicrosoftLogin is false.                         |
+
+### MicrosoftLoginConfig
+
+**MPO Version:** 1.3.0
+
+Configuration details for Microsoft OAuth login. The clientId and clientSecret are obtained from the Azure Portal (Microsoft Entra ID > App registrations). The tenant controls which account types are accepted: 'common' allows both personal and work/school accounts, 'organizations' allows only work/school accounts, 'consumers' allows only personal accounts, or a specific Azure AD tenant ID for single-tenant apps. Registration is always allowed via social login.
+
+```typescript
+interface MicrosoftLoginConfig = {
+  clientId : String;
+  clientSecret : String;
+  tenant : String;
+}
+```
+
+| Field        | Description                                                                                                                                                                                                                                        |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| clientId     | The Microsoft Application (client) ID. Found in the Azure Portal under App registrations > Overview.                                                                                                                                               |
+| clientSecret | The Microsoft client secret (value, not the secret ID). Created in Azure Portal under App registrations > Certificates & secrets. Stored securely in the Mindbricks secret store.                                                                  |
+| tenant       | Controls which Microsoft account types can sign in. Use 'common' (default) for both personal and work/school, 'organizations' for work/school only, 'consumers' for personal only, or a specific Azure AD tenant ID (GUID) for single-tenant apps. |
+
+## LinkedinLoginSetting
+
+**MPO Version:** 1.3.0
+
+Configuration for LinkedIn OAuth login. This section defines whether LinkedIn login is enabled, the client ID and secret, and whether users can register using their LinkedIn accounts. LinkedIn uses OpenID Connect with the 'openid', 'profile', and 'email' scopes.
+
+```typescript
+interface LinkedinLoginSetting = {
+  useLinkedinLogin : Boolean;
+  configuration : LinkedinLoginConfig;
+}
+```
+
+| Field            | Description                                                                                                            |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| useLinkedinLogin | A boolean value to enable or disable LinkedIn OAuth login. When true, users can sign in using their LinkedIn accounts. |
+| configuration    | The configuration object for LinkedIn OAuth login. Leave it null if useLinkedinLogin is false.                         |
+
+### LinkedinLoginConfig
+
+**MPO Version:** 1.3.0
+
+Configuration details for LinkedIn OAuth login, including client ID and secret. This object is used when LinkedIn login is enabled. LinkedIn uses the 'Sign In with LinkedIn using OpenID Connect' product. Registration is always allowed via social login.
+
+```typescript
+interface LinkedinLoginConfig = {
+  clientId : String;
+  clientSecret : String;
+}
+```
+
+| Field        | Description                                                                                                                      |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| clientId     | The LinkedIn OAuth client ID. This should match the identifier registered in your LinkedIn Developer application.                |
+| clientSecret | The LinkedIn OAuth client secret. This is a confidential key issued by LinkedIn, stored securely in the Mindbricks secret store. |
 
 ## GitlabLoginSetting
 
@@ -119,21 +234,19 @@ interface GitlabLoginSetting = {
 
 **MPO Version:** 1.3.0
 
-Configuration details for GitLab OAuth login, including client ID, secret, and registration behavior. This object is used when GitLab login is enabled.
+Configuration details for GitLab OAuth login, including client ID and secret. This object is used when GitLab login is enabled. Registration is always allowed via social login.
 
 ```typescript
 interface GitlabLoginConfig = {
   clientId : String;
   clientSecret : String;
-  useForRegister : Boolean;
 }
 ```
 
-| Field          | Description                                                                                                                           |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| clientId       | The GitLab OAuth client ID. This should match the identifier registered in your GitLab application settings.                          |
-| clientSecret   | The GitLab OAuth client secret. This is a confidential key issued by GitLab, stored securely in the Mindbricks secret store.          |
-| useForRegister | If true, users can register with their GitLab account. If false, GitLab login is permitted only for authentication of existing users. |
+| Field        | Description                                                                                                                  |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| clientId     | The GitLab OAuth client ID. This should match the identifier registered in your GitLab application settings.                 |
+| clientSecret | The GitLab OAuth client secret. This is a confidential key issued by GitLab, stored securely in the Mindbricks secret store. |
 
 ## GithubLoginSetting
 
@@ -157,18 +270,16 @@ interface GithubLoginSetting = {
 
 **MPO Version:** 1.3.0
 
-Configuration details for GitHub OAuth login, including client ID, secret, and registration behavior. This object is used when GitHub login is enabled.
+Configuration details for GitHub OAuth login, including client ID and secret. This object is used when GitHub login is enabled. Registration is always allowed via social login.
 
 ```typescript
 interface GithubLoginConfig = {
   clientId : String;
   clientSecret : String;
-  useForRegister : Boolean;
 }
 ```
 
-| Field          | Description                                                                                                                           |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| clientId       | The GitHub OAuth client ID. This should match the identifier registered in your GitHub application settings.                          |
-| clientSecret   | The GitHub OAuth client secret. This is a confidential key issued by GitHub, stored securely in the Mindbricks secret store.          |
-| useForRegister | If true, users can register with their GitHub account. If false, GitHub login is permitted only for authentication of existing users. |
+| Field        | Description                                                                                                                  |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| clientId     | The GitHub OAuth client ID. This should match the identifier registered in your GitHub application settings.                 |
+| clientSecret | The GitHub OAuth client secret. This is a confidential key issued by GitHub, stored securely in the Mindbricks secret store. |

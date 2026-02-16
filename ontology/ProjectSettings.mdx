@@ -1,7 +1,4 @@
----
-title: Project settings ontology
-description: Reference for the ProjectSettings ontology in Mindbricks, covering basic project metadata, Stripe, AI, CORS, pipeline templates, and integration configuration.
----
+# ProjectSettings
 
 **MPO Version:** 1.3.0
 
@@ -43,6 +40,7 @@ interface BasicProjectSettings = {
   hasAuthentication : Boolean;
   ignoreDeploymentSpecificFiles : Boolean;
   customVariables : DataMapSimpleItem[];
+  frontendUrl : FrontendUrl;
 }
 ```
 
@@ -56,6 +54,7 @@ interface BasicProjectSettings = {
 | hasAuthentication             | Determines if the project uses an authentication system (for users, administrators, etc.). Enabling this typically activates an auth microservice and related security features. Detailed settings are in the main authentication module.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ignoreDeploymentSpecificFiles | Use this in your custom deployment not to generate auto-deployemnt specific files so you can integrate your own files to your repository. AI Agents should keep this false.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | customVariables               | Key-value pairs defining custom environment variables for the project. These variables are available in runtime and can be accessed in service logic and functions.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| frontendUrl                   | Per-environment base URLs for the frontend application. Used to derive callback URLs (e.g. social login redirect). Defaults: dev=http://localhost:5173, test=https://{codename}.prw.mindbricks.com, stage=https://{codename}-stage.mindbricks.co, prod=https://{codename}.mindbricks.co. Override when using a custom domain.                                                                                                                                                                                                                                                                                                                                                                            |
 
 ### DataMapSimpleItem
 
@@ -74,6 +73,28 @@ interface DataMapSimpleItem = {
 | ----- | ---------------------------------------------------------------------------- |
 | name  | The key name for the data item (e.g., a header name or parameter name).      |
 | value | The value of the data item, should be deifned as string even it is a number. |
+
+### FrontendUrl
+
+**MPO Version:** 1.3.0
+
+Per-environment base URLs for the frontend application. These URLs are used to derive callback URLs (e.g. SOCIAL_LOGIN_REDIRECT_URL = frontendUrl + /auth/callback). If not set, defaults are derived from the project codename: dev=http://localhost:5173, test=https://{codename}.prw.mindbricks.com, stage=https://{codename}-stage.mindbricks.co, prod=https://{codename}.mindbricks.co.
+
+```typescript
+interface FrontendUrl = {
+  dev : String;
+  test : String;
+  stage : String;
+  prod : String;
+}
+```
+
+| Field | Description                                                                                               |
+| ----- | --------------------------------------------------------------------------------------------------------- |
+| dev   | Frontend base URL for local development environment. Default: http://localhost:5173                       |
+| test  | Frontend base URL for the test/preview environment. Default: https://{projectCodename}.prw.mindbricks.com |
+| stage | Frontend base URL for the staging environment. Default: https://{projectCodename}-stage.mindbricks.co     |
+| prod  | Frontend base URL for the production environment. Default: https://{projectCodename}.mindbricks.co        |
 
 ## StripeSettings
 

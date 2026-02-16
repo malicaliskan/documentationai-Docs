@@ -1,0 +1,1035 @@
+# ShoppingCartConfig
+
+**MPO Version:** 1.3.0
+
+Shopping cart configuration chapter. When enabled, auto-generates Cart, CartItem, and optionally Campaign/Coupon DataObjects with Redis-first architecture for hyper-scalable cart management.
+
+```typescript
+interface ShoppingCartConfig = {
+  basicSettings : ShoppingCartBasicSettings;
+  pricingSettings : ShoppingCartPricingSettings;
+  itemSettings : ShoppingCartItemSettings;
+  productCatalogSettings : ShoppingCartProductCatalogSettings;
+  logisticsSettings : ShoppingCartLogisticsSettings;
+  loyaltySettings : ShoppingCartLoyaltySettings;
+  promotionSettings : ShoppingCartPromotionSettings;
+  redisSettings : ShoppingCartRedisSettings;
+  eventSettings : ShoppingCartEventSettings;
+  apiSettings : ShoppingCartApiSettings;
+  checkoutSettings : ShoppingCartCheckoutSettings;
+}
+```
+
+| Field                  | Description                                                                                                                                                          |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| basicSettings          | Core cart settings including activation, naming, currency, and guest cart support. The useShoppingCartFeature flag activates the entire shopping cart functionality. |
+| pricingSettings        | Price calculation settings including VAT handling, rounding, discounts, shipment, and extra charges.                                                                 |
+| itemSettings           | Cart item configuration including what item properties to generate.                                                                                                  |
+| productCatalogSettings | Optional product catalog integration for automatic item population when adding products.                                                                             |
+| logisticsSettings      | Shipping logistics settings for weight, dimensions, and volume tracking.                                                                                             |
+| loyaltySettings        | Loyalty program settings for points earning and redemption.                                                                                                          |
+| promotionSettings      | Promotion engine configuration including static and dynamic promotions.                                                                                              |
+| redisSettings          | Redis caching configuration for hyper-scalable cart management.                                                                                                      |
+| eventSettings          | Event hooks for custom business logic injection.                                                                                                                     |
+| apiSettings            | Generated API routes configuration.                                                                                                                                  |
+| checkoutSettings       | Checkout settings for cart-to-order conversion. Configures how checkout creates orders, property mappings, and event publishing.                                     |
+
+## ShoppingCartBasicSettings
+
+**MPO Version:** 1.3.0
+
+Core shopping cart settings with activation flag. When useShoppingCartFeature is true, the Cart and CartItem DataObjects are auto-generated.
+
+```typescript
+interface ShoppingCartBasicSettings = {
+  useShoppingCartFeature : Boolean;
+  cartObjectName : String;
+  currency : String;
+  supportGuestCart : Boolean;
+  supportNotes : Boolean;
+  supportMetadata : Boolean;
+  churningPeriodDays : Integer;
+  abandonmentPeriodDays : Integer;
+}
+```
+
+| Field                  | Description                                                                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| useShoppingCartFeature | Enables shopping cart functionality for this service. When true, auto-generates Cart and CartItem DataObjects with all pricing, status, and calculation properties. |
+| cartObjectName         | Name for the auto-generated Cart DataObject (e.g., 'cart', 'shoppingCart'). Related objects are named based on this: {name}Item, {name}Campaign, etc.               |
+| currency               | The currency code for this cart (e.g., USD, EUR, TRY). All monetary calculations use this currency.                                                                 |
+| supportGuestCart       | Whether to support anonymous/guest carts before user login. Adds sessionId property for session binding.                                                            |
+| supportNotes           | Whether to include a notes field for customer special instructions.                                                                                                 |
+| supportMetadata        | Whether to include a metadata JSON field for custom extensibility.                                                                                                  |
+| churningPeriodDays     | Number of days of inactivity before a cart is marked as 'churning'. Churning carts may trigger reminder emails. Set to 0 to disable churning detection.             |
+| abandonmentPeriodDays  | Number of days of inactivity before a cart is marked as 'abandoned'. Abandoned carts may be deleted or archived. Must be greater than churningPeriodDays.           |
+
+## ShoppingCartPricingSettings
+
+**MPO Version:** 1.3.0
+
+Price calculation settings. Controls VAT handling, rounding, and which charge types are supported.
+
+```typescript
+interface ShoppingCartPricingSettings = {
+  catalogPricesIncludeVat : Boolean;
+  defaultVatRate : Double;
+  roundingStrategy : RoundingStrategy;
+  roundingPrecision : Integer;
+  discountSettings : CartDiscountConfig;
+  shipmentSettings : CartShipmentConfig;
+  extraChargeSettings : CartExtraChargeConfig;
+}
+```
+
+| Field                   | Description                                                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| catalogPricesIncludeVat | Whether product prices include VAT. If true, prices are normalized to ex-VAT internally for correct tax calculation. |
+| defaultVatRate          | Default VAT rate as decimal (e.g., 0.18 for 18%) when item doesn't specify its own rate.                             |
+| roundingStrategy        | When to round monetary values: perLine (recommended), perItem, or atTotal.                                           |
+| roundingPrecision       | Decimal places for rounding (typically 2).                                                                           |
+| discountSettings        | Discount calculation configuration.                                                                                  |
+| shipmentSettings        | Shipment charge configuration.                                                                                       |
+| extraChargeSettings     | Extra charges configuration (handling, packaging, etc.).                                                             |
+
+### RoundingStrategy
+
+Defines when monetary rounding is applied during price calculations.
+
+```js
+const RoundingStrategy = {
+  perLine: "perLine",
+  perItem: "perItem",
+  atTotal: "atTotal",
+};
+```
+
+| Enum    | Description                                                                                       |
+| ------- | ------------------------------------------------------------------------------------------------- |
+| perLine | Round each line total after calculating (quantity × unit price). Recommended for most cases.      |
+| perItem | Round each item's unit price before multiplication. May cause small discrepancies in line totals. |
+| atTotal | Only round the final grand total. Keeps maximum precision but may show odd line totals.           |
+
+### CartDiscountConfig
+
+**MPO Version:** 1.3.0
+
+Configuration for discount handling.
+
+```typescript
+interface CartDiscountConfig = {
+  supportType : DiscountSupportType;
+  allocationMode : DiscountAllocationMode;
+}
+```
+
+| Field          | Description                                                                                         |
+| -------------- | --------------------------------------------------------------------------------------------------- |
+| supportType    | What level of discounts are supported: none, cartLevel, itemLevel, or bothLevels.                   |
+| allocationMode | How cart-level discounts are allocated to items: proportional, byQuantity, lastItem, or customRule. |
+
+#### DiscountSupportType
+
+Defines what types of discounts the cart supports.
+
+```js
+const DiscountSupportType = {
+  none: "none",
+  cartLevel: "cartLevel",
+  itemLevel: "itemLevel",
+  bothLevels: "bothLevels",
+};
+```
+
+| Enum       | Description                                                                  |
+| ---------- | ---------------------------------------------------------------------------- |
+| none       | No discounts supported.                                                      |
+| cartLevel  | Only cart-level discounts (applied to entire cart, then allocated to items). |
+| itemLevel  | Only item-level discounts (applied directly to individual items).            |
+| bothLevels | Both cart-level and item-level discounts supported.                          |
+
+#### DiscountAllocationMode
+
+Defines how cart-level discounts are allocated to individual items for accounting and tax purposes.
+
+```js
+const DiscountAllocationMode = {
+  proportional: "proportional",
+  byQuantity: "byQuantity",
+  lastItem: "lastItem",
+  customRule: "customRule",
+};
+```
+
+| Enum         | Description                                                                     |
+| ------------ | ------------------------------------------------------------------------------- |
+| proportional | Allocate discount proportionally based on each item's contribution to subtotal. |
+| byQuantity   | Allocate discount equally per item quantity.                                    |
+| lastItem     | Apply entire discount to the last item (simplest, least accurate).              |
+| customRule   | Use custom allocation logic defined in event handler.                           |
+
+### CartShipmentConfig
+
+**MPO Version:** 1.3.0
+
+Configuration for shipment/delivery charges.
+
+```typescript
+interface CartShipmentConfig = {
+  supportShipment : Boolean;
+  defaultShipmentVatRate : Double;
+}
+```
+
+| Field                  | Description                                                                                        |
+| ---------------------- | -------------------------------------------------------------------------------------------------- |
+| supportShipment        | Whether the cart supports shipment charges.                                                        |
+| defaultShipmentVatRate | Default VAT rate for shipping (may differ from product VAT). Uses defaultVatRate if not specified. |
+
+### CartExtraChargeConfig
+
+**MPO Version:** 1.3.0
+
+Configuration for additional charges like handling, packaging, insurance, etc.
+
+```typescript
+interface CartExtraChargeConfig = {
+  supportExtraCharges : Boolean;
+  storeBreakdown : Boolean;
+}
+```
+
+| Field               | Description                                                           |
+| ------------------- | --------------------------------------------------------------------- |
+| supportExtraCharges | Whether the cart supports extra charges beyond shipment.              |
+| storeBreakdown      | Whether to store breakdown of individual extra charges as JSON array. |
+
+## ShoppingCartItemSettings
+
+**MPO Version:** 1.3.0
+
+Configuration for cart line items. The CartItem DataObject is auto-generated based on these settings.
+
+```typescript
+interface ShoppingCartItemSettings = {
+  itemObjectSuffix : String;
+  supportCategory : Boolean;
+  supportBrand : Boolean;
+  supportProductGroup : Boolean;
+  supportVendor : Boolean;
+  supportGiftItems : Boolean;
+  supportItemMetadata : Boolean;
+}
+```
+
+| Field               | Description                                                                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------- |
+| itemObjectSuffix    | Suffix for the auto-generated CartItem DataObject name (default: 'Item'). E.g., 'cart' + 'Item' = 'cartItem'. |
+| supportCategory     | Whether items track category for filtering and promotions.                                                    |
+| supportBrand        | Whether items track brand for filtering and promotions.                                                       |
+| supportProductGroup | Whether items track product group ID for variant grouping in promotions.                                      |
+| supportVendor       | Whether items track vendor/supplier for marketplace scenarios.                                                |
+| supportGiftItems    | Whether items can be marked as promotional gifts.                                                             |
+| supportItemMetadata | Whether items have a metadata JSON field for custom data.                                                     |
+
+## ShoppingCartProductCatalogSettings
+
+**MPO Version:** 1.3.0
+
+Optional product catalog integration. When enabled, adding a product by ID/barcode automatically populates item properties from the product catalog.
+
+```typescript
+interface ShoppingCartProductCatalogSettings = {
+  useProductCatalog : Boolean;
+  productDataObject : DataObjectName;
+  lookupField : ProductLookupField;
+  productMappings : ProductFieldMappings;
+}
+```
+
+| Field             | Description                                                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------------------------------- |
+| useProductCatalog | Whether to integrate with a product DataObject for automatic item population.                               |
+| productDataObject | The product catalog DataObject to fetch product details from.                                               |
+| lookupField       | Field to use for product lookup: 'id' or 'barcode'.                                                         |
+| productMappings   | Which product fields to map to cart items. Configure only if your product uses non-standard property names. |
+
+### ProductLookupField
+
+Field used to look up products when adding to cart.
+
+```js
+const ProductLookupField = {
+  id: "id",
+  barcode: "barcode",
+};
+```
+
+| Enum    | Description                    |
+| ------- | ------------------------------ |
+| id      | Look up by product ID          |
+| barcode | Look up by product barcode/SKU |
+
+### ProductFieldMappings
+
+**MPO Version:** 1.3.0
+
+Maps product DataObject property names to expected names. Only configure if your product uses non-standard names. All fields are optional - only specify overrides.
+
+```typescript
+interface ProductFieldMappings = {
+  barcodeField : String;
+  nameField : String;
+  imageField : String;
+  descriptionField : String;
+  categoryField : String;
+  brandField : String;
+  productGroupField : String;
+  priceField : String;
+  vatRateField : String;
+  discountPercentField : String;
+  vendorField : String;
+  weightField : String;
+  lengthField : String;
+  widthField : String;
+  heightField : String;
+  earnedPointsField : String;
+}
+```
+
+| Field                | Description                                                   |
+| -------------------- | ------------------------------------------------------------- |
+| barcodeField         | Product property for barcode (default: 'barcode').            |
+| nameField            | Product property for name (default: 'name').                  |
+| imageField           | Product property for image URL (default: 'image').            |
+| descriptionField     | Product property for description (default: 'description').    |
+| categoryField        | Product property for category (default: 'category').          |
+| brandField           | Product property for brand (default: 'brand').                |
+| productGroupField    | Product property for product group (default: 'productGroup'). |
+| priceField           | Product property for price (default: 'price').                |
+| vatRateField         | Product property for VAT rate (default: 'vatRate').           |
+| discountPercentField | Product property for discount % (default: 'discountPercent'). |
+| vendorField          | Product property for vendor (default: 'vendor').              |
+| weightField          | Product property for weight (default: 'weight').              |
+| lengthField          | Product property for length (default: 'length').              |
+| widthField           | Product property for width (default: 'width').                |
+| heightField          | Product property for height (default: 'height').              |
+| earnedPointsField    | Product property for earned points (default: 'earnedPoints'). |
+
+## ShoppingCartLogisticsSettings
+
+**MPO Version:** 1.3.0
+
+Configuration for shipping logistics. When enabled, adds weight/dimension properties to Cart and CartItem.
+
+```typescript
+interface ShoppingCartLogisticsSettings = {
+  supportLogistics : Boolean;
+  supportDimensions : Boolean;
+  supportVolume : Boolean;
+  supportDimensionalWeight : Boolean;
+  dimFactor : Integer;
+}
+```
+
+| Field                    | Description                                                                             |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| supportLogistics         | Whether to track logistics data (weight, dimensions, volume) for shipping calculations. |
+| supportDimensions        | Whether to track length, width, height in addition to weight.                           |
+| supportVolume            | Whether to auto-calculate and store volume.                                             |
+| supportDimensionalWeight | Whether to calculate dimensional weight for shipping carriers.                          |
+| dimFactor                | Dimensional weight factor (default: 5000 for cm/kg, 139 for in/lb).                     |
+
+## ShoppingCartLoyaltySettings
+
+**MPO Version:** 1.3.0
+
+Loyalty program configuration. When enabled, adds points properties to Cart and CartItem.
+
+```typescript
+interface ShoppingCartLoyaltySettings = {
+  supportLoyalty : Boolean;
+  supportPointsRedemption : Boolean;
+  pointsToMoneyRate : Double;
+  pointsAllocationMode : PointsAllocationMode;
+}
+```
+
+| Field                   | Description                                                    |
+| ----------------------- | -------------------------------------------------------------- |
+| supportLoyalty          | Whether to enable loyalty points functionality.                |
+| supportPointsRedemption | Whether customers can redeem points for discounts.             |
+| pointsToMoneyRate       | How many points equal 1 currency unit (e.g., 100 points = $1). |
+| pointsAllocationMode    | How cart-level bonus points are allocated to items.            |
+
+### PointsAllocationMode
+
+Defines how cart-level bonus points are allocated to individual items.
+
+```js
+const PointsAllocationMode = {
+  proportional: "proportional",
+  lastItem: "lastItem",
+  highestPrice: "highestPrice",
+  firstMatch: "firstMatch",
+};
+```
+
+| Enum         | Description                                                      |
+| ------------ | ---------------------------------------------------------------- |
+| proportional | Allocate points proportionally based on item value contribution. |
+| lastItem     | Assign all bonus points to the last item.                        |
+| highestPrice | Assign all bonus points to the highest-priced item.              |
+| firstMatch   | Assign all bonus points to the first qualifying item.            |
+
+## ShoppingCartPromotionSettings
+
+**MPO Version:** 1.3.0
+
+Promotion engine configuration with two tiers: static promotions (hardcoded for performance) and dynamic promotions (auto-generated DataObjects with full engine).
+
+```typescript
+interface ShoppingCartPromotionSettings = {
+  supportPromotions : Boolean;
+  conflictResolution : ConflictResolutionMode;
+  maxPromotionsPerCart : Integer;
+  staticPromotions : StaticPromotionSettings;
+  dynamicPromotions : DynamicPromotionSettings;
+}
+```
+
+| Field                | Description                                                                                       |
+| -------------------- | ------------------------------------------------------------------------------------------------- |
+| supportPromotions    | Whether to enable promotion functionality. Adds couponCode and appliedCampaignIds fields to Cart. |
+| conflictResolution   | How to handle conflicts between multiple applicable promotions.                                   |
+| maxPromotionsPerCart | Maximum promotions per cart (null = unlimited).                                                   |
+| staticPromotions     | Simple, always-on promotions hardcoded into CartManager for maximum performance.                  |
+| dynamicPromotions    | Complex promotions with auto-generated Campaign and Coupon DataObjects.                           |
+
+### ConflictResolutionMode
+
+Defines how to handle multiple applicable promotions.
+
+```js
+const ConflictResolutionMode = {
+  bestForCustomer: "bestForCustomer",
+  applyAll: "applyAll",
+  priorityOrder: "priorityOrder",
+  exclusive: "exclusive",
+};
+```
+
+| Enum            | Description                                                                       |
+| --------------- | --------------------------------------------------------------------------------- |
+| bestForCustomer | Automatically select the promotion(s) that give the customer the highest benefit. |
+| applyAll        | Apply all applicable promotions that are stackable.                               |
+| priorityOrder   | Apply promotions in priority order until max is reached.                          |
+| exclusive       | Only apply the highest-priority exclusive promotion.                              |
+
+### StaticPromotionSettings
+
+**MPO Version:** 1.3.0
+
+Simple, always-on promotions hardcoded into CartManager for maximum performance. These require no database lookups and are limited to cart-level conditions.
+
+```typescript
+interface StaticPromotionSettings = {
+  freeShippingThreshold : FreeShippingPromotion;
+  cartTotalDiscount : CartTotalDiscountPromotion;
+  cartQuantityDiscount : CartQuantityDiscountPromotion;
+  membershipDiscounts : MembershipDiscountPromotion;
+  loyaltyPointsMultiplier : LoyaltyPointsMultiplierPromotion;
+}
+```
+
+| Field                   | Description                                              |
+| ----------------------- | -------------------------------------------------------- |
+| freeShippingThreshold   | Free shipping when cart total exceeds a threshold.       |
+| cartTotalDiscount       | Tiered percentage or fixed discount based on cart total. |
+| cartQuantityDiscount    | Tiered discount based on total item quantity.            |
+| membershipDiscounts     | Discounts based on customer membership level.            |
+| loyaltyPointsMultiplier | Points multiplier based on membership level.             |
+
+#### FreeShippingPromotion
+
+**MPO Version:** 1.3.0
+
+Static promotion: Free shipping when cart total exceeds threshold.
+
+```typescript
+interface FreeShippingPromotion = {
+  enabled : Boolean;
+  minCartTotal : Double;
+  customerMessage : String;
+}
+```
+
+| Field           | Description                                               |
+| --------------- | --------------------------------------------------------- |
+| enabled         | Whether this promotion is active.                         |
+| minCartTotal    | Minimum cart total (ex-VAT) to qualify for free shipping. |
+| customerMessage | Message to display to customer when promotion applies.    |
+
+#### CartTotalDiscountPromotion
+
+**MPO Version:** 1.3.0
+
+Static promotion: Tiered discount based on cart total.
+
+```typescript
+interface CartTotalDiscountPromotion = {
+  enabled : Boolean;
+  tiers : CartTotalDiscountTier[];
+  maxDiscountAmount : Double;
+  stackableWithDynamic : Boolean;
+}
+```
+
+| Field                | Description                                                               |
+| -------------------- | ------------------------------------------------------------------------- |
+| enabled              | Whether this promotion is active.                                         |
+| tiers                | Array of discount tiers. Evaluated top-down, first matching tier applies. |
+| maxDiscountAmount    | Optional cap on the maximum discount amount.                              |
+| stackableWithDynamic | Whether this discount can stack with dynamic promotions.                  |
+
+##### CartTotalDiscountTier
+
+**MPO Version:** 1.3.0
+
+A single tier in cart total discount promotion.
+
+```typescript
+interface CartTotalDiscountTier = {
+  minCartTotal : Double;
+  discountPercent : Double;
+  discountAmount : Double;
+  customerMessage : String;
+}
+```
+
+| Field           | Description                                                                              |
+| --------------- | ---------------------------------------------------------------------------------------- |
+| minCartTotal    | Minimum cart total to activate this tier.                                                |
+| discountPercent | Percentage discount to apply (e.g., 10 for 10%). Mutually exclusive with discountAmount. |
+| discountAmount  | Fixed discount amount to apply. Mutually exclusive with discountPercent.                 |
+| customerMessage | Message to display when this tier applies.                                               |
+
+#### CartQuantityDiscountPromotion
+
+**MPO Version:** 1.3.0
+
+Static promotion: Tiered discount based on total item quantity.
+
+```typescript
+interface CartQuantityDiscountPromotion = {
+  enabled : Boolean;
+  tiers : CartQuantityDiscountTier[];
+  stackableWithDynamic : Boolean;
+}
+```
+
+| Field                | Description                                              |
+| -------------------- | -------------------------------------------------------- |
+| enabled              | Whether this promotion is active.                        |
+| tiers                | Array of quantity discount tiers.                        |
+| stackableWithDynamic | Whether this discount can stack with dynamic promotions. |
+
+##### CartQuantityDiscountTier
+
+**MPO Version:** 1.3.0
+
+A single tier in cart quantity discount promotion.
+
+```typescript
+interface CartQuantityDiscountTier = {
+  minQuantity : Integer;
+  discountPercent : Double;
+  discountAmount : Double;
+  customerMessage : String;
+}
+```
+
+| Field           | Description                                |
+| --------------- | ------------------------------------------ |
+| minQuantity     | Minimum total items to activate this tier. |
+| discountPercent | Percentage discount to apply.              |
+| discountAmount  | Fixed discount amount to apply.            |
+| customerMessage | Message to display when this tier applies. |
+
+#### MembershipDiscountPromotion
+
+**MPO Version:** 1.3.0
+
+Static promotion: Discount based on customer membership level.
+
+```typescript
+interface MembershipDiscountPromotion = {
+  enabled : Boolean;
+  membershipProperty : String;
+  levels : MembershipDiscountLevel[];
+  stackableWithDynamic : Boolean;
+}
+```
+
+| Field                | Description                                                  |
+| -------------------- | ------------------------------------------------------------ |
+| enabled              | Whether this promotion is active.                            |
+| membershipProperty   | Session property that holds the customer's membership level. |
+| levels               | Array of membership levels and their discount percentages.   |
+| stackableWithDynamic | Whether this discount can stack with dynamic promotions.     |
+
+##### MembershipDiscountLevel
+
+**MPO Version:** 1.3.0
+
+Discount configuration for a specific membership level.
+
+```typescript
+interface MembershipDiscountLevel = {
+  membershipLevel : String;
+  discountPercent : Double;
+  customerMessage : String;
+}
+```
+
+| Field           | Description                                               |
+| --------------- | --------------------------------------------------------- |
+| membershipLevel | The membership level name (e.g., silver, gold, platinum). |
+| discountPercent | Percentage discount for this membership level.            |
+| customerMessage | Message to display to customer.                           |
+
+#### LoyaltyPointsMultiplierPromotion
+
+**MPO Version:** 1.3.0
+
+Static promotion: Points multiplier based on membership level.
+
+```typescript
+interface LoyaltyPointsMultiplierPromotion = {
+  enabled : Boolean;
+  membershipProperty : String;
+  defaultMultiplier : Double;
+  levels : PointsMultiplierLevel[];
+}
+```
+
+| Field              | Description                                                  |
+| ------------------ | ------------------------------------------------------------ |
+| enabled            | Whether this promotion is active.                            |
+| membershipProperty | Session property that holds the customer's membership level. |
+| defaultMultiplier  | Default points multiplier for non-members (typically 1).     |
+| levels             | Array of membership levels and their point multipliers.      |
+
+##### PointsMultiplierLevel
+
+**MPO Version:** 1.3.0
+
+Points multiplier configuration for a specific membership level.
+
+```typescript
+interface PointsMultiplierLevel = {
+  membershipLevel : String;
+  multiplier : Double;
+}
+```
+
+| Field           | Description                                                   |
+| --------------- | ------------------------------------------------------------- |
+| membershipLevel | The membership level name.                                    |
+| multiplier      | Points multiplier for this level (e.g., 2 for double points). |
+
+### DynamicPromotionSettings
+
+**MPO Version:** 1.3.0
+
+Configuration for complex, database-driven promotions evaluated by the Promotion Engine at runtime. When enabled, auto-generates Campaign, Coupon, and CampaignUsage DataObjects.
+
+```typescript
+interface DynamicPromotionSettings = {
+  enabled : Boolean;
+  supportCoupons : Boolean;
+  supportMultipleCoupons : Boolean;
+  maxCouponsPerCart : Integer;
+  campaignSettings : AutoGeneratedCampaignSettings;
+  cacheSettings : PromotionCacheSettings;
+}
+```
+
+| Field                  | Description                                                                                                                       |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| enabled                | Whether dynamic promotions are enabled. Auto-generates Campaign DataObject and adds couponCode/appliedCampaignIds fields to Cart. |
+| supportCoupons         | Whether to generate the Coupon DataObject for coupon code support.                                                                |
+| supportMultipleCoupons | Whether multiple coupon codes can be applied to a single cart.                                                                    |
+| maxCouponsPerCart      | Maximum coupons per cart (if supportMultipleCoupons).                                                                             |
+| campaignSettings       | Configuration for the auto-generated Campaign DataObject.                                                                         |
+| cacheSettings          | Redis caching settings for campaign data.                                                                                         |
+
+#### AutoGeneratedCampaignSettings
+
+**MPO Version:** 1.3.0
+
+Configuration for the auto-generated Campaign DataObject. Controls which features are available for campaigns.
+
+```typescript
+interface AutoGeneratedCampaignSettings = {
+  generateAdminApis : Boolean;
+  supportBudgetLimits : Boolean;
+  supportUsageLimits : Boolean;
+  supportCustomerLimits : Boolean;
+  supportDailyLimits : Boolean;
+  supportScheduling : Boolean;
+  supportCustomerTags : Boolean;
+}
+```
+
+| Field                 | Description                                                             |
+| --------------------- | ----------------------------------------------------------------------- |
+| generateAdminApis     | Whether to generate CRUD APIs for campaign and coupon management.       |
+| supportBudgetLimits   | Whether campaigns can have budget limits (max discount amount to give). |
+| supportUsageLimits    | Whether campaigns can have usage limits (max total redemptions).        |
+| supportCustomerLimits | Whether campaigns can have per-customer usage limits.                   |
+| supportDailyLimits    | Whether campaigns can have daily usage/budget limits.                   |
+| supportScheduling     | Whether campaigns can have start/end dates and time-of-day rules.       |
+| supportCustomerTags   | Whether campaigns can target specific customer segments.                |
+
+#### PromotionCacheSettings
+
+**MPO Version:** 1.3.0
+
+Redis caching configuration for promotion campaign data.
+
+```typescript
+interface PromotionCacheSettings = {
+  cacheInRedis : Boolean;
+  cacheTtlSeconds : Integer;
+  cacheKeyPrefix : String;
+}
+```
+
+| Field           | Description                                                 |
+| --------------- | ----------------------------------------------------------- |
+| cacheInRedis    | Whether to cache active campaigns in Redis for performance. |
+| cacheTtlSeconds | TTL for campaign cache in Redis (default: 300 = 5 minutes). |
+| cacheKeyPrefix  | Prefix for campaign cache keys (default: 'promo:').         |
+
+## ShoppingCartRedisSettings
+
+**MPO Version:** 1.3.0
+
+Redis caching configuration for cart data enabling hyper-scalable, Redis-first architecture.
+
+```typescript
+interface ShoppingCartRedisSettings = {
+  enabled : Boolean;
+  keyPrefix : String;
+  cartTtlSeconds : Integer;
+  itemsTtlSeconds : Integer;
+  persistStrategy : RedisPersistStrategy;
+  persistIntervalSeconds : Integer;
+  useHashForCart : Boolean;
+  useListForItems : Boolean;
+}
+```
+
+| Field                  | Description                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------ |
+| enabled                | Whether to use Redis for cart caching.                                                     |
+| keyPrefix              | Prefix for all Redis keys related to this cart type (e.g., 'cart:').                       |
+| cartTtlSeconds         | TTL for cart data in Redis. After this time inactive carts are evicted.                    |
+| itemsTtlSeconds        | TTL for cart items data in Redis.                                                          |
+| persistStrategy        | When to persist cart data to database: 'onEveryChange', 'onCheckout', 'periodic', 'never'. |
+| persistIntervalSeconds | Interval for periodic persistence (if persistStrategy is 'periodic').                      |
+| useHashForCart         | Use Redis HASH for cart data (better for partial updates) vs STRING (simpler).             |
+| useListForItems        | Use Redis LIST for items (ordered) vs SET (unordered, faster lookups).                     |
+
+### RedisPersistStrategy
+
+Defines when cart data in Redis is persisted to the database.
+
+```js
+const RedisPersistStrategy = {
+  onEveryChange: "onEveryChange",
+  onCheckout: "onCheckout",
+  periodic: "periodic",
+  never: "never",
+};
+```
+
+| Enum          | Description                                                                                |
+| ------------- | ------------------------------------------------------------------------------------------ |
+| onEveryChange | Persist to DB on every cart modification. Most durable but highest DB load.                |
+| onCheckout    | Only persist when cart is checked out. Abandoned carts may be lost if Redis fails.         |
+| periodic      | Persist on a schedule (see persistIntervalSeconds). Balance of durability and performance. |
+| never         | Never persist to DB automatically. Use for pure Redis carts (e.g., anonymous sessions).    |
+
+## ShoppingCartEventSettings
+
+**MPO Version:** 1.3.0
+
+Event hooks for injecting custom business logic. Each event references a function name from the Service Library.
+
+```typescript
+interface ShoppingCartEventSettings = {
+  lifecycleEvents : CartLifecycleEvents;
+  itemEvents : CartItemEvents;
+  pricingEvents : CartPricingEvents;
+  promotionEvents : CartPromotionEvents;
+  checkoutEvents : CartCheckoutEvents;
+}
+```
+
+| Field           | Description                                         |
+| --------------- | --------------------------------------------------- |
+| lifecycleEvents | Events for cart creation, loading, and destruction. |
+| itemEvents      | Events for item add, update, remove operations.     |
+| pricingEvents   | Events during price calculation phases.             |
+| promotionEvents | Events during promotion evaluation.                 |
+| checkoutEvents  | Events during checkout process.                     |
+
+### CartLifecycleEvents
+
+**MPO Version:** 1.3.0
+
+Event handlers for cart lifecycle. Values are Service Library function names.
+
+```typescript
+interface CartLifecycleEvents = {
+  onCartCreate : String;
+  onCartLoad : String;
+  onCartDestroy : String;
+  onCartChurning : String;
+  onCartAbandon : String;
+}
+```
+
+| Field          | Description                                                                                                                                                                       |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| onCartCreate   | Called when a new cart is created. Context: { cart, session }                                                                                                                     |
+| onCartLoad     | Called when an existing cart is loaded. Context: { cart, items, session }                                                                                                         |
+| onCartDestroy  | Called when a cart is destroyed. Context: { cartId, session }                                                                                                                     |
+| onCartChurning | Called when a cart transitions to 'churning' status (inactive for churningPeriodDays). Use this to send reminder emails. Context: { cart, daysSinceLastActivity, session }        |
+| onCartAbandon  | Called when a cart transitions to 'abandoned' status (inactive for abandonmentPeriodDays). Use this to archive or delete carts. Context: { cart, daysSinceLastActivity, session } |
+
+### CartItemEvents
+
+**MPO Version:** 1.3.0
+
+Event handlers for item operations. Values are Service Library function names.
+
+```typescript
+interface CartItemEvents = {
+  onBeforeAddItem : String;
+  onAfterAddItem : String;
+  onBeforeUpdateItem : String;
+  onAfterUpdateItem : String;
+  onBeforeRemoveItem : String;
+  onAfterRemoveItem : String;
+  onStockValidation : String;
+}
+```
+
+| Field              | Description                                                                                                           |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| onBeforeAddItem    | Before adding item. Context: { cart, itemData, session }. Return modified itemData or throw CartEventError to reject. |
+| onAfterAddItem     | After item added. Context: { cart, item, session }                                                                    |
+| onBeforeUpdateItem | Before updating item. Context: { cart, item, changes, session }                                                       |
+| onAfterUpdateItem  | After item updated. Context: { cart, item, session }                                                                  |
+| onBeforeRemoveItem | Before removing item. Context: { cart, item, session }                                                                |
+| onAfterRemoveItem  | After item removed. Context: { cart, removedItem, session }                                                           |
+| onStockValidation  | Validate stock availability. Context: { items, session }. Return { itemId: { available: bool, maxQty: int } }         |
+
+### CartPricingEvents
+
+**MPO Version:** 1.3.0
+
+Event handlers for pricing calculations. Values are Service Library function names.
+
+```typescript
+interface CartPricingEvents = {
+  onBeforeCalculate : String;
+  onCalculateItemPrice : String;
+  onCalculateVat : String;
+  onCalculateShipping : String;
+  onAfterCalculate : String;
+}
+```
+
+| Field                | Description                                                                                                    |
+| -------------------- | -------------------------------------------------------------------------------------------------------------- |
+| onBeforeCalculate    | Before calculation starts. Context: { cart, items, session }                                                   |
+| onCalculateItemPrice | For each item. Context: { cart, item, session }. Return modified pricing or null.                              |
+| onCalculateVat       | During VAT calculation. Context: { cart, item, session }. Return { vatRate, exempt } for tax-exempt scenarios. |
+| onCalculateShipping  | Calculate shipping. Context: { cart, items, session }. Return { chargeExVat, vatRate }                         |
+| onAfterCalculate     | After all calculations. Context: { cart, items, totals, session }. Return modified totals.                     |
+
+### CartPromotionEvents
+
+**MPO Version:** 1.3.0
+
+Event handlers for promotion evaluation. Values are Service Library function names.
+
+```typescript
+interface CartPromotionEvents = {
+  onBeforePromotionEvaluation : String;
+  onPromotionEvaluation : String;
+  onAfterPromotionEvaluation : String;
+  onApplyCoupon : String;
+}
+```
+
+| Field                       | Description                                                                                                |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| onBeforePromotionEvaluation | Before engine runs. Context: { cart, items, session }                                                      |
+| onPromotionEvaluation       | Add custom promotions. Context: { cart, items, appliedPromotions, session }. Return additional promotions. |
+| onAfterPromotionEvaluation  | After promotions determined. Context: { cart, items, promotions, session }. Can filter/modify.             |
+| onApplyCoupon               | Coupon validation. Context: { cart, couponCode, session }. Return { valid, message } or throw error.       |
+
+### CartCheckoutEvents
+
+**MPO Version:** 1.3.0
+
+Event handlers for checkout process. Values are Service Library function names.
+
+```typescript
+interface CartCheckoutEvents = {
+  onBeforeCheckout : String;
+  onReserveStock : String;
+  onCreateOrder : String;
+  onAfterCheckout : String;
+  onCheckoutFailed : String;
+}
+```
+
+| Field            | Description                                                                           |
+| ---------------- | ------------------------------------------------------------------------------------- |
+| onBeforeCheckout | Before checkout. Context: { cart, items, session }. Throw CartEventError to block.    |
+| onReserveStock   | Reserve inventory. Context: { cart, items, session }. Return { success, failedItems } |
+| onCreateOrder    | Create order from cart. Context: { cart, items, session }. Return { orderId }         |
+| onAfterCheckout  | After successful checkout. Context: { cart, orderId, session }                        |
+| onCheckoutFailed | On failure. Context: { cart, error, session }. Handle cleanup.                        |
+
+## ShoppingCartApiSettings
+
+**MPO Version:** 1.3.0
+
+Configuration for auto-generated cart management API routes.
+
+```typescript
+interface ShoppingCartApiSettings = {
+  routePrefix : String;
+  authenticationRequired : Boolean;
+  rateLimiting : Boolean;
+  maxRequestsPerMinute : Integer;
+  enabledRoutes : CartApiRoutes;
+}
+```
+
+| Field                  | Description                                                               |
+| ---------------------- | ------------------------------------------------------------------------- |
+| routePrefix            | URL prefix for cart routes (e.g., '/cart'). Default: '/{cartObjectName}'. |
+| authenticationRequired | Whether authentication is required. False allows guest carts.             |
+| rateLimiting           | Enable rate limiting on cart APIs.                                        |
+| maxRequestsPerMinute   | Rate limit: max requests per minute per user/session.                     |
+| enabledRoutes          | Which cart routes to generate.                                            |
+
+### CartApiRoutes
+
+**MPO Version:** 1.3.0
+
+Which cart API routes to generate. All default to true.
+
+```typescript
+interface CartApiRoutes = {
+  getCart : Boolean;
+  addItem : Boolean;
+  updateItem : Boolean;
+  removeItem : Boolean;
+  clearCart : Boolean;
+  applyCoupon : Boolean;
+  removeCoupon : Boolean;
+  redeemPoints : Boolean;
+  checkout : Boolean;
+  recalculate : Boolean;
+}
+```
+
+| Field        | Description                                                         |
+| ------------ | ------------------------------------------------------------------- |
+| getCart      | GET /{prefix} - Retrieve current cart with items and totals.        |
+| addItem      | POST /{prefix}/items - Add item to cart by productId or barcode.    |
+| updateItem   | PUT /{prefix}/items/:itemId - Update item quantity.                 |
+| removeItem   | DELETE /{prefix}/items/:itemId - Remove item from cart.             |
+| clearCart    | DELETE /{prefix}/items - Clear all items from cart.                 |
+| applyCoupon  | POST /{prefix}/coupon - Apply a coupon code.                        |
+| removeCoupon | DELETE /{prefix}/coupon - Remove applied coupon.                    |
+| redeemPoints | POST /{prefix}/points - Redeem loyalty points (if loyalty enabled). |
+| checkout     | POST /{prefix}/checkout - Begin checkout process.                   |
+| recalculate  | POST /{prefix}/recalculate - Force recalculation.                   |
+
+## ShoppingCartCheckoutSettings
+
+**MPO Version:** 1.3.0
+
+Configuration for cart-to-order checkout process. Defines how checkout converts a cart into an order, including property mapping, order creation mode, and event publishing.
+
+```typescript
+interface ShoppingCartCheckoutSettings = {
+  orderCreationMode : OrderCreationMode;
+  orderDataObjectName : String;
+  autoMapProperties : Boolean;
+  propertyMappings : CartToOrderPropertyMapping[];
+  orderDataClause : MScript;
+  publishCheckoutEvent : Boolean;
+  checkoutEventTopic : String;
+  initialOrderStatus : String;
+}
+```
+
+| Field                | Description                                                                                                                                                                                                           |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| orderCreationMode    | How to create orders from cart: 'local' creates order in same service, 'remote' publishes event for external order service, 'none' skips order creation.                                                              |
+| orderDataObjectName  | Name of the order DataObject in this service. Required when orderCreationMode is 'local'. The system will auto-detect if there's a DataObject with isOrder flag.                                                      |
+| autoMapProperties    | If true, automatically map cart properties to order properties (userId, subtotal, total, etc.).                                                                                                                       |
+| propertyMappings     | Override specific cart-to-order property mappings when autoMapProperties isn't sufficient.                                                                                                                            |
+| orderDataClause      | JavaScript code injected into order creation for custom properties. Access cart as 'cart', items as 'cartItems', and session context as 'this'. Example: 'salesChannel: "web", referralCode: this.metadata?.referral' |
+| publishCheckoutEvent | Whether to publish a checkout completed event to Kafka. Always true when orderCreationMode is 'remote'.                                                                                                               |
+| checkoutEventTopic   | Kafka topic for checkout events. Default: '{serviceCodename}-cart-checkout-completed'                                                                                                                                 |
+| initialOrderStatus   | Initial status to set on created orders. Usually 'pending' or 'awaiting_payment'.                                                                                                                                     |
+
+### OrderCreationMode
+
+How checkout creates orders from the shopping cart.
+
+```js
+const OrderCreationMode = {
+  local: "local",
+  remote: "remote",
+  none: "none",
+};
+```
+
+| Enum   | Description                                                                                |
+| ------ | ------------------------------------------------------------------------------------------ |
+| local  | Create the order directly in this service using the specified orderDataObjectName.         |
+| remote | Publish a checkout event for an external order service to consume and create the order.    |
+| none   | Do not create an order automatically. Use this when custom order creation logic is needed. |
+
+### CartToOrderPropertyMapping
+
+**MPO Version:** 1.3.0
+
+Maps a cart property to an order property, optionally with a transformation.
+
+```typescript
+interface CartToOrderPropertyMapping = {
+  cartProperty : String;
+  orderProperty : String;
+  transform : MScript;
+}
+```
+
+| Field         | Description                                                                                           |
+| ------------- | ----------------------------------------------------------------------------------------------------- |
+| cartProperty  | The cart property path to read from (e.g., 'grandTotalIncVat', 'userId', 'items').                    |
+| orderProperty | The order property to write to (e.g., 'totalAmount', 'customerId').                                   |
+| transform     | Optional MScript expression to transform the value. Use 'value' to reference the cart property value. |

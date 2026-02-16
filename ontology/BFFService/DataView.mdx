@@ -1,11 +1,8 @@
----
-title: "DataView (BFF Service Ontology)"
-description: "Definition of the DataView ontology element in the BFF Service, including stored and dynamic views, aggregates, and statistical projections."
----
+# DataView
 
 **MPO Version:** 1.3.0
 
-A DataView defines an aggregated projection of data for the BFF service in Mindbricks. It serves as a unified structure that collects and combines information from multiple microservices. DataViews can be configured as either *stored* or *dynamic*. Stored DataViews persist their results in Elasticsearch and are optimal for queries requiring filtering, sorting, or cross-service joins. Dynamic DataViews are assembled at runtime during the request cycle and are suitable for lightweight, user-specific, or real-time scenarios. Both types aim to simplify frontend development by consolidating distributed data into a single, queryable view.
+A DataView defines an aggregated projection of data for the BFF service in Mindbricks. It serves as a unified structure that collects and combines information from multiple microservices. DataViews can be configured as either _stored_ or _dynamic_. Stored DataViews persist their results in Elasticsearch and are optimal for queries requiring filtering, sorting, or cross-service joins. Dynamic DataViews are assembled at runtime during the request cycle and are suitable for lightweight, user-specific, or real-time scenarios. Both types aim to simplify frontend development by consolidating distributed data into a single, queryable view.
 
 ```typescript
 interface DataView = {
@@ -15,11 +12,11 @@ interface DataView = {
 }
 ```
 
-| Field      | Description                                                                                                                                                                                                                                     |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| viewBasics | Basic metadata and configuration for the DataView, including its name, storage strategy, source object, and selected properties. This section determines the fundamental structure and behavior of the view.                                    |
-| aggregates | A list of aggregate definitions that perform data joins from related objects, similar to SQL joins. These are used to enrich the DataView with related datasets, such as joining orders into a customer view.                                   |
-| stats      | A list of statistical calculations performed within the view to enrich it with precomputed analytics.                                                                                                                                           |
+| Field      | Description                                                                                                                                                                                                   |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| viewBasics | Basic metadata and configuration for the DataView, including its name, storage strategy, source object, and selected properties. This section determines the fundamental structure and behavior of the view.  |
+| aggregates | A list of aggregate definitions that perform data joins from related objects, similar to SQL joins. These are used to enrich the DataView with related datasets, such as joining orders into a customer view. |
+| stats      | A list of statistical calculations performed within the view to enrich it with precomputed analytics.                                                                                                         |
 
 ## ViewBasics
 
@@ -137,10 +134,10 @@ const AggTypes = {
 };
 ```
 
-| Enum         | Description                            |
-| ------------ | -------------------------------------- |
-| value\_count | Count the number of records.           |
-| sum          | Sum the values of the records.         |
-| avg          | Average the values of the records.     |
-| min          | Find the minimum value of the records. |
-| max          | Find the maximum value of the records. |
+| Enum        | Description                            |
+| ----------- | -------------------------------------- |
+| value_count | Count the number of records.           |
+| sum         | Sum the values of the records.         |
+| avg         | Average the values of the records.     |
+| min         | Find the minimum value of the records. |
+| max         | Find the maximum value of the records. |
