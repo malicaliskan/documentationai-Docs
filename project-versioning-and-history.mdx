@@ -1,0 +1,87 @@
+---
+title: Project Versioning & History
+description: >-
+  How Mindbricks project JSON versioning works, including history queries,
+  diff/compare, revert workflows, and conflict resolution guidance.
+---
+
+## Overview
+
+Genesis provides project-level version tracking for architecture JSON so teams can:
+
+- inspect change history
+- compare revisions
+- reconstruct prior states
+- revert safely
+- resolve edit conflicts
+
+This is especially useful when multiple architects/agents edit the same project.
+
+---
+
+## Core Capabilities
+
+- **History**: list versions with pagination/filtering
+- **Current**: inspect current active version pointer
+- **At Version**: reconstruct full project JSON at a given version
+- **Diff**: inspect incremental changes
+- **Compare**: compare two version points
+- **Revert**: move active state back to a selected version
+- **Resolve**: submit merge-style conflict resolution payloads
+
+---
+
+## Recommended Workflow
+
+### 1) Before major edits
+
+- Read current version metadata.
+- Capture baseline version ID.
+
+### 2) During iterative changes
+
+- Keep issue-linked writes (`X-Issue-Id`) for traceability.
+- Periodically inspect version history and changed paths.
+
+### 3) If conflict/risk appears
+
+- Use compare and diff routes to inspect divergence.
+- Resolve with explicit conflict flow.
+
+### 4) If rollback needed
+
+- Revert to known-good version.
+- Re-run validation and smoke checks.
+
+---
+
+## Practical Route Map
+
+Common route family:
+
+- `GET /versions/:projectId`
+- `GET /versions/:projectId/current`
+- `GET /versions/:projectId/at/:versionId`
+- `GET /versions/:projectId/diff/:versionId`
+- `GET /versions/:projectId/compare/:fromVersionId/:toVersionId`
+- `POST /versions/:projectId/initialize`
+- `POST /versions/:projectId/revert/:versionId`
+- `POST /versions/:projectId/resolve`
+
+Use project management docs and generated API docs to confirm exact request/response shapes in your deployment.
+
+---
+
+## Safety Guidelines
+
+- Always preserve a baseline version before sweeping edits.
+- Treat revert as architecture-state change, not only "git-like undo".
+- Pair revert with issue comments/change notes so teams understand intent.
+- Validate after revert/resolve before resuming design work.
+
+---
+
+## Related Pages
+
+- [Genesis Project Management APIs](./genesis-project-management-apis)
+- [Issues & Architect Docs](./project-issues-and-architect-docs)

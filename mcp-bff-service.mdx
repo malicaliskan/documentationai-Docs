@@ -1,0 +1,74 @@
+---
+title: MCP-BFF Service
+description: >-
+  Guide to the MCP-BFF service in Mindbricks: chat/tool orchestration, service
+  documentation access, tenant-aware routing, and operational diagnostics.
+---
+
+## Scope
+
+This page documents **MCP-BFF** behavior (AI chat + tool orchestration layer).  
+It is different from the classical DataView-oriented BFF service.
+
+For DataView/CQRS read-model design, see [BFF Service](./bff-service).
+
+---
+
+## What MCP-BFF Does
+
+MCP-BFF acts as a unified interface for AI-driven product workflows:
+
+- chat message processing
+- tool discovery and routing across services
+- docs retrieval endpoints
+- AI completion helpers
+- service status and diagnostics
+
+---
+
+## Endpoint Families (Conceptual)
+
+- **Chat**: message and stream flows, conversation lifecycle
+- **Tools**: list, service-scoped list, call, refresh, status
+- **Docs**: service/API documentation retrieval
+- **AI Complete**: assisted request/body generation helpers
+- **Health/Status**: service readiness and integration diagnostics
+
+Use generated API docs for exact route signatures in your environment.
+
+---
+
+## Tenant-Aware Behavior
+
+In multi-tenant projects, MCP-BFF propagates tenant context in routed requests.
+
+Design implications:
+
+- always send tenant context from frontend session/routing layer
+- keep tool calls tenant-safe by default
+- verify cross-service calls preserve tenant headers/metadata
+
+---
+
+## Practical Usage Guidance
+
+- Use MCP-BFF for orchestrated AI interactions, not direct domain CRUD replacement.
+- Keep sensitive APIs/tool calls role-protected.
+- Refresh tool registry after major service generation updates.
+- Prefer structured prompts that reference concrete service/API names.
+
+---
+
+## Operational Notes
+
+- Validate health/status endpoints during startup and after deployments.
+- Check logs/diagnostics endpoints when tool discovery appears incomplete.
+- Treat streaming and non-streaming chat paths as separate client concerns.
+
+---
+
+## Related Pages
+
+- [BFF Service](./bff-service)
+- [Consuming Your Backend](./accessing-application-backend)
+- [Machine-to-Machine Communication](./machine-to-machine-communication)

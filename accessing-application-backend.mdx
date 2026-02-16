@@ -109,3 +109,16 @@ For each other service, the service base URL will be given in the service sectio
 Any request that requires login must include a valid token in the Bearer authorization header.
 
 Please note that for each service in the project (which will be introduced in following pages) will use a different address so it is a good practice to define a separate client for each service in the frontend application lib source. Not only the different base urls, some services even may need different access rules when shaping the request.
+
+## Route Compatibility Guidance
+
+Mindbricks API routes are generated from service/API definitions and generation templates.
+
+- Older generated projects may use `/v1/...` style paths.
+- Newer projects may expose normalized non-`/v1` routes.
+
+For frontend stability:
+
+- Keep route definitions centralized in one API client layer.
+- Prefer reading generated API docs/assets after each regeneration.
+- Treat hardcoded route literals in UI code as temporary scaffolding only.

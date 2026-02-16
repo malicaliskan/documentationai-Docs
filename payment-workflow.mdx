@@ -102,8 +102,13 @@ The `StripeOrder` pattern defines the settings for integrating this data object 
     "orderStatusProperty": "PropRefer",
     "orderStatusUpdateDateProperty": "PropRefer",
     "orderOwnerIdProperty": "PropRefer",
+    "frontendAmountField": "PropRefer",
+    "frontendCurrencyField": "PropRefer",
+    "orderItemRelation": "StripeOrderItemRelation",
+    "afterPaymentCreations": ["AfterPaymentCreation"],
     "mapPaymentResultToOrderStatus": "PaymentResultMap",
-    "edgeFunctionOnStatusChange": "String"
+    "edgeFunctionOnStatusChange": "String",
+    "edgeFunctionPaymentDone": "String"
   },
 
   "PaymentResultMap": {
@@ -144,6 +149,18 @@ paymentResultFailed: `"paymentError"`,
 paymentResultSuccess: `"paid"`
 
 `edgeFunctionOnStatusChange`: Optional name of an edge function from the service library that will be automatically triggered after any payment status change (e.g., payment completed, canceled, or failed). The edge function will be invoked via a Kafka edge controller (automatically built in the background) with the session (when a user is logged in) and the latest order object data directly accessible on the request (e.g., `request.order` or `request.ticket`, depending on the data object name). This allows executing custom business logic after payment events without requiring a separate edge controller definition. For example, you might use this to send notification emails, update inventory, trigger fulfillment workflows, or perform any other post-payment operations.
+
+`edgeFunctionPaymentDone`: Optional name of an edge function from the service library that is triggered only when payment is successfully completed from the callback flow. This hook is intended for critical post-payment operations that should run on successful completion (for example creating coins, issuing credits, or activating premium access). Since callback retries are possible in distributed systems, this function should be written as idempotent.
+
+`orderItemRelation`: Optional relation definition between your order object and its order-item object. This is used by post-payment automation scenarios where records are emitted per item or per quantity.
+
+`afterPaymentCreations`: Optional list of automatic creation rules that run after successful payment completion. Each rule targets a DataObject and supports emit modes:
+
+- `perOrder`: one creation for the whole order
+- `perOrderItem`: one creation per order item
+- `perOrderItemQuantity`: multiple creations per item based on the quantity property in `orderItemRelation`
+
+`frontendAmountField` and `frontendCurrencyField`: Optional property references that tell frontend clients which fields should be displayed as payment amount and currency. This is useful when the backend amount/currency expression is complex and UI should show a stable business-facing value.
 
 In addition to the `orderStatusProperty `of your own logic, Mindbricks automatically adds a system field to your order data object that manages the status of the payment with system wording. You can always read this property from your data object instance once the instance is created.
 
@@ -441,7 +458,7 @@ Call the API as follows:
 
 ```javascript
 const response = await fetch(
-  `$serviceUrl/v1/starttickettayment/${orderId}`,
+  `${serviceUrl}/${generatedStartPaymentRoute}/${orderId}`,
   {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -721,9 +738,9 @@ A Mindbricks Business API can be accessed through multiple interfaces, including
 
 The `startOrderPayment` Business API includes a REST controller that can be triggered via the following route:
 
-`/v1/startorderpayment/:orderId`
+`/{generated-start-payment-route}/:orderId`
 
-By sending a request to this route using the service API address, you can execute this Business API. Parameters can be provided in multiple HTTP locations, including the URL path, URL query, request body, and request headers. Detailed information about these parameters is provided in the **Parameters** section.
+By sending a request to this route using the service API address, you can execute this Business API. Route naming can vary by generated service conventions and version. Always verify the exact route from your service API documentation or generated assets reference, then use that concrete path. Parameters can be provided in multiple HTTP locations, including the URL path, URL query, request body, and request headers. Detailed information about these parameters is provided in the **Parameters** section.
 
 ### MCP Tool
 
@@ -1056,12 +1073,12 @@ The `startOrderPayment` api has got 2 client parameters
 
 ### REST Request
 
-To access the api you can use the **REST** controller with the path **PATCH /v1/startorderpayment/:orderId**
+To access the api use the generated REST controller path for your service (typically a `PATCH` route for `startOrderPayment` with `:orderId`).
 
 ```javascript
 axios({
   method: "PATCH",
-  url: `/v1/startorderpayment/${orderId}`,
+  url: `${serviceUrl}/${generatedStartPaymentRoute}/${orderId}`,
   data: {
     paymentUserParams: "Object",
   },

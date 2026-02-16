@@ -1,0 +1,89 @@
+---
+title: Genesis Project Management APIs
+description: >-
+  Practical guide for managing Mindbricks project JSON safely using Genesis
+  APIs, including write lifecycles, validation-first workflows, editor tracking,
+  and full project operations.
+---
+
+## Why This Page Exists
+
+`/api/genesis` includes powerful management routes for reading, writing, validating, and operating on project architecture data.  
+This page focuses on **safe usage patterns** for architects and AI agents, not only endpoint listing.
+
+---
+
+## Base Concepts
+
+- Project data is treated as structured architecture state.
+- Write operations support editor tracking and issue linking via headers.
+- Validation and patching are first-class operations.
+- Some operations (for example full delete) orchestrate multiple external systems.
+
+---
+
+## Recommended Write Lifecycle
+
+For reliable project updates, use this sequence:
+
+1. Read current state (`GET /data/:projectId` or `GET /data/:projectId/*`).
+2. Validate intended changes (`POST /validate/:projectId` or `POST /validate/:projectId/*`).
+3. Apply write (`POST /data/:projectId` or `POST /data/:projectId/*`, or `PATCH /patch/:projectId`).
+4. Re-read and verify key paths.
+
+This reduces accidental schema drift and catches unknown/invalid properties before persistence.
+
+---
+
+## Editor Tracking and Issue Linking
+
+Write operations accept metadata headers:
+
+- `X-Editor-Type: user | agent | mindbricks`
+- `X-Editor-Id` and `X-Editor-Name` (typically for agent edits)
+- `X-Issue-Id` to link changes to a tracked issue
+
+These are used for traceability and collaborative architecture workflows.
+
+---
+
+## Main Route Families (Project Management)
+
+- `/data/*` — read/write/delete project JSON by path
+- `/validate/*` — validation-only routes
+- `/patch/*` — JSON Patch update flow
+- `/issues/*` — project issue lifecycle
+- `/architect/*` — architect-authored docs per project
+- `/versions/*` — project version history, compare, revert, resolve
+- `/migration/*` — migration analysis and async migration jobs
+
+---
+
+## Full Delete Semantics
+
+`DELETE /data/deleteproject/:projectId` performs full delete orchestration.
+
+Important behavior:
+
+- Attempts cleanup across multiple sources (Genesis + external systems where configured).
+- Designed to continue cleanup attempts even if one source fails.
+- Can return partial-success style outcomes depending on downstream availability.
+
+Use in admin/operational workflows where full project teardown is required.
+
+---
+
+## Operational Tips
+
+- Prefer path-scoped writes for smaller, safer updates.
+- Keep issue IDs on all non-trivial architecture edits.
+- Use version routes before and after large refactors.
+- Keep migration routes in deployment/release workflows, not ad-hoc edit loops.
+
+---
+
+## Related Pages
+
+- [Project Versioning & History](./project-versioning-and-history)
+- [Issues & Architect Docs](./project-issues-and-architect-docs)
+- [Build Your API](./build-your-api)

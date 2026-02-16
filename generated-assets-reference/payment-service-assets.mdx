@@ -249,6 +249,42 @@ module.exports = async (request) => {
 
 **Note:** This edge function does not require a separate edge controller definition. The Kafka edge controller is automatically built in the background.
 
+### Payment Done Edge Function (Callback-Success Hook)
+
+When `edgeFunctionPaymentDone` is specified in `StripeOrderConfig`, Mindbricks generates a dedicated post-payment hook for successful callback completion.
+
+**Important behavior:**
+- This hook is callback-success oriented (not a generic status-change hook).
+- It is intended for critical post-payment operations (credit issuance, entitlement activation, fulfillment triggers).
+- Stripe callback retries may occur; implementations should be idempotent.
+
+**Configuration:**
+```json
+{
+  "stripeOrder": {
+    "objectIsAnOrderObject": true,
+    "configuration": {
+      "edgeFunctionPaymentDone": "handlePaymentDone"
+    }
+  }
+}
+```
+
+**When to use which hook:**
+- `edgeFunctionOnStatusChange` → react to started/canceled/failed/success transitions.
+- `edgeFunctionPaymentDone` → run one-time completion logic when callback reports successful payment.
+
+### After-Payment Automatic Creation Flow
+
+When `afterPaymentCreations` is configured, Mindbricks generates post-callback object creation logic tied to successful payment completion.
+
+This flow supports multiple emission strategies:
+- `perOrder`: create one target record per paid order.
+- `perOrderItem`: create one target record for each related order item.
+- `perOrderItemQuantity`: create multiple records per item using the quantity property from `orderItemRelation`.
+
+These rules are executed after successful callback processing and can be combined with `edgeFunctionPaymentDone` for additional orchestration.
+
 ---
 
 ## Generated Kafka Topics
@@ -262,6 +298,7 @@ For each order object with `StripeOrder` enabled, Mindbricks automatically gener
 | `started` | `{projectCodeName}-{serviceName}-service-{objectName}payment-started` | `start{ObjectName}Payment` API is called | `{ {objectName}: {...orderData}, paymentResult: {...paymentData} }` |
 | `refreshed` | `{projectCodeName}-{serviceName}-service-{objectName}payment-refreshed` | `refresh{ObjectName}Payment` API is called | `{ {objectName}: {...orderData}, paymentResult: {...paymentData} }` |
 | `calledback` | `{projectCodeName}-{serviceName}-service-{objectName}payment-calledback` | `callback{ObjectName}Payment` API processes a webhook | `{ {objectName}: {...orderData}, webhookData: {...stripeWebhookData} }` |
+| `paymentdone` | auto-configured payment-done topic | successful callback completion | `{ {objectName}: {...orderDataWithMergedPaymentConfirmation} }` |
 
 **Examples:** If project code name is `myproject`, service is `order`, and object is `order`:
 - `myproject-order-service-orderpayment-started`
@@ -273,6 +310,7 @@ For each order object with `StripeOrder` enabled, Mindbricks automatically gener
 - Replace `{serviceName}` with the actual service name where the payment framework is enabled
 - Replace `{objectName}` with the lowercase object name (e.g., `order`, `ticket`, `reservation`)
 - These topics are automatically created when `StripeOrder` is enabled
+- `paymentdone` topic naming is automatically normalized/configured by the generator/runtime.
 
 ### Payment Status Change Events (Edge Function)
 
@@ -456,7 +494,7 @@ In addition to the standard CRUD APIs, Mindbricks automatically generates specia
 - The API performs both PaymentIntent creation and confirmation in a single step
 - In cases requiring 3D Secure or bank authentication, the payment may require frontend completion
 - The `return_url` is strongly recommended to handle payment result pages
-- The exact route path follows the standard naming convention: `/v1/start{objectName}payment/:orderId` (e.g., `/v1/startorderpayment/:orderId`, `/v1/startticketpayment/:orderId`)
+- The exact route path follows generated service naming conventions; verify the concrete path from your generated API docs/assets for the current project.
 
 ### `refresh{ObjectName}Payment` API
 

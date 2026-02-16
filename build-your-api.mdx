@@ -20,6 +20,19 @@ For example, marking a Data Object with **membership logic** or **payment logic*
 
 ---
 
+### **Route Generation and Compatibility Note**
+
+Mindbricks generates REST paths from your API naming and template conventions.  
+Older projects may expose `/v1/...` style routes while newer generations can use different normalized paths.
+
+For production/frontend contracts:
+
+- Always verify concrete paths from generated API documentation/assets for the target project.
+- Avoid hardcoding route assumptions across shared frontend libraries.
+- Prefer central route constants generated from your service docs when possible.
+
+---
+
 ### **From Data Objects to Business APIs**
 
 A **Business API** in Mindbricks is not merely an endpoint definition — it’s an **architectural workflow design** triggered by an endpoint.

@@ -697,9 +697,9 @@ Once the provider returns a verified profile:
 
 - If the user already exists (by email), they are logged in.
 
-- If not, Mindbricks can auto-create the user account using the information returned by the provider (depending on the `useForRegister` flag).
+- If not, Mindbricks returns a registration-needed response that includes a temporary `socialCode` reference.
 
-After that, login behavior is identical to a native login — a JWT session is issued.
+After that, frontend exchanges `socialCode` and either completes registration or receives a direct login result. Final login behavior is identical to native login — a JWT session is issued.
 
 #### Enabling Google Login
 
@@ -713,8 +713,7 @@ In the ontology, Google login is configured as:
         "useGoogleLogin": true,
         "configuration": {
           "clientId": "yourGoogleClientIdHere",
-          "clientSecret": "yourGoogleClientSecretHere",
-          "useForRegister": true
+          "clientSecret": "yourGoogleClientSecretHere"
         }
       }
     }
@@ -731,8 +730,7 @@ In the ontology, Google login is configured as:
       "apple": {
         "useAppleLogin": true,
         "configuration": {
-          "clientId": "yourAppleClientIdHere",
-          "useForRegister": true
+          "clientId": "yourAppleClientIdHere"
         }
       }
     }
@@ -750,16 +748,14 @@ In the ontology, Google login is configured as:
         "useGitlabLogin": true,
         "configuration": {
           "clientId": "yourGitlabClientIdHere",
-          "clientSecret": "yourGitlabClientSecretHere",
-          "useForRegister": true
+          "clientSecret": "yourGitlabClientSecretHere"
         }
       },
       "github": {
         "useGithubLogin": true,
         "configuration": {
           "clientId": "yourGithubClientIdHere",
-          "clientSecret": "yourGithubClientSecretHere",
-          "useForRegister": true
+          "clientSecret": "yourGithubClientSecretHere"
         }
       }
     }
@@ -767,28 +763,29 @@ In the ontology, Google login is configured as:
 }
 ```
 
-#### Controlling Auto-Registration via Social Login
+#### Social Login Registration Behavior (Current)
 
-The `useForRegister` flag controls whether a user without an existing account is auto-created on first social login:
+Social login for new users is a **two-step flow**:
 
-```json
-{
-  "authentication": {
-    "socialLogins": {
-      "google": {
-        "useGoogleLogin": true,
-        "configuration": {
-          "clientId": "yourGoogleClientIdHere",
-          "clientSecret": "yourGoogleClientSecretHere",
-          "useForRegister": false
-        }
-      }
-    }
-  }
-}
-```
+1. OAuth callback authenticates the user and creates a short-lived `socialCode`.
+2. Frontend exchanges `socialCode` with `POST /auth/social-login-result`.
+3. If user does not exist, backend returns `type: RegisterNeededForSocialLogin` with:
+   - `socialCode`
+   - `accountInfo` (verified profile fields from provider)
 
-Setting `useForRegister` to `false` means Google can only be used for **existing users** (no automatic onboarding).
+At this point frontend has two valid registration paths:
+
+- **Direct registration with social profile data**  
+  Frontend calls register API using `socialCode` and minimal fields. Backend complements user data from social profile.
+
+- **Registration with additional user input**  
+  Frontend first collects missing/required fields (for example mobile or custom required properties), then calls register API with those fields plus `socialCode`.
+
+The register API resolves social profile data by `socialCode`, merges provided fields, and creates the user accordingly.
+
+#### Legacy Migration Note
+
+Older projects may still contain `useForRegister` in social login configurations. During current write/migration flows this legacy field is removed automatically, and social-login registration behavior follows the current default model.
 
 ```plaintext
 Security note:

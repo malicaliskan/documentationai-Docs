@@ -4,6 +4,36 @@ description: Release history and updates for Mindbricks
 ---
 ## Release History
 
+<Update label="2026-02-16" description="v1.4.0" tags={["Documentation Update", "Project Management", "MCP-BFF"]}>
+  ## Architecture and Operations Documentation Expansion
+
+  - Added new deep-dive pages for Genesis project-management APIs, project versioning/history, and issue + architect-doc collaboration flows.
+
+  - Added a dedicated MCP-BFF service page to separate AI orchestration concerns from classic DataView BFF design.
+
+  - Updated navigation in **Mastering Mindbricks** to expose these new operational capabilities directly.
+</Update>
+
+<Update label="2026-02-16" description="v1.3.1" tags={["Payment", "Route Compatibility"]}>
+  ## Payment and Route-Generation Clarifications
+
+  - Expanded payment documentation to include `edgeFunctionPaymentDone`, `afterPaymentCreations`, and `orderItemRelation` behavior.
+
+  - Clarified callback-success (`paymentDone`) semantics and idempotency expectations for post-payment hooks.
+
+  - Replaced brittle hardcoded `/v1/...` route assumptions with generated-route guidance across payment and cart workflow docs.
+</Update>
+
+<Update label="2026-02-16" description="v1.3.0" tags={["Auth", "Social Login"]}>
+  ## Social Login Flow Accuracy Update
+
+  - Updated social login documentation to reflect current two-step registration behavior using `socialCode`.
+
+  - Documented `RegisterNeededForSocialLogin` response flow and both frontend registration paths (direct + additional user input).
+
+  - Removed outdated `useForRegister` usage from social login examples and added migration-context notes.
+</Update>
+
 <Update label="2025-12-29" description="v1.0.0" tags={["Initial Launch"]}>
   ## Initial Launch
 

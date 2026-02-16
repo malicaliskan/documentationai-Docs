@@ -158,6 +158,10 @@
                 "path": "bff-service"
               },
               {
+                "title": "MCP-BFF Service",
+                "path": "mcp-bff-service"
+              },
+              {
                 "title": "Notification Service",
                 "path": "notification-service"
               },
@@ -196,6 +200,18 @@
               {
                 "title": "Realtime Service",
                 "path": "realtime-service"
+              },
+              {
+                "title": "Genesis Project Management APIs",
+                "path": "genesis-project-management-apis"
+              },
+              {
+                "title": "Project Versioning & History",
+                "path": "project-versioning-and-history"
+              },
+              {
+                "title": "Issues & Architect Docs",
+                "path": "project-issues-and-architect-docs"
               }
             ]
           },

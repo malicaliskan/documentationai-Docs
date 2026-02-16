@@ -624,14 +624,18 @@ await fetch(`${serviceUrl}/cart/coupons/SUMMER20`, {
 
 Business APIs are workflow-based APIs that provide more complex operations with full ecosystem integration (REST, gRPC, Kafka events).
 
+> **Route Compatibility Note**
+>
+> Older generated projects may expose checkout and campaign/coupon business APIs with `/v1/...` style routes. Newer projects can use different generated route conventions based on API naming and service generation templates. Always confirm exact paths from your generated service API documentation.
+
 ### **Checkout API**
 
 The checkout API converts a cart into an order through a multi-step workflow.
 
-**REST**: `POST /v1/checkout{CartObjectName}/:id` (e.g., `POST /v1/checkoutcart/:id`)
+**REST**: `POST /{generatedCheckoutRoute}/:id`
 
 ```javascript
-const response = await fetch(`${serviceUrl}/v1/checkoutcart/${cartId}`, {
+const response = await fetch(`${serviceUrl}/${generatedCheckoutRoute}/${cartId}`, {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -695,17 +699,17 @@ When dynamic promotions are enabled, full CRUD APIs are generated for campaigns:
 
 | API | Method | Path | Description |
 |-----|--------|------|-------------|
-| Create Campaign | POST | `/v1/create{CartObjectName}campaign` | Create a new campaign |
-| Get Campaign | GET | `/v1/get{CartObjectName}campaign/:id` | Get campaign by ID |
-| List Campaigns | GET | `/v1/list{CartObjectName}campaigns` | List all campaigns |
+| Create Campaign | POST | `/{generatedCreateCampaignRoute}` | Create a new campaign |
+| Get Campaign | GET | `/{generatedGetCampaignRoute}/:id` | Get campaign by ID |
+| List Campaigns | GET | `/{generatedListCampaignsRoute}` | List all campaigns |
 | List Active | GET | `/{cartObjectName}campaigns/active` | List active campaigns (public) |
-| Update Campaign | PATCH | `/v1/update{CartObjectName}campaign/:id` | Update a campaign |
-| Delete Campaign | DELETE | `/v1/delete{CartObjectName}campaign/:id` | Delete a campaign |
+| Update Campaign | PATCH | `/{generatedUpdateCampaignRoute}/:id` | Update a campaign |
+| Delete Campaign | DELETE | `/{generatedDeleteCampaignRoute}/:id` | Delete a campaign |
 
 **Create Campaign Example:**
 
 ```javascript
-const response = await fetch(`${serviceUrl}/v1/createcartcampaign`, {
+const response = await fetch(`${serviceUrl}/${generatedCreateCampaignRoute}`, {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -741,13 +745,13 @@ When coupons are enabled:
 
 | API | Method | Path | Description |
 |-----|--------|------|-------------|
-| Create Coupon | POST | `/v1/create{CartObjectName}coupon` | Create a new coupon |
-| Get Coupon | GET | `/v1/get{CartObjectName}coupon/:id` | Get coupon by ID |
+| Create Coupon | POST | `/{generatedCreateCouponRoute}` | Create a new coupon |
+| Get Coupon | GET | `/{generatedGetCouponRoute}/:id` | Get coupon by ID |
 | Get by Code | GET | `/{cartObjectName}coupons/code/:code` | Get coupon by code |
 | Validate Coupon | GET | `/{cartObjectName}coupons/validate` | Validate coupon eligibility |
-| List Coupons | GET | `/v1/list{CartObjectName}coupons` | List all coupons |
-| Update Coupon | PATCH | `/v1/update{CartObjectName}coupon/:id` | Update a coupon |
-| Delete Coupon | DELETE | `/v1/delete{CartObjectName}coupon/:id` | Delete a coupon |
+| List Coupons | GET | `/{generatedListCouponsRoute}` | List all coupons |
+| Update Coupon | PATCH | `/{generatedUpdateCouponRoute}/:id` | Update a coupon |
+| Delete Coupon | DELETE | `/{generatedDeleteCouponRoute}/:id` | Delete a coupon |
 
 **Validate Coupon Example:**
 
@@ -1211,7 +1215,7 @@ class CartService {
   async checkout(checkoutData) {
     const cart = await this.getCart();
     const response = await fetch(
-      `${this.apiBaseUrl}/v1/checkoutcart/${cart.id}`,
+      `${this.apiBaseUrl}/${generatedCheckoutRoute}/${cart.id}`,
       {
         method: 'POST',
         headers: {
@@ -1314,7 +1318,7 @@ The shopping cart checkout creates an order. After checkout, you can trigger pay
 async function completeCheckoutWithPayment(checkoutData, paymentMethodId) {
   // Step 1: Checkout the cart (cart → order)
   const checkoutResponse = await fetch(
-    `${serviceUrl}/v1/checkoutcart/${cartId}`,
+    `${serviceUrl}/${generatedCheckoutRoute}/${cartId}`,
     {
       method: 'POST',
       headers: {
@@ -1333,7 +1337,7 @@ async function completeCheckoutWithPayment(checkoutData, paymentMethodId) {
   
   // Step 2: Start payment for the order (order → charge)
   const paymentResponse = await fetch(
-    `${serviceUrl}/v1/startorderpayment/${checkoutResult.orderId}`,
+    `${serviceUrl}/${generatedStartPaymentRoute}/${checkoutResult.orderId}`,
     {
       method: 'PATCH',
       headers: {

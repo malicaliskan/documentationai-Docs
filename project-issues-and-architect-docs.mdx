@@ -1,0 +1,80 @@
+---
+title: Issues & Architect Docs
+description: >-
+  Collaboration guide for project issue tracking and architect documentation in
+  Genesis, including status lifecycle, change linking, and practical team flow.
+---
+
+## Overview
+
+Mindbricks Genesis supports architecture collaboration with two complementary tools:
+
+- **Project Issues**: track tasks, bugs, refactors, and validation findings.
+- **Architect Docs**: maintain structured project-specific design notes and decisions.
+
+Together, these form a traceable workflow between edits, reasoning, and outcomes.
+
+---
+
+## Project Issues
+
+Issue routes allow teams and agents to:
+
+- list and filter issues by project
+- create and update issue content
+- change issue status
+- add comments
+- soft-delete completed/obsolete items
+
+### Typical Status Lifecycle
+
+Common status progression:
+
+- `progress`
+- `readyToTest`
+- `solved`
+- `canceled`
+
+Keep issue status transitions explicit, especially during larger architecture updates.
+
+---
+
+## Linking Changes to Issues
+
+When performing writes, include `X-Issue-Id` to link architecture changes directly to issue context.
+
+This improves:
+
+- auditability
+- handoffs between human and AI contributors
+- release readiness and review clarity
+
+---
+
+## Architect Docs
+
+Architect-doc routes provide project-scoped documentation storage with structured metadata (name/title/content/tags/version).
+
+Use architect docs for:
+
+- architecture decisions
+- migration notes
+- deployment playbooks
+- design rationale for non-obvious patterns
+
+---
+
+## Recommended Team Pattern
+
+1. Create/assign issue.
+2. Update architecture with `X-Issue-Id`.
+3. Add architect-doc entry for reasoning/decision details.
+4. Move issue to `readyToTest`.
+5. Validate and finalize to `solved` (or `canceled`).
+
+---
+
+## Related Pages
+
+- [Genesis Project Management APIs](./genesis-project-management-apis)
+- [Project Versioning & History](./project-versioning-and-history)

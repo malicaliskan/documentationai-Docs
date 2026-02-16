@@ -43,3 +43,9 @@ It can start, complete, refresh, or accept webhooks for payment sessions.
 ```
 
 **Note:** **Payment** refers to processing payment through a gateway (Stripe, etc.) using `PaymentAction` and `PaymentManager`. This is distinct from **Checkout**, which refers to converting a shopping cart into an order using `CartCheckoutAction` and the shopping cart's `checkoutSettings`.
+
+## Runtime Notes for StripeOrder Flows
+
+- Callback processing can result in a dedicated completion phase (`paymentDone`) used by generated payment assets.
+- When using post-callback hooks (for example `edgeFunctionPaymentDone`), write handlers as idempotent because gateway callbacks may be retried.
+- For checkout/order integrations, route names are generated; verify exact REST paths from generated service docs instead of assuming fixed `/v1/...` patterns.

@@ -431,6 +431,9 @@ Integrations are pre-coded, so you only supply parameters.
 Handles a **payment lifecycle** using a native gateway integration (currently Stripe).
 It can start, complete, refresh, or accept webhooks for payment sessions.
 
+For callback-success flows, keep in mind that payment processing may trigger a dedicated **payment-done** phase in generated assets (`paymentDone` event / post-callback hooks).  
+Use idempotent post-payment logic for any operation that may be retried by provider callbacks.
+
 **Note:** **Payment** refers to processing payment through a gateway (Stripe, etc.) using `PaymentAction` and `PaymentManager`. This is distinct from **Checkout**, which refers to converting a shopping cart into an order using `CartCheckoutAction` and the shopping cart's `checkoutSettings`.
 
 ### **18. AiCallAction**
