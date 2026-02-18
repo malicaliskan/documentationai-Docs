@@ -136,7 +136,11 @@ interface SSOServerSettings = {
 
 **MPO Version:** 1.3.0
 
-Defines the configuration for API key-based authentication. This method allows clients to authenticate by providing a public API key and an optional secret in the request. It can be used as the primary or a supplemental authentication method.
+Defines the configuration for API key-based authentication. When enabled, users can create secret API keys from their profile to allow programmatic access on their behalf. API keys are intended for server-to-server integrations, CI/CD pipelines, and automated scripts.
+
+When a service receives a request with an API key, it validates the key (checking Redis cache first, then the auth service) and creates a tokenless session that lasts 1 day in Redis. Unlike password-based login, API key authentication does not return an access token or set cookies — every request must include the API key.
+
+**Key format:** Secret keys use the `sk_mbx_` prefix (e.g., `sk_mbx_a3f29e1b4c8d...`). When `apiKeyLocation` is `bearer`, services distinguish API keys from JWT tokens by checking this prefix.
 
 ```typescript
 interface APIKeyAuth = {
@@ -147,28 +151,39 @@ interface APIKeyAuth = {
 
 | Field                      | Description                                                                                                |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| useAPIKeyForAuthentication | Indicates whether API key authentication is enabled for the project.                                       |
+| useAPIKeyForAuthentication | Indicates whether API key authentication is enabled for the project. When true, an `apiKey` data object and management APIs are generated in the auth service. |
 | configuration              | The configuration object for API key authentication. Leave it null if useAPIKeyForAuthentication is false. |
 
 ### APIKeyAuthConfig
 
 **MPO Version:** 1.3.0
 
-Configuration details for API key authentication, including key and secret names and their locations.
+Configuration details for API key authentication. Specifies where in the request the API key will be located and its field names.
 
 ```typescript
 interface APIKeyAuthConfig = {
   apiKeyLocation : RequestLocations;
-  apiKeyName : String;
-  apiSecretName : String;
+  secretApiKeyName : String;
+  publicApiKeyName : String;
 }
 ```
 
-| Field          | Description                                                                                                                                         |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| apiKeyLocation | Specifies where in the request the API key and secret will be sent. This must be one of the defined RequestLocations (e.g., header, query, cookie). |
-| apiKeyName     | The name of the API key in the request, used to identify the client's public access key.                                                            |
-| apiSecretName  | The name of the API secret in the request, used to identify the client's private key or shared secret.                                              |
+| Field            | Description                                                                                                                                         |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| apiKeyLocation   | Specifies where in the request the secret API key will be sent. When set to `bearer`, the API key shares the `Authorization: Bearer` header with JWT tokens and is distinguished by the `sk_mbx_` prefix. For other locations (header, query, cookie, body), a dedicated field is used. |
+| secretApiKeyName | The name of the secret API key field in the request. Required only when `apiKeyLocation` is not `bearer`. Secret keys authenticate trusted parties for full user-scoped access. |
+| publicApiKeyName | The name of the public API key field in the request. Optional. Public keys are reserved for future use (not supported in current version). |
+
+### Generated Assets When API Key Auth is Enabled
+
+When `useAPIKeyForAuthentication` is `true`, the following are automatically generated:
+
+- **`apiKey` data object** in the auth service — stores user-created API keys (name, keyHash, keyPrefix, keyType, userId, lastUsedAt, expiresAt)
+- **`createSecretApiKey` API** — creates a new secret key (the plaintext key is returned only once)
+- **`deleteApiKey` API** — deletes a key and cleans up cached sessions
+- **`listApiKeys` API** — lists user's keys (prefix only, never exposes the hash)
+- **`POST /validateapikey` route** — internal inter-service route used by other services to validate an API key and create a session
+- **API key session handling** in all services — extracts API keys from requests, checks Redis cache, and falls back to auth service validation
 
 #### RequestLocations
 

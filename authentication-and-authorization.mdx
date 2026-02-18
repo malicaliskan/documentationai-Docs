@@ -1690,6 +1690,83 @@ Implementation details for such feature-flag-like behaviors can be modeled using
 
 ---
 
+## API Key Authentication
+
+Mindbricks supports **API Key authentication** for programmatic access to services on behalf of a user. API keys are intended for server-to-server integrations, CI/CD pipelines, automated scripts, and any scenario where a user's credentials should not be used directly.
+
+### Enabling API Key Authentication
+
+Enable API key authentication in the `AuthBasics` configuration:
+
+```json
+{
+  "authenticationEssentials": {
+    "apiKeyAuthentication": {
+      "useAPIKeyForAuthentication": true,
+      "configuration": {
+        "apiKeyLocation": "bearer",
+        "secretApiKeyName": null,
+        "publicApiKeyName": null
+      }
+    }
+  }
+}
+```
+
+When `apiKeyLocation` is `"bearer"`, the API key is sent in the `Authorization: Bearer` header alongside JWT tokens. The system distinguishes API keys from JWTs by the `sk_mbx_` prefix.
+
+For other locations (`"header"`, `"query"`, `"cookie"`, `"body"`), set the `secretApiKeyName` to the field name where the key will be placed in the request.
+
+### How API Key Authentication Works
+
+1. **Key creation**: An authenticated user calls `createSecretApiKey` to generate a new key. The plaintext key (`sk_mbx_{random_hex}`) is returned only once. The system stores only the SHA-256 hash.
+
+2. **Making requests**: The client sends requests with the API key (in the configured location). Every request must include the key — API key sessions are tokenless (no JWT, no cookie).
+
+3. **Session resolution**: When a service receives a request with an API key:
+   - It computes the SHA-256 hash of the key
+   - Checks Redis for a cached session (`apikeysession:{hash}`)
+   - If found, uses the cached session directly
+   - If not found, calls the auth service's `POST /validateapikey` route
+   - The auth service looks up the key hash in the database, verifies it, loads the user, and creates a session
+   - The session is cached in Redis with a **1-day TTL**
+   - After 1 day, the cached session expires and the next request triggers a fresh validation
+
+4. **Key management**: Users can list, create, and delete their keys via the auth service profile APIs.
+
+### Bearer Token Discrimination
+
+When `apiKeyLocation` is `"bearer"`, both JWT tokens and API keys share the `Authorization: Bearer` header. The system uses the `sk_mbx_` prefix to distinguish between them:
+
+- If the bearer value starts with `sk_mbx_`, it is treated as an API key
+- Otherwise, it is treated as a JWT token and follows the standard JWT authentication flow
+
+This allows both authentication methods to coexist seamlessly on the same endpoints.
+
+### Generated Assets
+
+When API key authentication is enabled, the following are automatically generated:
+
+- **`apiKey` data object** — stores key records (hash, prefix, userId, expiry, etc.)
+- **`createSecretApiKey`** — creates a new secret key
+- **`deleteApiKey`** — deletes a key and cleans up Redis sessions
+- **`listApiKeys`** — lists user's keys (prefix only)
+- **`POST /validateapikey`** — internal inter-service validation route (not for client use)
+
+For full API details, see the [Auth Service Generated Assets](./generated-assets-reference/auth-service-assets) reference.
+
+### API Key vs. Password Login vs. M2M
+
+| Feature | Password Login | API Key | M2M |
+|---------|---------------|---------|-----|
+| Session created | Yes (JWT + cookie) | Yes (Redis only, tokenless) | No session |
+| Token returned | Yes (access token) | No | Ed25519 signed token |
+| Session TTL | Configurable (days) | 1 day in Redis | 15 minutes per token |
+| User identity | Direct login | On behalf of key owner | Service identity |
+| Use case | Interactive users | Programmatic access | Inter-service calls |
+
+---
+
 ## Machine-to-Machine (M2M) Authentication
 
 Mindbricks supports **Machine-to-Machine (M2M) authentication** for secure inter-service communication without requiring user session tokens. M2M tokens use Ed25519 cryptographic signatures and include request payload hashing to prevent token reuse attacks.

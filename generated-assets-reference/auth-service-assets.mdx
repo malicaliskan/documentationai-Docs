@@ -173,7 +173,38 @@ The `givenPermission` data object is generated when Permission-Based Access Cont
 
 ---
 
-### 6. `tenant` Data Object (Conditional)
+### 6. `apiKey` Data Object (Conditional)
+
+The `apiKey` data object is generated when API key authentication is enabled (`useAPIKeyForAuthentication` is true in `AuthBasics.apiKeyAuthentication`). It stores user-created API keys for programmatic access.
+
+**Naming Convention:**
+- Data Object Name: `apiKey`
+- Model Name: `ApiKey` (PascalCase)
+- Service Reference: `auth:apiKey`
+
+**System-Owned Properties:**
+
+| Property Name | Type | Required | Description |
+|--------------|------|----------|-------------|
+| `id` | UUID | Yes | Unique identifier for the API key |
+| `name` | String | Yes | User-given label for the key (e.g., "Production Backend") |
+| `userId` | ID | Yes | Owner of the API key (relation to `user.id`, cascade delete) |
+| `keyHash` | String | Yes | SHA-256 hash of the plaintext key (unique, used for DB lookup) |
+| `keyPrefix` | String | Yes | First 12 characters of the key for display (e.g., `sk_mbx_a3f2`) |
+| `keyType` | String | Yes | Type of key: `"secret"` (default). Public keys reserved for future use. |
+| `lastUsedAt` | Date | No | Timestamp of the last authentication using this key |
+| `expiresAt` | Date | No | Optional expiration date. Null means the key never expires. |
+| `{tenantName}Id` | UUID | Conditional | Tenant ID (when multi-tenancy is active) |
+
+**Key Behavior:**
+- The plaintext key (`sk_mbx_{random_hex}`) is returned **only once** at creation time and cannot be retrieved again
+- Keys are looked up by their SHA-256 hash for efficient database queries
+- When a key is deleted, its cached session in Redis is also cleaned up
+- API key sessions are stored in Redis with a 1-day TTL (vs 30 days for password sessions)
+
+---
+
+### 7. `tenant` Data Object (Conditional)
 
 The `tenant` data object is generated when multi-tenancy is active (`useMultiTenantFeature` is true).
 
@@ -230,6 +261,43 @@ For detailed route generation rules, see the [Introduction](./introduction) docu
 - `registerUser` is only generated when `userRegisterIsPublic` is true and multi-tenancy is disabled
 - `register{TenantName}Owner` and `register{TenantName}User` are only generated when multi-tenancy is active
 - All user APIs have gRPC controllers enabled
+
+### ApiKey Data Object APIs (if `useAPIKeyForAuthentication` is true)
+
+| Business API Name | CRUD Type | REST Route | HTTP Method | Description | Auth Requirements |
+|------------------|-----------|------------|-------------|-------------|-------------------|
+| `createSecretApiKey` | `create` | `/auth-api/v1/apikeys` | POST | Creates a new secret API key for the user. The plaintext key (`sk_mbx_...`) is returned **only once** in the `secretKey` field of the response. | Login required, ownership check |
+| `deleteApiKey` | `delete` | `/auth-api/v1/apikeys/:apiKeyId` | DELETE | Deletes an API key and cleans up any cached sessions in Redis | Login required, ownership check or admin roles |
+| `listApiKeys` | `list` | `/auth-api/v1/apikeys` | GET | Lists user's API keys. Returns `id`, `name`, `keyPrefix`, `keyType`, `lastUsedAt`, `expiresAt`, `createdAt`. Never returns `keyHash`. | Login required, ownership check or admin roles |
+
+**`createSecretApiKey` request body:**
+```json
+{
+  "name": "Production Backend",
+  "expiresAt": "2026-12-31T00:00:00Z"
+}
+```
+
+**`createSecretApiKey` response (note: `secretKey` is shown only once):**
+```json
+{
+  "apiKey": {
+    "id": "a1b2c3d4-...",
+    "name": "Production Backend",
+    "keyPrefix": "sk_mbx_a3f2",
+    "keyType": "secret",
+    "expiresAt": "2026-12-31T00:00:00Z",
+    "createdAt": "2026-02-18T10:00:00Z"
+  },
+  "secretKey": "sk_mbx_a3f29e1b4c8d7f6e5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3"
+}
+```
+
+**Internal route (not a client API):**
+
+| Route | HTTP Method | Description |
+|-------|-------------|-------------|
+| `/validateapikey` | POST | Inter-service route used by other services to validate an API key and get the user's session. Accepts `{ "apiKey": "sk_mbx_..." }` in the body or `x-api-key` header. Returns the session object (no access token, no cookie). |
 
 ### UserGroup Data Object APIs (if `userGroupsActive` is true)
 
@@ -784,9 +852,44 @@ When multi-tenancy is active, a root tenant is automatically created:
 
 ---
 
+## MCP Tool Exposure
+
+When a Mindbricks project is generated, each service exposes its Business APIs as **MCP tools** via the MCP protocol endpoint at `{serviceUrl}/mcp`. The auth service is no exception — all auth Business APIs (user management, API key management, permissions, etc.) are available as MCP tools.
+
+### Auth Service MCP Tools
+
+All auto-generated Business APIs listed above are exposed as MCP tools. Each tool:
+
+- Accepts the same parameters as the REST API (with Zod schema validation)
+- Requires an `accessToken` parameter for authenticated operations (JWT or API key)
+- Returns the same response structure as the REST endpoint
+- Supports role-based tool visibility (admin-only tools are hidden from non-admin users)
+
+### MCP-BFF Aggregation
+
+The **MCP-BFF** service aggregates tools from all services (including auth) into a single MCP endpoint. External AI agents (Lovable, Cursor, etc.) connect to the MCP-BFF rather than individual services.
+
+- MCP-BFF endpoint: `{appUrl}/bff/mcp` (SSE transport)
+- Authentication: Pass the API key or JWT in the `Authorization: Bearer` header
+- The BFF forwards the token to individual services for per-request authentication
+
+### API Key Authentication for MCP
+
+When API key authentication is enabled, MCP clients can authenticate using API keys instead of JWT tokens:
+
+1. Create an API key via `createSecretApiKey` (REST or MCP tool)
+2. Connect to the MCP endpoint with `Authorization: Bearer sk_mbx_...`
+3. The system detects the `sk_mbx_` prefix, validates the key, and creates a session
+4. All subsequent tool calls use the cached session (1-day TTL in Redis)
+
+This is the recommended authentication method for external AI agents and automated tools, as API keys don't expire like JWT tokens (unless an explicit expiration is set).
+
+---
+
 ## Related Documentation
 
 - [Introduction](./introduction) — Naming conventions and general patterns
 - [General Service Assets](./general-service-assets) — Common assets for all services
 - [Database Utility Functions](../db-utility-functions) — Detailed function documentation
+- [MCP Management in Mindbricks](../mcp-management) — MCP integration guide for generated projects and Mindbricks SaaS
 
