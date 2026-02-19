@@ -136,11 +136,7 @@ interface SSOServerSettings = {
 
 **MPO Version:** 1.3.0
 
-Defines the configuration for API key-based authentication. When enabled, users can create secret API keys from their profile to allow programmatic access on their behalf. API keys are intended for server-to-server integrations, CI/CD pipelines, and automated scripts.
-
-When a service receives a request with an API key, it validates the key (checking Redis cache first, then the auth service) and creates a tokenless session that lasts 1 day in Redis. Unlike password-based login, API key authentication does not return an access token or set cookies — every request must include the API key.
-
-**Key format:** Secret keys use the `sk_mbx_` prefix (e.g., `sk_mbx_a3f29e1b4c8d...`). When `apiKeyLocation` is `bearer`, services distinguish API keys from JWT tokens by checking this prefix.
+Defines the configuration for API key-based authentication. This method allows clients to authenticate by providing a public API key and an optional secret in the request. It can be used as the primary or a supplemental authentication method.
 
 ```typescript
 interface APIKeyAuth = {
@@ -151,39 +147,50 @@ interface APIKeyAuth = {
 
 | Field                      | Description                                                                                                |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| useAPIKeyForAuthentication | Indicates whether API key authentication is enabled for the project. When true, an `apiKey` data object and management APIs are generated in the auth service. |
+| useAPIKeyForAuthentication | Indicates whether API key authentication is enabled for the project.                                       |
 | configuration              | The configuration object for API key authentication. Leave it null if useAPIKeyForAuthentication is false. |
 
 ### APIKeyAuthConfig
 
 **MPO Version:** 1.3.0
 
-Configuration details for API key authentication. Specifies where in the request the API key will be located and its field names.
+Configuration details for API key authentication, mindbricks supports both secret APİ Key and public API Keys. If APIKeyAuth is ebabled and not configuration is given, it will work as an secret API key in bearer
 
 ```typescript
 interface APIKeyAuthConfig = {
-  apiKeyLocation : RequestLocations;
+  apiKeyType : APIKeyType;
+  secretApiKeyLocation : RequestLocations;
+  publicApiKeyLocation : RequestLocations;
   secretApiKeyName : String;
   publicApiKeyName : String;
 }
 ```
 
-| Field            | Description                                                                                                                                         |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| apiKeyLocation   | Specifies where in the request the secret API key will be sent. When set to `bearer`, the API key shares the `Authorization: Bearer` header with JWT tokens and is distinguished by the `sk_mbx_` prefix. For other locations (header, query, cookie, body), a dedicated field is used. |
-| secretApiKeyName | The name of the secret API key field in the request. Required only when `apiKeyLocation` is not `bearer`. Secret keys authenticate trusted parties for full user-scoped access. |
-| publicApiKeyName | The name of the public API key field in the request. Optional. Public keys are reserved for future use (not supported in current version). |
+| Field                | Description                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| apiKeyType           | Specifies the type of API key to use. This can be either 'secret', 'public', or 'both'. If not set, the default is 'secret'. If you need to use both secret and public keys, you can set this to 'both'.                                                                                                                                                                    |
+| secretApiKeyLocation | Specifies where in the request the secret API key and public API will be sent. This must be one of the defined RequestLocations (e.g., bearer, header, query, cookie).                                                                                                                                                                                                      |
+| publicApiKeyLocation | Specifies where in the request the public API key will be sent. This must be one of the defined RequestLocations (e.g., bearer, header, query, cookie).                                                                                                                                                                                                                     |
+| secretApiKeyName     | The name of the API secret in the request, used to identify the client's private api key. This is used only if the secret api keyLocation is not bearer. Secret api keys are used in trusted parties to access on behalf of the user to the sensitive data.                                                                                                                 |
+| publicApiKeyName     | The name of the public API key in the request, used to identify the client's public access key. This is used only if the public api key location is not bearer and can be used to identify the client's public access key. Use public keys if you need to identify the client when you need to identify the client when from a frontend based access to non-sensitive data. |
 
-### Generated Assets When API Key Auth is Enabled
+#### APIKeyType
 
-When `useAPIKeyForAuthentication` is `true`, the following are automatically generated:
+Specifies the type of API key to use. This can be either 'secret', 'public', or 'both'. If not set, the default is 'secret'. If you need to use both secret and public keys, you can set this to 'both'.
 
-- **`apiKey` data object** in the auth service — stores user-created API keys (name, keyHash, keyPrefix, keyType, userId, lastUsedAt, expiresAt)
-- **`createSecretApiKey` API** — creates a new secret key (the plaintext key is returned only once)
-- **`deleteApiKey` API** — deletes a key and cleans up cached sessions
-- **`listApiKeys` API** — lists user's keys (prefix only, never exposes the hash)
-- **`POST /validateapikey` route** — internal inter-service route used by other services to validate an API key and create a session
-- **API key session handling** in all services — extracts API keys from requests, checks Redis cache, and falls back to auth service validation
+```js
+const APIKeyType = {
+  secret: "secret",
+  public: "public",
+  both: "both",
+};
+```
+
+| Enum   | Description                                                                                                                                                                                                         |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| secret | Secret API key is used in trusted parties to access on behalf of the user to the sensitive data.                                                                                                                    |
+| public | Public API key is used to identify the client's public access key. Use public keys if you need to identify the client when you need to identify the client when from a frontend based access to non-sensitive data. |
+| both   | Both secret and public API keys are used. This is useful if you need to use both secret and public keys for the same client.                                                                                        |
 
 #### RequestLocations
 
