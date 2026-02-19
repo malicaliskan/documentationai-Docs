@@ -106,7 +106,12 @@
               {
                 "title": "Teke Out Your Code",
                 "path": "teke-out-your-code"
-              }
+              },
+              {
+                "title": "Connect External MCP Clients To Your Application",
+                "path": "mcp-management"
+              },
+
             ]
           },
           {
@@ -241,7 +246,11 @@
               {
                 "title": "Filter Parameters",
                 "path": "filter-parameters"
-              }
+              },
+              {
+                "title": "Connect External Tools To Mindbricks",
+                "path": "mcp-management"
+              },
             ]
           },
           {
