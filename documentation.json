@@ -110,8 +110,7 @@
               {
                 "title": "Connect External MCP Clients To Your Application",
                 "path": "mcp-management"
-              },
-
+              }
             ]
           },
           {
@@ -250,7 +249,7 @@
               {
                 "title": "Connect External Tools To Mindbricks",
                 "path": "mcp-management"
-              },
+              }
             ]
           },
           {
