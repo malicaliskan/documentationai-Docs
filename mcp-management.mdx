@@ -40,11 +40,19 @@ By default, all Business APIs are exposed as MCP tools. You can exclude specific
 
 ### The MCP-BFF Aggregation Layer
 
-External AI agents don't connect to individual services. Instead, the **MCP-BFF** (Backend-for-Frontend) service aggregates tools from all services into a single MCP endpoint:
+External AI agents don't connect to individual services. Instead, the **MCP-BFF** (Backend-for-Frontend) service aggregates tools from all services into a single unified MCP endpoint.
 
-```
-{appUrl}/bff/mcp/sse
-```
+Two transports are supported:
+
+| Transport | Endpoint | Recommendation |
+|-----------|----------|----------------|
+| **StreamableHTTP** (primary) | `{appUrl}/mcpbff-api/mcp` | Preferred for modern MCP clients (Cursor, Claude Desktop) |
+| **SSE** (legacy fallback) | `{appUrl}/mcpbff-api/mcp/sse` | For older MCP clients that don't support StreamableHTTP |
+
+Where `{appUrl}` follows the standard Mindbricks URL pattern:
+- **Preview:** `https://{codename}.prw.mindbricks.com`
+- **Staging:** `https://{codename}-stage.mindbricks.co`
+- **Production:** `https://{codename}.mindbricks.co`
 
 The MCP-BFF:
 - Discovers tools from all registered services
@@ -104,11 +112,12 @@ This is the same engine that powers the Ada assistant in the Mindbricks dashboar
 
 ### Genesis MCP Server URL
 
-Connect your MCP client to:
+Two transports are supported:
 
-```
-https://app.mindbricks.com/api/genesis/mcp/sse
-```
+| Transport | Endpoint | Recommendation |
+|-----------|----------|----------------|
+| **StreamableHTTP** (primary) | `https://app.mindbricks.com/api/genesis/mcp` | Preferred for modern MCP clients (Cursor, Claude Desktop) |
+| **SSE** (legacy fallback) | `https://app.mindbricks.com/api/genesis/mcp/sse` | For older MCP clients that don't support StreamableHTTP |
 
 > **Authentication Required**: You must use an **API Key** for authentication. Pass it as a bearer token:
 > ```
@@ -212,7 +221,7 @@ Add the following to your Cursor MCP settings (`.cursor/mcp.json`):
 {
   "mcpServers": {
     "mindbricks": {
-      "url": "https://app.mindbricks.com/api/genesis/mcp/sse",
+      "url": "https://app.mindbricks.com/api/genesis/mcp",
       "headers": {
         "Authorization": "Bearer sk_mbx_your_api_key_here"
       }
@@ -224,6 +233,21 @@ Add the following to your Cursor MCP settings (`.cursor/mcp.json`):
 #### Claude Desktop
 
 Add to your Claude Desktop configuration (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "mindbricks": {
+      "url": "https://app.mindbricks.com/api/genesis/mcp",
+      "headers": {
+        "Authorization": "Bearer sk_mbx_your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+If your Claude Desktop version does not support StreamableHTTP, use the SSE fallback:
 
 ```json
 {
@@ -241,12 +265,11 @@ Add to your Claude Desktop configuration (`claude_desktop_config.json`):
 
 #### Other MCP Clients
 
-Any MCP-compatible client can connect using SSE transport:
+Any MCP-compatible client can connect using either transport:
 
-- **Endpoint**: `https://app.mindbricks.com/api/genesis/mcp/sse`
-- **Transport**: SSE (Server-Sent Events)
+- **StreamableHTTP (preferred)**: `POST https://app.mindbricks.com/api/genesis/mcp`
+- **SSE (legacy fallback)**: `GET https://app.mindbricks.com/api/genesis/mcp/sse`
 - **Authentication**: `Authorization: Bearer sk_mbx_...` header
-- **Message endpoint**: Returned in the SSE connection headers
 
 ---
 
