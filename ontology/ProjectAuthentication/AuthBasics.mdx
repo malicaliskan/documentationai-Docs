@@ -136,7 +136,7 @@ interface SSOServerSettings = {
 
 **MPO Version:** 1.3.0
 
-Defines the configuration for API key-based authentication. This method allows clients to authenticate by providing a public API key and an optional secret in the request. It can be used as the primary or a supplemental authentication method.
+Enables API key authentication for the project. When enabled, Mindbricks generates an apiKey data object, management APIs (create, list, delete), and validation endpoints. Secret API keys use the sk*mbx* prefix and allow tokenless, session-based authentication — ideal for server-to-server integrations, AI agents, CI/CD pipelines, and MCP connections. Public API keys are defined in the configuration schema for future support but are not yet implemented.
 
 ```typescript
 interface APIKeyAuth = {
@@ -145,16 +145,16 @@ interface APIKeyAuth = {
 }
 ```
 
-| Field                      | Description                                                                                                |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| useAPIKeyForAuthentication | Indicates whether API key authentication is enabled for the project.                                       |
-| configuration              | The configuration object for API key authentication. Leave it null if useAPIKeyForAuthentication is false. |
+| Field                      | Description                                                                                                                                                           |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| useAPIKeyForAuthentication | Enable or disable API key authentication for this project. When true, the auth service will include the apiKey data object and key management APIs.                   |
+| configuration              | Optional configuration for API key behavior. When null, defaults to secret-only keys sent in the Bearer header. Set this to customize key types, locations, or names. |
 
 ### APIKeyAuthConfig
 
 **MPO Version:** 1.3.0
 
-Configuration details for API key authentication, mindbricks supports both secret APİ Key and public API Keys. If APIKeyAuth is ebabled and not configuration is given, it will work as an secret API key in bearer
+Fine-tune API key authentication behavior. Controls which key types are generated, where keys are located in requests, and custom header/query parameter names. When omitted, Mindbricks defaults to secret-only keys in the Authorization Bearer header with the sk*mbx* prefix — no additional configuration needed for standard usage. Note: public API key fields (publicApiKeyLocation, publicApiKeyName) are reserved for future support and have no effect currently.
 
 ```typescript
 interface APIKeyAuthConfig = {
@@ -166,13 +166,13 @@ interface APIKeyAuthConfig = {
 }
 ```
 
-| Field                | Description                                                                                                                                                                                                                                                                                                                                                                 |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| apiKeyType           | Specifies the type of API key to use. This can be either 'secret', 'public', or 'both'. If not set, the default is 'secret'. If you need to use both secret and public keys, you can set this to 'both'.                                                                                                                                                                    |
-| secretApiKeyLocation | Specifies where in the request the secret API key and public API will be sent. This must be one of the defined RequestLocations (e.g., bearer, header, query, cookie).                                                                                                                                                                                                      |
-| publicApiKeyLocation | Specifies where in the request the public API key will be sent. This must be one of the defined RequestLocations (e.g., bearer, header, query, cookie).                                                                                                                                                                                                                     |
-| secretApiKeyName     | The name of the API secret in the request, used to identify the client's private api key. This is used only if the secret api keyLocation is not bearer. Secret api keys are used in trusted parties to access on behalf of the user to the sensitive data.                                                                                                                 |
-| publicApiKeyName     | The name of the public API key in the request, used to identify the client's public access key. This is used only if the public api key location is not bearer and can be used to identify the client's public access key. Use public keys if you need to identify the client when you need to identify the client when from a frontend based access to non-sensitive data. |
+| Field                | Description                                                                                                                                                                                                                                                     |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| apiKeyType           | The type of API keys to generate. 'secret' (default) creates sk*mbx*-prefixed keys that authenticate on behalf of a user and create server-side sessions. 'public' and 'both' options are reserved for future support — only 'secret' is currently implemented. |
+| secretApiKeyLocation | Where secret API keys are sent in HTTP requests. Defaults to 'bearer' (Authorization: Bearer sk*mbx*...). When set to 'header' or 'query', the secretApiKeyName field specifies the header or query parameter name.                                             |
+| publicApiKeyLocation | Reserved for future support. Where public API keys will be sent in HTTP requests. Defaults to 'query'. Has no effect until public API key support is implemented.                                                                                               |
+| secretApiKeyName     | Custom header or query parameter name for secret API keys. Only required when secretApiKeyLocation is not 'bearer'. When location is 'bearer', the sk*mbx* prefix is used for automatic detection and this field is ignored.                                    |
+| publicApiKeyName     | Reserved for future support. Custom header or query parameter name for public API keys. Has no effect until public API key support is implemented.                                                                                                              |
 
 #### APIKeyType
 
