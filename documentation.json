@@ -206,6 +206,10 @@
                 "path": "realtime-service"
               },
               {
+                "title": "SSE in Business API",
+                "path": "sse-business-api"
+              },
+              {
                 "title": "Genesis Project Management APIs",
                 "path": "genesis-project-management-apis"
               },
