@@ -689,7 +689,7 @@ or
 
 ### Social Logins
 
-The Mindbricks `auth` service supports social login via several providers defined under `SocialLoginSettings`: Google, Apple, GitLab, and GitHub.
+The Mindbricks `auth` service supports social login via several providers defined under `SocialLoginSettings`: Google, Apple, Facebook, Microsoft, LinkedIn, GitLab, and GitHub.
 
 Social login allows users to sign in using their existing social accounts. Behind the scenes, Mindbricks uses OAuth2-based flows to authenticate users and extract profile data such as email.
 
@@ -700,6 +700,28 @@ Once the provider returns a verified profile:
 - If not, Mindbricks returns a registration-needed response that includes a temporary `socialCode` reference.
 
 After that, frontend exchanges `socialCode` and either completes registration or receives a direct login result. Final login behavior is identical to native login — a JWT session is issued.
+
+#### Frontend URL and Auth Callback
+
+After OAuth processing, the auth service redirects the browser back to the frontend application's callback page. The redirect URL is resolved at runtime as follows:
+
+1. If `SOCIAL_LOGIN_REDIRECT_URL` is explicitly set in the deployment environment, that value is used as-is.
+2. Otherwise, the auth service derives it from `FRONTEND_URL + /auth/callback`.
+
+**`FRONTEND_URL`** is an environment variable automatically set from the project's **frontendUrl** setting in Basic Project Settings (see `BasicProjectSettings.frontendUrl`). It contains the base URL of the frontend application for the current deployment environment. This variable is important beyond social login — it is also used for email notification links, password reset URLs, and other frontend-facing URLs.
+
+| Environment | FRONTEND_URL default (if frontendUrl not configured) |
+|-------------|------------------------------------------------------|
+| dev         | `http://localhost:5173`                              |
+| test        | `https://{codename}.prw.mindbricks.com`              |
+| stage       | `https://{codename}-stage.mindbricks.co`             |
+| prod        | `https://{codename}.mindbricks.co`                   |
+
+You can override `FRONTEND_URL` for any environment by configuring the `frontendUrl` field in your project's Basic Project Settings. If you use a custom domain (e.g., `https://app.mycustomdomain.com`), set it there.
+
+**The frontend must have a page at `/auth/callback`** (relative to `FRONTEND_URL`). This is the default route where the auth service redirects after OAuth processing. The callback page receives query parameters (`provider`, `socialCode`, or `error`) and exchanges the `socialCode` for the full session data via `POST /auth/social-login-result`.
+
+In rare cases where a different callback path is needed, `SOCIAL_LOGIN_REDIRECT_URL` can be explicitly set as a custom variable in Basic Project Settings or as a deployment environment variable to override the default. In most cases, you do not need to set `SOCIAL_LOGIN_REDIRECT_URL` — the default derived from `FRONTEND_URL` is sufficient.
 
 #### Enabling Google Login
 
