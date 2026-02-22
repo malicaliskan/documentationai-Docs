@@ -13,7 +13,6 @@ interface BusinessApi = {
   restSettings : ApiRestSettings;
   grpcSettings : ApiGrpcSettings;
   kafkaSettings : ApiKafkaSettings;
-  socketSettings : ApiSocketSettings;
   cronSettings : ApiCronSettings;
   selectClause : SelectClauseSettings;
   dataClause : DataClauseSettings;
@@ -36,7 +35,6 @@ interface BusinessApi = {
 | restSettings      | Defines HTTP REST controller settings such as method and route path. Automatically generated using naming conventions, but can be customized for fine-grained control over REST behavior, parameter mapping, or URL design.                                                                                                                                                                                                                                                                         |
 | grpcSettings      | Enables gRPC access for this Business API and configures the request and response schemas. gRPC is disabled by default unless explicitly configured.                                                                                                                                                                                                                                                                                                                                                |
 | kafkaSettings     | Enables this Business API to be triggered by Kafka events. This controller listens for messages published to configured Kafka topics, allowing the API to respond to system-level events (e.g., file uploaded, user signed up) or external integrations. This is commonly used for decoupled orchestration between services or for reacting to events emitted by backend libraries and storage providers.                                                                                           |
-| socketSettings    | Enables invocation of this Business API over WebSocket channels. Useful for real-time communication where APIs must respond to push-based client interactions.                                                                                                                                                                                                                                                                                                                                      |
 | cronSettings      | Schedules this Business API for automatic execution at specified intervals. Useful for background tasks, data cleanup, or scheduled jobs. Uses cron expressions to define timing.                                                                                                                                                                                                                                                                                                                   |
 | selectClause      | Specifies which fields will be selected from the main data object during a `get` or `list` operation. Leave blank to select all properties. This applies only to `get` and `list` type APIs.                                                                                                                                                                                                                                                                                                        |
 | dataClause        | Defines custom field-value assignments used to modify or augment the default payload for `create` and `update` operations. These settings override values derived from the session or parameters if explicitly provided.                                                                                                                                                                                                                                                                            |
@@ -331,40 +329,6 @@ interface ApiKafkaSettingsConfig = {
 | ----------------- | ---------------------------------------------------------------------------------------- |
 | requestTopicName  | Name of the Kafka topic to listen to. Can be custom or auto-generated from the API name. |
 | responseTopicName | Topic name to which the API response will be published. Optional.                        |
-
-## ApiSocketSettings
-
-**MPO Version:** 1.3.0
-
-Enables real-time WebSocket access to the Business API, allowing interaction through socket-based event systems (e.g., chat, notifications, dashboards).
-
-```typescript
-interface ApiSocketSettings = {
-  hasSocketController : Boolean;
-  configuration : ApiSocketSettingsConfig;
-}
-```
-
-| Field               | Description                                            |
-| ------------------- | ------------------------------------------------------ |
-| hasSocketController | Enables the WebSocket controller for this API.         |
-| configuration       | Optional socket configuration. Leave null if disabled. |
-
-### ApiSocketSettingsConfig
-
-**MPO Version:** 1.3.0
-
-WebSocket server configuration, including the port on which the socket server will listen.
-
-```typescript
-interface ApiSocketSettingsConfig = {
-  socketPort : Integer;
-}
-```
-
-| Field      | Description                                                                       |
-| ---------- | --------------------------------------------------------------------------------- |
-| socketPort | The port for the WebSocket server. If not provided, Mindbricks defaults to 50001. |
 
 ## ApiCronSettings
 
