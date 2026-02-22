@@ -108,8 +108,8 @@
                 "path": "teke-out-your-code"
               },
               {
-                "title": "Connect External MCP Clients To Your Application",
-                "path": "mcp-management"
+                "title": "Application MCP",
+                "path": "application-mcp"
               }
             ]
           },
@@ -251,8 +251,8 @@
                 "path": "filter-parameters"
               },
               {
-                "title": "Connect External Tools To Mindbricks",
-                "path": "mcp-management"
+                "title": "Genesis MCP",
+                "path": "genesis-mcp"
               }
             ]
           },

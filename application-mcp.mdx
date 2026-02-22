@@ -1,0 +1,108 @@
+---
+title: Application MCP
+description: >-
+  How generated Mindbricks projects expose Business APIs as MCP tools through the MCP-BFF
+  aggregation layer, enabling AI agents to interact with your application backend.
+---
+
+## Overview
+
+When you build and deploy a Mindbricks project, each service automatically exposes its **Business APIs** as MCP tools. This means every CRUD operation, custom query, workflow action, or integration endpoint you define in your project configuration becomes available as a structured MCP tool — no additional coding required.
+
+External AI agents connect through the **MCP-BFF** (Backend-for-Frontend) service, which aggregates tools from all services into a single unified MCP endpoint.
+
+---
+
+## What Generated Projects Provide
+
+Each generated service runs an MCP endpoint at:
+
+```
+{serviceUrl}/mcp
+```
+
+The tools include:
+- **Data CRUD operations** — Create, read, update, delete, and list records
+- **Custom Business APIs** — Any API you define in your business logic (filtered queries, aggregations, batch operations)
+- **File operations** — Upload, download, and manage attachments (if S3 is configured)
+- **Payment flows** — Payment intents, subscription management (if Stripe is configured)
+- **Auth operations** — User management, API key management, permission assignments
+
+## Controlling MCP Tool Visibility
+
+By default, all Business APIs are exposed as MCP tools. You can exclude specific APIs from MCP exposure by setting `blockMcp: true` on a Business API. This is useful for internal APIs that should only be accessed via REST.
+
+---
+
+## The MCP-BFF Aggregation Layer
+
+External AI agents don't connect to individual services. Instead, the **MCP-BFF** (Backend-for-Frontend) service aggregates tools from all services into a single unified MCP endpoint.
+
+Two transports are supported:
+
+| Transport | Endpoint | Recommendation |
+|-----------|----------|----------------|
+| **StreamableHTTP** (primary) | `{appUrl}/mcpbff-api/mcp` | Preferred for modern MCP clients (Cursor, Claude Desktop) |
+| **SSE** (legacy fallback) | `{appUrl}/mcpbff-api/mcp/sse` | For older MCP clients that don't support StreamableHTTP |
+
+Where `{appUrl}` follows the standard Mindbricks URL pattern:
+- **Preview:** `https://{codename}.prw.mindbricks.com`
+- **Staging:** `https://{codename}-stage.mindbricks.co`
+- **Production:** `https://{codename}.mindbricks.co`
+
+The MCP-BFF:
+- Discovers tools from all registered services
+- Presents a unified tool catalog to connecting clients
+- Routes tool calls to the correct service
+- Propagates authentication context (JWT or API key sessions)
+- Supports tenant-aware routing in multi-tenant projects
+
+---
+
+## When MCP Is Useful in Generated Projects
+
+MCP integration makes generated projects immediately consumable by AI agents. Common use cases include:
+
+- **AI-powered frontends** — Tools like Lovable, Bolt, or Cursor can use MCP tools to interact with your backend while building the frontend
+- **Automated workflows** — AI agents can execute multi-step business operations by composing MCP tool calls
+- **Data exploration** — AI agents can query, filter, and aggregate your application data through natural language
+- **Admin dashboards** — AI chat interfaces can provide admin users with natural language access to management operations
+- **Integration scripts** — Automated pipelines can use MCP tools to read or write data across services
+
+---
+
+## Frontend Prompts
+
+Each generated project produces **frontend prompt documents** — detailed markdown guides that describe how to build the frontend for each part of the application. These prompts are served through the MCP-BFF's documentation endpoints:
+
+- `GET /api/docs/prompts` — Lists all available prompts with metadata
+- `GET /api/docs/prompts/:promptName` — Returns a specific prompt as markdown
+
+Prompts cover:
+- Authentication pages (login, register, forgot password)
+- Profile management (user settings, avatar, API key management)
+- User administration (user list, role assignment)
+- Verification flows (email, mobile, 2FA)
+- Service-specific CRUD pages (one per business service)
+- Payment flows (if configured)
+
+---
+
+## Authentication for MCP Clients
+
+MCP clients must authenticate when connecting. Two methods are supported:
+
+1. **JWT Token** — Pass a valid JWT in the `Authorization: Bearer {token}` header
+2. **API Key** (recommended for AI agents) — Pass an API key in the `Authorization: Bearer sk_mbx_...` header
+
+API keys are preferred for AI agents because they don't expire like JWT access tokens. The system detects API keys by their `sk_mbx_` prefix and validates them through Redis cache or the auth service.
+
+---
+
+## Related Pages
+
+- [MCP-BFF Service](./mcp-bff-service) — MCP-BFF behavior and configuration
+- [Genesis MCP](./genesis-mcp) — Use the Mindbricks Genesis MCP server to design and manage projects with AI agents
+- [Auth Service Assets](./generated-assets-reference/auth-service-assets) — Auth service generated assets including API key management
+- [Authentication and Authorization](./authentication-and-authorization) — Authentication configuration including API key setup
+- [Build Your API](./build-your-api) — Business API configuration and MCP tool exposure

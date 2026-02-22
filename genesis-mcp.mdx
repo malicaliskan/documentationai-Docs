@@ -1,0 +1,195 @@
+---
+title: Genesis MCP
+description: >-
+  The Mindbricks Genesis MCP server allows AI agents and external tools to design, configure,
+  and manage Mindbricks projects, and to access frontend development prompts for building
+  frontends against Mindbricks-generated backends.
+---
+
+## Overview
+
+The **Mindbricks Genesis MCP Server** is a dedicated MCP endpoint exposed by the Mindbricks platform itself. It allows AI agents, external tools, and automation workflows to:
+
+- Read and modify project configurations
+- Access the Mindbricks Pattern Ontology documentation
+- Generate frontend prompts for any project
+- Create, update, or delete entire projects
+
+This is the same engine that powers the Ada assistant in the Mindbricks dashboard, now accessible to any MCP-compatible client.
+
+---
+
+## Genesis MCP Server URL
+
+Two transports are supported:
+
+| Transport | Endpoint | Recommendation |
+|-----------|----------|----------------|
+| **StreamableHTTP** (primary) | `https://app.mindbricks.com/api/genesis/mcp` | Preferred for modern MCP clients (Cursor, Claude Desktop) |
+| **SSE** (legacy fallback) | `https://app.mindbricks.com/api/genesis/mcp/sse` | For older MCP clients that don't support StreamableHTTP |
+
+> **Authentication Required**: You must use an **API Key** for authentication. Pass it as a bearer token:
+> ```
+> Authorization: Bearer sk_mbx_your_api_key_here
+> ```
+>
+> **OpenAuth (OAuth) is not supported yet.** Only API key authentication is currently available for the Genesis MCP server.
+
+## How to Create an API Key
+
+1. Log into the Mindbricks dashboard at `https://app.mindbricks.com`
+2. Navigate to your **Profile** page
+3. Open the **API Keys** section
+4. Create a new secret API key with a descriptive name (e.g., "Cursor MCP", "Lovable Agent")
+5. Copy the key immediately — it is shown only once
+
+---
+
+## Available Tools
+
+### Schema Tools
+| Tool | Description |
+|------|-------------|
+| `getTypeSchema` | Get the JSON Schema for any Mindbricks pattern type (Service, DataObject, BusinessApi, etc.) |
+| `listTypeNames` | List all available pattern type names |
+
+### Project Data Tools
+| Tool | Description |
+|------|-------------|
+| `readPath` | Read project configuration at a specific path (e.g., `/services/customer/dataObjects/order`) |
+| `writePath` | Update project configuration at a specific path |
+| `deletePath` | Delete a configuration item (property, data object, business API, service) |
+| `listPath` | List children at a path level |
+| `getFullProject` | Get the complete project JSON |
+| `saveFullProject` | Save a complete project JSON |
+| `getProjectOverview` | Get a lightweight summary of the project structure |
+
+### Documentation Tools
+| Tool | Description |
+|------|-------------|
+| `getOntologyDocs` | Get the full Mindbricks Pattern Ontology documentation |
+| `getOntologyIndex` | Get the ontology table of contents |
+
+### Frontend Prompt Tools
+| Tool | Description |
+|------|-------------|
+| `listFrontendPrompts` | List all frontend prompt documents for a project |
+| `getFrontendPrompt` | Get a specific frontend prompt rendered as markdown |
+
+### MCP Prompts (Native)
+
+In addition to tools, the Genesis MCP server exposes **native MCP prompts** — a first-class MCP primitive that injects content directly into the AI conversation context. In compatible clients (Claude Desktop, Cursor), these appear as selectable items:
+
+| Prompt | Description |
+|--------|-------------|
+| `frontendPrompt` | Select a frontend development guide by project and index. The full rendered guide is injected into the conversation. |
+| `projectOverview` | Load the complete project structure as context — services, data objects, APIs, and configuration. |
+
+Native MCP prompts are the preferred way to load frontend guides interactively, while the tool versions (`listFrontendPrompts`, `getFrontendPrompt`) are better for programmatic or automated workflows.
+
+---
+
+## Use Cases
+
+### 1. Build Frontend with AI Agents
+
+AI coding agents (Lovable, Bolt, Cursor) can use the Genesis MCP to understand your backend and build a matching frontend:
+
+1. Connect the AI agent to the Genesis MCP server
+2. The agent calls `getProjectOverview` to understand the project structure
+3. The agent calls `listFrontendPrompts` and `getFrontendPrompt` to get detailed UI requirements and API documentation
+4. The agent uses the prompts to generate frontend pages with correct API integration
+
+Frontend prompts include complete REST API documentation (endpoints, request/response schemas, authentication headers) so the AI agent can produce working frontend code immediately.
+
+### 2. Update Backend Design from Frontend Needs
+
+When building a frontend, you often discover that the backend needs adjustments — new fields, new APIs, or different query patterns. With the Genesis MCP:
+
+1. The AI agent identifies that a new field or API is needed
+2. It calls `readPath` to see the current configuration
+3. It calls `getOntologyDocs` to understand the pattern structure
+4. It calls `writePath` to add the new field, API, or configuration
+5. The project is automatically versioned and ready for regeneration
+
+This creates a feedback loop where frontend development drives backend evolution, all through AI agents.
+
+### 3. Full Project Design with Natural Language
+
+You can describe your project requirements to an AI agent connected to the Genesis MCP, and it can create or modify the entire project configuration:
+
+- "Add a `comments` data object to the blog service with userId, content, and createdAt fields"
+- "Create a new `analytics` service with pageView tracking and daily aggregation APIs"
+- "Enable API key authentication and add rate limiting to the public APIs"
+
+---
+
+## Connecting External Tools
+
+### Cursor
+
+Add the following to your Cursor MCP settings (`.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "mindbricks": {
+      "url": "https://app.mindbricks.com/api/genesis/mcp",
+      "headers": {
+        "Authorization": "Bearer sk_mbx_your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+### Claude Desktop
+
+Add to your Claude Desktop configuration (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "mindbricks": {
+      "url": "https://app.mindbricks.com/api/genesis/mcp",
+      "headers": {
+        "Authorization": "Bearer sk_mbx_your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+If your Claude Desktop version does not support StreamableHTTP, use the SSE fallback:
+
+```json
+{
+  "mcpServers": {
+    "mindbricks": {
+      "transport": "sse",
+      "url": "https://app.mindbricks.com/api/genesis/mcp/sse",
+      "headers": {
+        "Authorization": "Bearer sk_mbx_your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+### Other MCP Clients
+
+Any MCP-compatible client can connect using either transport:
+
+- **StreamableHTTP (preferred)**: `POST https://app.mindbricks.com/api/genesis/mcp`
+- **SSE (legacy fallback)**: `GET https://app.mindbricks.com/api/genesis/mcp/sse`
+- **Authentication**: `Authorization: Bearer sk_mbx_...` header
+
+---
+
+## Related Pages
+
+- [Application MCP](./application-mcp) — How generated projects expose Business APIs as MCP tools
+- [MCP-BFF Service](./mcp-bff-service) — MCP-BFF behavior and configuration
+- [Auth Service Assets](./generated-assets-reference/auth-service-assets) — Auth service generated assets including API key management
+- [Authentication and Authorization](./authentication-and-authorization) — Authentication configuration including API key setup
+- [Build Your API](./build-your-api) — Business API configuration and MCP tool exposure
