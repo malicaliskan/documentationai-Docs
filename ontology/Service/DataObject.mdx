@@ -302,20 +302,6 @@ interface StripeOrderItemRelation = {
 | orderItemLocalKey    | Property of the order item object that stores the relation value to the order. Commonly `orderId`.                             |
 | quantityProperty     | Property of the order item object that stores item quantity for perOrderItemQuantity operations. Commonly `quantity` or `qty`. |
 
-###### LocalDataObjectName
-
-**MPO Version:** 1.3.0
-
-Represents a reference to a data object within the same service. The value must be a simple object name; not a qualified reference in the format 'serviceName:objectName'.
-
-```typescript
-interface LocalDataObjectName = {
-}
-```
-
-| Field | Description |
-| ----- | ----------- |
-
 ##### AfterPaymentCreation
 
 **MPO Version:** 1.3.0

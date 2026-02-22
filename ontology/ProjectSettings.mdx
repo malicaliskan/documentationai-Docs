@@ -78,7 +78,7 @@ interface DataMapSimpleItem = {
 
 **MPO Version:** 1.3.0
 
-Per-environment base URLs for the frontend application. These URLs are used to derive callback URLs (e.g. SOCIAL_LOGIN_REDIRECT_URL = frontendUrl + /auth/callback). If not set, defaults are derived from the project codename: dev=http://localhost:5173, test=https://{codename}.prw.mindbricks.com, stage=https://{codename}-stage.mindbricks.co, prod=https://{codename}.mindbricks.co.
+Per-environment base URLs for the frontend application. Sets the FRONTEND_URL environment variable used at runtime for social login callback redirects (defaults to FRONTEND_URL + /auth/callback), email notification links, and other frontend-facing URLs. If not set, defaults are derived from the project codename: dev=http://localhost:5173, test=https://{codename}.prw.mindbricks.com, stage=https://{codename}-stage.mindbricks.co, prod=https://{codename}.mindbricks.co.
 
 ```typescript
 interface FrontendUrl = {

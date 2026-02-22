@@ -40,7 +40,12 @@
           "title": "Social Login Settings",
           "path": "SocialLoginSettings.mdx"
         },
-        { "type": "file", "title": "Data Property", "path": "DataProperty.mdx" }
+        {
+          "type": "file",
+          "title": "Data Property",
+          "path": "DataProperty.mdx"
+        },
+        { "type": "file", "title": "Business Api", "path": "BusinessApi.mdx" }
       ]
     },
     {
@@ -88,7 +93,6 @@
           "path": "ShoppingCartConfig.mdx"
         },
         { "type": "file", "title": "Data Object", "path": "DataObject.mdx" },
-        { "type": "file", "title": "Business Api", "path": "BusinessApi.mdx" },
         {
           "type": "file",
           "title": "Service Library",
