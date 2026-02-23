@@ -95,15 +95,14 @@ The `StripeOrder` pattern defines the settings for integrating this data object 
 
   "StripeOrderConfig": {
     "orderName": "String",
-    "orderId": "MScript",
-    "amount": "MScript",
-    "currency": "MScript",
-    "description": "MScript",
+    "orderIdProperty": "PropRefer",
+    "amountProperty": "PropRefer",
+    "currencyProperty": "PropRefer",
+    "currencyStaticValue": "String",
     "orderStatusProperty": "PropRefer",
     "orderStatusUpdateDateProperty": "PropRefer",
     "orderOwnerIdProperty": "PropRefer",
-    "frontendAmountField": "PropRefer",
-    "frontendCurrencyField": "PropRefer",
+    "description": "MScript",
     "orderItemRelation": "StripeOrderItemRelation",
     "afterPaymentCreations": ["AfterPaymentCreation"],
     "mapPaymentResultToOrderStatus": "PaymentResultMap",
@@ -125,15 +124,17 @@ To configure the `stripeOrder` pattern in the `objectSettings` consider followin
 
 Following pattern properties are MScript values that will be evaluated in the context. In these MScripts you can reach your order object like , `this.order`or `this.reservation `etc.
 
-`orderId`: MScript expression to extract the order's unique identifier. Typically the ID field like , `this.reservation.id`.
-
-`amount`:MScript expression to determine the order amount for payment. Typically the amount field like , `this.reservation.amount` or may be a calculation like `this.reservation.rentPrice + this.reservation.taxAmount`.
-
-`currency`: MScript expression to determine the currency for the order. Typically an hardcoded string like `"USD"` or an expression like `this.order.currency`.
-
 `description`: MScript expression for the order description, shown in Stripe and receipts. Typically a template string like ``javascript `Reservation fee for PublicHouse application, your card is charged for ${this.reservation.amount} USD`. ``
 
 Following pattern properties should be directly the related property names of your order data object.
+
+`orderIdProperty`: The property name that holds the order's unique identifier. Typically the ID field like `"id"`.
+
+`amountProperty`: The property name that holds the order amount for payment. Typically the amount field like `"amount"` or `"totalAmount"`.
+
+`currencyProperty`: The property name that holds the currency for the order. For example `"currency"`. This is optional if you use `currencyStaticValue` instead.
+
+`currencyStaticValue`: The static value of the currency for the order (e.g., `"USD"`, `"EUR"`). If not set, the currency will be determined by the `currencyProperty`. Use this when all orders use the same currency.
 
 `orderStatusProperty`: The field name in the data object that holds the current order status. This will be automatically updated based on payment results.
 
@@ -159,8 +160,6 @@ paymentResultSuccess: `"paid"`
 - `perOrder`: one creation for the whole order
 - `perOrderItem`: one creation per order item
 - `perOrderItemQuantity`: multiple creations per item based on the quantity property in `orderItemRelation`
-
-`frontendAmountField` and `frontendCurrencyField`: Optional property references that tell frontend clients which fields should be displayed as payment amount and currency. This is useful when the backend amount/currency expression is complex and UI should show a stable business-facing value.
 
 In addition to the `orderStatusProperty `of your own logic, Mindbricks automatically adds a system field to your order data object that manages the status of the payment with system wording. You can always read this property from your data object instance once the instance is created.
 
