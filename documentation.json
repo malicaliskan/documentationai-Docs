@@ -206,8 +206,16 @@
                 "path": "realtime-service"
               },
               {
+                "title": "Realtime Hub",
+                "path": "realtime-hub"
+              },
+              {
                 "title": "SSE in Business API",
                 "path": "sse-business-api"
+              },
+              {
+                "title": "AI Agents",
+                "path": "ai-agents"
               },
               {
                 "title": "Genesis Project Management APIs",
@@ -251,8 +259,8 @@
                 "path": "filter-parameters"
               },
               {
-                "title": "Genesis MCP",
-                "path": "genesis-mcp"
+                "title": "Connect External Tools To Mindbricks",
+                "path": "mcp-management"
               }
             ]
           },

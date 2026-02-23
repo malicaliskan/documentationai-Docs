@@ -1,0 +1,930 @@
+---
+title: Realtime Hub Pattern
+description: >-
+  A comprehensive guide to designing bidirectional real-time communication hubs
+  in Mindbricks. Covers Socket.IO rooms, typed messages, presence events,
+  custom events, Kafka bridging, message persistence, room authorization,
+  guardrails, and REST fallback endpoints.
+---
+
+# Realtime Hub Pattern
+
+## Overview
+
+A RealtimeHub is a bidirectional Socket.IO communication channel that brings real-time messaging, presence, and custom events to your Mindbricks service. Unlike the older Realtime Service (a standalone microservice that bridges Kafka events to clients via topics), RealtimeHub lives **inside a business service** and provides **room-based, full-duplex communication** with built-in message persistence, authorization, and rate limiting.
+
+| Capability | Realtime Service | RealtimeHub |
+|------------|-----------------|-------------|
+| Transport | Socket.IO (one-way push) | Socket.IO (bidirectional) |
+| Scope | Standalone microservice | Inside any business service |
+| Model | Topic + rights-token authorization | Room + membership/ownership auth |
+| Message flow | Kafka → Server → Client | Client ↔ Server ↔ Client |
+| Persistence | Not built-in | Auto-generated Message DataObject |
+| Custom events | No | Yes (typing, reactions, game actions, etc.) |
+| Kafka bridge | Core function | Optional add-on |
+| REST fallback | No | Auto-generated REST endpoints |
+
+**Use RealtimeHub when:** Users need to talk to each other in real time -- chat rooms, multiplayer games, collaborative editing, live dashboards, support tickets, auction bidding.
+
+**Use Realtime Service when:** You only need one-way server-to-client push of backend events (e.g., order status notifications, live price feeds).
+
+---
+
+## Architecture
+
+Each RealtimeHub is mounted as a Socket.IO **namespace** (`/hub/{hubName}`) on the service's HTTP server. Rooms within the namespace correspond to records in an existing DataObject (e.g., a `Chat`, `Match`, or `Dashboard`). The framework handles:
+
+1. **Authentication** -- Token-based auth middleware validates every socket connection via the existing session layer (HexaAuth).
+2. **Room authorization** -- Configurable rules determine who can join which room (public, membership, ownership, custom function).
+3. **Message handling** -- Typed messages with system fields, standard properties (files, replies, reactions, location, forwarded), and a custom data schema.
+4. **Persistence** -- Optional auto-generated Message DataObject with all configured fields stored in the database.
+5. **Custom events** -- Named signals beyond messages (typing indicators, read receipts, game actions).
+6. **Kafka bridge** -- Backend events from Kafka topics are filtered and broadcast to the appropriate rooms.
+7. **REST endpoints** -- Auto-generated REST routes for message history, deletion, and REST-based message sending.
+8. **Horizontal scaling** -- Redis adapter for multi-instance deployments (Socket.IO events broadcast across instances).
+
+---
+
+## Pattern Structure
+
+A RealtimeHub is a **chapter** in the Mindbricks ontology with 6 sections:
+
+| Section | Purpose |
+|---------|---------|
+| `hubBasics` | Name and description |
+| `roomSettings` | Room DataObject, authorization rules |
+| `messageSettings` | Message schema, persistence, standard properties, custom dataMap |
+| `eventSettings` | Custom events, Kafka event bridging |
+| `historySettings` | Message history on join |
+| `guardrails` | Rate limits, size limits, connection limits |
+
+Additionally, the service-level `realtimeConfig` section (inside `ServiceSettings`) controls the Socket.IO server itself (adapter, heartbeat, connection limits).
+
+---
+
+## Service-Level Configuration: RealtimeConfig
+
+Before designing individual hubs, configure the Socket.IO server at the service level:
+
+```json
+{
+  "serviceSettings": {
+    "realtimeConfig": {
+      "adapter": "redis",
+      "heartbeatInterval": 25000,
+      "heartbeatTimeout": 20000,
+      "maxConnectionsPerUser": 10
+    }
+  }
+}
+```
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `adapter` | `"redis"` \| `"memory"` | `"redis"` | Scaling adapter. Use `redis` for production (multi-instance), `memory` for development. |
+| `heartbeatInterval` | Integer | `25000` | Ping interval in ms. |
+| `heartbeatTimeout` | Integer | `20000` | Pong timeout in ms. Must be less than interval. |
+| `maxConnectionsPerUser` | Integer | `10` | Max concurrent sockets per authenticated user. |
+
+When `adapter` is `redis`, the generated `package.json` includes `@socket.io/redis-adapter` and the socket server initializer sets up the Redis pub/sub adapter automatically.
+
+---
+
+## Hub Basics
+
+```json
+{
+  "hubBasics": {
+    "name": "chatHub",
+    "description": "Real-time messaging hub for one-on-one and group conversations"
+  }
+}
+```
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `name` | String | Yes | Unique identifier (camelCase). Becomes the namespace `/hub/chatHub` and REST prefix `/chat-hub`. |
+| `description` | Text | No | Human-readable purpose. Used in docs and AI context. |
+
+---
+
+## Room Settings
+
+Every hub requires a **room DataObject** -- an existing DataObject in the same service that represents the "room" entity. Users join rooms by referencing the DataObject record ID.
+
+```json
+{
+  "roomSettings": {
+    "roomDataObject": "Chat",
+    "roomAuthRule": "membership",
+    "membershipObject": "ChatParticipant",
+    "userField": "userId",
+    "roomField": "chatId"
+  }
+}
+```
+
+### Room Authorization Rules
+
+| Rule | How it works | Required fields |
+|------|-------------|-----------------|
+| `public` | Any authenticated user can join any room. | `roomDataObject` only |
+| `membership` | Checks a join-table DataObject for a row matching the user and room. | `membershipObject`, `userField`, `roomField` |
+| `ownership` | Checks if the room record's `createdBy` or `ownerId` matches the user. | `roomDataObject` only |
+| `custom` | Delegates to a library function that receives `(socket, roomId, session)` and returns `true`/`false`. | `customAuthFunction` |
+
+### Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `roomDataObject` | String | -- | Name of the DataObject representing rooms (e.g., `Chat`, `ChessMatch`). |
+| `roomAuthRule` | Enum | `"membership"` | Authorization strategy for join requests. |
+| `membershipObject` | String | null | Join-table DataObject name. Required for `membership` rule. |
+| `userField` | String | `"userId"` | User FK field name in the membership object. |
+| `roomField` | String | null | Room FK field name in the membership object (e.g., `chatId`). |
+| `customAuthFunction` | String | null | Library function name for `custom` rule. |
+
+---
+
+## Message Settings
+
+Controls how messages are structured, what properties they carry, and whether they're persisted.
+
+```json
+{
+  "messageSettings": {
+    "autoDataObject": true,
+    "dataObjectName": "ChatHubMessage",
+    "enableFiles": true,
+    "enableReplyTo": true,
+    "enableReaction": true,
+    "enableLocation": false,
+    "enableForwarded": false,
+    "dataMapFields": [
+      {
+        "name": "messageType",
+        "fieldType": "Enum",
+        "required": true,
+        "enumValues": "text,image,link,document",
+        "defaultValue": "text",
+        "description": "The type of message content"
+      },
+      {
+        "name": "text",
+        "fieldType": "Text",
+        "required": false,
+        "description": "Message body or media caption"
+      }
+    ]
+  }
+}
+```
+
+### Auto-Generated Message DataObject
+
+When `autoDataObject` is `true`, the framework generates a dedicated DataObject with:
+
+**System fields** (always present):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | ID | Primary key |
+| `roomId` | ID | Foreign key to the room DataObject |
+| `senderId` | ID | Foreign key to the authenticated user |
+| `timestamp` | DateTime | Message creation time |
+
+**Standard properties** (toggled individually):
+
+| Toggle | Field | Type | Description |
+|--------|-------|------|-------------|
+| `enableFiles` | `files` | JSON | Array of file attachments (`{ url, type, name, size }`) |
+| `enableReplyTo` | `replyTo` | JSON | Reply thread reference (`{ id, preview }`) |
+| `enableReaction` | `reaction` | JSON | Emoji reactions array (`{ emoji, userId, timestamp }`) |
+| `enableLocation` | `location` | JSON | Geo coordinates (`{ lat, lng }`) |
+| `enableForwarded` | `forwarded` | Boolean | Whether the message was forwarded from another room |
+
+**Custom dataMap fields** (defined per-hub):
+
+Each field in `dataMapFields` adds a typed entry to the message's data payload. The entire dataMap is stored as a single JSONB column in the database.
+
+### DataMap Field Types
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `String` | Short text (up to 255 chars) | Username, label |
+| `Text` | Long-form text | Message body, description |
+| `Integer` | Whole number | Score, count |
+| `Decimal` | Floating point | Price, rating |
+| `Boolean` | True/false | Is read, is pinned |
+| `ID` | UUID reference | Parent message ID |
+| `DateTime` | ISO 8601 timestamp | Deadline, scheduled time |
+| `Enum` | Fixed set of values | Message type, status |
+| `JSON` | Arbitrary JSON | Metadata, nested data |
+
+For `Enum` fields, provide the allowed values as a comma-separated string in `enumValues`.
+
+### Ephemeral Hubs
+
+Set `autoDataObject: false` for hubs that don't need message persistence -- live dashboards, game state broadcasts, cursor tracking. Messages are broadcast to room members but not stored.
+
+---
+
+## Event Settings
+
+### Custom Events
+
+Custom events are named signals beyond standard messages. They carry typed payloads for interactions like typing indicators, read receipts, game moves, or system notifications.
+
+```json
+{
+  "eventSettings": {
+    "enableCustomEvents": true,
+    "customEvents": [
+      {
+        "name": "typing",
+        "description": "User is currently typing",
+        "ephemeral": true,
+        "direction": "clientToRoom"
+      },
+      {
+        "name": "messageRead",
+        "description": "User has read messages up to a timestamp",
+        "ephemeral": false,
+        "direction": "clientToRoom"
+      },
+      {
+        "name": "systemAlert",
+        "description": "Server-initiated alert broadcast to all room members",
+        "ephemeral": true,
+        "direction": "serverToRoom"
+      }
+    ]
+  }
+}
+```
+
+### Event Directions
+
+| Direction | Emitter | Receiver | Use case |
+|-----------|---------|----------|----------|
+| `clientToRoom` | Client via socket | All room members | Typing, game moves, reactions |
+| `serverToClient` | Server logic | Specific client | Private notifications, session warnings |
+| `serverToRoom` | Server logic | All room members | System alerts, status changes |
+
+### Ephemeral vs Persisted Events
+
+- **Ephemeral (`true`)**: Broadcast only, not stored. For high-frequency signals (typing, cursor position, presence pings). Cheap and fast.
+- **Persisted (`false`)**: Stored in the database alongside messages. For events that matter historically (read receipts, game outcomes, moderation actions).
+
+### Kafka Event Bridge
+
+Bridge backend events from Kafka topics into hub rooms. Useful when other services produce events that should reach connected clients.
+
+```json
+{
+  "eventSettings": {
+    "enableKafkaBridge": true,
+    "kafkaEvents": [
+      {
+        "name": "participantAdded",
+        "description": "New participant joined the chat via the API",
+        "topic": "chat-service-events",
+        "filterExpression": "data.eventType === 'participant.added'",
+        "targetRoomExpression": "data.chatId"
+      },
+      {
+        "name": "orderStatusChanged",
+        "description": "Order status update from the commerce service",
+        "topic": "order-events",
+        "filterExpression": "data.type === 'status.changed'",
+        "targetRoomExpression": "data.dashboardId"
+      }
+    ]
+  }
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | String | Event name emitted to clients (e.g., `hub:participantAdded`). |
+| `topic` | String | Kafka topic to subscribe to. |
+| `filterExpression` | MScript | Expression to filter incoming messages. Receives `data` (parsed payload). Return truthy to bridge. |
+| `targetRoomExpression` | MScript | Expression to extract the target room ID from the message. |
+
+If `filterExpression` is omitted, all messages on the topic are bridged.
+
+---
+
+## History Settings
+
+Controls whether message history is delivered to clients when they join a room.
+
+```json
+{
+  "historySettings": {
+    "historyEnabled": true,
+    "historyLimit": 50
+  }
+}
+```
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `historyEnabled` | Boolean | `true` | Send recent messages on join. Requires `autoDataObject: true`. |
+| `historyLimit` | Integer | `50` | Number of most recent messages to send. |
+
+When a client joins a room and history is enabled, the server emits a `hub:history` event with the last N messages immediately after the `hub:joined` confirmation.
+
+---
+
+## Guardrails
+
+Safety limits to prevent abuse and resource exhaustion.
+
+```json
+{
+  "guardrails": {
+    "maxUsersPerRoom": 1000,
+    "maxRoomsPerUser": 50,
+    "messageRateLimit": 60,
+    "maxMessageSize": 65536,
+    "connectionTimeout": 300000
+  }
+}
+```
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `maxUsersPerRoom` | Integer | `1000` | Max concurrent users per room. New joins rejected when exceeded. |
+| `maxRoomsPerUser` | Integer | `50` | Max rooms a user can be in simultaneously. |
+| `messageRateLimit` | Integer | `60` | Max messages per user per minute. |
+| `maxMessageSize` | Integer | `65536` | Max message payload in bytes (64 KB). |
+| `connectionTimeout` | Integer | `300000` | Idle timeout in ms (5 minutes). |
+
+---
+
+## Socket.IO Protocol
+
+### Connection
+
+```javascript
+import { io } from "socket.io-client";
+
+const socket = io("https://your-service.example.com/hub/chatHub", {
+  auth: { token: "Bearer <jwt-token>" },
+  transports: ["websocket", "polling"]
+});
+
+socket.on("connect", () => console.log("Connected to chatHub"));
+socket.on("connect_error", (err) => console.error("Auth failed:", err.message));
+```
+
+### Joining a Room
+
+```javascript
+socket.emit("hub:join", { roomId: "chat-uuid-123", meta: { displayName: "Alice" } });
+
+socket.on("hub:joined", ({ roomId }) => {
+  console.log("Joined room", roomId);
+});
+
+socket.on("hub:history", ({ roomId, messages }) => {
+  console.log(`Received ${messages.length} historical messages`);
+});
+
+socket.on("hub:error", ({ roomId, error }) => {
+  console.error("Error:", error);
+});
+```
+
+### Sending a Message
+
+```javascript
+socket.emit("hub:send", {
+  roomId: "chat-uuid-123",
+  data: { messageType: "text", text: "Hello everyone!" },
+  replyTo: null,
+  files: null
+});
+```
+
+### Receiving Messages
+
+```javascript
+socket.on("hub:messageArrived", ({ roomId, sender, message }) => {
+  console.log(`[${roomId}] ${sender.id}: `, message.data);
+});
+```
+
+### Presence Events
+
+```javascript
+socket.on("hub:presence", ({ event, roomId, user }) => {
+  if (event === "joined") console.log(user.id, "joined", roomId);
+  if (event === "left") console.log(user.id, "left", roomId);
+});
+```
+
+### Custom Events
+
+```javascript
+// Emit a typing indicator
+socket.emit("hub:event", {
+  roomId: "chat-uuid-123",
+  event: "typing",
+  data: { isTyping: true }
+});
+
+// Receive typing indicators
+socket.on("hub:typing", ({ roomId, userId, isTyping }) => {
+  console.log(userId, isTyping ? "is typing..." : "stopped typing");
+});
+
+// Receive Kafka-bridged events
+socket.on("hub:participantAdded", ({ roomId, userId, ...data }) => {
+  console.log("New participant:", data);
+});
+```
+
+### Leaving a Room
+
+```javascript
+socket.emit("hub:leave", { roomId: "chat-uuid-123" });
+```
+
+### Message Deletion
+
+```javascript
+socket.on("hub:messageDeleted", ({ roomId, messageId, deletedBy }) => {
+  console.log(`Message ${messageId} deleted by ${deletedBy}`);
+});
+```
+
+### Full Event Reference
+
+| Event | Direction | Payload | Description |
+|-------|-----------|---------|-------------|
+| `hub:join` | Client → Server | `{ roomId, meta? }` | Request to join a room |
+| `hub:joined` | Server → Client | `{ roomId }` | Join confirmed |
+| `hub:leave` | Client → Server | `{ roomId }` | Request to leave a room |
+| `hub:send` | Client → Server | `{ roomId, data, replyTo?, files?, location?, reaction? }` | Send a message |
+| `hub:messageArrived` | Server → Room | `{ roomId, sender, message }` | New message broadcast |
+| `hub:messageDeleted` | Server → Room | `{ roomId, messageId, deletedBy }` | Message deletion broadcast |
+| `hub:history` | Server → Client | `{ roomId, messages[] }` | Historical messages on join |
+| `hub:presence` | Server → Room | `{ event, roomId, user }` | Join/leave presence notification |
+| `hub:event` | Client → Server | `{ roomId, event, data }` | Custom event emission |
+| `hub:{eventName}` | Server → Room/Client | `{ roomId, userId, ...data }` | Custom event broadcast |
+| `hub:error` | Server → Client | `{ roomId?, error }` | Error notification |
+
+---
+
+## REST Endpoints
+
+For hubs with message persistence, REST endpoints are auto-generated for scenarios where Socket.IO is unavailable or where server-side access is needed.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/{hub-name}/:roomId/messages` | Paginated message history. Query params: `limit`, `offset`. |
+| `POST` | `/{hub-name}/:roomId/messages` | Send a message via REST (also broadcasts to connected clients). |
+| `DELETE` | `/{hub-name}/:roomId/messages/:messageId` | Delete a message (also broadcasts `hub:messageDeleted`). |
+
+REST endpoints use the same authentication and authorization as the service's regular APIs.
+
+---
+
+## Complete Examples
+
+### Example 1: Chat Application
+
+A messaging hub for a team collaboration app with membership-based rooms, message persistence, file attachments, reply threading, and typing indicators.
+
+```json
+{
+  "hubBasics": {
+    "name": "teamChat",
+    "description": "Team collaboration messaging hub with channels and direct messages"
+  },
+  "roomSettings": {
+    "roomDataObject": "Channel",
+    "roomAuthRule": "membership",
+    "membershipObject": "ChannelMember",
+    "userField": "userId",
+    "roomField": "channelId"
+  },
+  "messageSettings": {
+    "autoDataObject": true,
+    "dataObjectName": "TeamChatMessage",
+    "enableFiles": true,
+    "enableReplyTo": true,
+    "enableReaction": true,
+    "enableLocation": false,
+    "enableForwarded": true,
+    "dataMapFields": [
+      {
+        "name": "messageType",
+        "fieldType": "Enum",
+        "required": true,
+        "enumValues": "text,image,video,file,code",
+        "defaultValue": "text",
+        "description": "Content type of the message"
+      },
+      {
+        "name": "text",
+        "fieldType": "Text",
+        "required": false,
+        "description": "Message body or media caption"
+      },
+      {
+        "name": "mentions",
+        "fieldType": "JSON",
+        "required": false,
+        "description": "Array of mentioned user IDs"
+      },
+      {
+        "name": "isPinned",
+        "fieldType": "Boolean",
+        "required": false,
+        "defaultValue": "false",
+        "description": "Whether the message is pinned in the channel"
+      }
+    ]
+  },
+  "eventSettings": {
+    "enableCustomEvents": true,
+    "enableKafkaBridge": true,
+    "customEvents": [
+      {
+        "name": "typing",
+        "description": "User is typing in the channel",
+        "ephemeral": true,
+        "direction": "clientToRoom"
+      },
+      {
+        "name": "messageRead",
+        "description": "User has read messages up to a timestamp",
+        "ephemeral": false,
+        "direction": "clientToRoom"
+      },
+      {
+        "name": "userStatusChanged",
+        "description": "User online/away/offline status change",
+        "ephemeral": true,
+        "direction": "serverToRoom"
+      }
+    ],
+    "kafkaEvents": [
+      {
+        "name": "memberAdded",
+        "description": "New member added to channel via API",
+        "topic": "collab-service-events",
+        "filterExpression": "data.eventType === 'channel.member.added'",
+        "targetRoomExpression": "data.channelId"
+      },
+      {
+        "name": "memberRemoved",
+        "description": "Member removed from channel via API",
+        "topic": "collab-service-events",
+        "filterExpression": "data.eventType === 'channel.member.removed'",
+        "targetRoomExpression": "data.channelId"
+      }
+    ]
+  },
+  "historySettings": {
+    "historyEnabled": true,
+    "historyLimit": 100
+  },
+  "guardrails": {
+    "maxUsersPerRoom": 5000,
+    "maxRoomsPerUser": 100,
+    "messageRateLimit": 30,
+    "maxMessageSize": 131072,
+    "connectionTimeout": 600000
+  }
+}
+```
+
+### Example 2: Multiplayer Game Lobby
+
+An ephemeral hub for a chess platform where games don't persist messages but use custom events for game moves.
+
+```json
+{
+  "hubBasics": {
+    "name": "chessLobby",
+    "description": "Real-time chess game hub with move broadcasting and game state events"
+  },
+  "roomSettings": {
+    "roomDataObject": "ChessMatch",
+    "roomAuthRule": "membership",
+    "membershipObject": "MatchPlayer",
+    "userField": "playerId",
+    "roomField": "matchId"
+  },
+  "messageSettings": {
+    "autoDataObject": false,
+    "enableFiles": false,
+    "enableReplyTo": false,
+    "enableReaction": false,
+    "enableLocation": false,
+    "enableForwarded": false,
+    "dataMapFields": []
+  },
+  "eventSettings": {
+    "enableCustomEvents": true,
+    "enableKafkaBridge": false,
+    "customEvents": [
+      {
+        "name": "moveMade",
+        "description": "A chess move was made",
+        "ephemeral": false,
+        "direction": "clientToRoom"
+      },
+      {
+        "name": "gameOver",
+        "description": "Game ended with a result",
+        "ephemeral": false,
+        "direction": "serverToRoom"
+      },
+      {
+        "name": "drawOffered",
+        "description": "Player offers a draw",
+        "ephemeral": true,
+        "direction": "clientToRoom"
+      },
+      {
+        "name": "clockUpdate",
+        "description": "Timer sync event",
+        "ephemeral": true,
+        "direction": "serverToRoom"
+      }
+    ]
+  },
+  "historySettings": {
+    "historyEnabled": false
+  },
+  "guardrails": {
+    "maxUsersPerRoom": 10,
+    "maxRoomsPerUser": 5,
+    "messageRateLimit": 120,
+    "maxMessageSize": 4096,
+    "connectionTimeout": 1800000
+  }
+}
+```
+
+### Example 3: Live Dashboard with Kafka Bridge
+
+A read-mostly hub where backend events are pushed to connected dashboard viewers. No client-to-client messaging; data flows from Kafka topics to dashboard rooms.
+
+```json
+{
+  "hubBasics": {
+    "name": "liveDashboard",
+    "description": "Real-time dashboard hub that streams backend metrics and events to viewers"
+  },
+  "roomSettings": {
+    "roomDataObject": "Dashboard",
+    "roomAuthRule": "ownership"
+  },
+  "messageSettings": {
+    "autoDataObject": false,
+    "enableFiles": false,
+    "enableReplyTo": false,
+    "enableReaction": false,
+    "enableLocation": false,
+    "enableForwarded": false,
+    "dataMapFields": []
+  },
+  "eventSettings": {
+    "enableCustomEvents": false,
+    "enableKafkaBridge": true,
+    "kafkaEvents": [
+      {
+        "name": "metricUpdate",
+        "description": "New metric data point arrived",
+        "topic": "analytics-events",
+        "filterExpression": "data.type === 'metric'",
+        "targetRoomExpression": "data.dashboardId"
+      },
+      {
+        "name": "alertTriggered",
+        "description": "Threshold alert triggered for a dashboard widget",
+        "topic": "analytics-events",
+        "filterExpression": "data.type === 'alert'",
+        "targetRoomExpression": "data.dashboardId"
+      },
+      {
+        "name": "orderPlaced",
+        "description": "New order placed in the commerce service",
+        "topic": "order-events",
+        "filterExpression": "data.eventType === 'order.created'",
+        "targetRoomExpression": "data.merchantDashboardId"
+      }
+    ]
+  },
+  "historySettings": {
+    "historyEnabled": false
+  },
+  "guardrails": {
+    "maxUsersPerRoom": 200,
+    "maxRoomsPerUser": 10,
+    "messageRateLimit": 10,
+    "maxMessageSize": 8192,
+    "connectionTimeout": 900000
+  }
+}
+```
+
+### Example 4: Customer Support Ticketing
+
+A hub where support agents and customers communicate within ticket rooms, with message history and ownership-based auth.
+
+```json
+{
+  "hubBasics": {
+    "name": "supportChat",
+    "description": "Customer support live chat hub tied to support tickets"
+  },
+  "roomSettings": {
+    "roomDataObject": "SupportTicket",
+    "roomAuthRule": "custom",
+    "customAuthFunction": "authorizeTicketAccess"
+  },
+  "messageSettings": {
+    "autoDataObject": true,
+    "dataObjectName": "SupportChatMessage",
+    "enableFiles": true,
+    "enableReplyTo": false,
+    "enableReaction": false,
+    "enableLocation": false,
+    "enableForwarded": false,
+    "dataMapFields": [
+      {
+        "name": "messageType",
+        "fieldType": "Enum",
+        "required": true,
+        "enumValues": "text,image,system",
+        "defaultValue": "text",
+        "description": "Content type"
+      },
+      {
+        "name": "text",
+        "fieldType": "Text",
+        "required": false,
+        "description": "Message content"
+      },
+      {
+        "name": "isInternal",
+        "fieldType": "Boolean",
+        "required": false,
+        "defaultValue": "false",
+        "description": "Internal note visible only to agents"
+      }
+    ]
+  },
+  "eventSettings": {
+    "enableCustomEvents": true,
+    "enableKafkaBridge": true,
+    "customEvents": [
+      {
+        "name": "typing",
+        "description": "User or agent is typing",
+        "ephemeral": true,
+        "direction": "clientToRoom"
+      },
+      {
+        "name": "agentAssigned",
+        "description": "Support agent was assigned to the ticket",
+        "ephemeral": false,
+        "direction": "serverToRoom"
+      }
+    ],
+    "kafkaEvents": [
+      {
+        "name": "ticketStatusChanged",
+        "description": "Ticket status updated by the backend",
+        "topic": "support-service-events",
+        "filterExpression": "data.eventType === 'ticket.status.changed'",
+        "targetRoomExpression": "data.ticketId"
+      }
+    ]
+  },
+  "historySettings": {
+    "historyEnabled": true,
+    "historyLimit": 100
+  },
+  "guardrails": {
+    "maxUsersPerRoom": 10,
+    "maxRoomsPerUser": 20,
+    "messageRateLimit": 30,
+    "maxMessageSize": 65536,
+    "connectionTimeout": 600000
+  }
+}
+```
+
+### Example 5: Auction Bidding Room
+
+A hub for live auction bidding with bid amounts as typed data and Kafka-bridged timer events.
+
+```json
+{
+  "hubBasics": {
+    "name": "auctionRoom",
+    "description": "Live auction bidding hub with real-time bid updates and timer"
+  },
+  "roomSettings": {
+    "roomDataObject": "AuctionListing",
+    "roomAuthRule": "public"
+  },
+  "messageSettings": {
+    "autoDataObject": true,
+    "dataObjectName": "AuctionBid",
+    "enableFiles": false,
+    "enableReplyTo": false,
+    "enableReaction": false,
+    "enableLocation": false,
+    "enableForwarded": false,
+    "dataMapFields": [
+      {
+        "name": "bidAmount",
+        "fieldType": "Decimal",
+        "required": true,
+        "description": "The bid amount in the listing's currency"
+      },
+      {
+        "name": "isAutoBid",
+        "fieldType": "Boolean",
+        "required": false,
+        "defaultValue": "false",
+        "description": "Whether this bid was placed by the auto-bid system"
+      }
+    ]
+  },
+  "eventSettings": {
+    "enableCustomEvents": true,
+    "enableKafkaBridge": true,
+    "customEvents": [
+      {
+        "name": "bidConfirmed",
+        "description": "Bid was validated and accepted by the server",
+        "ephemeral": false,
+        "direction": "serverToRoom"
+      },
+      {
+        "name": "bidRejected",
+        "description": "Bid was rejected (too low, auction ended, etc.)",
+        "ephemeral": true,
+        "direction": "serverToClient"
+      }
+    ],
+    "kafkaEvents": [
+      {
+        "name": "auctionEnding",
+        "description": "Auction timer is about to expire",
+        "topic": "auction-events",
+        "filterExpression": "data.type === 'auction.ending'",
+        "targetRoomExpression": "data.listingId"
+      },
+      {
+        "name": "auctionClosed",
+        "description": "Auction has closed with a winner",
+        "topic": "auction-events",
+        "filterExpression": "data.type === 'auction.closed'",
+        "targetRoomExpression": "data.listingId"
+      }
+    ]
+  },
+  "historySettings": {
+    "historyEnabled": true,
+    "historyLimit": 200
+  },
+  "guardrails": {
+    "maxUsersPerRoom": 10000,
+    "maxRoomsPerUser": 30,
+    "messageRateLimit": 10,
+    "maxMessageSize": 2048,
+    "connectionTimeout": 1800000
+  }
+}
+```
+
+---
+
+## Best Practices
+
+1. **Choose the right room auth rule.** Use `membership` for most cases (chat channels, game lobbies). Use `public` for open events or auctions. Use `ownership` for private dashboards. Reserve `custom` for complex multi-factor authorization.
+
+2. **Design your dataMapFields carefully.** The dataMap is your message schema. Put required fields first, use `Enum` for categorical data, and keep payloads small. Don't duplicate information already in system fields (sender, room, timestamp).
+
+3. **Use ephemeral events for high-frequency signals.** Typing indicators, cursor positions, and heartbeat pings should always be `ephemeral: true`. Persisting high-frequency events will overwhelm the database.
+
+4. **Set conservative guardrails for production.** Start with tight limits and relax as needed. A `messageRateLimit` of 10-30 is appropriate for chat; 60-120 for games. Set `maxUsersPerRoom` based on your actual expected room sizes.
+
+5. **Use Kafka bridge for cross-service events.** When another service (orders, payments, user management) produces events that should appear in a hub room, bridge them via Kafka instead of making direct API calls. This decouples services.
+
+6. **Prefer Socket.IO over REST for real-time interactions.** REST endpoints are fallbacks for server-to-server access, admin tools, or mobile clients with limited socket support. For user-facing real-time features, always use the socket connection.
+
+7. **Use Redis adapter in production.** The `memory` adapter only works with a single service instance. As soon as you have two or more instances behind a load balancer, messages won't reach clients on other instances without Redis.
+
+8. **Keep message payloads under 64 KB.** For file attachments, store files in the Bucket Service and include only URLs in the message. Don't embed binary data in socket payloads.

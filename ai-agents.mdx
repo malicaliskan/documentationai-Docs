@@ -1,0 +1,709 @@
+---
+title: AI Agents in Mindbricks
+description: >-
+  A comprehensive guide to AI Agents in Mindbricks. Covers standalone AI Agent
+  pattern design, provider configuration, execution modes, tool calling,
+  conversation management, modalities, and the distinction between standalone
+  agents, AiCallAction in Business APIs, and the MCP-BFF native agent.
+---
+
+# AI Agents in Mindbricks
+
+## Overview
+
+Mindbricks provides three complementary ways to integrate AI capabilities into your application:
+
+| Approach | Where | When to Use |
+|----------|-------|-------------|
+| **AI Agent** (this document) | Service-level standalone entity | Dedicated AI endpoints: chatbots, task agents, orchestrators, media generation |
+| **AiCallAction** | Inside a Business API workflow | Inline AI call as one step in a larger CRUD pipeline (e.g., summarize after create) |
+| **MCP-BFF Native Agent** | MCP-BFF service | Project-wide conversational interface that orchestrates tools across all services |
+
+All three share the same underlying provider adapters (OpenAI, Anthropic, DeepSeek, Moonshot, xAI, Fal AI, ElevenLabs, Runway, and custom endpoints), but they serve different architectural purposes.
+
+---
+
+## When to Use Which
+
+### Standalone AI Agent
+
+Use when:
+
+- You need a **dedicated endpoint** for AI interaction (`POST /agents/{name}`, `POST /agents/{name}/stream`).
+- The agent should maintain **its own conversation history** (chat mode).
+- The agent needs its own **tool set** (CRUD tools, API tools, library functions, sub-agents).
+- You're building a **media generation** pipeline (images, audio, video) with dedicated configuration.
+- You want to **orchestrate** multiple sub-agents for complex, multi-step tasks.
+
+Examples: Customer support chatbot, content generation API, image generation service, multi-agent research pipeline.
+
+### AiCallAction in Business API
+
+Use when:
+
+- AI is **one step** in a larger business workflow (create record → AI summarize → send notification).
+- The AI call is **triggered by a CRUD operation** (before or after create, update, delete, get, list).
+- You need AI to **refine, validate, or enrich** data within an existing API pipeline.
+- The result should flow back into the **same response envelope** as the CRUD result.
+- When placed in an SSE-enabled Business API, AiCallAction **automatically streams tokens** — no extra configuration needed.
+
+Examples: Auto-generate product descriptions on create, AI-powered search refinement on list, content moderation before publish.
+
+### MCP-BFF Native Agent
+
+The MCP-BFF (Model Context Protocol - Backend for Frontend) service includes a built-in AI agent that serves as the **intelligent conversational interface** for the entire application. It:
+
+- Automatically discovers and aggregates **MCP tools** from all connected services.
+- Maintains **per-user conversation history** across sessions.
+- Can **search Mindbricks documentation** to answer platform questions.
+- Routes tool calls to the appropriate service with **context injection** (user session, tenant info).
+- Supports **streaming responses** via SSE for real-time chat experience.
+
+You do not need to configure this agent — it is automatically generated when you build a MCP-BFF service. It is aligned with the general purpose of the application and uses the system prompt derived from your project's service descriptions.
+
+---
+
+## AI Agent Pattern Structure
+
+Each AI Agent is a **chapter** in the Mindbricks ontology, composed of 13 sections:
+
+| Section | Purpose |
+|---------|---------|
+| `agentBasics` | Name, description, execution mode, modality |
+| `modelSettings` | Provider, model, system prompt, temperature, tokens |
+| `inputSettings` | Prompt template, file upload, context sources |
+| `outputSettings` | Response transformation, post-processing, storage |
+| `toolSettings` | CRUD, API, agent, library, and custom tools |
+| `chatSettings` | Conversation history (chat mode only) |
+| `orchestrationSettings` | Multi-agent coordination (orchestrator mode only) |
+| `imageSettings` | Image generation parameters (image modality only) |
+| `audioSettings` | Audio TTS/STT parameters (audio modality only) |
+| `videoSettings` | Video generation parameters (video modality only) |
+| `customEndpoint` | Custom provider URL and API key (custom provider only) |
+| `endpointSettings` | REST/SSE endpoint toggles, auth, custom path |
+| `guardrails` | Safety limits: max tool calls, timeout, file size, validation |
+
+---
+
+## Execution Modes
+
+### Task Mode
+
+One-shot execution. The agent receives a request, processes it (possibly calling tools), and returns a single response.
+
+```json
+{
+  "agentBasics": {
+    "name": "contentWriter",
+    "executionMode": "task",
+    "modality": "text"
+  }
+}
+```
+
+**Flow:** Request → Build prompt → Call model → (Tool loop if needed) → Return response
+
+### Chat Mode
+
+Multi-turn conversations with persistent history. Each request includes the full conversation context.
+
+```json
+{
+  "agentBasics": {
+    "name": "supportBot",
+    "executionMode": "chat",
+    "modality": "text"
+  },
+  "chatSettings": {
+    "historyStorage": "memory",
+    "maxHistoryMessages": 50,
+    "summarizeAfter": 0,
+    "refreshSystemPrompt": false
+  }
+}
+```
+
+**Flow:** Request → Load history → Append user message → Call model → (Tool loop) → Save to history → Return response
+
+**History storage options:**
+
+| Storage | Description |
+|---------|-------------|
+| `memory` | In-process memory. Fast, but lost on restart. Good for development. |
+| `database` | Persisted to the service database. Survives restarts. Production-ready. |
+
+### Orchestrator Mode
+
+Coordinates multiple sub-agents in sequential or parallel steps. Each step invokes another AI Agent and passes results forward.
+
+```json
+{
+  "agentBasics": {
+    "name": "researchPipeline",
+    "executionMode": "orchestrator",
+    "modality": "text"
+  },
+  "orchestrationSettings": {
+    "strategy": "sequential",
+    "failOnStepError": true,
+    "orchestrationSteps": [
+      {
+        "name": "research",
+        "agentName": "webResearcher",
+        "inputMapping": "{ query: this.request.body.topic }",
+        "outputMapping": "result.choices[0].message.content"
+      },
+      {
+        "name": "summarize",
+        "agentName": "contentWriter",
+        "inputMapping": "{ message: stepResults.research }",
+        "outputMapping": "result.choices[0].message.content"
+      }
+    ]
+  }
+}
+```
+
+**Strategies:**
+
+| Strategy | Description |
+|----------|-------------|
+| `sequential` | Steps run one after another. Each step can use previous step results. |
+| `parallel` | Steps with `parallel: true` run concurrently. Sequential steps wait for all parallel steps. |
+| `adaptive` | The orchestrator model decides the execution order dynamically. |
+
+---
+
+## Modalities
+
+### Text
+
+Standard text generation with optional tool calling. The default modality.
+
+### Vision
+
+Text + image input. The agent can analyze uploaded images alongside text prompts. Requires a vision-capable model (e.g., `gpt-4o`, `claude-3-opus`).
+
+```json
+{
+  "agentBasics": { "modality": "vision" },
+  "inputSettings": { "acceptsUpload": true },
+  "guardrails": { "allowedMimeTypes": "image/png,image/jpeg,image/webp" }
+}
+```
+
+### Image
+
+Image generation. The agent returns generated image URLs.
+
+```json
+{
+  "agentBasics": { "modality": "image" },
+  "modelSettings": { "provider": "openai", "model": "dall-e-3" },
+  "imageSettings": {
+    "size": "1024x1024",
+    "quality": "hd",
+    "style": "natural",
+    "numberOfImages": 1
+  }
+}
+```
+
+### Audio
+
+Text-to-speech or speech-to-text.
+
+```json
+{
+  "agentBasics": { "modality": "audio" },
+  "modelSettings": { "provider": "elevenlabs" },
+  "audioSettings": {
+    "direction": "tts",
+    "voice": "rachel",
+    "outputFormat": "mp3"
+  }
+}
+```
+
+### Video
+
+Video generation from text or image prompts.
+
+```json
+{
+  "agentBasics": { "modality": "video" },
+  "modelSettings": { "provider": "runway" },
+  "videoSettings": {
+    "duration": 4,
+    "resolution": "1080p",
+    "fps": 24
+  }
+}
+```
+
+---
+
+## Model Providers
+
+| Provider | Models | Modalities | Notes |
+|----------|--------|------------|-------|
+| `openai` | gpt-4o, gpt-4-turbo, gpt-3.5-turbo, dall-e-3, whisper, tts-1 | text, vision, image, audio | Full-featured: tool calling, streaming, all modalities |
+| `anthropic` | claude-3-opus, claude-3-sonnet, claude-3-haiku | text, vision | Tool calling, streaming, large context windows |
+| `deepseek` | deepseek-chat, deepseek-coder | text | OpenAI-compatible API |
+| `moonshot` | moonshot-v1-8k, moonshot-v1-32k | text | OpenAI-compatible API |
+| `xai` | grok-2, grok-2-vision | text, vision | OpenAI-compatible API |
+| `fal` | Various image/video models | image, video | Specialized media generation |
+| `elevenlabs` | Various voice models | audio | Text-to-speech |
+| `runway` | gen-3 | video | Video generation with async polling |
+| `custom` | Any | Depends on API | Set `apiFormat` to `openai` or `anthropic`, provide base URL |
+
+### Custom Provider Example
+
+```json
+{
+  "modelSettings": {
+    "provider": "custom",
+    "model": "llama-3-70b"
+  },
+  "customEndpoint": {
+    "baseUrl": "http://localhost:11434/v1",
+    "apiKeyEnvVar": "OLLAMA_API_KEY",
+    "apiFormat": "openai"
+  }
+}
+```
+
+---
+
+## Tool Calling
+
+Tools give the agent the ability to take actions — query data, call APIs, invoke other agents, or run custom functions. The model decides when and which tools to call based on the conversation context.
+
+### Enabling Tools
+
+```json
+{
+  "toolSettings": {
+    "enableCrudTools": true,
+    "crudScopes": "Product,Order,Customer",
+    "apiTools": "searchProducts,processPayment",
+    "agentTools": "contentWriter",
+    "libraryTools": "calculateDiscount,sendNotification",
+    "customTools": [
+      {
+        "name": "getWeather",
+        "description": "Get current weather for a location",
+        "parameters": "{\"type\":\"object\",\"properties\":{\"city\":{\"type\":\"string\"}},\"required\":[\"city\"]}",
+        "handler": "lib.getWeather"
+      }
+    ]
+  }
+}
+```
+
+### Tool Types
+
+| Type | Source | What it does |
+|------|--------|--------------|
+| **CRUD Tools** | DataObjects | Auto-generated create, read, update, delete, list tools for specified DataObjects |
+| **API Tools** | Business APIs | Invokes named Business APIs as tools |
+| **Agent Tools** | Other AI Agents | Invokes other agents as sub-tools (for delegation patterns) |
+| **Library Tools** | Service Library | Calls custom functions from the service library |
+| **Custom Tools** | Inline definition | Fully custom tool with JSON Schema parameters and a handler function |
+
+When `enableCrudTools` is true and `crudScopes` is empty, CRUD tools are generated for **all** DataObjects in the service.
+
+---
+
+## System Prompt and Context Sources
+
+### Static System Prompt
+
+```json
+{
+  "modelSettings": {
+    "systemPrompt": "You are a customer support agent for an e-commerce platform. Help users with orders, returns, and product questions. Always be polite and concise."
+  }
+}
+```
+
+### Dynamic System Prompt Sources
+
+Inject runtime data into the system prompt using `systemPromptSources`:
+
+```json
+{
+  "modelSettings": {
+    "systemPromptSources": [
+      {
+        "name": "userProfile",
+        "sourceType": "dataObject",
+        "config": "{ where: { id: this.request.body.userId } }"
+      },
+      {
+        "name": "storePolicy",
+        "sourceType": "libraryFunction",
+        "config": "lib.getStorePolicy"
+      }
+    ]
+  }
+}
+```
+
+These sources are fetched at runtime and made available in the system prompt template.
+
+### Input Context Sources
+
+Similarly, `contextSources` in `inputSettings` inject data into the user prompt:
+
+```json
+{
+  "inputSettings": {
+    "promptTemplate": "this.request.body.message",
+    "contextSources": [
+      {
+        "name": "recentOrders",
+        "sourceType": "dataObject",
+        "config": "{ where: { userId: this.session.id }, limit: 5, order: [['createdAt', 'DESC']] }"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Endpoints
+
+Each agent generates up to two endpoints:
+
+| Endpoint | Method | Path | Response |
+|----------|--------|------|----------|
+| REST | POST | `/agents/{name}` | Synchronous JSON response |
+| SSE | POST | `/agents/{name}/stream` | Server-Sent Events stream |
+
+### Configuration
+
+```json
+{
+  "endpointSettings": {
+    "hasRestEndpoint": true,
+    "hasSseEndpoint": true,
+    "authRequired": true,
+    "basePath": null
+  }
+}
+```
+
+Setting `basePath` to a custom value (e.g., `/api/chat`) overrides the default `/agents/{name}` path.
+
+### SSE Streaming
+
+The SSE endpoint streams tokens as they arrive from the model:
+
+```
+event: token
+data: {"token": "Hello"}
+
+event: token
+data: {"token": " world"}
+
+event: tool_call
+data: {"name": "searchProducts", "arguments": {"query": "red shoes"}}
+
+event: tool_result
+data: {"name": "searchProducts", "result": [...]}
+
+event: complete
+data: {"content": "Hello world. I found 3 red shoes for you.", "usage": {"total_tokens": 156}}
+```
+
+---
+
+## Guardrails
+
+```json
+{
+  "guardrails": {
+    "maxToolCalls": 10,
+    "maxTokenBudget": 50000,
+    "maxFileSizeMb": 10,
+    "timeout": 60000,
+    "inputValidation": "this.request.body.message && this.request.body.message.length < 10000",
+    "outputValidation": "result.length > 0",
+    "allowedMimeTypes": "image/png,image/jpeg,application/pdf"
+  }
+}
+```
+
+| Property | Description |
+|----------|-------------|
+| `maxToolCalls` | Max tool invocations per request (prevents infinite loops) |
+| `maxTokenBudget` | Max total tokens (input + output) per request |
+| `maxFileSizeMb` | Max upload file size in MB |
+| `timeout` | Max execution time in milliseconds |
+| `inputValidation` | MScript expression; must return true to proceed |
+| `outputValidation` | MScript expression; must return true to return result |
+| `allowedMimeTypes` | Comma-separated MIME types for file uploads |
+
+---
+
+## Complete Examples
+
+### Example 1: Customer Support Chatbot
+
+A chat-mode agent with CRUD tools for orders and products, conversation history in the database, and both REST and SSE endpoints.
+
+```json
+{
+  "agentBasics": {
+    "name": "supportBot",
+    "description": "Customer support chatbot with order lookup and product search",
+    "executionMode": "chat",
+    "modality": "text"
+  },
+  "modelSettings": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "systemPrompt": "You are a helpful customer support agent for ShopMart. Help customers with order status, returns, and product recommendations. Always verify the customer's identity before sharing order details.",
+    "temperature": 0.7,
+    "maxTokens": 2000,
+    "responseFormat": "text"
+  },
+  "inputSettings": {
+    "promptTemplate": "this.request.body.message",
+    "acceptsUpload": false
+  },
+  "outputSettings": {
+    "responseProperty": null,
+    "postProcess": null,
+    "storeTo": null
+  },
+  "toolSettings": {
+    "enableCrudTools": true,
+    "crudScopes": "Order,Product,Return",
+    "apiTools": "trackShipment",
+    "libraryTools": "calculateRefund"
+  },
+  "chatSettings": {
+    "historyStorage": "database",
+    "maxHistoryMessages": 100,
+    "summarizeAfter": 50,
+    "refreshSystemPrompt": false
+  },
+  "endpointSettings": {
+    "hasRestEndpoint": true,
+    "hasSseEndpoint": true,
+    "authRequired": true
+  },
+  "guardrails": {
+    "maxToolCalls": 15,
+    "timeout": 90000
+  }
+}
+```
+
+### Example 2: Content Generation Task Agent
+
+A task-mode agent that generates marketing copy in a single call.
+
+```json
+{
+  "agentBasics": {
+    "name": "copyWriter",
+    "description": "Generates marketing copy for products",
+    "executionMode": "task",
+    "modality": "text"
+  },
+  "modelSettings": {
+    "provider": "anthropic",
+    "model": "claude-3-sonnet-20240229",
+    "systemPrompt": "You are a professional copywriter. Generate compelling, concise marketing copy. Output as JSON with fields: headline, body, callToAction.",
+    "temperature": 0.9,
+    "maxTokens": 1000,
+    "responseFormat": "json"
+  },
+  "inputSettings": {
+    "promptTemplate": "'Write marketing copy for: ' + this.request.body.productName + '. Target audience: ' + this.request.body.audience",
+    "contextSources": [
+      {
+        "name": "productDetails",
+        "sourceType": "dataObject",
+        "config": "{ where: { id: this.request.body.productId } }"
+      }
+    ]
+  },
+  "endpointSettings": {
+    "hasRestEndpoint": true,
+    "hasSseEndpoint": false,
+    "authRequired": true
+  },
+  "guardrails": {
+    "maxToolCalls": 0,
+    "timeout": 30000
+  }
+}
+```
+
+### Example 3: Image Generation Agent
+
+```json
+{
+  "agentBasics": {
+    "name": "imageGenerator",
+    "description": "Generates product images from text descriptions",
+    "executionMode": "task",
+    "modality": "image"
+  },
+  "modelSettings": {
+    "provider": "openai",
+    "model": "dall-e-3"
+  },
+  "inputSettings": {
+    "promptTemplate": "this.request.body.prompt"
+  },
+  "imageSettings": {
+    "size": "1024x1024",
+    "quality": "hd",
+    "style": "natural",
+    "numberOfImages": 1
+  },
+  "endpointSettings": {
+    "hasRestEndpoint": true,
+    "hasSseEndpoint": true,
+    "authRequired": true
+  },
+  "guardrails": {
+    "timeout": 60000,
+    "inputValidation": "this.request.body.prompt && this.request.body.prompt.length <= 4000"
+  }
+}
+```
+
+### Example 4: Multi-Agent Orchestrator
+
+A research pipeline that uses a researcher agent, a fact-checker agent, and a writer agent in sequence.
+
+```json
+{
+  "agentBasics": {
+    "name": "articlePipeline",
+    "description": "Researches a topic, fact-checks, and writes a polished article",
+    "executionMode": "orchestrator",
+    "modality": "text"
+  },
+  "modelSettings": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "systemPrompt": "You are an orchestrator that coordinates research, fact-checking, and writing."
+  },
+  "orchestrationSettings": {
+    "strategy": "sequential",
+    "failOnStepError": true,
+    "orchestrationSteps": [
+      {
+        "name": "research",
+        "agentName": "webResearcher",
+        "inputMapping": "{ message: 'Research the following topic thoroughly: ' + this.request.body.topic }",
+        "outputMapping": "result.choices[0].message.content"
+      },
+      {
+        "name": "factCheck",
+        "agentName": "factChecker",
+        "inputMapping": "{ message: 'Verify the following claims: ' + stepResults.research }",
+        "outputMapping": "result.choices[0].message.content"
+      },
+      {
+        "name": "write",
+        "agentName": "copyWriter",
+        "inputMapping": "{ message: 'Write a polished article based on: ' + stepResults.research + '. Corrections: ' + stepResults.factCheck }",
+        "outputMapping": "result.choices[0].message.content"
+      }
+    ]
+  },
+  "endpointSettings": {
+    "hasRestEndpoint": true,
+    "hasSseEndpoint": true,
+    "authRequired": true
+  },
+  "guardrails": {
+    "timeout": 300000
+  }
+}
+```
+
+### Example 5: Vision Analysis Agent
+
+An agent that analyzes uploaded images and returns structured data.
+
+```json
+{
+  "agentBasics": {
+    "name": "productAnalyzer",
+    "description": "Analyzes product images and extracts metadata",
+    "executionMode": "task",
+    "modality": "vision"
+  },
+  "modelSettings": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "systemPrompt": "Analyze the uploaded product image. Return JSON with: category, color, material, estimatedPrice, suggestedTags[].",
+    "responseFormat": "json"
+  },
+  "inputSettings": {
+    "promptTemplate": "this.request.body.instructions || 'Analyze this product image'",
+    "acceptsUpload": true,
+    "maxFiles": 3,
+    "autoResize": true
+  },
+  "endpointSettings": {
+    "hasRestEndpoint": true,
+    "hasSseEndpoint": false,
+    "authRequired": true
+  },
+  "guardrails": {
+    "maxFileSizeMb": 20,
+    "timeout": 45000,
+    "allowedMimeTypes": "image/png,image/jpeg,image/webp"
+  }
+}
+```
+
+---
+
+## File Uploads
+
+Agents with `acceptsUpload: true` accept multipart file uploads. The upload manager handles:
+
+- File size enforcement (via `guardrails.maxFileSizeMb`)
+- MIME type filtering (via `guardrails.allowedMimeTypes`)
+- File count limits (via `inputSettings.maxFiles`)
+- Automatic image resizing (via `inputSettings.autoResize`)
+- Temporary storage and cleanup
+
+Upload files via the REST endpoint using `multipart/form-data`:
+
+```bash
+curl -X POST /agents/productAnalyzer \
+  -H "Authorization: Bearer <token>" \
+  -F "message=Analyze this product" \
+  -F "files=@product-photo.jpg"
+```
+
+---
+
+## Best Practices
+
+1. **Start with task mode.** Only use chat mode when you genuinely need multi-turn conversations. Task mode is simpler and cheaper.
+
+2. **Scope your tools.** Don't enable CRUD tools for all DataObjects if the agent only needs access to two. Use `crudScopes` to restrict.
+
+3. **Set tight guardrails.** Always configure `maxToolCalls`, `timeout`, and `inputValidation`. Unbounded agents are expensive and risky.
+
+4. **Use SSE for user-facing agents.** Streaming gives users immediate feedback. REST is better for backend-to-backend or simple integrations.
+
+5. **Prefer AiCallAction for inline enrichment.** If AI is just one step in a create/update/list workflow, use AiCallAction in the Business API instead of a standalone agent.
+
+6. **Use the MCP-BFF agent for general chat.** Don't create a standalone agent just for "talk to the app" — the MCP-BFF native agent already does this with full tool discovery across all services.
+
+7. **Test with low temperature first.** Start at 0.3-0.5 for deterministic outputs, increase to 0.7-0.9 only for creative tasks.
