@@ -146,7 +146,12 @@ Every hub requires a **room DataObject** -- an existing DataObject in the same s
 | `membershipObject` | String | null | Join-table DataObject name. Required for `membership` rule. |
 | `userField` | String | `"userId"` | User FK field name in the membership object. |
 | `roomField` | String | null | Room FK field name in the membership object (e.g., `chatId`). |
+| `membershipCondition` | MScript | null | Optional MScript expression evaluated after fetching the membership record. Uses `membership` as the context variable. If it returns `false`, the user is denied access even though a record exists. Example: `membership.status == "active" && membership.expireAt > new Date()`. |
 | `customAuthFunction` | String | null | Library function name for `custom` rule. |
+
+### Cross-Service Membership
+
+The membership check uses **Elasticsearch** rather than a direct database query. This allows the membership DataObject to live in a **different service** -- as long as it's indexed in Elasticsearch (which is the default for all DataObjects), the hub can query it across service boundaries. The Elasticsearch index name is automatically derived from the project codename and the membership DataObject name.
 
 ---
 
@@ -425,6 +430,7 @@ Safety limits to prevent abuse and resource exhaustion.
 import { io } from "socket.io-client";
 
 const socket = io("https://your-service.example.com/hub/chatHub", {
+  path: "/your-service-api/socket.io/",   // HTTP path for reverse proxy routing
   auth: { token: "Bearer <jwt-token>" },
   transports: ["websocket", "polling"]
 });
@@ -432,6 +438,23 @@ const socket = io("https://your-service.example.com/hub/chatHub", {
 socket.on("connect", () => console.log("Connected to chatHub"));
 socket.on("connect_error", (err) => console.error("Auth failed:", err.message));
 ```
+
+#### Multi-Tenant Connection
+
+For multi-tenant projects, include the tenant codename in the `auth` payload:
+
+```javascript
+const socket = io("https://your-service.example.com/hub/chatHub", {
+  path: "/your-service-api/socket.io/",
+  auth: {
+    token: "Bearer <jwt-token>",
+    tenantCodename: "my-tenant"       // required for multi-tenant projects
+  },
+  transports: ["websocket", "polling"]
+});
+```
+
+> **Important:** Do **not** rely on `extraHeaders` for the tenant codename. Browsers cannot send custom headers over the WebSocket transport -- only the HTTP polling transport receives `extraHeaders`. The `auth` payload is delivered over **all** transports (WebSocket and polling), so it is the only reliable way to pass the tenant context.
 
 ### Joining a Room
 

@@ -259,8 +259,8 @@
                 "path": "filter-parameters"
               },
               {
-                "title": "Connect External Tools To Mindbricks",
-                "path": "mcp-management"
+                "title": "Genesis MCP",
+                "path": "genesis-mcp"
               }
             ]
           },
