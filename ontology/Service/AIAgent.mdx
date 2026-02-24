@@ -1,0 +1,605 @@
+# AIAgent
+
+**MPO Version:** 1.3.0
+
+Defines a standalone AI agent at the service level. Each agent encapsulates a model configuration, system prompt, input/output pipeline, optional tool access, and conversation management. Agents support multiple execution modes (task, chat, orchestrator) and modalities (text, image, audio, video, vision). They are exposed as dedicated REST and/or SSE endpoints and can be invoked by other agents as tools.
+
+```typescript
+interface AIAgent = {
+  agentBasics : AgentBasics;
+  modelSettings : AgentModelSettings;
+  inputSettings : AgentInputSettings;
+  outputSettings : AgentOutputSettings;
+  toolSettings : AgentToolSettings;
+  chatSettings : AgentChatSettings;
+  orchestrationSettings : AgentOrchestrationSettings;
+  imageSettings : AgentImageSettings;
+  audioSettings : AgentAudioSettings;
+  videoSettings : AgentVideoSettings;
+  customEndpoint : AgentCustomEndpoint;
+  endpointSettings : AgentEndpointSettings;
+  guardrails : AgentGuardrails;
+}
+```
+
+| Field                 | Description                                                                                                                                                                                                            |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| agentBasics           | Core identity and execution mode of the agent, including its name, description, modality, and how it processes requests.                                                                                               |
+| modelSettings         | AI provider and model configuration, including the system prompt and optional dynamic prompt sources that inject context into the system message.                                                                      |
+| inputSettings         | Defines how incoming request data is transformed into the agent's prompt or input, including file upload support and dynamic context enrichment.                                                                       |
+| outputSettings        | Controls how the AI model's response is transformed before returning to the client, including optional storage of generated media to a bucket.                                                                         |
+| toolSettings          | Configures which tools the agent can call during execution. Only applicable for text and vision modality agents. Includes CRUD tools, API tools, sub-agent tools, library function tools, and custom tool definitions. |
+| chatSettings          | Conversation history management settings. Only applicable when executionMode is 'chat'.                                                                                                                                |
+| orchestrationSettings | Multi-agent orchestration configuration. Only applicable when executionMode is 'orchestrator'. Defines the execution strategy and the steps to coordinate.                                                             |
+| imageSettings         | Image generation parameters. Only applicable when modality is 'image'.                                                                                                                                                 |
+| audioSettings         | Audio generation or transcription parameters. Only applicable when modality is 'audio'.                                                                                                                                |
+| videoSettings         | Video generation parameters. Only applicable when modality is 'video'.                                                                                                                                                 |
+| customEndpoint        | Custom provider endpoint configuration. Only applicable when provider is 'custom'.                                                                                                                                     |
+| endpointSettings      | Controls how the agent is exposed as an API endpoint, including REST/SSE toggles, path customization, and authentication.                                                                                              |
+| guardrails            | Safety limits and cost controls including token budgets, timeouts, file size limits, and input/output validation.                                                                                                      |
+
+## AgentBasics
+
+**MPO Version:** 1.3.0
+
+Core identity and execution mode of the AI agent. The name serves as the asset identifier and is used in endpoint paths, inter-agent references, and code generation.
+
+```typescript
+interface AgentBasics = {
+  name : String;
+  description : Text;
+  executionMode : AgentExecutionMode;
+  modality : AgentModality;
+}
+```
+
+| Field         | Description                                                                                                                                                             |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name          | Unique agent name within the service. Used in endpoint paths (/agents/{name}), inter-agent tool references, and generated code file names. Must be camelCase.           |
+| description   | Human-readable description of what this agent does. Used in documentation, MCP tool descriptions, and the design UI.                                                    |
+| executionMode | How the agent processes requests: 'task' for one-shot execution, 'chat' for multi-turn conversations with history, 'orchestrator' for coordinating multiple sub-agents. |
+| modality      | The primary input/output modality: 'text' for text generation with tool calling, 'vision' for text+image input, 'image'/'audio'/'video' for media generation.           |
+
+### AgentExecutionMode
+
+Defines how the AI agent processes requests.
+
+```js
+const AgentExecutionMode = {
+  task: "task",
+  chat: "chat",
+  orchestrator: "orchestrator",
+};
+```
+
+| Enum         | Description                                                                                |
+| ------------ | ------------------------------------------------------------------------------------------ |
+| task         | One-shot execution: receives input, processes it, returns result. No conversation history. |
+| chat         | Multi-turn conversation: maintains history across requests using a session identifier.     |
+| orchestrator | Coordinates multiple sub-agents in sequential, parallel, or adaptive workflows.            |
+
+### AgentModality
+
+Defines the primary input/output modality of the agent.
+
+```js
+const AgentModality = {
+  text: "text",
+  vision: "vision",
+  image: "image",
+  audio: "audio",
+  video: "video",
+};
+```
+
+| Enum   | Description                                                             |
+| ------ | ----------------------------------------------------------------------- |
+| text   | Text-in, text/JSON-out. Supports tool calling and streaming.            |
+| vision | Text + image(s) in, text/JSON-out. Supports tool calling and streaming. |
+| image  | Text prompt in, image URL(s) out. No tool calling.                      |
+| audio  | Text-to-speech or speech-to-text depending on direction setting.        |
+| video  | Text/image prompt in, video URL out. No tool calling.                   |
+
+## AgentModelSettings
+
+**MPO Version:** 1.3.0
+
+AI provider and model configuration for the agent. Defines which LLM or generative model to use, its parameters, and optional dynamic system prompt sources that inject contextual data into the system message at runtime.
+
+```typescript
+interface AgentModelSettings = {
+  provider : String;
+  model : String;
+  systemPrompt : Text;
+  temperature : Float;
+  maxTokens : Integer;
+  responseFormat : AgentResponseFormat;
+  systemPromptSources : AgentContextSource[];
+}
+```
+
+| Field               | Description                                                                                                                                                                                                                                                       |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| provider            | AI provider identifier. Built-in adapters: 'openai', 'anthropic', 'deepseek', 'moonshot', 'xai', 'fal', 'elevenlabs', 'runway'. Use 'custom' for any OpenAI-compatible API. The provider string is extensible — new adapters can be added without schema changes. |
+| model               | Provider-specific model name (e.g., 'gpt-4o', 'claude-sonnet-4-20250514', 'dall-e-3', 'eleven_multilingual_v2'). Refer to the provider's documentation for available models.                                                                                      |
+| systemPrompt        | Static system instructions that define the agent's persona, constraints, and output format. This text is sent as the system message in every request.                                                                                                             |
+| temperature         | Controls randomness in model output. Range 0.0-2.0. Lower values (0.1-0.3) for deterministic tasks, higher values (0.7-1.0) for creative tasks. Default: 0.7.                                                                                                     |
+| maxTokens           | Maximum number of tokens the model can generate per response. Limits cost and response length. Leave null for provider default.                                                                                                                                   |
+| responseFormat      | Expected response format: 'text' for plain text, 'json' for structured JSON (uses JSON mode), 'url' for media URLs, 'binary' for raw binary data.                                                                                                                 |
+| systemPromptSources | Dynamic data sources fetched at runtime and injected into the system prompt. Each source provides a named variable that can be interpolated into the systemPrompt text using MScript. Useful for injecting user profiles, configuration, or domain knowledge.     |
+
+### AgentResponseFormat
+
+Defines the expected response format from the AI model.
+
+```js
+const AgentResponseFormat = {
+  text: "text",
+  json: "json",
+  url: "url",
+  binary: "binary",
+};
+```
+
+| Enum   | Description                                                   |
+| ------ | ------------------------------------------------------------- |
+| text   | Plain text response.                                          |
+| json   | Structured JSON response (uses JSON mode where supported).    |
+| url    | A URL pointing to a generated resource (image, audio, video). |
+| binary | Raw binary data (e.g., audio stream chunks).                  |
+
+### AgentContextSource
+
+**MPO Version:** 1.3.0
+
+Defines a dynamic data source that fetches context at runtime. Used in both systemPromptSources (injected into the system message) and contextSources (injected into the user prompt). Each source produces a named variable accessible via MScript in templates.
+
+```typescript
+interface AgentContextSource = {
+  name : String;
+  sourceType : AgentContextSourceType;
+  config : MScript;
+}
+```
+
+| Field      | Description                                                                                                                                                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| name       | Variable name used to reference this source's data in MScript templates. Example: if name is 'userProfile', access it as 'userProfile.email' in the promptTemplate.                                                                        |
+| sourceType | How data is fetched: 'dataObject' queries a DataObject, 'libraryFunction' calls a library function, 'apiCall' invokes a BusinessApi or external endpoint.                                                                                  |
+| config     | Source-specific configuration as an MScript expression. For 'dataObject': a query expression (e.g., '{ where: { id: this.request.body.userId } }'). For 'libraryFunction': the function name and args. For 'apiCall': the API name or URL. |
+
+#### AgentContextSourceType
+
+Defines how a context source fetches its data.
+
+```js
+const AgentContextSourceType = {
+  dataObject: "dataObject",
+  libraryFunction: "libraryFunction",
+  apiCall: "apiCall",
+};
+```
+
+| Enum            | Description                                       |
+| --------------- | ------------------------------------------------- |
+| dataObject      | Queries a DataObject from the service's database. |
+| libraryFunction | Calls a function from the service library.        |
+| apiCall         | Invokes a BusinessApi or external HTTP endpoint.  |
+
+## AgentInputSettings
+
+**MPO Version:** 1.3.0
+
+Defines how incoming request data is transformed into the agent's prompt or input. Includes the prompt template (an MScript expression that builds the user message from request body, params, and context), file upload support for vision/audio agents, and dynamic context sources that fetch additional data to enrich the prompt.
+
+```typescript
+interface AgentInputSettings = {
+  promptTemplate : MScript;
+  acceptsUpload : Boolean;
+  maxFiles : Integer;
+  autoResize : Boolean;
+  autoConvert : Boolean;
+  contextSources : AgentContextSource[];
+}
+```
+
+| Field          | Description                                                                                                                                                                                                                                                      |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| promptTemplate | MScript expression that builds the user message from request data. Has access to 'this.request.body', 'this.request.params', and any context source variables. Example: 'this.request.body.message' or a template literal combining multiple fields.             |
+| acceptsUpload  | When true, the agent's endpoint accepts multipart/form-data with file uploads. A dedicated upload manager middleware is generated to handle validation, auto-conversion, and temporary storage. Required for vision (images) and audio STT (audio files) agents. |
+| maxFiles       | Maximum number of files accepted per request. Default: 1. Only relevant when acceptsUpload is true.                                                                                                                                                              |
+| autoResize     | When true, uploaded images are automatically resized to optimal dimensions for the model. Only relevant for vision modality.                                                                                                                                     |
+| autoConvert    | When true, uploaded audio/video files are automatically converted to a format supported by the provider. Only relevant for audio/video modality.                                                                                                                 |
+| contextSources | Dynamic data sources fetched at runtime to enrich the user prompt. Each source provides a named variable accessible in the promptTemplate via MScript. Use these to inject database records, computed values, or external data into the conversation.            |
+
+## AgentOutputSettings
+
+**MPO Version:** 1.3.0
+
+Controls how the AI model's response is transformed before returning to the client. Supports extracting a specific property from JSON responses, applying post-processing transformations, and optionally storing generated media files to a permanent bucket.
+
+```typescript
+interface AgentOutputSettings = {
+  responseProperty : String;
+  postProcess : MScript;
+  storeTo : MScript;
+}
+```
+
+| Field            | Description                                                                                                                                                                                                                                                                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| responseProperty | When the model returns JSON, extract this property as the response value. Example: 'result' extracts the 'result' field from the model's JSON output. Leave null to return the full response.                                                                                                                                        |
+| postProcess      | MScript expression to transform the model's output before sending to the client. The raw response is available as 'result'. Example: 'result.trim().toUpperCase()' or a more complex transformation function.                                                                                                                        |
+| storeTo          | MScript expression that evaluates to a bucket storage path. When set, generated media (images, audio, video) is auto-downloaded from the provider's temporary URL and stored permanently in the service's bucket. The permanent URL is returned instead. Example: 'agents/images/' + this.request.body.category + '/' + Date.now()'. |
+
+## AgentToolSettings
+
+**MPO Version:** 1.3.0
+
+Configures which tools the agent can invoke during its execution loop. Only applicable for text and vision modality agents. Tools follow the OpenAI/Anthropic function calling convention. The agent's tool-calling loop continues until the model stops requesting tools or the maxToolCalls guardrail is hit.
+
+```typescript
+interface AgentToolSettings = {
+  enableCrudTools : Boolean;
+  crudScopes : String;
+  apiTools : String;
+  agentTools : String;
+  libraryTools : String;
+  customTools : AgentCustomTool[];
+}
+```
+
+| Field           | Description                                                                                                                                                                                            |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| enableCrudTools | When true, auto-generates tool definitions from the service's DataObjects, exposing create/read/update/delete/list operations. Uses the same schema generation as the MCP layer.                       |
+| crudScopes      | Comma-separated list of DataObject names to expose as CRUD tools. Leave empty to expose all DataObjects. Example: 'User,Order,Product'.                                                                |
+| apiTools        | Comma-separated list of BusinessApi names to expose as callable tools. Each API becomes a tool the agent can invoke. Example: 'sendNotification,calculatePrice'.                                       |
+| agentTools      | Comma-separated list of other AI agent names to expose as tools. Enables cross-agent delegation — a text agent can invoke an image agent to generate visuals. Example: 'imageGenerator,translator'.    |
+| libraryTools    | Comma-separated list of service library function names to expose as tools. Each function becomes a callable tool with auto-generated parameter schemas. Example: 'formatCurrency,geocodeAddress'.      |
+| customTools     | Custom tool definitions with explicit name, description, JSON Schema parameters, and a handler function reference. Use when you need tools that don't map to existing CRUD, API, or library functions. |
+
+### AgentCustomTool
+
+**MPO Version:** 1.3.0
+
+Defines a custom tool that the agent can invoke during its execution loop. Custom tools are used when existing CRUD, API, or library tools are not sufficient. Each tool has a name, description (shown to the AI), a JSON Schema defining its parameters, and a handler pointing to a library function.
+
+```typescript
+interface AgentCustomTool = {
+  name : String;
+  description : String;
+  parameters : Text;
+  handler : MScript;
+}
+```
+
+| Field       | Description                                                                                                                                                                                              |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name        | Tool name as exposed to the AI model. Should be descriptive and unique within the agent's tool set. Example: 'searchProducts', 'sendEmail'.                                                              |
+| description | Human-readable description of what the tool does. This text is included in the tool definition sent to the AI model and helps it decide when to use the tool.                                            |
+| parameters  | JSON Schema defining the tool's input parameters. The AI model uses this schema to generate valid arguments. Example: '{"type":"object","properties":{"query":{"type":"string"}},"required":["query"]}'. |
+| handler     | MScript reference to a library function that implements the tool. Example: 'lib.searchProducts' or 'lib.sendEmail'. The function receives the parsed parameters as its argument.                         |
+
+## AgentChatSettings
+
+**MPO Version:** 1.3.0
+
+Conversation history management for chat-mode agents. Controls how messages are stored, truncated, and optionally summarized. Only applicable when executionMode is 'chat'.
+
+```typescript
+interface AgentChatSettings = {
+  historyStorage : AgentHistoryStorage;
+  maxHistoryMessages : Integer;
+  summarizeAfter : Integer;
+  refreshSystemPrompt : Boolean;
+}
+```
+
+| Field               | Description                                                                                                                                                                                                      |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| historyStorage      | Where conversation history is persisted: 'memory' for in-process storage (fast but lost on restart), 'database' for persistent storage (survives restarts, required for production).                             |
+| maxHistoryMessages  | Maximum number of messages retained in history. When exceeded, oldest messages are dropped (or summarized if summarizeAfter is set). Default: 100.                                                               |
+| summarizeAfter      | When message count exceeds this threshold, older messages are summarized into a single context message. Set to 0 to disable summarization and use simple truncation instead.                                     |
+| refreshSystemPrompt | When true, system prompt sources are re-evaluated on every conversation turn. Useful when prompt context is time-sensitive (e.g., current user status). When false, sources are evaluated only on session start. |
+
+### AgentHistoryStorage
+
+Defines where conversation history is stored for chat-mode agents.
+
+```js
+const AgentHistoryStorage = {
+  memory: "memory",
+  database: "database",
+};
+```
+
+| Enum     | Description                                                                                  |
+| -------- | -------------------------------------------------------------------------------------------- |
+| memory   | In-memory storage. Fast but lost on restart. Suitable for development or ephemeral sessions. |
+| database | Persistent database storage. History survives restarts. Required for production chat agents. |
+
+## AgentOrchestrationSettings
+
+**MPO Version:** 1.3.0
+
+Multi-agent orchestration configuration for orchestrator-mode agents. Defines the execution strategy and the steps to coordinate. Only applicable when executionMode is 'orchestrator'.
+
+```typescript
+interface AgentOrchestrationSettings = {
+  strategy : AgentOrchestrationStrategy;
+  maxIterations : Integer;
+  completionCondition : MScript;
+  orchestrationSteps : AgentOrchestrationStep[];
+}
+```
+
+| Field               | Description                                                                                                                                                                                                                             |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| strategy            | How steps are executed: 'sequential' runs steps one after another, 'parallel' runs steps marked as parallel concurrently, 'adaptive' lets the orchestrator AI decide which steps to run next based on intermediate results.             |
+| maxIterations       | Safety limit for the orchestrator loop. Prevents infinite loops in adaptive mode. Default: 10.                                                                                                                                          |
+| completionCondition | MScript expression evaluated after each iteration in adaptive mode. The orchestrator stops when this evaluates to true. Has access to 'stepResults' (all completed step outputs). Example: 'stepResults.validation?.approved === true'. |
+| orchestrationSteps  | The sequence of steps the orchestrator executes. Each step invokes a sub-agent with mapped input, captures its output, and optionally runs conditionally or in parallel with other steps.                                               |
+
+### AgentOrchestrationStrategy
+
+Defines how orchestrator agents execute their steps.
+
+```js
+const AgentOrchestrationStrategy = {
+  sequential: "sequential",
+  parallel: "parallel",
+  adaptive: "adaptive",
+};
+```
+
+| Enum       | Description                                                                                                                  |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| sequential | Steps run one after another in defined order.                                                                                |
+| parallel   | Steps marked as parallel run concurrently; others run sequentially.                                                          |
+| adaptive   | The orchestrator AI decides which steps to run next based on intermediate results, looping until completionCondition is met. |
+
+### AgentOrchestrationStep
+
+**MPO Version:** 1.3.0
+
+Defines a single step in an orchestrator agent's workflow. Each step invokes a sub-agent with mapped input and captures its output. Steps can be conditional and can run in parallel with other steps.
+
+```typescript
+interface AgentOrchestrationStep = {
+  name : String;
+  agentName : String;
+  inputMapping : MScript;
+  outputMapping : MScript;
+  condition : MScript;
+  parallel : Boolean;
+}
+```
+
+| Field         | Description                                                                                                                                                                                                                      |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name          | Unique step identifier within the orchestration workflow. Used in logging, progress events, and result references.                                                                                                               |
+| agentName     | Name of the sub-agent to invoke for this step. Must reference another AIAgent defined in the same service.                                                                                                                       |
+| inputMapping  | MScript expression that prepares the input for the sub-agent. Has access to 'this.request' (original request) and 'stepResults' (outputs from previously completed steps). Example: '{ message: stepResults.research.summary }'. |
+| outputMapping | MScript expression that transforms the sub-agent's output before storing it in stepResults. Has access to 'result' (the sub-agent's raw response). Example: 'result.choices[0].message.content'.                                 |
+| condition     | MScript expression evaluated before executing this step. The step is skipped if it evaluates to false. Has access to 'stepResults'. Example: 'stepResults.triage?.needsReview === true'.                                         |
+| parallel      | When true, this step can run concurrently with other parallel steps. Sequential steps wait for all preceding parallel steps to complete before running.                                                                          |
+
+## AgentImageSettings
+
+**MPO Version:** 1.3.0
+
+Image generation parameters. Only applicable when modality is 'image'. These settings are passed to the provider's image generation API (e.g., DALL-E, Fal AI).
+
+```typescript
+interface AgentImageSettings = {
+  size : String;
+  quality : AgentImageQuality;
+  style : AgentImageStyle;
+  count : Integer;
+}
+```
+
+| Field   | Description                                                                                                                                                      |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| size    | Output image dimensions. Common values: '1024x1024' (square), '1792x1024' (landscape), '1024x1792' (portrait). Available sizes depend on the provider and model. |
+| quality | Image quality level: 'standard' for faster/cheaper generation, 'hd' for higher detail. Not all providers support quality control.                                |
+| style   | Artistic style: 'natural' for realistic output, 'vivid' for hyper-real/dramatic output. Provider-specific.                                                       |
+| count   | Number of images to generate per request. Default: 1. Some providers support batch generation.                                                                   |
+
+### AgentImageQuality
+
+Defines the quality level for image generation.
+
+```js
+const AgentImageQuality = {
+  standard: "standard",
+  hd: "hd",
+};
+```
+
+| Enum     | Description                                                |
+| -------- | ---------------------------------------------------------- |
+| standard | Standard quality. Faster generation, lower cost.           |
+| hd       | High-definition quality. Slower generation, higher detail. |
+
+### AgentImageStyle
+
+Defines the artistic style for image generation.
+
+```js
+const AgentImageStyle = {
+  natural: "natural",
+  vivid: "vivid",
+};
+```
+
+| Enum    | Description                            |
+| ------- | -------------------------------------- |
+| natural | Realistic, photographic style.         |
+| vivid   | Hyper-real, dramatic, cinematic style. |
+
+## AgentAudioSettings
+
+**MPO Version:** 1.3.0
+
+Audio generation or transcription parameters. Only applicable when modality is 'audio'. Supports text-to-speech (TTS) and speech-to-text (STT) directions.
+
+```typescript
+interface AgentAudioSettings = {
+  direction : AgentAudioDirection;
+  voice : String;
+  outputFormat : AgentAudioOutputFormat;
+  language : String;
+}
+```
+
+| Field        | Description                                                                                                                                |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| direction    | The audio processing direction: 'tts' converts text to speech audio, 'stt' converts speech audio to text.                                  |
+| voice        | Voice identifier for TTS. Provider-specific (e.g., 'alloy', 'echo' for OpenAI; voice IDs for ElevenLabs). Leave null for provider default. |
+| outputFormat | Audio output format for TTS: 'mp3', 'wav', 'opus', or 'flac'. Default depends on provider.                                                 |
+| language     | Language code for STT transcription (e.g., 'en', 'tr', 'de'). Leave null for auto-detection.                                               |
+
+### AgentAudioDirection
+
+Defines whether the audio agent performs text-to-speech or speech-to-text.
+
+```js
+const AgentAudioDirection = {
+  tts: "tts",
+  stt: "stt",
+};
+```
+
+| Enum | Description                                            |
+| ---- | ------------------------------------------------------ |
+| tts  | Text-to-speech: converts text input into audio output. |
+| stt  | Speech-to-text: converts audio input into text output. |
+
+### AgentAudioOutputFormat
+
+Defines the output format for text-to-speech audio generation.
+
+```js
+const AgentAudioOutputFormat = {
+  mp3: "mp3",
+  wav: "wav",
+  opus: "opus",
+  flac: "flac",
+};
+```
+
+| Enum | Description                                      |
+| ---- | ------------------------------------------------ |
+| mp3  | MP3 format. Widely supported, good compression.  |
+| wav  | WAV format. Uncompressed, highest quality.       |
+| opus | Opus format. Excellent compression, low latency. |
+| flac | FLAC format. Lossless compression.               |
+
+## AgentVideoSettings
+
+**MPO Version:** 1.3.0
+
+Video generation parameters. Only applicable when modality is 'video'. Video generation is typically asynchronous — the agent polls for completion and streams progress events via SSE.
+
+```typescript
+interface AgentVideoSettings = {
+  duration : Integer;
+  aspectRatio : String;
+  resolution : String;
+}
+```
+
+| Field       | Description                                                                                                |
+| ----------- | ---------------------------------------------------------------------------------------------------------- |
+| duration    | Target video duration in seconds. Available range depends on the provider and model. Common: 4-16 seconds. |
+| aspectRatio | Video aspect ratio. Common values: '16:9' (landscape), '9:16' (portrait/vertical), '1:1' (square).         |
+| resolution  | Video resolution. Common values: '720p', '1080p'. Higher resolution may cost more and take longer.         |
+
+## AgentCustomEndpoint
+
+**MPO Version:** 1.3.0
+
+Custom provider endpoint configuration. Only applicable when provider is 'custom'. Allows connecting to any OpenAI-compatible API (self-hosted models, vLLM, Ollama, etc.) or Anthropic-compatible endpoints.
+
+```typescript
+interface AgentCustomEndpoint = {
+  baseUrl : String;
+  apiKeyEnvVar : String;
+  apiFormat : AgentApiFormat;
+}
+```
+
+| Field        | Description                                                                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| baseUrl      | Base URL of the custom API (e.g., 'https://my-model.example.com/v1' or 'http://localhost:11434/v1').                                                               |
+| apiKeyEnvVar | Name of the environment variable containing the API key for the custom endpoint (e.g., 'CUSTOM_AI_API_KEY'). The key is read from process.env at runtime.          |
+| apiFormat    | API format to use: 'openai' for OpenAI-compatible chat completions, 'anthropic' for Anthropic Messages format, 'raw' for full control over request/response shape. |
+
+### AgentApiFormat
+
+Defines the API format for custom provider endpoints.
+
+```js
+const AgentApiFormat = {
+  openai: "openai",
+  anthropic: "anthropic",
+  raw: "raw",
+};
+```
+
+| Enum      | Description                                                 |
+| --------- | ----------------------------------------------------------- |
+| openai    | OpenAI-compatible chat completions API format.              |
+| anthropic | Anthropic Messages API format.                              |
+| raw       | Raw HTTP request/response. Full control over payload shape. |
+
+## AgentEndpointSettings
+
+**MPO Version:** 1.3.0
+
+Controls how the agent is exposed as an API endpoint. Each agent can have a REST endpoint (synchronous) and/or an SSE endpoint (streaming). Authentication requirements and path customization are configured here.
+
+```typescript
+interface AgentEndpointSettings = {
+  hasRestEndpoint : Boolean;
+  hasSseEndpoint : Boolean;
+  basePath : String;
+  authRequired : Boolean;
+}
+```
+
+| Field           | Description                                                                                                                                                                |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| hasRestEndpoint | When true, generates a POST REST endpoint at /agents/{name} (or custom basePath). Returns the full response synchronously.                                                 |
+| hasSseEndpoint  | When true, generates a POST SSE endpoint at /agents/{name}/stream. Streams tokens (text), progress events (media generation), or step results (orchestrator) in real-time. |
+| basePath        | Custom base path override for the agent's endpoints. Default: '/agents/{name}'. Example: '/ai/chat' generates POST /ai/chat and POST /ai/chat/stream.                      |
+| authRequired    | When true, the agent's endpoints require a valid JWT token. Set to false for public-facing agents (e.g., a chatbot widget).                                                |
+
+## AgentGuardrails
+
+**MPO Version:** 1.3.0
+
+Safety limits and cost controls for the agent. Prevents runaway costs, excessive tool usage, and enforces input/output validation. These limits are enforced at runtime by the agent execution loop.
+
+```typescript
+interface AgentGuardrails = {
+  maxToolCalls : Integer;
+  maxTokenBudget : Integer;
+  maxFileSizeMb : Integer;
+  timeout : Integer;
+  inputValidation : MScript;
+  outputValidation : MScript;
+  allowedMimeTypes : String;
+}
+```
+
+| Field            | Description                                                                                                                                                             |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| maxToolCalls     | Maximum number of tool invocations allowed per request. Prevents infinite tool-calling loops. Default: 25.                                                              |
+| maxTokenBudget   | Maximum total tokens (input + output) allowed per request. Includes all messages in the conversation. Prevents excessive cost on a single request.                      |
+| maxFileSizeMb    | Maximum file size in MB for uploaded files. Enforced by the upload manager middleware.                                                                                  |
+| timeout          | Maximum execution time in milliseconds for a single agent request. Includes all tool calls and provider API calls. Default: 120000 (2 minutes).                         |
+| inputValidation  | MScript expression to validate the request input before processing. Return true to allow, false or a string error message to reject. Has access to 'this.request.body'. |
+| outputValidation | MScript expression to validate the model's output before returning to the client. Return true to allow, false or a string to reject. Has access to 'result'.            |
+| allowedMimeTypes | Comma-separated list of allowed MIME types for file uploads. Example: 'image/png,image/jpeg,image/webp' for vision agents. Enforced by the upload manager.              |

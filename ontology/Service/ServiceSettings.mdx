@@ -8,13 +8,15 @@ Defines the foundational settings of the service module, including basic metadat
 interface ServiceSettings = {
   serviceBasics : ServiceBasics;
   serviceOptions : ServiceOptions;
+  realtimeConfig : RealtimeConfig;
 }
 ```
 
-| Field          | Description                                                                                                                                                                                                   |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| serviceBasics  | Defines the basic metadata of the service, including its unique name, description, and optional custom configuration variables. These basics are used throughout code generation, routing, and documentation. |
-| serviceOptions | Defines basic options of the service for authentication, http and data model                                                                                                                                  |
+| Field          | Description                                                                                                                                                                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| serviceBasics  | Defines the basic metadata of the service, including its unique name, description, and optional custom configuration variables. These basics are used throughout code generation, routing, and documentation.                                          |
+| serviceOptions | Defines basic options of the service for authentication, http and data model                                                                                                                                                                           |
+| realtimeConfig | Configures the Socket.IO server for realtime hubs. Only relevant when the service has one or more RealtimeHub definitions. Controls the scaling adapter (Redis for multi-instance, memory for dev), heartbeat timings, and per-user connection limits. |
 
 ## ServiceBasics
 
@@ -109,3 +111,41 @@ const DbTypes = {
 | ---------- | ------------------------------------------------------------------- |
 | postgresql | Use PostgreSQL for relational database management.                  |
 | mongodb    | Use MongoDB for document-oriented data storage (currently in beta). |
+
+## RealtimeConfig
+
+**MPO Version:** 1.3.0
+
+Service-level configuration for the Socket.IO server powering realtime hubs. Only active when the service has at least one RealtimeHub. Controls the scaling adapter, heartbeat timings, and connection limits.
+
+```typescript
+interface RealtimeConfig = {
+  adapter : HubScalingAdapter;
+  heartbeatInterval : Integer;
+  heartbeatTimeout : Integer;
+  maxConnectionsPerUser : Integer;
+}
+```
+
+| Field                 | Description                                                                                                                                                                       |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| adapter               | The Socket.IO adapter for multi-instance scaling. Use 'redis' for production (broadcasts events across instances via Redis pub/sub) or 'memory' for single-instance development.  |
+| heartbeatInterval     | How often the Socket.IO server sends heartbeat pings to connected clients, in milliseconds. Default: 25000 (25 seconds).                                                          |
+| heartbeatTimeout      | How long the server waits for a heartbeat response before considering the client disconnected, in milliseconds. Must be less than heartbeatInterval. Default: 20000 (20 seconds). |
+| maxConnectionsPerUser | Maximum number of concurrent Socket.IO connections allowed per authenticated user. Prevents resource exhaustion from excessive client connections. Default: 10.                   |
+
+### HubScalingAdapter
+
+Defines the Socket.IO adapter for multi-instance scaling.
+
+```js
+const HubScalingAdapter = {
+  redis: "redis",
+  memory: "memory",
+};
+```
+
+| Enum   | Description                                                                                                            |
+| ------ | ---------------------------------------------------------------------------------------------------------------------- |
+| redis  | Uses @socket.io/redis-adapter for broadcasting across multiple service instances. Required for production deployments. |
+| memory | In-memory adapter. Only works with a single service instance. Suitable for development.                                |

@@ -1,0 +1,423 @@
+# RealtimeHub
+
+**MPO Version:** 1.3.0
+
+Defines a bidirectional realtime communication hub powered by Socket.IO. Each hub provides room-based messaging with built-in message types (text, image, video, audio, document, sticker, contact, location, system) and optional custom message types for app-specific structured data. Messages are always persisted to an auto-generated DataObject. The hub auto-bridges CRUD events from the room, membership, and message DataObjects via Kafka, and provides standard events (typing, read receipts, presence) as toggles. Hubs are mounted as Socket.IO namespaces and expose auto-generated REST endpoints.
+
+```typescript
+interface RealtimeHub = {
+  hubBasics : HubBasics;
+  roomSettings : HubRoomSettings;
+  hubRoles : HubRole[];
+  messageSettings : HubMessageSettings;
+  eventSettings : HubEventSettings;
+  historySettings : HubHistorySettings;
+  guardrails : HubGuardrails;
+}
+```
+
+| Field           | Description |
+| --------------- | ----------- |
+| hubBasics       | undefined   |
+| roomSettings    | undefined   |
+| hubRoles        | undefined   |
+| messageSettings | undefined   |
+| eventSettings   | undefined   |
+| historySettings | undefined   |
+| guardrails      | undefined   |
+
+## HubBasics
+
+**MPO Version:** 1.3.0
+
+Core identity of the realtime hub. The name is used as the Socket.IO namespace path (/hub/{name}), REST endpoint prefix (/{name}), and code identifier.
+
+```typescript
+interface HubBasics = {
+  name : String;
+  description : Text;
+}
+```
+
+| Field       | Description                                                                                                                                                                                                            |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name        | Unique hub identifier within the service. Used as the Socket.IO namespace (/hub/{name}) and REST endpoint prefix. Must be a valid code name (camelCase, no spaces). Examples: 'chatHub', 'gameLobby', 'liveDashboard'. |
+| description | Human-readable description of the hub's purpose. Used in documentation and AI assistant context.                                                                                                                       |
+
+## HubRoomSettings
+
+**MPO Version:** 1.3.0
+
+Configures how rooms are managed and who can join them. Every hub requires a roomDataObject -- an existing DataObject that represents rooms. Authorization uses a layered flow: (1) roomEligibility checks if the room supports real-time features, (2) absoluteRoles bypass all checks, (3) checkRoles gates access to specific user roles, (4) checkScript applies a custom condition, (5) authSources and authScripts (OR-logic) determine the user's hub role. The first matching authSource/authScript wins (ordered highest-privilege first).
+
+```typescript
+interface HubRoomSettings = {
+  roomDataObject : LocalDataObjectName;
+  roomEligibility : MScript;
+  absoluteRoles : String[];
+  checkRoles : String[];
+  checkScript : MScript;
+  authSources : HubAuthSource[];
+  authScripts : HubAuthScript[];
+}
+```
+
+| Field           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| roomDataObject  | Name of the existing DataObject that represents rooms in this hub. The DataObject must be defined in the same service. Examples: 'Chat', 'ChessMatch', 'SupportTicket'. Clients join rooms by referencing the ID of this DataObject.                                                                                                                                                                                                                                                |
+| roomEligibility | MScript condition evaluated against the room record (fetched from Elasticsearch) BEFORE any authorization. The context variable name is the roomDataObject name (e.g., if roomDataObject is 'catalogEvent', use 'catalogEvent.chatEnabled'). The generic alias 'room' is also available. If false, the room does not support real-time features and NOBODY can join -- including absoluteRoles. Examples: 'catalogEvent.chatEnabled == true', 'catalogEvent.status == "published"'. |
+| absoluteRoles   | List of role names (from session.roleId) that bypass ALL authorization checks. Users with any of these roles get the built-in 'system' hub role with full permissions. Checked AFTER roomEligibility (even superAdmins cannot join ineligible rooms). Examples: ['superAdmin'], ['superAdmin', 'systemAdmin'].                                                                                                                                                                      |
+| checkRoles      | List of role names that are REQUIRED to proceed to auth sources. If defined, users whose roleId is NOT in this list are immediately denied. Use to restrict hub access to specific user tiers. Examples: ['premiumUser', 'subscriber']. Leave empty to allow all roles.                                                                                                                                                                                                             |
+| checkScript     | MScript condition evaluated after checkRoles and before authSources. Context variables: 'user' (session data) and the roomDataObject name for the room record (e.g., 'catalogEvent'). The generic alias 'room' is also available. Must return true to proceed. Examples: 'user.city == catalogEvent.city', 'user.subscriptionLevel >= catalogEvent.minLevel'.                                                                                                                       |
+| authSources     | Ordered array of DataObject-based authorization sources. Each source queries Elasticsearch for a record matching the user and room. Sources are checked top-to-bottom (highest-privilege first). The FIRST matching source determines the user's hub role -- remaining sources are skipped. Each source can have an optional 'condition' MScript evaluated against the found record (context variable: 'record').                                                                   |
+| authScripts     | Ordered array of MScript-based authorization sources. Checked after authSources if no authSource matched. Each script is evaluated with 'user' (session) and 'room' (room record) context. The FIRST script returning true determines the user's hub role. Use for complex authorization logic that can call library functions.                                                                                                                                                     |
+
+### HubAuthSource
+
+**MPO Version:** 1.3.0
+
+A DataObject-based authorization source for hub room access. Queries Elasticsearch for a record in the specified DataObject where userField matches the authenticated user and roomField matches the target room. If a record is found (and the optional condition passes), the user is granted the specified hubRole. Sources are evaluated top-to-bottom; the first match wins.
+
+```typescript
+interface HubAuthSource = {
+  name : String;
+  sourceObject : DataObjectName;
+  userField : PropRefer;
+  roomField : PropRefer;
+  condition : MScript;
+  hubRole : String;
+}
+```
+
+| Field        | Description                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name         | Unique identifier for this authorization source. Used as a reference name in logs and documentation. Examples: 'ticketHolder', 'eventOwner', 'hostAssignment'.                                                                                                                                                                                                                                                 |
+| sourceObject | Name of the DataObject to query in Elasticsearch. Can be the room DataObject itself (for ownership checks), a membership/join-table DataObject, or any other DataObject. The query searches for a record where userField = current userId AND roomField = roomId. Examples: 'issuedTicket', 'eventHost', 'catalogEvent'.                                                                                       |
+| userField    | Property on the DataObject that holds the user identifier. Matched against the authenticated user's userId. Examples: 'userId', 'ownerUserId', 'createdBy', 'playerId'.                                                                                                                                                                                                                                        |
+| roomField    | Property on the DataObject that holds the room identifier. Matched against the room's ID. Use 'id' when checking the room DataObject itself (ownership pattern). Examples: 'eventId', 'chatId', 'id'.                                                                                                                                                                                                          |
+| condition    | Optional MScript condition evaluated against the found record. The context variable name matches the 'sourceObject' name (e.g., if sourceObject is 'issuedTicket', use 'issuedTicket.status'). The generic alias 'record' is also available. If the condition returns false, this source does not match and the next source is tried. Examples: 'issuedTicket.status == "active"', 'eventHost.role == "lead"'. |
+| hubRole      | The hub role assigned to the user if this source matches. Must correspond to a role defined in the hubRoles section. If null, the user is authorized but gets no specific role (all members have equal permissions). Examples: 'owner', 'moderator', 'attendee'.                                                                                                                                               |
+
+### HubAuthScript
+
+**MPO Version:** 1.3.0
+
+An MScript-based authorization source for hub room access. The script is evaluated with 'user' (session data) and 'room' (room record from Elasticsearch) as context variables. Scripts can call library functions for complex logic. If the script returns true, the user is granted the specified hubRole. Scripts are evaluated after authSources, top-to-bottom; the first match wins.
+
+```typescript
+interface HubAuthScript = {
+  name : String;
+  script : MScript;
+  hubRole : String;
+}
+```
+
+| Field   | Description                                                                                                                                                                                                                                                                              |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name    | Unique identifier for this authorization script. Used as a reference name in logs and documentation. Examples: 'vipAccess', 'geoRestriction', 'publicRoomGuest'.                                                                                                                         |
+| script  | MScript expression that must evaluate to a boolean. Context variables: 'user' (authenticated session with userId, roleId, etc.) and 'room' (the room DataObject record). Can call library functions. Examples: 'lib.checkVIPAccess(user, room)', 'user.tier == "gold" && room.isPublic'. |
+| hubRole | The hub role assigned to the user if this script returns true. Must correspond to a role defined in the hubRoles section. If null, the user is authorized but gets no specific role (all members have equal permissions).                                                                |
+
+## HubRole
+
+**MPO Version:** 1.3.0
+
+Defines a named permission set for hub users. Each role controls what actions a user can perform within a room. Roles are assigned by authSources, authScripts, or absoluteRoles. A built-in 'system' role (all permissions true) is automatically used for absoluteRoles users. When globalModeration or the role's 'moderated' flag is true, messages require moderator approval before broadcast.
+
+```typescript
+interface HubRole = {
+  name : String;
+  canRead : Boolean;
+  canSend : Boolean;
+  allowedMessageTypes : String;
+  moderated : Boolean;
+  canModerate : Boolean;
+  canDeleteAny : Boolean;
+  canManageRoom : Boolean;
+}
+```
+
+| Field               | Description                                                                                                                                                                                               |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name                | Unique role name. Referenced by authSources and authScripts via their hubRole property. Convention: lowercase descriptive names. Examples: 'owner', 'moderator', 'attendee', 'viewer'.                    |
+| canRead             | When true, the user can receive messages and events in the room. When false, the user is in the room but receives nothing (rare use case). Default: true.                                                 |
+| canSend             | When true, the user can send messages. When false, the user is read-only (viewer). Default: true.                                                                                                         |
+| allowedMessageTypes | Comma-separated list of message types this role can send. If empty, all hub message types are allowed. Use to restrict certain roles to text-only or exclude media types. Examples: 'text', 'text,image'. |
+| moderated           | When true, messages from users with this role are saved as 'pending' and require moderator approval before being broadcast to the room. Default: false.                                                   |
+| canModerate         | When true, the user can approve/reject pending messages, and block/silence other users. Default: false.                                                                                                   |
+| canDeleteAny        | When true, the user can delete any message in the room (not just their own). Default: false.                                                                                                              |
+| canManageRoom       | When true, the user can update room settings and kick users from the room. Default: false.                                                                                                                |
+
+## HubMessageSettings
+
+**MPO Version:** 1.3.0
+
+Controls message structure and persistence. Every hub auto-generates a Message DataObject with system fields (id, roomId, senderId, timestamp), a messageType enum column, and a content JSONB column. Designers select which built-in message types to support (text, image, video, etc.) and can define custom message types with app-specific field schemas. Cross-cutting features (reply threading, reactions, forwarded flag) are toggleable across all message types.
+
+```typescript
+interface HubMessageSettings = {
+  dataObjectName : String;
+  messageTypes : HubMessageType[];
+  enableReplyTo : Boolean;
+  enableReaction : Boolean;
+  enableForwarded : Boolean;
+  customMessageTypes : HubCustomMessageType[];
+}
+```
+
+| Field              | Description                                                                                                                                                                                                                                                                                                     |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| dataObjectName     | Name for the auto-generated Message DataObject. Must be a valid code name. Convention: '{HubName}Message'. Example: 'ChatHubMessage', 'GameLobbyMessage'. If omitted, defaults to '{hubName}Message'.                                                                                                           |
+| messageTypes       | Built-in message types to support in this hub. Each type has a known content schema managed by the framework. Select the types relevant to your use case. The messageType column in the DataObject becomes an enum of all selected built-in types plus any custom message type names.                           |
+| enableReplyTo      | When true, adds a 'replyTo' JSON field to all messages for threading/reply support. Contains { id, preview }. Works across all message types.                                                                                                                                                                   |
+| enableReaction     | When true, adds a 'reaction' JSON array field to all messages for emoji reactions. Each entry has emoji, userId, timestamp. Works across all message types.                                                                                                                                                     |
+| enableForwarded    | When true, adds a 'forwarded' Boolean field to all messages indicating if the message was forwarded from another room. Works across all message types.                                                                                                                                                          |
+| customMessageTypes | App-specific message types beyond the built-in set. Each custom type defines a name (added to the messageType enum) and a field schema validated at runtime. Use for structured payloads like game moves, bids, polls, or domain-specific actions. The fields are stored in the message's content JSONB column. |
+
+### HubMessageType
+
+Built-in message content types for hub messages. Each type defines a known content schema stored in the message's content JSONB column.
+
+```js
+const HubMessageType = {
+  text: "text",
+  image: "image",
+  video: "video",
+  audio: "audio",
+  document: "document",
+  sticker: "sticker",
+  contact: "contact",
+  location: "location",
+  system: "system",
+};
+```
+
+| Enum     | Description                                                                                               |
+| -------- | --------------------------------------------------------------------------------------------------------- |
+| text     | Plain text message. Content: { body }.                                                                    |
+| image    | Image message. Content: { mediaUrl, thumbnail, caption, width, height }.                                  |
+| video    | Video message. Content: { mediaUrl, thumbnail, caption, duration }.                                       |
+| audio    | Audio/voice message. Content: { mediaUrl, duration, waveform }.                                           |
+| document | File/document message. Content: { mediaUrl, fileName, fileSize, mimeType }.                               |
+| sticker  | Sticker image. Content: { stickerUrl, stickerPackId }.                                                    |
+| contact  | Shared contact card. Content: { contactName, contactPhone, contactUserId }.                               |
+| location | Location pin. Content: { lat, lng, address, label }.                                                      |
+| system   | Auto-generated system message (member joined, room renamed, etc.). Content: { systemAction, systemData }. |
+
+### HubCustomMessageType
+
+**MPO Version:** 1.3.0
+
+Defines a custom (app-specific) message type for the hub. Custom message types extend the built-in types with designer-defined names and field schemas. Each custom type adds its name to the messageType enum in the generated DataObject. The content JSONB column stores the fields defined here, validated at runtime. Examples: 'chessMove' with from/to/piece fields, 'nudge' with animation field, 'bid' with amount/currency fields.
+
+```typescript
+interface HubCustomMessageType = {
+  name : String;
+  description : String;
+  fields : HubCustomField[];
+}
+```
+
+| Field       | Description                                                                                                                                                                                                                                        |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name        | Unique name for this custom message type. Becomes an entry in the messageType enum alongside built-in types. Must be a valid code name (camelCase). Examples: 'chessMove', 'nudge', 'bid', 'pollVote'.                                             |
+| description | Human-readable description of what this message type represents and when it is used.                                                                                                                                                               |
+| fields      | Typed fields that make up this custom message type's content schema. Each field has a name, type, and optional constraints. Fields are validated before broadcast and persistence. The entire set is stored in the message's content JSONB column. |
+
+#### HubCustomField
+
+**MPO Version:** 1.3.0
+
+Defines a single field in a custom message type's content schema. Fields are stored inside the message's content JSONB column and validated before persistence and broadcast. For Enum types, provide comma-separated allowed values in enumValues.
+
+```typescript
+interface HubCustomField = {
+  name : String;
+  fieldType : HubCustomFieldType;
+  required : Boolean;
+  description : String;
+  enumValues : String;
+  defaultValue : String;
+}
+```
+
+| Field        | Description                                                                                                                                    |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| name         | Field name in the custom message content JSON. Must be a valid JavaScript identifier. Example: 'from', 'piece', 'bidAmount', 'animation'.      |
+| fieldType    | Data type of this field. Determines validation and serialization. Use 'Enum' with enumValues for fixed-choice fields.                          |
+| required     | When true, messages of this custom type must include this field. Validated before persistence and broadcast.                                   |
+| description  | Human-readable description of the field's purpose. Used in documentation and AI context.                                                       |
+| enumValues   | Comma-separated list of allowed values when fieldType is 'Enum'. Example: 'pawn,rook,knight,bishop,queen,king'. Ignored for other field types. |
+| defaultValue | Default value for this field if not provided in the message payload. Stored as a string and coerced to the field type at runtime.              |
+
+##### HubCustomFieldType
+
+Data types for fields in custom message type definitions.
+
+```js
+const HubCustomFieldType = {
+  String: "String",
+  Text: "Text",
+  Integer: "Integer",
+  Decimal: "Decimal",
+  Boolean: "Boolean",
+  ID: "ID",
+  DateTime: "DateTime",
+  Enum: "Enum",
+  JSON: "JSON",
+};
+```
+
+| Enum     | Description                                                  |
+| -------- | ------------------------------------------------------------ |
+| String   | Short text, up to 255 characters.                            |
+| Text     | Long-form text content.                                      |
+| Integer  | Whole number.                                                |
+| Decimal  | Floating-point number.                                       |
+| Boolean  | True or false.                                               |
+| ID       | UUID or ObjectId reference.                                  |
+| DateTime | ISO 8601 date-time string.                                   |
+| Enum     | One of a fixed set of string values (defined in enumValues). |
+| JSON     | Arbitrary JSON object or array.                              |
+
+## HubEventSettings
+
+**MPO Version:** 1.3.0
+
+Configures standard events, auto-bridged DataObject events, custom events, and external Kafka events. Standard events (typing, recording, read receipts, delivery receipts, presence) are toggleable -- the framework generates the socket handlers and payload validation. Auto-bridge automatically listens to CRUD events from the room, membership, and message DataObjects and broadcasts them to hub rooms. Custom events and Kafka events remain for app-specific signals and external sources.
+
+```typescript
+interface HubEventSettings = {
+  enableTypingIndicator : Boolean;
+  enableRecordingIndicator : Boolean;
+  enableReadReceipts : Boolean;
+  enableDeliveryReceipts : Boolean;
+  enablePresence : Boolean;
+  autoBridgeDataEvents : Boolean;
+  customEvents : HubCustomEvent[];
+  kafkaEvents : HubKafkaEvent[];
+}
+```
+
+| Field                    | Description                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| enableTypingIndicator    | When true, enables built-in typing/stopTyping events. Clients emit 'hub:event' with event 'typing' and the server broadcasts 'hub:typing' / 'hub:stopTyping' to room members. Ephemeral (not persisted).                                                                                                                                                                                        |
+| enableRecordingIndicator | When true, enables built-in recording/stopRecording events for voice message recording state. Ephemeral (not persisted).                                                                                                                                                                                                                                                                        |
+| enableReadReceipts       | When true, enables built-in read receipt events. Clients emit messageRead with { roomId, lastReadTimestamp } and the server broadcasts 'hub:messageRead' to room members. Persisted.                                                                                                                                                                                                            |
+| enableDeliveryReceipts   | When true, enables built-in delivery receipt events. Clients emit messageDelivered when a message is received, server broadcasts 'hub:messageDelivered'. Persisted.                                                                                                                                                                                                                             |
+| enablePresence           | When true, enables built-in online/offline/away presence events. The server tracks connection state and broadcasts 'hub:online', 'hub:offline', 'hub:away' to room members. Ephemeral.                                                                                                                                                                                                          |
+| autoBridgeDataEvents     | When true (default), the hub automatically subscribes to Kafka CRUD events from the room DataObject, membership DataObject, and message DataObject. Events like memberJoined, memberLeft, messageEdited, messageDeleted, roomUpdated, roomClosed are broadcast to the appropriate rooms without manual configuration. If 'system' message type is enabled, these also generate system messages. |
+| customEvents             | App-specific events beyond the standard set. Define named signals with a direction (clientToRoom, serverToClient, serverToRoom) and an ephemeral flag. Use for domain-specific interactions like game clock updates, collaborative cursor tracking, or custom notifications that don't fit built-in standard events.                                                                            |
+| kafkaEvents              | External Kafka topic events to bridge into hub rooms. Use for events from other services or topics not covered by auto-bridge (which handles the hub's own room, membership, and message DataObjects). Each entry specifies a topic, a filter expression, and a target room expression.                                                                                                         |
+
+### HubCustomEvent
+
+**MPO Version:** 1.3.0
+
+Defines a custom event that clients or the server can emit within the hub. Custom events go beyond standard messages -- they carry typed payloads for signals like typing indicators, read receipts, game actions, or system notifications. Ephemeral events are broadcast but not persisted.
+
+```typescript
+interface HubCustomEvent = {
+  name : String;
+  description : String;
+  ephemeral : Boolean;
+  direction : HubEventDirection;
+}
+```
+
+| Field       | Description                                                                                                                                                                                                     |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name        | Event name. Used as the Socket.IO event identifier. Examples: 'typing', 'messageRead', 'gameOver', 'presence'. Convention: camelCase.                                                                           |
+| description | Human-readable description of when and why this event is emitted.                                                                                                                                               |
+| ephemeral   | When true, the event is broadcast to room members but not persisted to the database. Use for high-frequency signals like typing indicators, cursor positions, or presence pings.                                |
+| direction   | Who can emit this event and who receives it. 'clientToRoom' = client emits, server broadcasts to room. 'serverToClient' = server emits to a specific client. 'serverToRoom' = server emits to all room members. |
+
+#### HubEventDirection
+
+Defines the direction of a custom hub event.
+
+```js
+const HubEventDirection = {
+  clientToRoom: "clientToRoom",
+  serverToClient: "serverToClient",
+  serverToRoom: "serverToRoom",
+};
+```
+
+| Enum           | Description                                                               |
+| -------------- | ------------------------------------------------------------------------- |
+| clientToRoom   | Client emits to the server, which broadcasts to all room members.         |
+| serverToClient | Server emits directly to a specific client (e.g., presence updates).      |
+| serverToRoom   | Server emits to all members of a room (e.g., system messages, deletions). |
+
+### HubKafkaEvent
+
+**MPO Version:** 1.3.0
+
+Bridges a Kafka topic message into the hub as a room-scoped event. When a matching message arrives on the configured Kafka topic, the filterExpression is evaluated. If it passes, the targetRoomExpression extracts the room ID, and the event is broadcast to all clients in that room. Use for backend-driven updates like participant changes, status transitions, or external system notifications.
+
+```typescript
+interface HubKafkaEvent = {
+  name : String;
+  description : String;
+  topic : String;
+  filterExpression : MScript;
+  targetRoomExpression : MScript;
+}
+```
+
+| Field                | Description                                                                                                                                                                                                                                         |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name                 | Event name emitted to room clients when a matching Kafka message arrives. Example: 'participantAdded', 'statusChanged'.                                                                                                                             |
+| description          | Human-readable description of what this Kafka-bridged event represents.                                                                                                                                                                             |
+| topic                | Kafka topic to subscribe to. The hub creates a consumer for this topic and evaluates incoming messages against the filterExpression.                                                                                                                |
+| filterExpression     | MScript expression evaluated against each Kafka message to decide if it should be bridged. Has access to 'data' (the parsed message payload). Example: 'data.eventType === "participant.added"'. If omitted, all messages on the topic are bridged. |
+| targetRoomExpression | MScript expression to extract the target room ID from the Kafka message. Has access to 'data'. Example: 'data.chatId'. The event is broadcast only to clients in this room.                                                                         |
+
+## HubHistorySettings
+
+**MPO Version:** 1.3.0
+
+Controls whether message history is sent to clients when they join a room. When enabled, the server queries the message DataObject for the most recent messages and emits them as a 'hub:history' event immediately after join confirmation.
+
+```typescript
+interface HubHistorySettings = {
+  historyEnabled : Boolean;
+  historyLimit : Integer;
+}
+```
+
+| Field          | Description                                                                                                                         |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| historyEnabled | When true, sends the most recent messages to a client when they join a room. Requires autoDataObject to be true in messageSettings. |
+| historyLimit   | Number of most recent messages to send when a client joins a room. Default: 50.                                                     |
+
+## HubGuardrails
+
+**MPO Version:** 1.3.0
+
+Safety limits, rate controls, moderation settings, and caching for the hub. Prevents resource exhaustion, abuse, and oversized payloads. All values have sensible defaults but should be tuned for production use cases.
+
+```typescript
+interface HubGuardrails = {
+  maxUsersPerRoom : Integer;
+  maxRoomsPerUser : Integer;
+  messageRateLimit : Integer;
+  maxMessageSize : Integer;
+  connectionTimeout : Integer;
+  authCacheTTL : Integer;
+  globalModeration : Boolean;
+  defaultSilenced : Boolean;
+}
+```
+
+| Field             | Description                                                                                                                                                                                                                                                                                            |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| maxUsersPerRoom   | Maximum number of concurrent users allowed in a single room. When exceeded, new join requests are rejected. Default: 1000.                                                                                                                                                                             |
+| maxRoomsPerUser   | Maximum number of rooms a single user can be joined to simultaneously. Prevents memory exhaustion from users joining too many rooms. Default: 50.                                                                                                                                                      |
+| messageRateLimit  | Maximum number of messages a single user can send per minute across all rooms. Exceeding this triggers a temporary cooldown. Default: 60.                                                                                                                                                              |
+| maxMessageSize    | Maximum message payload size in bytes. Messages exceeding this limit are rejected. Default: 65536 (64 KB).                                                                                                                                                                                             |
+| connectionTimeout | Idle connection timeout in milliseconds. Connections with no activity (no messages, no heartbeats) for this duration are disconnected. Default: 300000 (5 minutes).                                                                                                                                    |
+| authCacheTTL      | Time-to-live in seconds for the Redis auth cache. After a user's authorization is resolved, the result (hubRole, permissions) is cached in Redis. Subsequent joins within the TTL skip auth source checks. Set to 0 to disable caching. Default: 300 (5 minutes).                                      |
+| globalModeration  | When true, ALL messages in the hub require moderator approval before being broadcast, regardless of the sender's hubRole. When false, only messages from roles with 'moderated: true' go through moderation. Default: false.                                                                           |
+| defaultSilenced   | When true, all users join rooms in a silenced state (canSend overridden to false) regardless of their hubRole. Users with canModerate permission are exempt. Other users must request speak permission, which a moderator can grant. Useful for webinar/classroom/town-hall scenarios. Default: false. |

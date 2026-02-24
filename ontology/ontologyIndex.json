@@ -102,7 +102,9 @@
           "type": "file",
           "title": "Edge Controller",
           "path": "EdgeController.mdx"
-        }
+        },
+        { "type": "file", "title": "AI Agent", "path": "AIAgent.mdx" },
+        { "type": "file", "title": "Realtime Hub", "path": "RealtimeHub.mdx" }
       ]
     }
   ]
