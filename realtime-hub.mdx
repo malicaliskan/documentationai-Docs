@@ -39,7 +39,7 @@ Each RealtimeHub is mounted as a Socket.IO **namespace** (`/hub/{hubName}`) on t
 1. **Authentication** -- Token-based auth middleware validates every socket connection via the existing session layer (HexaAuth).
 2. **Room authorization** -- A configurable pipeline of role checks, script evaluations, and DataObject-based auth sources determines who can join each room and what hub role they receive.
 3. **Message types** -- Built-in types (text, image, video, audio, document, sticker, contact, location, system) with known schemas, plus designer-defined custom message types for app-specific structured data.
-4. **Persistence** -- Every hub auto-generates a Message DataObject. Messages are always persisted with system fields, a messageType discriminator, and a content JSONB column.
+4. **Persistence** -- Every hub auto-generates a Message DataObject. Messages are always persisted with system fields, a messageType discriminator, a content JSONB column, and denormalized sender identity (`senderName`, `senderAvatar`) for fast history rendering.
 5. **Standard events** -- Typing indicators, recording indicators, read receipts, delivery receipts, and presence are built-in toggles.
 6. **Auto-bridge** -- CRUD events from the room, membership, and message DataObjects are automatically bridged to connected clients via Kafka.
 7. **Custom events** -- Named signals beyond messages for app-specific needs (game actions, cursor tracking).
@@ -336,6 +336,16 @@ These apply to **all** message types:
 | `enableReplyTo` | `replyTo` (JSON) | Any message can quote another |
 | `enableReaction` | `reaction` (JSON) | Any message can have emoji reactions |
 | `enableForwarded` | `forwarded` (Boolean) | Any message can be marked as forwarded |
+
+### Sender Identity in Messages
+
+Every message persisted by the hub includes denormalized sender identity fields -- `senderName` and `senderAvatar` -- populated automatically from the user's session at send time. This eliminates the need for frontend clients to make separate user profile lookups when rendering chat history or incoming messages.
+
+**Real-time events** (`hub:messageArrived`, `hub:messagePending`) include a `sender` envelope with `{ id, fullname, avatar }`.
+
+**Persisted messages** (history and REST responses) include `senderName` and `senderAvatar` directly on the message record.
+
+The `hub:presence` event also includes `fullname` and `avatar` on the `user` object, so the frontend can display who joined or left with their display name and profile picture.
 
 ### Custom Message Types
 
