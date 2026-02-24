@@ -120,15 +120,15 @@ Every hub requires a **room DataObject** -- an existing DataObject in the same s
 ```json
 {
   "roomSettings": {
-    "roomDataObject": "CatalogEvent",
+    "roomDataObject": "catalogEvent",
     "roomEligibility": "catalogEvent.chatEnabled == true",
     "absoluteRoles": ["superAdmin"],
     "checkRoles": ["premiumUser", "subscriber"],
     "checkScript": "user.city == catalogEvent.city",
     "authSources": [
-      { "name": "eventOwner", "object": "CatalogEvent", "userField": "createdBy", "roomField": "id", "hubRole": "owner" },
-      { "name": "eventHost", "object": "EventHost", "userField": "userId", "roomField": "eventId", "hubRole": "moderator" },
-      { "name": "ticketHolder", "object": "IssuedTicket", "userField": "ownerUserId", "roomField": "eventId", "condition": "issuedTicket.status == 'active'", "hubRole": "attendee" }
+      { "name": "eventOwner", "sourceObject": "catalogEvent", "userField": "createdBy", "roomField": "id", "hubRole": "owner" },
+      { "name": "eventHost", "sourceObject": "eventHost", "userField": "userId", "roomField": "eventId", "hubRole": "moderator" },
+      { "name": "ticketHolder", "sourceObject": "issuedTicket", "userField": "ownerUserId", "roomField": "eventId", "condition": "issuedTicket.status == 'active'", "hubRole": "attendee" }
     ],
     "authScripts": [
       { "name": "vipAccess", "script": "lib.checkVIPAccess(user, room)", "hubRole": "viewer" }
@@ -141,7 +141,7 @@ Every hub requires a **room DataObject** -- an existing DataObject in the same s
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `roomDataObject` | String | -- | Name of the DataObject representing rooms. |
+| `roomDataObject` | LocalDataObjectName | -- | DataObject representing rooms in this hub. Selected from the service's DataObject list. |
 | `roomEligibility` | MScript | `null` | Condition evaluated against the room record. The context variable name matches the `roomDataObject` name (e.g., `catalogEvent.chatEnabled`). The generic alias `room` is also available. If `false`, nobody can join (including `absoluteRoles`). |
 | `absoluteRoles` | String[] | `[]` | List of role names that bypass all auth checks. Users with a matching role get the built-in `system` role with full permissions. |
 | `checkRoles` | String[] | `[]` | List of role names REQUIRED to proceed. Users without any of these roles are denied immediately. |
@@ -156,10 +156,10 @@ Each entry in `authSources` queries an Elasticsearch-indexed DataObject to deter
 | Property | Type | Description |
 |----------|------|-------------|
 | `name` | String | Unique identifier for this auth source. Used in logs and documentation. |
-| `object` | String | DataObject to query in Elasticsearch. |
-| `userField` | String | Field on the DataObject matching the user's ID. |
-| `roomField` | String | Field on the DataObject matching the room's ID. |
-| `condition` | MScript | Optional condition evaluated on the found record. The context variable name matches the `object` name (e.g., `issuedTicket`). The generic alias `record` is also available. Example: `issuedTicket.status == 'active'`. |
+| `sourceObject` | DataObjectName | DataObject to query in Elasticsearch. Selected from the project's DataObject list. |
+| `userField` | PropRefer | Property on the sourceObject matching the user's ID. Selected from sourceObject's property list. |
+| `roomField` | PropRefer | Property on the sourceObject matching the room's ID. Selected from sourceObject's property list. |
+| `condition` | MScript | Optional condition evaluated on the found record. The context variable name matches the `sourceObject` name (e.g., `issuedTicket`). The generic alias `record` is also available. Example: `issuedTicket.status == 'active'`. |
 | `hubRole` | String | Optional. Hub role assigned to the user if this source matches. If `null`, the user is authorized with a default `member` role (read + send, no moderation). If provided, must reference a role defined in `hubRoles`. |
 
 ### Auth Script Properties
@@ -751,10 +751,10 @@ A messaging hub supporting 1-on-1 and group conversations with all media types, 
     "description": "WhatsApp-style messaging hub with 1-on-1 and group conversations"
   },
   "roomSettings": {
-    "roomDataObject": "Conversation",
+    "roomDataObject": "conversation",
     "authSources": [
-      { "name": "conversationAdmin", "object": "ConversationMember", "userField": "userId", "roomField": "conversationId", "condition": "conversationMember.role == 'admin'", "hubRole": "admin" },
-      { "name": "conversationMember", "object": "ConversationMember", "userField": "userId", "roomField": "conversationId", "hubRole": "member" }
+      { "name": "conversationAdmin", "sourceObject": "conversationMember", "userField": "userId", "roomField": "conversationId", "condition": "conversationMember.role == 'admin'", "hubRole": "admin" },
+      { "name": "conversationMember", "sourceObject": "conversationMember", "userField": "userId", "roomField": "conversationId", "hubRole": "member" }
     ]
   },
   "hubRoles": [
@@ -801,9 +801,9 @@ A game hub with text chat, stickers, and custom message types for chess moves an
     "description": "Real-time chess game hub with move broadcasting and chat"
   },
   "roomSettings": {
-    "roomDataObject": "ChessMatch",
+    "roomDataObject": "chessMatch",
     "authSources": [
-      { "name": "matchPlayer", "object": "MatchPlayer", "userField": "playerId", "roomField": "matchId", "hubRole": "player" }
+      { "name": "matchPlayer", "sourceObject": "matchPlayer", "userField": "playerId", "roomField": "matchId", "hubRole": "player" }
     ]
   },
   "hubRoles": [
@@ -886,9 +886,9 @@ A read-mostly hub where backend events are pushed to dashboard viewers. Uses the
     "description": "Real-time dashboard streaming backend metrics and events"
   },
   "roomSettings": {
-    "roomDataObject": "Dashboard",
+    "roomDataObject": "dashboard",
     "authSources": [
-      { "name": "dashboardOwner", "object": "Dashboard", "userField": "createdBy", "roomField": "id", "hubRole": "dashboardOwner" }
+      { "name": "dashboardOwner", "sourceObject": "dashboard", "userField": "createdBy", "roomField": "id", "hubRole": "dashboardOwner" }
     ]
   },
   "hubRoles": [
@@ -949,10 +949,10 @@ A support hub with script-based auth, text and image messages, and a custom `int
     "description": "Customer support live chat tied to support tickets"
   },
   "roomSettings": {
-    "roomDataObject": "SupportTicket",
+    "roomDataObject": "supportTicket",
     "absoluteRoles": ["supportAgent", "supportLead"],
     "authSources": [
-      { "name": "ticketCreator", "object": "SupportTicket", "userField": "createdBy", "roomField": "id", "hubRole": "customer" }
+      { "name": "ticketCreator", "sourceObject": "supportTicket", "userField": "createdBy", "roomField": "id", "hubRole": "customer" }
     ]
   },
   "hubRoles": [
@@ -1008,7 +1008,7 @@ A hub for live auctions with a custom `bid` message type, Kafka-bridged timer ev
     "description": "Live auction bidding with real-time bid updates and timer"
   },
   "roomSettings": {
-    "roomDataObject": "AuctionListing",
+    "roomDataObject": "auctionListing",
     "roomEligibility": "auctionListing.status == 'active'",
     "checkRoles": ["verifiedBidder"],
     "authScripts": [
