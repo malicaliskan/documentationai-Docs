@@ -121,17 +121,17 @@ Every hub requires a **room DataObject** -- an existing DataObject in the same s
 {
   "roomSettings": {
     "roomDataObject": "CatalogEvent",
-    "roomEligibility": "room.chatEnabled == true",
-    "absoluteRoles": "superAdmin",
-    "checkRoles": "premiumUser,subscriber",
-    "checkScript": "user.city == room.city",
+    "roomEligibility": "catalogEvent.chatEnabled == true",
+    "absoluteRoles": ["superAdmin"],
+    "checkRoles": ["premiumUser", "subscriber"],
+    "checkScript": "user.city == catalogEvent.city",
     "authSources": [
-      { "object": "CatalogEvent", "userField": "createdBy", "roomField": "id", "hubRole": "owner" },
-      { "object": "EventHost", "userField": "userId", "roomField": "eventId", "hubRole": "moderator" },
-      { "object": "IssuedTicket", "userField": "ownerUserId", "roomField": "eventId", "condition": "record.status == 'active'", "hubRole": "attendee" }
+      { "name": "eventOwner", "object": "CatalogEvent", "userField": "createdBy", "roomField": "id", "hubRole": "owner" },
+      { "name": "eventHost", "object": "EventHost", "userField": "userId", "roomField": "eventId", "hubRole": "moderator" },
+      { "name": "ticketHolder", "object": "IssuedTicket", "userField": "ownerUserId", "roomField": "eventId", "condition": "issuedTicket.status == 'active'", "hubRole": "attendee" }
     ],
     "authScripts": [
-      { "script": "lib.checkVIPAccess(user, room)", "hubRole": "viewer" }
+      { "name": "vipAccess", "script": "lib.checkVIPAccess(user, room)", "hubRole": "viewer" }
     ]
   }
 }
@@ -142,10 +142,10 @@ Every hub requires a **room DataObject** -- an existing DataObject in the same s
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `roomDataObject` | String | -- | Name of the DataObject representing rooms. |
-| `roomEligibility` | MScript | `null` | Condition evaluated against the room record. If `false`, nobody can join (including `absoluteRoles`). Frontend should check the same fields to show/hide the chat UI. |
-| `absoluteRoles` | String | `null` | Comma-separated role names that bypass all auth checks. Users with a matching role get the built-in `system` role with full permissions. |
-| `checkRoles` | String | `null` | Comma-separated role names REQUIRED to proceed. Users without any of these roles are denied immediately. |
-| `checkScript` | MScript | `null` | Condition with `user` + `room` context. Must return `true` to proceed to auth sources. |
+| `roomEligibility` | MScript | `null` | Condition evaluated against the room record. The context variable name matches the `roomDataObject` name (e.g., `catalogEvent.chatEnabled`). The generic alias `room` is also available. If `false`, nobody can join (including `absoluteRoles`). |
+| `absoluteRoles` | String[] | `[]` | List of role names that bypass all auth checks. Users with a matching role get the built-in `system` role with full permissions. |
+| `checkRoles` | String[] | `[]` | List of role names REQUIRED to proceed. Users without any of these roles are denied immediately. |
+| `checkScript` | MScript | `null` | Condition with `user` + roomDataObject name context (e.g., `catalogEvent`). Generic alias `room` is also available. Must return `true` to proceed to auth sources. |
 | `authSources` | Array | `[]` | Ordered DataObject-based auth sources. First match wins -- put highest-privilege sources first. |
 | `authScripts` | Array | `[]` | Ordered MScript-based auth sources. Checked after `authSources`. |
 
@@ -155,11 +155,12 @@ Each entry in `authSources` queries an Elasticsearch-indexed DataObject to deter
 
 | Property | Type | Description |
 |----------|------|-------------|
+| `name` | String | Unique identifier for this auth source. Used in logs and documentation. |
 | `object` | String | DataObject to query in Elasticsearch. |
 | `userField` | String | Field on the DataObject matching the user's ID. |
 | `roomField` | String | Field on the DataObject matching the room's ID. |
-| `condition` | MScript | Optional condition evaluated on the found record. Context variable: `record`. Example: `record.status == 'active'`. |
-| `hubRole` | String | Hub role assigned to the user if this source matches. Must reference a role defined in `hubRoles`. |
+| `condition` | MScript | Optional condition evaluated on the found record. The context variable name matches the `object` name (e.g., `issuedTicket`). The generic alias `record` is also available. Example: `issuedTicket.status == 'active'`. |
+| `hubRole` | String | Optional. Hub role assigned to the user if this source matches. If `null`, the user is authorized with a default `member` role (read + send, no moderation). If provided, must reference a role defined in `hubRoles`. |
 
 ### Auth Script Properties
 
@@ -167,8 +168,9 @@ Each entry in `authScripts` runs an MScript expression to determine authorizatio
 
 | Property | Type | Description |
 |----------|------|-------------|
+| `name` | String | Unique identifier for this auth script. Used in logs and documentation. |
 | `script` | MScript | Expression with `user` + `room` context. Can call library functions via `lib.*`. Must return `true` for the source to match. |
-| `hubRole` | String | Hub role assigned to the user if the script returns `true`. Must reference a role defined in `hubRoles`. |
+| `hubRole` | String | Optional. Hub role assigned to the user if the script returns `true`. If `null`, the user is authorized with a default `member` role. If provided, must reference a role defined in `hubRoles`. |
 
 ### Authorization Flow
 
@@ -177,13 +179,13 @@ The framework evaluates authorization as a **top-to-bottom pipeline**. The first
 ```
  1. Fetch room record from Elasticsearch
  2. Room not found → DENY
- 3. roomEligibility → eval({ room }) → false → DENY (blocks everyone)
+ 3. roomEligibility → eval({ roomDataObject, room }) → false → DENY (blocks everyone)
  4. Check if user is BLOCKED (Redis/ES) → DENY
  5. absoluteRoles → user.roleId in list → ALLOW with "system" role
  6. checkRoles → not in list → DENY
  7. checkScript → false → DENY
- 8. authSources top-to-bottom → first match → ALLOW with hubRole → BREAK
- 9. authScripts top-to-bottom → first match → ALLOW with hubRole → BREAK
+ 8. authSources top-to-bottom → first match → ALLOW with hubRole (or default "member") → BREAK
+ 9. authScripts top-to-bottom → first match → ALLOW with hubRole (or default "member") → BREAK
 10. No match → DENY
 ```
 
@@ -197,6 +199,7 @@ Auth source queries use **Elasticsearch** rather than direct database queries. T
 
 Hub roles define what each user can do within a room. Roles are assigned by `authSources` and `authScripts` during the authorization flow. A built-in `system` role (all permissions enabled) is automatically assigned to users who match `absoluteRoles`.
 
+If `hubRoles` is empty and auth sources/scripts use `null` for `hubRole`, all authorized members receive a default `member` role with read + send permissions, no moderation. This is the simplest configuration for hubs that do not need differentiated permissions.
 ```json
 {
   "hubRoles": [
@@ -750,8 +753,8 @@ A messaging hub supporting 1-on-1 and group conversations with all media types, 
   "roomSettings": {
     "roomDataObject": "Conversation",
     "authSources": [
-      { "object": "ConversationMember", "userField": "userId", "roomField": "conversationId", "condition": "record.role == 'admin'", "hubRole": "admin" },
-      { "object": "ConversationMember", "userField": "userId", "roomField": "conversationId", "hubRole": "member" }
+      { "name": "conversationAdmin", "object": "ConversationMember", "userField": "userId", "roomField": "conversationId", "condition": "conversationMember.role == 'admin'", "hubRole": "admin" },
+      { "name": "conversationMember", "object": "ConversationMember", "userField": "userId", "roomField": "conversationId", "hubRole": "member" }
     ]
   },
   "hubRoles": [
@@ -800,7 +803,7 @@ A game hub with text chat, stickers, and custom message types for chess moves an
   "roomSettings": {
     "roomDataObject": "ChessMatch",
     "authSources": [
-      { "object": "MatchPlayer", "userField": "playerId", "roomField": "matchId", "hubRole": "player" }
+      { "name": "matchPlayer", "object": "MatchPlayer", "userField": "playerId", "roomField": "matchId", "hubRole": "player" }
     ]
   },
   "hubRoles": [
@@ -885,7 +888,7 @@ A read-mostly hub where backend events are pushed to dashboard viewers. Uses the
   "roomSettings": {
     "roomDataObject": "Dashboard",
     "authSources": [
-      { "object": "Dashboard", "userField": "createdBy", "roomField": "id", "hubRole": "dashboardOwner" }
+      { "name": "dashboardOwner", "object": "Dashboard", "userField": "createdBy", "roomField": "id", "hubRole": "dashboardOwner" }
     ]
   },
   "hubRoles": [
@@ -947,9 +950,9 @@ A support hub with script-based auth, text and image messages, and a custom `int
   },
   "roomSettings": {
     "roomDataObject": "SupportTicket",
-    "absoluteRoles": "supportAgent,supportLead",
+    "absoluteRoles": ["supportAgent", "supportLead"],
     "authSources": [
-      { "object": "SupportTicket", "userField": "createdBy", "roomField": "id", "hubRole": "customer" }
+      { "name": "ticketCreator", "object": "SupportTicket", "userField": "createdBy", "roomField": "id", "hubRole": "customer" }
     ]
   },
   "hubRoles": [
@@ -1006,10 +1009,10 @@ A hub for live auctions with a custom `bid` message type, Kafka-bridged timer ev
   },
   "roomSettings": {
     "roomDataObject": "AuctionListing",
-    "roomEligibility": "room.status == 'active'",
-    "checkRoles": "verifiedBidder",
+    "roomEligibility": "auctionListing.status == 'active'",
+    "checkRoles": ["verifiedBidder"],
     "authScripts": [
-      { "script": "true", "hubRole": "bidder" }
+      { "name": "allVerifiedBidders", "script": "true", "hubRole": "bidder" }
     ]
   },
   "hubRoles": [
