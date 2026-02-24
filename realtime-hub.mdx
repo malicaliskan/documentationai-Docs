@@ -37,7 +37,7 @@ A RealtimeHub is a bidirectional Socket.IO communication channel that brings rea
 Each RealtimeHub is mounted as a Socket.IO **namespace** (`/hub/{hubName}`) on the service's HTTP server. Rooms within the namespace correspond to records in an existing DataObject (e.g., a `Chat`, `Match`, or `Dashboard`). The framework handles:
 
 1. **Authentication** -- Token-based auth middleware validates every socket connection via the existing session layer (HexaAuth).
-2. **Room authorization** -- Configurable rules determine who can join which room (public, membership, ownership, custom function).
+2. **Room authorization** -- A configurable pipeline of role checks, script evaluations, and DataObject-based auth sources determines who can join each room and what hub role they receive.
 3. **Message types** -- Built-in types (text, image, video, audio, document, sticker, contact, location, system) with known schemas, plus designer-defined custom message types for app-specific structured data.
 4. **Persistence** -- Every hub auto-generates a Message DataObject. Messages are always persisted with system fields, a messageType discriminator, and a content JSONB column.
 5. **Standard events** -- Typing indicators, recording indicators, read receipts, delivery receipts, and presence are built-in toggles.
@@ -51,16 +51,17 @@ Each RealtimeHub is mounted as a Socket.IO **namespace** (`/hub/{hubName}`) on t
 
 ## Pattern Structure
 
-A RealtimeHub is a **chapter** in the Mindbricks ontology with 6 sections:
+A RealtimeHub is a **chapter** in the Mindbricks ontology with 7 sections:
 
 | Section | Purpose |
 |---------|---------|
 | `hubBasics` | Name and description |
-| `roomSettings` | Room DataObject, authorization rules |
+| `roomSettings` | Room DataObject, authorization flow, auth sources, auth scripts |
+| `hubRoles` | Role definitions with granular permissions (read, send, moderate, etc.) |
 | `messageSettings` | Built-in message types, custom message types, cross-cutting features |
 | `eventSettings` | Standard events, auto-bridge, custom events, external Kafka events |
 | `historySettings` | Message history on join |
-| `guardrails` | Rate limits, size limits, connection limits |
+| `guardrails` | Rate limits, size limits, connection limits, moderation settings |
 
 Additionally, the service-level `realtimeConfig` section (inside `ServiceSettings`) controls the Socket.IO server itself (adapter, heartbeat, connection limits).
 
@@ -114,44 +115,166 @@ When `adapter` is `redis`, the generated `package.json` includes `@socket.io/red
 
 ## Room Settings
 
-Every hub requires a **room DataObject** -- an existing DataObject in the same service that represents the "room" entity. Users join rooms by referencing the DataObject record ID.
+Every hub requires a **room DataObject** -- an existing DataObject in the same service that represents the "room" entity. Users join rooms by referencing the DataObject record ID. The room settings define the authorization pipeline that decides who can join a room and what role they receive.
 
 ```json
 {
   "roomSettings": {
-    "roomDataObject": "Chat",
-    "roomAuthRule": "membership",
-    "membershipObject": "ChatParticipant",
-    "userField": "userId",
-    "roomField": "chatId"
+    "roomDataObject": "CatalogEvent",
+    "roomEligibility": "room.chatEnabled == true",
+    "absoluteRoles": "superAdmin",
+    "checkRoles": "premiumUser,subscriber",
+    "checkScript": "user.city == room.city",
+    "authSources": [
+      { "object": "CatalogEvent", "userField": "createdBy", "roomField": "id", "hubRole": "owner" },
+      { "object": "EventHost", "userField": "userId", "roomField": "eventId", "hubRole": "moderator" },
+      { "object": "IssuedTicket", "userField": "ownerUserId", "roomField": "eventId", "condition": "record.status == 'active'", "hubRole": "attendee" }
+    ],
+    "authScripts": [
+      { "script": "lib.checkVIPAccess(user, room)", "hubRole": "viewer" }
+    ]
   }
 }
 ```
-
-### Room Authorization Rules
-
-| Rule | How it works | Required fields |
-|------|-------------|-----------------|
-| `public` | Any authenticated user can join any room. | `roomDataObject` only |
-| `membership` | Checks a join-table DataObject for a row matching the user and room. | `membershipObject`, `userField`, `roomField` |
-| `ownership` | Checks if the room record's `createdBy` or `ownerId` matches the user. | `roomDataObject` only |
-| `custom` | Delegates to a library function that receives `(socket, roomId, session)` and returns `true`/`false`. | `customAuthFunction` |
 
 ### Properties
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `roomDataObject` | String | -- | Name of the DataObject representing rooms (e.g., `Chat`, `ChessMatch`). |
-| `roomAuthRule` | Enum | `"membership"` | Authorization strategy for join requests. |
-| `membershipObject` | String | null | Join-table DataObject name. Required for `membership` rule. |
-| `userField` | String | `"userId"` | User FK field name in the membership object. |
-| `roomField` | String | null | Room FK field name in the membership object (e.g., `chatId`). |
-| `membershipCondition` | MScript | null | Optional MScript expression evaluated after fetching the membership record. Uses `membership` as the context variable. If it returns `false`, the user is denied access even though a record exists. Example: `membership.status == "active" && membership.expireAt > new Date()`. |
-| `customAuthFunction` | String | null | Library function name for `custom` rule. |
+| `roomDataObject` | String | -- | Name of the DataObject representing rooms. |
+| `roomEligibility` | MScript | `null` | Condition evaluated against the room record. If `false`, nobody can join (including `absoluteRoles`). Frontend should check the same fields to show/hide the chat UI. |
+| `absoluteRoles` | String | `null` | Comma-separated role names that bypass all auth checks. Users with a matching role get the built-in `system` role with full permissions. |
+| `checkRoles` | String | `null` | Comma-separated role names REQUIRED to proceed. Users without any of these roles are denied immediately. |
+| `checkScript` | MScript | `null` | Condition with `user` + `room` context. Must return `true` to proceed to auth sources. |
+| `authSources` | Array | `[]` | Ordered DataObject-based auth sources. First match wins -- put highest-privilege sources first. |
+| `authScripts` | Array | `[]` | Ordered MScript-based auth sources. Checked after `authSources`. |
 
-### Cross-Service Membership
+### Auth Source Properties
 
-The membership check uses **Elasticsearch** rather than a direct database query. This allows the membership DataObject to live in a **different service** -- as long as it's indexed in Elasticsearch (which is the default for all DataObjects), the hub can query it across service boundaries. The Elasticsearch index name is automatically derived from the project codename and the membership DataObject name.
+Each entry in `authSources` queries an Elasticsearch-indexed DataObject to determine whether the user has a relationship with the room.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `object` | String | DataObject to query in Elasticsearch. |
+| `userField` | String | Field on the DataObject matching the user's ID. |
+| `roomField` | String | Field on the DataObject matching the room's ID. |
+| `condition` | MScript | Optional condition evaluated on the found record. Context variable: `record`. Example: `record.status == 'active'`. |
+| `hubRole` | String | Hub role assigned to the user if this source matches. Must reference a role defined in `hubRoles`. |
+
+### Auth Script Properties
+
+Each entry in `authScripts` runs an MScript expression to determine authorization. Checked after all `authSources` have been tried.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `script` | MScript | Expression with `user` + `room` context. Can call library functions via `lib.*`. Must return `true` for the source to match. |
+| `hubRole` | String | Hub role assigned to the user if the script returns `true`. Must reference a role defined in `hubRoles`. |
+
+### Authorization Flow
+
+The framework evaluates authorization as a **top-to-bottom pipeline**. The first matching rule wins.
+
+```
+ 1. Fetch room record from Elasticsearch
+ 2. Room not found → DENY
+ 3. roomEligibility → eval({ room }) → false → DENY (blocks everyone)
+ 4. Check if user is BLOCKED (Redis/ES) → DENY
+ 5. absoluteRoles → user.roleId in list → ALLOW with "system" role
+ 6. checkRoles → not in list → DENY
+ 7. checkScript → false → DENY
+ 8. authSources top-to-bottom → first match → ALLOW with hubRole → BREAK
+ 9. authScripts top-to-bottom → first match → ALLOW with hubRole → BREAK
+10. No match → DENY
+```
+
+### Cross-Service Auth Sources
+
+Auth source queries use **Elasticsearch** rather than direct database queries. This allows the DataObjects referenced in `authSources` to live in a **different service** -- as long as they are indexed in Elasticsearch (which is the default for all DataObjects), the hub can query them across service boundaries. The Elasticsearch index name is automatically derived from the project codename and the DataObject name.
+
+---
+
+## Hub Roles
+
+Hub roles define what each user can do within a room. Roles are assigned by `authSources` and `authScripts` during the authorization flow. A built-in `system` role (all permissions enabled) is automatically assigned to users who match `absoluteRoles`.
+
+```json
+{
+  "hubRoles": [
+    { "name": "owner", "canRead": true, "canSend": true, "canModerate": true, "canDeleteAny": true, "canManageRoom": true },
+    { "name": "moderator", "canRead": true, "canSend": true, "canModerate": true, "canDeleteAny": true },
+    { "name": "attendee", "canRead": true, "canSend": true, "allowedMessageTypes": "text,image", "moderated": true },
+    { "name": "viewer", "canRead": true, "canSend": false }
+  ]
+}
+```
+
+### Permission Fields
+
+| Permission | Default | Description |
+|------------|---------|-------------|
+| `name` | -- | Role identifier referenced by `authSources` / `authScripts`. |
+| `canRead` | `true` | Can receive messages. |
+| `canSend` | `true` | Can send messages. |
+| `allowedMessageTypes` | all | Comma-separated message types this role can send. If omitted, all enabled types are allowed. |
+| `moderated` | `false` | Messages from this role require moderator approval before broadcast. |
+| `canModerate` | `false` | Can approve/reject pending messages, block/silence users. |
+| `canDeleteAny` | `false` | Can delete any message in the room. |
+| `canManageRoom` | `false` | Can update room settings, kick users. |
+
+---
+
+## Block, Silence & Talk Permission
+
+Runtime moderation actions stored in an auto-generated **HubModeration** DataObject and cached in Redis for fast lookups.
+
+### Block & Silence
+
+| Action | Effect | Persistence |
+|--------|--------|-------------|
+| Block | User cannot enter the room. If currently connected, they are force-removed. | Elasticsearch + Redis cache |
+| Silence | User can read messages but cannot send. | Elasticsearch + Redis cache |
+
+#### Moderation Events
+
+| Event | Direction | Who | Payload |
+|-------|-----------|-----|---------|
+| `hub:block` | Client → Server | `canModerate` | `{ roomId, userId, reason?, duration? }` |
+| `hub:unblock` | Client → Server | `canModerate` | `{ roomId, userId }` |
+| `hub:silence` | Client → Server | `canModerate` | `{ roomId, userId, reason?, duration? }` |
+| `hub:unsilence` | Client → Server | `canModerate` | `{ roomId, userId }` |
+| `hub:blocked` | Server → User | -- | `{ roomId, reason }` (then force-leave) |
+| `hub:silenced` | Server → User | -- | `{ roomId, reason }` |
+| `hub:unsilenced` | Server → User | -- | `{ roomId }` |
+
+**Duration:** `0` or `null` = permanent. A positive value = seconds until automatic expiry.
+
+### Default Silenced Mode
+
+When `guardrails.defaultSilenced` is `true`, all users join rooms in a silenced state. Users with `canModerate` permission are exempt. Others must explicitly request speak permission from a moderator.
+
+| Event | Direction | Payload |
+|-------|-----------|---------|
+| `hub:requestSpeak` | Client → Server | `{ roomId }` |
+| `hub:speakRequested` | Server → Moderators | `{ roomId, userId }` |
+| `hub:grantSpeak` | Moderator → Server | `{ roomId, userId }` |
+| `hub:revokeSpeak` | Moderator → Server | `{ roomId, userId }` |
+| `hub:speakGranted` | Server → User | `{ roomId }` |
+| `hub:speakRevoked` | Server → User | `{ roomId }` |
+
+---
+
+## Message Moderation
+
+When a role has `moderated: true` or `guardrails.globalModeration` is `true`, messages are saved with a `status` of `"pending"` instead of `"approved"`. Only users with `canModerate` permission see pending messages. Moderators approve or reject pending messages:
+
+| Event | Direction | Payload |
+|-------|-----------|---------|
+| `hub:approve` | Moderator → Server | `{ roomId, messageId }` |
+| `hub:reject` | Moderator → Server | `{ roomId, messageId, reason? }` |
+| `hub:messagePending` | Server → Sender + Moderators | `{ roomId, messageId, sender?, message? }` |
+| `hub:messageRejected` | Server → Room | `{ roomId, messageId, reason? }` |
+
+Approved messages are broadcast to the room as `hub:messageArrived`.
 
 ---
 
@@ -301,13 +424,13 @@ When `autoBridgeDataEvents` is `true` (the default), the hub automatically subsc
 | `{message}.updated` | `hub:messageEdited` | A message was edited via REST/API |
 | `{message}.deleted` | `hub:messageDeleted` | A message was deleted via REST/API |
 
-**From the Membership DataObject** (when using `membership` auth):
+**From the Auth Source DataObjects** (when using `authSources`):
 
 | CRUD Event | Hub Event | Description |
 |-----------|-----------|-------------|
-| `{membership}.created` | `hub:memberJoined` | New member added to the room |
-| `{membership}.deleted` | `hub:memberLeft` | Member removed from the room |
-| `{membership}.updated` | `hub:memberUpdated` | Member role or settings changed |
+| `{authSource}.created` | `hub:memberJoined` | New member added to the room |
+| `{authSource}.deleted` | `hub:memberLeft` | Member removed from the room |
+| `{authSource}.updated` | `hub:memberUpdated` | Member role or settings changed |
 
 **From the Room DataObject:**
 
@@ -407,7 +530,10 @@ Safety limits to prevent abuse and resource exhaustion.
     "maxRoomsPerUser": 50,
     "messageRateLimit": 60,
     "maxMessageSize": 65536,
-    "connectionTimeout": 300000
+    "connectionTimeout": 300000,
+    "authCacheTTL": 300,
+    "globalModeration": false,
+    "defaultSilenced": false
   }
 }
 ```
@@ -419,6 +545,9 @@ Safety limits to prevent abuse and resource exhaustion.
 | `messageRateLimit` | Integer | `60` | Max messages per user per minute. |
 | `maxMessageSize` | Integer | `65536` | Max message payload in bytes (64 KB). |
 | `connectionTimeout` | Integer | `300000` | Idle timeout in ms (5 minutes). |
+| `authCacheTTL` | Integer | `300` | Redis auth cache TTL in seconds. `0` = caching disabled. |
+| `globalModeration` | Boolean | `false` | When `true`, all messages require moderator approval regardless of role. |
+| `defaultSilenced` | Boolean | `false` | When `true`, all users join rooms silenced and must request speak permission. `canModerate` users are exempt. |
 
 ---
 
@@ -549,30 +678,47 @@ socket.on("hub:roomUpdated", ({ roomId, ...data }) => console.log("Room updated:
 
 | Event | Direction | Payload | Description |
 |-------|-----------|---------|-------------|
-| `hub:join` | Client -> Server | `{ roomId, meta? }` | Request to join a room |
-| `hub:joined` | Server -> Client | `{ roomId }` | Join confirmed |
-| `hub:leave` | Client -> Server | `{ roomId }` | Request to leave a room |
-| `hub:send` | Client -> Server | `{ roomId, messageType, content, replyTo?, forwarded? }` | Send a message |
-| `hub:messageArrived` | Server -> Room | `{ roomId, sender, message }` | New message broadcast |
-| `hub:history` | Server -> Client | `{ roomId, messages[] }` | Historical messages on join |
-| `hub:presence` | Server -> Room | `{ event, roomId, user }` | Join/leave presence |
-| `hub:event` | Client -> Server | `{ roomId, event, data }` | Standard or custom event |
-| `hub:typing` | Server -> Room | `{ roomId, userId }` | Typing indicator |
-| `hub:stopTyping` | Server -> Room | `{ roomId, userId }` | Stopped typing |
-| `hub:recording` | Server -> Room | `{ roomId, userId }` | Recording voice |
-| `hub:stopRecording` | Server -> Room | `{ roomId, userId }` | Stopped recording |
-| `hub:messageRead` | Server -> Room | `{ roomId, userId, lastReadTimestamp }` | Read receipt |
-| `hub:messageDelivered` | Server -> Room | `{ roomId, userId, messageId }` | Delivery receipt |
-| `hub:online` | Server -> Room | `{ roomId, userId }` | User came online |
-| `hub:offline` | Server -> Room | `{ roomId, userId }` | User went offline |
-| `hub:messageEdited` | Server -> Room | `{ roomId, ...record }` | Auto-bridged: message edited |
-| `hub:messageDeleted` | Server -> Room | `{ roomId, messageId, deletedBy }` | Auto-bridged: message deleted |
-| `hub:memberJoined` | Server -> Room | `{ roomId, ...record }` | Auto-bridged: member added |
-| `hub:memberLeft` | Server -> Room | `{ roomId, ...record }` | Auto-bridged: member removed |
-| `hub:memberUpdated` | Server -> Room | `{ roomId, ...record }` | Auto-bridged: member updated |
-| `hub:roomUpdated` | Server -> Room | `{ roomId, ...record }` | Auto-bridged: room updated |
-| `hub:roomClosed` | Server -> Room | `{ roomId, ...record }` | Auto-bridged: room deleted |
-| `hub:error` | Server -> Client | `{ roomId?, error }` | Error notification |
+| `hub:join` | Client → Server | `{ roomId, meta? }` | Request to join a room |
+| `hub:joined` | Server → Client | `{ roomId }` | Join confirmed |
+| `hub:leave` | Client → Server | `{ roomId }` | Request to leave a room |
+| `hub:send` | Client → Server | `{ roomId, messageType, content, replyTo?, forwarded? }` | Send a message |
+| `hub:messageArrived` | Server → Room | `{ roomId, sender, message }` | New message broadcast (or approved moderated message) |
+| `hub:history` | Server → Client | `{ roomId, messages[] }` | Historical messages on join |
+| `hub:presence` | Server → Room | `{ event, roomId, user }` | Join/leave presence |
+| `hub:event` | Client → Server | `{ roomId, event, data }` | Standard or custom event |
+| `hub:typing` | Server → Room | `{ roomId, userId }` | Typing indicator |
+| `hub:stopTyping` | Server → Room | `{ roomId, userId }` | Stopped typing |
+| `hub:recording` | Server → Room | `{ roomId, userId }` | Recording voice |
+| `hub:stopRecording` | Server → Room | `{ roomId, userId }` | Stopped recording |
+| `hub:messageRead` | Server → Room | `{ roomId, userId, lastReadTimestamp }` | Read receipt |
+| `hub:messageDelivered` | Server → Room | `{ roomId, userId, messageId }` | Delivery receipt |
+| `hub:online` | Server → Room | `{ roomId, userId }` | User came online |
+| `hub:offline` | Server → Room | `{ roomId, userId }` | User went offline |
+| `hub:block` | Client → Server | `{ roomId, userId, reason?, duration? }` | Block a user (requires `canModerate`) |
+| `hub:unblock` | Client → Server | `{ roomId, userId }` | Unblock a user (requires `canModerate`) |
+| `hub:silence` | Client → Server | `{ roomId, userId, reason?, duration? }` | Silence a user (requires `canModerate`) |
+| `hub:unsilence` | Client → Server | `{ roomId, userId }` | Unsilence a user (requires `canModerate`) |
+| `hub:blocked` | Server → User | `{ roomId, reason }` | Notifies user they were blocked (then force-leave) |
+| `hub:silenced` | Server → User | `{ roomId, reason }` | Notifies user they were silenced |
+| `hub:unsilenced` | Server → User | `{ roomId }` | Notifies user they were unsilenced |
+| `hub:requestSpeak` | Client → Server | `{ roomId }` | Request speak permission (defaultSilenced mode) |
+| `hub:speakRequested` | Server → Moderators | `{ roomId, userId }` | Notifies moderators of speak request |
+| `hub:grantSpeak` | Moderator → Server | `{ roomId, userId }` | Grant speak permission |
+| `hub:revokeSpeak` | Moderator → Server | `{ roomId, userId }` | Revoke speak permission |
+| `hub:speakGranted` | Server → User | `{ roomId }` | Notifies user speak was granted |
+| `hub:speakRevoked` | Server → User | `{ roomId }` | Notifies user speak was revoked |
+| `hub:approve` | Moderator → Server | `{ roomId, messageId }` | Approve a pending message |
+| `hub:reject` | Moderator → Server | `{ roomId, messageId, reason? }` | Reject a pending message |
+| `hub:messagePending` | Server → Sender + Moderators | `{ roomId, messageId, sender?, message? }` | Message awaiting moderation |
+| `hub:messageRejected` | Server → Room | `{ roomId, messageId, reason? }` | Moderated message was rejected |
+| `hub:messageEdited` | Server → Room | `{ roomId, ...record }` | Auto-bridged: message edited |
+| `hub:messageDeleted` | Server → Room | `{ roomId, messageId, deletedBy }` | Auto-bridged: message deleted |
+| `hub:memberJoined` | Server → Room | `{ roomId, ...record }` | Auto-bridged: member added |
+| `hub:memberLeft` | Server → Room | `{ roomId, ...record }` | Auto-bridged: member removed |
+| `hub:memberUpdated` | Server → Room | `{ roomId, ...record }` | Auto-bridged: member updated |
+| `hub:roomUpdated` | Server → Room | `{ roomId, ...record }` | Auto-bridged: room updated |
+| `hub:roomClosed` | Server → Room | `{ roomId, ...record }` | Auto-bridged: room deleted |
+| `hub:error` | Server → Client | `{ roomId?, error }` | Error notification |
 
 ---
 
@@ -585,6 +731,7 @@ REST endpoints are auto-generated for server-side access and fallback scenarios.
 | `GET` | `/{hub-name}/:roomId/messages` | Paginated message history. Query params: `limit`, `offset`. |
 | `POST` | `/{hub-name}/:roomId/messages` | Send a message via REST (also broadcasts to connected clients). |
 | `DELETE` | `/{hub-name}/:roomId/messages/:messageId` | Delete a message (also broadcasts `hub:messageDeleted`). |
+| `GET` | `/{hub-name}/:roomId/eligible` | Check if a room supports real-time features. Returns the `roomEligibility` evaluation result for the given room. |
 
 ---
 
@@ -592,7 +739,7 @@ REST endpoints are auto-generated for server-side access and fallback scenarios.
 
 ### Example 1: WhatsApp-Style Messenger
 
-A messaging hub supporting 1-on-1 and group conversations with all media types, read receipts, typing indicators, and auto-bridged membership events.
+A messaging hub supporting 1-on-1 and group conversations with all media types, read receipts, typing indicators, role-based permissions, and auto-bridged membership events.
 
 ```json
 {
@@ -602,11 +749,15 @@ A messaging hub supporting 1-on-1 and group conversations with all media types, 
   },
   "roomSettings": {
     "roomDataObject": "Conversation",
-    "roomAuthRule": "membership",
-    "membershipObject": "ConversationMember",
-    "userField": "userId",
-    "roomField": "conversationId"
+    "authSources": [
+      { "object": "ConversationMember", "userField": "userId", "roomField": "conversationId", "condition": "record.role == 'admin'", "hubRole": "admin" },
+      { "object": "ConversationMember", "userField": "userId", "roomField": "conversationId", "hubRole": "member" }
+    ]
   },
+  "hubRoles": [
+    { "name": "admin", "canRead": true, "canSend": true, "canModerate": true, "canDeleteAny": true, "canManageRoom": true },
+    { "name": "member", "canRead": true, "canSend": true }
+  ],
   "messageSettings": {
     "dataObjectName": "ChatMessage",
     "messageTypes": ["text", "image", "video", "audio", "document", "sticker", "contact", "location", "system"],
@@ -648,11 +799,13 @@ A game hub with text chat, stickers, and custom message types for chess moves an
   },
   "roomSettings": {
     "roomDataObject": "ChessMatch",
-    "roomAuthRule": "membership",
-    "membershipObject": "MatchPlayer",
-    "userField": "playerId",
-    "roomField": "matchId"
+    "authSources": [
+      { "object": "MatchPlayer", "userField": "playerId", "roomField": "matchId", "hubRole": "player" }
+    ]
   },
+  "hubRoles": [
+    { "name": "player", "canRead": true, "canSend": true }
+  ],
   "messageSettings": {
     "dataObjectName": "ChessMessage",
     "messageTypes": ["text", "sticker", "system"],
@@ -731,8 +884,13 @@ A read-mostly hub where backend events are pushed to dashboard viewers. Uses the
   },
   "roomSettings": {
     "roomDataObject": "Dashboard",
-    "roomAuthRule": "ownership"
+    "authSources": [
+      { "object": "Dashboard", "userField": "createdBy", "roomField": "id", "hubRole": "dashboardOwner" }
+    ]
   },
+  "hubRoles": [
+    { "name": "dashboardOwner", "canRead": true, "canSend": false, "canManageRoom": true }
+  ],
   "messageSettings": {
     "dataObjectName": "DashboardEvent",
     "messageTypes": ["system"],
@@ -779,7 +937,7 @@ A read-mostly hub where backend events are pushed to dashboard viewers. Uses the
 
 ### Example 4: Customer Support Chat
 
-A support hub with custom auth, text and image messages, and a custom `internalNote` message type visible only to agents.
+A support hub with script-based auth, text and image messages, and a custom `internalNote` message type visible only to agents.
 
 ```json
 {
@@ -789,9 +947,14 @@ A support hub with custom auth, text and image messages, and a custom `internalN
   },
   "roomSettings": {
     "roomDataObject": "SupportTicket",
-    "roomAuthRule": "custom",
-    "customAuthFunction": "authorizeTicketAccess"
+    "absoluteRoles": "supportAgent,supportLead",
+    "authSources": [
+      { "object": "SupportTicket", "userField": "createdBy", "roomField": "id", "hubRole": "customer" }
+    ]
   },
+  "hubRoles": [
+    { "name": "customer", "canRead": true, "canSend": true }
+  ],
   "messageSettings": {
     "dataObjectName": "SupportMessage",
     "messageTypes": ["text", "image", "document", "system"],
@@ -833,7 +996,7 @@ A support hub with custom auth, text and image messages, and a custom `internalN
 
 ### Example 5: Auction Bidding Room
 
-A hub for live auctions with a custom `bid` message type and Kafka-bridged timer events.
+A hub for live auctions with a custom `bid` message type, Kafka-bridged timer events, and message moderation for bids.
 
 ```json
 {
@@ -843,8 +1006,15 @@ A hub for live auctions with a custom `bid` message type and Kafka-bridged timer
   },
   "roomSettings": {
     "roomDataObject": "AuctionListing",
-    "roomAuthRule": "public"
+    "roomEligibility": "room.status == 'active'",
+    "checkRoles": "verifiedBidder",
+    "authScripts": [
+      { "script": "true", "hubRole": "bidder" }
+    ]
   },
+  "hubRoles": [
+    { "name": "bidder", "canRead": true, "canSend": true, "allowedMessageTypes": "text,bid" }
+  ],
   "messageSettings": {
     "dataObjectName": "AuctionActivity",
     "messageTypes": ["text", "system"],
@@ -918,3 +1088,7 @@ A hub for live auctions with a custom `bid` message type and Kafka-bridged timer
 7. **Use Redis adapter in production.** The `memory` adapter only works with a single service instance. Two or more instances behind a load balancer require Redis.
 
 8. **Set conservative guardrails.** Start tight: `messageRateLimit: 10-30` for chat, `60-120` for games. Set `maxUsersPerRoom` based on actual expected sizes, not theoretical maximums.
+
+9. **Order authSources by privilege.** Place the highest-privilege source first (e.g., owner before moderator before member). The pipeline stops at the first match, so ordering determines which role a user receives when they match multiple sources.
+
+10. **Use roomEligibility to gate the UI.** If a room can toggle chat on/off, use `roomEligibility` so the frontend can check the same field to show/hide the chat widget -- and the backend enforces the same rule at join time.
