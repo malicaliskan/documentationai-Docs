@@ -712,6 +712,7 @@ socket.on("hub:roomUpdated", ({ roomId, ...data }) => console.log("Room updated:
 | `hub:silence` | Client → Server | `{ roomId, userId, reason?, duration? }` | Silence a user (requires `canModerate`) |
 | `hub:unsilence` | Client → Server | `{ roomId, userId }` | Unsilence a user (requires `canModerate`) |
 | `hub:blocked` | Server → User | `{ roomId, reason }` | Notifies user they were blocked (then force-leave) |
+| `hub:unblocked` | Server → User | `{ roomId }` | Notifies user they were unblocked (may rejoin) |
 | `hub:silenced` | Server → User | `{ roomId, reason }` | Notifies user they were silenced |
 | `hub:unsilenced` | Server → User | `{ roomId }` | Notifies user they were unsilenced |
 | `hub:requestSpeak` | Client → Server | `{ roomId }` | Request speak permission (defaultSilenced mode) |
