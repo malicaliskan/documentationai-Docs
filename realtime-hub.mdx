@@ -19,7 +19,7 @@ A RealtimeHub is a bidirectional Socket.IO communication channel that brings rea
 | Transport | Socket.IO (one-way push) | Socket.IO (bidirectional) |
 | Scope | Standalone microservice | Inside any business service |
 | Model | Topic + rights-token authorization | Room + membership/ownership auth |
-| Message flow | Kafka -> Server -> Client | Client <-> Server <-> Client |
+| Message flow | Kafka → Server → Client | Client ↔ Server ↔ Client |
 | Persistence | Not built-in | Always-on auto-generated Message DataObject |
 | Message types | N/A | Built-in (text, image, video, ...) + custom types |
 | Standard events | No | Yes (typing, read receipts, presence, etc.) |
