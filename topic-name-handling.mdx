@@ -139,9 +139,9 @@ The resolver follows a priority chain:
 | `review:updated` | No direct match, `updated` skips CRUD match → DB fallback | `...-dbevent-review-updated` |
 | `publicUser:created` | No API resource match, no API object match → DB fallback | `...-dbevent-publicuser-created` |
 
-<Tip>
+<Callout kind="tip">
 **Why `updated` skips API matching via CRUD type:** A DataObject may have multiple update-type APIs (e.g., `approveReview`, `rejectReview`). The alias `review:updated` is ambiguous — it could mean any of them. To avoid incorrect mappings, `updated` always falls back to the DB-level event. Use `review:approved` or `review:rejected` to target a specific API.
-</Tip>
+</Callout>
 
 ### 5. DataObject + Non-Standard Action
 
