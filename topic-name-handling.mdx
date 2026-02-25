@@ -1,0 +1,257 @@
+---
+title: Topic Name Handling
+description: >-
+  How Mindbricks names Kafka topics, and how to use topic aliases to reference
+  them by intent instead of by their full generated names.
+---
+
+# Topic Name Handling
+
+## Overview
+
+Every Mindbricks service communicates through Kafka topics. Topics are generated automatically from your data model and business APIs, following strict naming conventions. While these full topic names are stable and predictable, they can be long and hard to remember when configuring Kafka controllers, event listeners, or cross-service communication.
+
+**Topic aliases** let you reference topics using short, intention-revealing names like `createUser:done` or `user:created` instead of their full form `my-project-auth-service-user-created`. Aliases are resolved both at **design time** (during code generation) and at **runtime** (when publishing or consuming messages).
+
+---
+
+## Topic Naming Conventions
+
+Mindbricks generates two categories of Kafka topics per service:
+
+### API-Level Event Topics
+
+When a Business API has event raising enabled, it publishes to a topic named:
+
+```
+<serviceCodename>-<resourceName>-<passiveAction>
+```
+
+| Component | Source | Example |
+|---|---|---|
+| `serviceCodename` | The service's codename | `myapp-auth-service` |
+| `resourceName` | The API's resource name (lowercase) | `user` |
+| `passiveAction` | Passive form of the API action | `created`, `updated`, `deleted`, `registered` |
+
+**Examples:**
+
+| Business API | Topic |
+|---|---|
+| `createUser` (action: create, resource: user) | `myapp-auth-service-user-created` |
+| `registerPublicUser` (action: register, resource: publicuser) | `myapp-auth-service-publicuser-registered` |
+| `approveReview` (action: approve, resource: review) | `myapp-auth-service-review-approved` |
+
+### DB-Level Event Topics
+
+Every DataObject automatically emits low-level database events (create, update, delete) to topics named:
+
+```
+<serviceCodename>-dbevent-<objectName>-<passiveAction>
+```
+
+**Examples:**
+
+| DataObject | Action | Topic |
+|---|---|---|
+| `user` | created | `myapp-auth-service-dbevent-user-created` |
+| `user` | updated | `myapp-auth-service-dbevent-user-updated` |
+| `review` | deleted | `myapp-auth-service-dbevent-review-deleted` |
+
+DB-level events fire on every database mutation, regardless of whether a Business API triggered it. API-level events only fire when a specific Business API completes.
+
+---
+
+## Topic Aliases
+
+Instead of typing full topic names, you can use short aliases anywhere a topic name is expected — in Kafka controller configuration, SSE progress listeners, `PublishEventAction` topics, RealtimeHub Kafka bridges, or runtime publish/subscribe calls.
+
+### Alias Format
+
+An alias consists of one, two, or three segments separated by a delimiter:
+
+```
+<asset>
+<asset><delimiter><event>
+dbEvent<delimiter><asset><delimiter><event>
+```
+
+**Supported delimiters:** `:` `.` `_`
+
+All aliases are **case-insensitive**. `CreateUser:Done`, `createuser:done`, and `CREATEUSER:DONE` all resolve identically.
+
+---
+
+## Alias Resolution Rules
+
+### 1. Single API Name
+
+The simplest alias — just the API name with no event qualifier. Resolves to the API's default event topic.
+
+| Alias | Resolves To |
+|---|---|
+| `createUser` | `myapp-auth-service-user-created` |
+| `updateUser` | `myapp-auth-service-user-updated` |
+| `approveReview` | `myapp-auth-service-review-approved` |
+
+Single data object names (e.g., just `user`) do **not** resolve because the intended action is ambiguous.
+
+### 2. API Name + Completion Keyword
+
+When the first segment matches a Business API name and the second segment is a **completion keyword**, the alias resolves to that API's main event topic.
+
+**Completion keywords:** `done`, `executed`, `ended`, `finished`, `completed`
+
+| Alias | Resolves To |
+|---|---|
+| `createUser:done` | `myapp-auth-service-user-created` |
+| `updateUser:finished` | `myapp-auth-service-user-updated` |
+| `approveReview:completed` | `myapp-auth-service-review-approved` |
+
+### 3. API Name + Own Action
+
+When the second segment is the passive form of the API's own action, it resolves to the API's event topic.
+
+| Alias | Resolves To |
+|---|---|
+| `createUser:created` | `myapp-auth-service-user-created` |
+| `registerPublicUser:registered` | `myapp-auth-service-publicuser-registered` |
+
+### 4. DataObject/Resource + Standard Action
+
+When the first segment matches a DataObject or API resource name and the second segment is a standard CRUD action in passive form:
+
+| Standard Actions |
+|---|
+| `created`, `updated`, `deleted`, `listed`, `retrieved` |
+
+The resolver follows a priority chain:
+
+1. **Direct resource-action match** — If a Business API's resource name matches the asset and its passive action matches the event, use the API's event topic.
+
+2. **Object + CRUD type match (create/delete only)** — If the asset matches a DataObject that an API operates on, and the action's CRUD type matches, use that API's topic. This only applies to `created` and `deleted` because creates and deletes are unambiguous.
+
+3. **DB-level event fallback** — If the DataObject exists but no API match was found (or the action is `updated`), fall back to the DB-level event topic.
+
+| Alias | Resolution Path | Topic |
+|---|---|---|
+| `user:created` | Direct match → `createUser` API | `...-user-created` |
+| `user:deleted` | Direct match → `deleteUser` API | `...-user-deleted` |
+| `review:updated` | No direct match, `updated` skips CRUD match → DB fallback | `...-dbevent-review-updated` |
+| `publicUser:created` | No API resource match, no API object match → DB fallback | `...-dbevent-publicuser-created` |
+
+<Tip>
+**Why `updated` skips API matching via CRUD type:** A DataObject may have multiple update-type APIs (e.g., `approveReview`, `rejectReview`). The alias `review:updated` is ambiguous — it could mean any of them. To avoid incorrect mappings, `updated` always falls back to the DB-level event. Use `review:approved` or `review:rejected` to target a specific API.
+</Tip>
+
+### 5. DataObject + Non-Standard Action
+
+When the action is not a standard CRUD passive form, the resolver checks if any Business API that operates on the same DataObject has a matching action.
+
+| Alias | Matched API | Topic |
+|---|---|---|
+| `user:registered` | `registerPublicUser` (action: register → registered) | `...-publicuser-registered` |
+| `review:approved` | `approveReview` (action: approve → approved) | `...-review-approved` |
+| `review:rejected` | `rejectReview` (action: reject → rejected) | `...-review-rejected` |
+
+---
+
+## Explicit DB Event Override
+
+Sometimes you want to listen to the raw database event even when an API-level event exists. Prefix the alias with `dbEvent` to force DB-level resolution, bypassing all API matching.
+
+### Three-Segment Form: `dbEvent:asset:action`
+
+| Alias | Resolves To |
+|---|---|
+| `dbEvent:user:created` | `...-dbevent-user-created` |
+| `dbEvent:user:updated` | `...-dbevent-user-updated` |
+| `dbEvent:review:deleted` | `...-dbevent-review-deleted` |
+
+The asset can also be an API name. The resolver finds the API's underlying DataObject and returns its DB event:
+
+| Alias | Resolves To |
+|---|---|
+| `dbEvent:createUser:done` | `...-dbevent-user-created` |
+| `dbEvent:updateUser:finished` | `...-dbevent-user-updated` |
+| `dbEvent:approveReview:done` | `...-dbevent-review-updated` |
+
+### Two-Segment Form: `dbEvent:apiName`
+
+Shorthand for the API's default action at the DB level:
+
+| Alias | Resolves To |
+|---|---|
+| `dbEvent:createUser` | `...-dbevent-user-created` |
+| `dbEvent:deleteUser` | `...-dbevent-user-deleted` |
+| `dbEvent:approveReview` | `...-dbevent-review-updated` |
+
+---
+
+## Cross-Service Resolution
+
+Aliases are not limited to the current service. If the asset or API name doesn't match anything in the local service, the resolver searches all services in the project.
+
+| Alias (from auth-service) | Resolves To |
+|---|---|
+| `createOrder:done` | `myapp-sales-service-order-created` |
+| `order:created` | `myapp-sales-service-order-created` |
+| `dbEvent:order:deleted` | `myapp-sales-service-dbevent-order-deleted` |
+
+The local service is always checked first. If a name exists in both the local and a remote service, the local service wins.
+
+---
+
+## Where Aliases Work
+
+Aliases are resolved in the following places:
+
+### Design Time (Code Generation)
+
+During code generation, the Mindbricks genesis engine resolves aliases in all topic-related configuration fields:
+
+| Pattern | Fields |
+|---|---|
+| **Business API** → Kafka Controller | `requestTopicName`, `responseTopicName` |
+| **Business API** → SSE Progress Listeners | `topic` |
+| **Service** → Edge Controllers | `requestTopic`, `responseTopic` |
+| **PublishEventAction** | `topic` |
+| **RealtimeHub** → Kafka Events | `topic` |
+
+The resolved topic name replaces the alias in the generated code. The original alias is preserved in an `originalTopic` field for debugging.
+
+### Runtime (Generated Code)
+
+The generated code includes a runtime alias resolver module (`topic-alias-resolver.js`) that contains a pre-computed lookup map of all aliases across the project. This module is used in:
+
+- **ServicePublisher** — resolves the topic before publishing any Kafka message.
+- **KafkaListener** — resolves the topic before subscribing to a consumer.
+- **kafka.js `sendMessageToKafka`** — resolves the topic on every send call.
+
+This means even if application code passes an alias to a publish or subscribe function at runtime, it will be transparently resolved to the real topic name.
+
+---
+
+## Real Topic Names Pass Through
+
+If you provide a full topic name (e.g., `myapp-auth-service-user-created`) instead of an alias, the resolver returns it unchanged. Multi-segment hyphenated strings that don't match any alias are treated as literal topic names.
+
+---
+
+## Quick Reference
+
+| Format | Example | Description |
+|---|---|---|
+| `apiName` | `createUser` | API's default event |
+| `apiName:done` | `createUser:done` | API event (completion keyword) |
+| `apiName:action` | `createUser:created` | API event (passive action match) |
+| `object:action` | `user:created` | API event or DB fallback |
+| `object:customAction` | `user:registered` | Matched API's event |
+| `dbEvent:object:action` | `dbEvent:user:created` | Forced DB event |
+| `dbEvent:apiName:action` | `dbEvent:createUser:done` | DB event via API lookup |
+| `dbEvent:apiName` | `dbEvent:createUser` | DB event via API (default action) |
+
+**Delimiter options:** `:` `.` `_` — all are equivalent. Use whichever reads best in your context.
+
+**Case:** All lookups are case-insensitive. `CreateUser:Done` = `createuser:done` = `CREATEUSER:DONE`.
+
+**Cross-service:** All formats work across services within the same project. Local service matches take priority.

@@ -202,6 +202,10 @@
                 "path": "kafka-controllers"
               },
               {
+                "title": "Topic Name Handling",
+                "path": "topic-name-handling"
+              },
+              {
                 "title": "Realtime Service",
                 "path": "realtime-service"
               },
