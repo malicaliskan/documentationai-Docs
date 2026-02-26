@@ -1,10 +1,6 @@
 ---
 title: Event Subscription Pattern
-description: >-
-  A comprehensive guide to designing client-facing Kafka event subscriptions in
-  Mindbricks. Covers WebSocket and SSE transports, DataObject-based
-  authorization, topic aliases, payload transformation, mixed-access splitting,
-  custom auth scripts, and lazy Kafka consumers.
+description: A comprehensive guide to designing client-facing Kafka event subscriptions in Mindbricks. Covers WebSocket and SSE transports, DataObject-based authorization, topic aliases, payload transformation, mixed-access splitting, custom auth scripts, and lazy Kafka consumers.
 ---
 # Event Subscription Pattern
 
@@ -323,7 +319,7 @@ Each topic gets a **shared Kafka consumer** (not per-client). Consumers are mana
 This means:
 - No idle consumers when no one is listening
 - Multiple service instances each run their own consumer group (Kafka partitions distribute messages)
-- Consumer creation is fast (typically <1s)
+- Consumer creation is fast (typically less than 1s)
 
 ### Message Distribution Flow
 
