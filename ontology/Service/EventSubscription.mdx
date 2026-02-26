@@ -1,0 +1,105 @@
+# EventSubscription
+
+**MPO Version:** 1.3.0
+
+Defines a client-facing Kafka event subscription channel. Clients connect via WebSocket (Socket.IO namespace at /events/{name}) or SSE (GET /events/{name}/stream) and subscribe to a subset of the configured topics. Each topic is linked to a DataObject whose authorization config drives the default access control. The designer can override access levels, transform payloads, and add custom auth scripts. Authorization automatically splits mixed-access subscriptions -- less-authorized users receive only the topics they are allowed to see.
+
+```typescript
+interface EventSubscription = {
+  basics : EventSubBasics;
+  topics : EventSubTopic[];
+  auth : EventSubAuth;
+}
+```
+
+| Field  | Description |
+| ------ | ----------- |
+| basics | undefined   |
+| topics | undefined   |
+| auth   | undefined   |
+
+## EventSubBasics
+
+**MPO Version:** 1.3.0
+
+Core identity of the event subscription. The name becomes the Socket.IO namespace path (/events/{name}) for WebSocket transport or the REST endpoint prefix (/events/{name}/stream) for SSE transport.
+
+```typescript
+interface EventSubBasics = {
+  name : String;
+  description : Text;
+  transport : EventSubTransport;
+}
+```
+
+| Field       | Description                                                                                                                                                                                                                                                                                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| name        | Unique subscription identifier within the service. Used as the Socket.IO namespace (/events/{name}) or SSE endpoint (/events/{name}/stream). Must be a valid code name (kebab-case recommended). Examples: 'dashboard', 'product-updates', 'order-tracking'.                                                                         |
+| description | Human-readable description of the subscription's purpose. Used in documentation and AI assistant context.                                                                                                                                                                                                                            |
+| transport   | The transport protocol for this subscription. Use 'websocket' for long-lived connections (finance dashboards, live tickers, admin panels) where clients dynamically subscribe/unsubscribe. Use 'sse' for short-lived, page-scoped connections (product page updates, order tracking) that open on page load and close on navigation. |
+
+### EventSubTransport
+
+Defines the transport protocol for a client event subscription.
+
+```js
+const EventSubTransport = {
+  websocket: "websocket",
+  sse: "sse",
+};
+```
+
+| Enum      | Description                                                                                                                                                      |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| websocket | Socket.IO WebSocket connection. Best for long-lived subscriptions (dashboards, tickers, admin panels) where clients dynamically subscribe/unsubscribe to topics. |
+| sse       | Server-Sent Events over HTTP. Best for short-lived, page-scoped subscriptions (product pages, order tracking) that open on page load and close on navigation.    |
+
+## EventSubTopic
+
+**MPO Version:** 1.3.0
+
+A Kafka topic included in this subscription. First select the DataObject -- the available topics are derived from the DataObject's API events and DB events. Authorization defaults to the DataObject's access level (public/protected/private) but can be overridden with forceAccessLevel. The payload can be transformed or fields can be excluded before delivery to the client.
+
+```typescript
+interface EventSubTopic = {
+  name : String;
+  dataObjectName : DataObjectName;
+  topic : String;
+  description : String;
+  forceAccessLevel : DataObjectAccess;
+  payloadMapping : MScript;
+  excludeFields : String[];
+}
+```
+
+| Field            | Description                                                                                                                                                                                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| name             | Client-facing event name emitted when a matching Kafka message arrives. Example: 'orderCreated', 'reviewAdded', 'inventoryChanged'.                                                                                                                                            |
+| dataObjectName   | The DataObject this topic belongs to. Select the DataObject first, then choose the topic. The DataObject's authorization config (public/protected/private, tenant scoping) drives the default access control for this topic.                                                   |
+| topic            | Kafka topic to subscribe to. Supports topic aliases (e.g., 'order.created', 'review_updated', 'dbEvent:inventory:updated'). The available topics are derived from the selected DataObject's API events and DB events.                                                          |
+| description      | Human-readable description of this topic event.                                                                                                                                                                                                                                |
+| forceAccessLevel | Override the DataObject's default access level for this specific topic. Leave null to use the DataObject's own access level. Set to 'accessPublic' to make events visible to everyone, 'accessProtected' for all authenticated users, or 'accessPrivate' to require ownership. |
+| payloadMapping   | MScript expression to build a new payload from the original event data. Has access to 'data' (the parsed Kafka message). Example: '{ orderId: data.id, status: data.status, updatedAt: data.updatedAt }'. If omitted, the full payload is sent (minus excludeFields).          |
+| excludeFields    | List of field names to strip from the payload before sending to clients. Applied after payloadMapping (if defined) or on the raw payload. Use to hide sensitive/internal fields. Example: ['internalNotes', 'costBreakdown', 'adminFlags'].                                    |
+
+## EventSubAuth
+
+**MPO Version:** 1.3.0
+
+Authorization configuration for this event subscription. Default auth derives from each topic's DataObject access level -- public topics are open, protected topics require authentication (+ tenant filtering in multi-tenant), private topics require ownership (or admin role if no ownership field exists). The designer can add absoluteRoles to bypass all checks, checkRoles to gate access, and custom MScript auth/filter logic.
+
+```typescript
+interface EventSubAuth = {
+  absoluteRoles : String[];
+  checkRoles : String[];
+  authScript : MScript;
+  filterScript : MScript;
+}
+```
+
+| Field         | Description                                                                                                                                                                                                                                                                                                                  |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | -------------------------------- |
+| absoluteRoles | List of role names (from session.roleId) that bypass ALL authorization checks. Users with any of these roles receive all topics in the subscription without filtering. Examples: ['superAdmin'], ['superAdmin', 'systemAdmin'].                                                                                              |
+| checkRoles    | List of role names REQUIRED to use this subscription. If defined, users whose roleId is NOT in this list are rejected entirely. Use to restrict subscriptions to specific user tiers. Examples: ['admin', 'tenantAdmin', 'salesManager']. Leave empty to allow all authenticated users.                                      |
+| authScript    | MScript evaluated at subscribe time for each requested topic. Must return a boolean. Context: 'session' (user session), 'topicName' (Kafka topic string), 'dataObjectName' (the DataObject name). Return false to reject the topic for this user. Example: 'session.subscriptionLevel >= 2                                   |     | dataObjectName == "PublicFeed"'. |
+| filterScript  | MScript evaluated for each incoming Kafka event before delivery. Must return a boolean. Context: 'session' (user session), 'topicName' (Kafka topic string), 'dataObjectName' (the DataObject name), 'data' (event payload). Return false to skip this event for this user. Example: 'data.priority >= session.minPriority'. |

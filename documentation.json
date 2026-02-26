@@ -222,6 +222,10 @@
                 "path": "ai-agents"
               },
               {
+                "title": "Event Subscriptions",
+                "path": "event-subscription"
+              },
+              {
                 "title": "Genesis Project Management APIs",
                 "path": "genesis-project-management-apis"
               },
@@ -338,6 +342,10 @@
                   {
                     "title": "Data Property",
                     "path": "ontology/ProjectAuthentication/DataProperty"
+                  },
+                  {
+                    "title": "Business Api",
+                    "path": "ontology/ProjectAuthentication/BusinessApi"
                   }
                 ]
               },
@@ -383,6 +391,10 @@
                     "path": "ontology/Service/ServiceSettings"
                   },
                   {
+                    "title": "Shopping Cart Config",
+                    "path": "ontology/Service/ShoppingCartConfig"
+                  },
+                  {
                     "title": "Data Object",
                     "path": "ontology/Service/DataObject"
                   },
@@ -397,6 +409,18 @@
                   {
                     "title": "Edge Controller",
                     "path": "ontology/Service/EdgeController"
+                  },
+                  {
+                    "title": "AI Agent",
+                    "path": "ontology/Service/AIAgent"
+                  },
+                  {
+                    "title": "Realtime Hub",
+                    "path": "ontology/Service/RealtimeHub"
+                  },
+                  {
+                    "title": "Event Subscription",
+                    "path": "ontology/Service/EventSubscription"
                   }
                 ]
               }
