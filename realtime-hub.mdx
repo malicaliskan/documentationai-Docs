@@ -4,7 +4,8 @@ description: >-
   A comprehensive guide to designing bidirectional real-time communication hubs
   in Mindbricks. Covers Socket.IO rooms, built-in message types, custom message
   types, standard events, auto-bridged DataObject events, Kafka bridging,
-  message persistence, room authorization, guardrails, and REST fallback
+  message persistence, room authorization, guardrails, server-side logic hooks
+  (message interception, state management, scheduled actions), and REST fallback
   endpoints.
 ---
 # Realtime Hub Pattern
@@ -574,6 +575,188 @@ Safety limits to prevent abuse and resource exhaustion.
 
 ---
 
+## Hub Logic
+
+HubLogic adds server-side processing hooks to a RealtimeHub. It allows intercepting custom message types with MScript before broadcast, delivering room state on join or on demand, and running scheduled actions on an interval. MScript hooks can call service library functions, Redis, DB, Business APIs, or external services -- the hub just provides the hook points and acts on the return values.
+
+### Pattern Structure
+
+```typescript
+interface HubLogic = {
+  stateScript : MScript;
+  messageHandlers : HubMessageHandler[];
+  scheduledActions : HubScheduledAction[];
+}
+
+interface HubMessageHandler = {
+  messageType : String;
+  script : MScript;
+}
+
+interface HubScheduledAction = {
+  name : String;
+  intervalMs : Integer;
+  keepAlive : Boolean;
+  script : MScript;
+}
+```
+
+### Message Handlers
+
+When a client sends a custom message type that has a matching handler, the hub **intercepts** the message instead of broadcasting it immediately. The handler's MScript is called with:
+
+| Context Variable | Type | Description |
+|-----------------|------|-------------|
+| `session` | Object | Sender's session (userId, roleId, fullname, avatar, tenantId) |
+| `message` | Object | `{ type: "chessMove", content: { from: "e2", to: "e4" } }` |
+| `roomId` | String | The room this message was sent in |
+| `room` | Object | The room DataObject record (fetched from Elasticsearch) |
+| `lib` | Object | Service library functions |
+
+The script must return an object:
+
+```javascript
+{
+  accept: true,                    // false to reject
+  rejectReason: "Not your turn",   // sent to sender if rejected
+
+  broadcast: true,                 // false to suppress the original message
+  broadcastTo: "all",              // "all" | "others" | "sender" | ["userId-1", "userId-2"]
+  modifiedContent: { ... },        // replace content before broadcast
+  persist: true,                   // false to skip persistence
+
+  serverMessages: [                // server-generated messages
+    {
+      type: "gameEvent",
+      content: { event: "check" },
+      to: "all",                   // "all" | "others" | "sender" | ["userId-1"]
+      persist: true                // false to skip persistence
+    }
+  ]
+}
+```
+
+**Per-room sequential queue:** Intercepted messages are queued per-room and processed one at a time. This prevents race conditions when two messages arrive simultaneously for the same room (critical for games, auctions, and collaborative editing).
+
+**Standard messages pass through:** Only custom message types with a matching handler are intercepted. Built-in types (text, image, sticker, etc.) and custom types without a handler follow the standard flow -- immediate broadcast and persistence.
+
+### State Script
+
+The `stateScript` is called when a user joins a room and when a client emits `hub:requestState`. It fetches the current room state from wherever the designer stores it (Redis, DB, external service) and returns it to the requesting client only.
+
+| Context Variable | Type | Description |
+|-----------------|------|-------------|
+| `session` | Object | Requesting user's session |
+| `roomId` | String | Room ID |
+| `room` | Object | Room DataObject record |
+| `lib` | Object | Service library functions |
+
+The return value can be any shape -- the hub wraps it in a `hub:state` event:
+
+```javascript
+// Client receives:
+socket.on("hub:state", ({ roomId, state }) => {
+  renderChessBoard(state.board);
+  setTurnIndicator(state.turn);
+});
+
+// Client can request state anytime (e.g., after reconnect):
+socket.emit("hub:requestState", { roomId });
+```
+
+### Scheduled Actions
+
+Scheduled actions run on a fixed interval for each active room. Each action's MScript is called every `intervalMs` milliseconds and can return `serverMessages` to broadcast.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | String | — | Identifier for logging and lifecycle |
+| `intervalMs` | Integer | `1000` | Milliseconds between invocations |
+| `keepAlive` | Boolean | `false` | When `true`, keeps running even when the room has no connected users |
+| `script` | MScript | — | Called each tick; returns `{ serverMessages: [...] }` |
+
+**Lifecycle:**
+- Starts when the first user joins the room
+- Stops when the last user disconnects (unless `keepAlive: true`)
+- Each room has its own independent timer
+
+### Example: Chess Game
+
+```json
+{
+  "hubLogic": {
+    "stateScript": "lib.chess.getState(roomId)",
+    "messageHandlers": [
+      {
+        "messageType": "chessMove",
+        "script": "lib.chess.processMove(roomId, session, message)"
+      }
+    ],
+    "scheduledActions": []
+  }
+}
+```
+
+The service library function `lib.chess.processMove` handles validation, state updates, and generates server messages:
+
+```javascript
+async function processMove(roomId, session, message) {
+  const state = JSON.parse(await redis.get(`chess:${roomId}`));
+
+  if (state.turn !== session.userId) {
+    return { accept: false, rejectReason: "Not your turn" };
+  }
+
+  const result = validateAndApply(state.board, message.content);
+  if (!result.valid) {
+    return { accept: false, rejectReason: result.reason };
+  }
+
+  await redis.set(`chess:${roomId}`, JSON.stringify(result.newState));
+
+  const serverMessages = [];
+  if (result.isCheckmate) {
+    serverMessages.push({
+      type: "gameEvent",
+      content: { event: "checkmate", winner: session.userId },
+      to: "all"
+    });
+  } else if (result.isCheck) {
+    serverMessages.push({
+      type: "gameEvent",
+      content: { event: "check" },
+      to: "all"
+    });
+  }
+
+  return { accept: true, broadcast: true, broadcastTo: "all", serverMessages };
+}
+```
+
+### Example: Multiplayer World with Ticks
+
+```json
+{
+  "hubLogic": {
+    "stateScript": "lib.world.getVisibleState(roomId, session)",
+    "messageHandlers": [
+      { "messageType": "playerMove", "script": "lib.world.processMove(roomId, session, message)" },
+      { "messageType": "playerAttack", "script": "lib.world.processAttack(roomId, session, message)" }
+    ],
+    "scheduledActions": [
+      {
+        "name": "worldTick",
+        "intervalMs": 1000,
+        "keepAlive": true,
+        "script": "lib.world.tick(roomId)"
+      }
+    ]
+  }
+}
+```
+
+---
+
 ## Socket.IO Protocol
 
 ### Connection
@@ -735,6 +918,9 @@ socket.on("hub:roomUpdated", ({ roomId, ...data }) => console.log("Room updated:
 | `hub:reject`           | Moderator → Server           | `{ roomId, messageId, reason? }`                         | Reject a pending message                              |
 | `hub:messagePending`   | Server → Sender + Moderators | `{ roomId, messageId, sender?, message? }`               | Message awaiting moderation                           |
 | `hub:messageRejected`  | Server → Room                | `{ roomId, messageId, reason? }`                         | Moderated message was rejected                        |
+| `hub:requestState`     | Client → Server              | `{ roomId }`                                             | Request current room state (HubLogic)                 |
+| `hub:state`            | Server → Client              | `{ roomId, state }`                                      | Room state delivered (HubLogic)                       |
+| `hub:rejected`         | Server → Client              | `{ roomId, messageType, reason }`                        | Intercepted message rejected by server logic          |
 | `hub:messageEdited`    | Server → Room                | `{ roomId, ...record }`                                  | Auto-bridged: message edited                          |
 | `hub:messageDeleted`   | Server → Room                | `{ roomId, messageId, deletedBy }`                       | Auto-bridged: message deleted                         |
 | `hub:memberJoined`     | Server → Room                | `{ roomId, ...record }`                                  | Auto-bridged: member added                            |
@@ -1093,6 +1279,892 @@ A hub for live auctions with a custom `bid` message type, Kafka-bridged timer ev
 }
 ```
 
+### Example 6: Online Chess Platform with HubLogic
+
+A complete online chess platform where two players play chess with a side chat panel. The game room is a `ChessGame` DataObject, moves are validated server-side via a chess engine in the service library, and the board state is stored in Redis for fast access with history backed up to a `ChessMove` DataObject. Chat messages (text, stickers) flow through standard hub mechanics, while `chessMove` messages are intercepted by HubLogic for validation before broadcast.
+
+#### DataObjects
+
+| DataObject | Purpose |
+|-----------|---------|
+| `ChessGame` | Room record — players, status (waiting/active/completed), result, winner, timeControl |
+| `ChessGameMessage` | Auto-generated message DataObject — chat messages AND moves (via messageType enum) |
+| `ChessMove` | Dedicated move history — from, to, piece, promotion, notation, moveNumber, fen (separate from messages for analysis/replay) |
+| `ChessGameMembership` | Player membership — userId, color (white/black), joined timestamp |
+
+#### Pattern Configuration
+
+```json
+{
+  "hubBasics": {
+    "name": "chessGame",
+    "description": "Online chess game with real-time moves, chat, and spectator mode"
+  },
+  "roomSettings": {
+    "roomDataObject": "ChessGame",
+    "roomEligibility": "chessGame.status !== 'completed'",
+    "absoluteRoles": ["superAdmin"],
+    "authSources": [
+      {
+        "name": "player",
+        "sourceObject": "ChessGameMembership",
+        "userField": "userId",
+        "roomField": "chessGameId",
+        "hubRole": "player"
+      }
+    ],
+    "authScripts": [
+      {
+        "name": "spectatorAccess",
+        "script": "room.allowSpectators === true",
+        "hubRole": "spectator"
+      }
+    ]
+  },
+  "hubRoles": [
+    {
+      "name": "player",
+      "canRead": true,
+      "canSend": true,
+      "canModerate": false,
+      "allowedMessageTypes": "text,sticker,chessMove,drawOffer,resign"
+    },
+    {
+      "name": "spectator",
+      "canRead": true,
+      "canSend": true,
+      "canModerate": false,
+      "allowedMessageTypes": "text,sticker"
+    }
+  ],
+  "messageSettings": {
+    "dataObjectName": "ChessGameMessage",
+    "messageTypes": ["text", "sticker", "system"],
+    "enableReplyTo": false,
+    "enableReaction": true,
+    "enableForwarded": false,
+    "customMessageTypes": [
+      {
+        "name": "chessMove",
+        "description": "A chess move on the board",
+        "fields": [
+          { "name": "from", "fieldType": "String", "required": true },
+          { "name": "to", "fieldType": "String", "required": true },
+          { "name": "promotion", "fieldType": "String", "required": false }
+        ]
+      },
+      {
+        "name": "drawOffer",
+        "description": "Offer or respond to a draw",
+        "fields": [
+          { "name": "action", "fieldType": "String", "required": true }
+        ]
+      },
+      {
+        "name": "resign",
+        "description": "Player resigns the game",
+        "fields": []
+      },
+      {
+        "name": "gameEvent",
+        "description": "Server-generated game events (check, checkmate, draw, time)",
+        "fields": [
+          { "name": "event", "fieldType": "String", "required": true },
+          { "name": "winner", "fieldType": "String", "required": false },
+          { "name": "reason", "fieldType": "String", "required": false }
+        ]
+      }
+    ]
+  },
+  "eventSettings": {
+    "enableTypingIndicator": true,
+    "enableRecordingIndicator": false,
+    "enableReadReceipts": false,
+    "enableDeliveryReceipts": false,
+    "enablePresence": true,
+    "autoBridgeDataEvents": true
+  },
+  "historySettings": {
+    "historyEnabled": true,
+    "historyLimit": 100
+  },
+  "guardrails": {
+    "maxUsersPerRoom": 50,
+    "maxRoomsPerUser": 5,
+    "messageRateLimit": 30,
+    "maxMessageSize": 4096,
+    "connectionTimeout": 1800000,
+    "authCacheTTL": 600
+  },
+  "hubLogic": {
+    "stateScript": "lib.chessEngine.getState(roomId, session)",
+    "messageHandlers": [
+      {
+        "messageType": "chessMove",
+        "script": "lib.chessEngine.processMove(roomId, session, message, lib)"
+      },
+      {
+        "messageType": "drawOffer",
+        "script": "lib.chessEngine.handleDrawOffer(roomId, session, message, lib)"
+      },
+      {
+        "messageType": "resign",
+        "script": "lib.chessEngine.handleResign(roomId, session, message, lib)"
+      }
+    ],
+    "scheduledActions": [
+      {
+        "name": "clockTick",
+        "intervalMs": 1000,
+        "keepAlive": false,
+        "script": "lib.chessEngine.clockTick(roomId, lib)"
+      }
+    ]
+  }
+}
+```
+
+#### Service Library: `chessEngine`
+
+These functions live in the service's library folder. The MScript hooks call them with the full context.
+
+**`lib.chessEngine.getState(roomId, session)`** — Called on join and on `hub:requestState`:
+
+```javascript
+const { getRedisData } = require("common");
+
+async function getState(roomId, session) {
+  const raw = await getRedisData(`chess:state:${roomId}`);
+  if (!raw) return null;
+  const state = JSON.parse(raw);
+
+  return {
+    board: state.board,
+    turn: state.turn,
+    moveCount: state.moveCount,
+    whitePlayer: state.whitePlayer,
+    blackPlayer: state.blackPlayer,
+    whiteClock: state.whiteClock,
+    blackClock: state.blackClock,
+    status: state.status,
+    lastMove: state.lastMove,
+    capturedPieces: state.capturedPieces,
+    isCheck: state.isCheck,
+    legalMoves: state.turn === session.userId ? state.legalMoves : undefined
+  };
+}
+```
+
+The `legalMoves` field is only sent to the player whose turn it is, preventing the opponent from seeing available moves.
+
+**`lib.chessEngine.processMove(roomId, session, message, lib)`** — The core move handler:
+
+```javascript
+const { getRedisData, setRedisData } = require("common");
+const { createChessMove, updateChessGameById } = require("dbLayer");
+
+async function processMove(roomId, session, message, lib) {
+  const raw = await getRedisData(`chess:state:${roomId}`);
+  if (!raw) return { accept: false, rejectReason: "Game not initialized" };
+
+  const state = JSON.parse(raw);
+
+  if (state.status !== "active") {
+    return { accept: false, rejectReason: "Game is not active" };
+  }
+
+  if (state.turn !== session.userId) {
+    return { accept: false, rejectReason: "Not your turn" };
+  }
+
+  const { from, to, promotion } = message.content;
+
+  const moveResult = validateAndApplyMove(state, from, to, promotion);
+  if (!moveResult.valid) {
+    return { accept: false, rejectReason: moveResult.reason };
+  }
+
+  const newState = moveResult.newState;
+
+  // Persist move to ChessMove DataObject for replay/analysis
+  await createChessMove({
+    chessGameId: roomId,
+    moveNumber: newState.moveCount,
+    playerId: session.userId,
+    from,
+    to,
+    piece: moveResult.piece,
+    captured: moveResult.captured || null,
+    promotion: promotion || null,
+    notation: moveResult.notation,
+    fen: newState.fen,
+    timestamp: new Date().toISOString()
+  });
+
+  // Save updated state to Redis
+  await setRedisData(`chess:state:${roomId}`, JSON.stringify(newState));
+
+  // Build the response
+  const serverMessages = [];
+
+  if (newState.isCheckmate) {
+    newState.status = "completed";
+    serverMessages.push({
+      type: "gameEvent",
+      content: { event: "checkmate", winner: session.userId, reason: "checkmate" },
+      to: "all"
+    });
+    await updateChessGameById(roomId, {
+      status: "completed",
+      result: "checkmate",
+      winnerId: session.userId
+    });
+  } else if (newState.isStalemate) {
+    newState.status = "completed";
+    serverMessages.push({
+      type: "gameEvent",
+      content: { event: "draw", reason: "stalemate" },
+      to: "all"
+    });
+    await updateChessGameById(roomId, {
+      status: "completed",
+      result: "draw",
+      reason: "stalemate"
+    });
+  } else if (newState.isCheck) {
+    serverMessages.push({
+      type: "gameEvent",
+      content: { event: "check" },
+      to: "all",
+      persist: false
+    });
+  }
+
+  // Update state in Redis with final status
+  await setRedisData(`chess:state:${roomId}`, JSON.stringify(newState));
+
+  return {
+    accept: true,
+    broadcast: true,
+    broadcastTo: "all",
+    modifiedContent: {
+      from,
+      to,
+      promotion: promotion || null,
+      piece: moveResult.piece,
+      captured: moveResult.captured || null,
+      notation: moveResult.notation,
+      fen: newState.fen,
+      isCheck: newState.isCheck
+    },
+    serverMessages
+  };
+}
+
+function validateAndApplyMove(state, from, to, promotion) {
+  // This is where the actual chess rules engine lives.
+  // Uses a chess library (or custom implementation) to:
+  // 1. Validate the move is legal for the current board position
+  // 2. Apply the move and compute the new board state
+  // 3. Detect check, checkmate, stalemate, draw conditions
+  // 4. Compute legal moves for the next player
+  // Returns: { valid, reason?, newState, piece, captured, notation }
+}
+```
+
+**`lib.chessEngine.handleDrawOffer(roomId, session, message, lib)`**:
+
+```javascript
+async function handleDrawOffer(roomId, session, message, lib) {
+  const raw = await getRedisData(`chess:state:${roomId}`);
+  const state = JSON.parse(raw);
+  const { action } = message.content;
+
+  if (action === "offer") {
+    state.drawOffer = { from: session.userId, timestamp: Date.now() };
+    await setRedisData(`chess:state:${roomId}`, JSON.stringify(state));
+    return {
+      accept: true,
+      broadcast: true,
+      broadcastTo: "all",
+      serverMessages: [{
+        type: "gameEvent",
+        content: { event: "drawOffered", by: session.userId },
+        to: "all",
+        persist: false
+      }]
+    };
+  }
+
+  if (action === "accept" && state.drawOffer && state.drawOffer.from !== session.userId) {
+    state.status = "completed";
+    await setRedisData(`chess:state:${roomId}`, JSON.stringify(state));
+    await updateChessGameById(roomId, { status: "completed", result: "draw", reason: "agreement" });
+    return {
+      accept: true,
+      broadcast: false,
+      serverMessages: [{
+        type: "gameEvent",
+        content: { event: "draw", reason: "agreement" },
+        to: "all"
+      }]
+    };
+  }
+
+  if (action === "decline") {
+    state.drawOffer = null;
+    await setRedisData(`chess:state:${roomId}`, JSON.stringify(state));
+    return {
+      accept: true,
+      broadcast: false,
+      serverMessages: [{
+        type: "gameEvent",
+        content: { event: "drawDeclined" },
+        to: "all",
+        persist: false
+      }]
+    };
+  }
+
+  return { accept: false, rejectReason: "Invalid draw action" };
+}
+```
+
+**`lib.chessEngine.handleResign(roomId, session, message, lib)`**:
+
+```javascript
+async function handleResign(roomId, session, message, lib) {
+  const raw = await getRedisData(`chess:state:${roomId}`);
+  const state = JSON.parse(raw);
+
+  const winnerId = state.whitePlayer === session.userId
+    ? state.blackPlayer
+    : state.whitePlayer;
+
+  state.status = "completed";
+  await setRedisData(`chess:state:${roomId}`, JSON.stringify(state));
+  await updateChessGameById(roomId, {
+    status: "completed",
+    result: "resignation",
+    winnerId
+  });
+
+  return {
+    accept: true,
+    broadcast: false,
+    serverMessages: [{
+      type: "gameEvent",
+      content: { event: "resignation", winner: winnerId, resigned: session.userId },
+      to: "all"
+    }]
+  };
+}
+```
+
+**`lib.chessEngine.clockTick(roomId, lib)`** — Scheduled action running every second:
+
+```javascript
+async function clockTick(roomId, lib) {
+  const raw = await getRedisData(`chess:state:${roomId}`);
+  if (!raw) return { serverMessages: [] };
+  const state = JSON.parse(raw);
+
+  if (state.status !== "active") return { serverMessages: [] };
+
+  const activeColor = state.turn === state.whitePlayer ? "white" : "black";
+  if (activeColor === "white") {
+    state.whiteClock = Math.max(0, state.whiteClock - 1);
+  } else {
+    state.blackClock = Math.max(0, state.blackClock - 1);
+  }
+
+  await setRedisData(`chess:state:${roomId}`, JSON.stringify(state));
+
+  // Time expired
+  if (state.whiteClock <= 0 || state.blackClock <= 0) {
+    const loser = state.whiteClock <= 0 ? state.whitePlayer : state.blackPlayer;
+    const winner = loser === state.whitePlayer ? state.blackPlayer : state.whitePlayer;
+    state.status = "completed";
+    await setRedisData(`chess:state:${roomId}`, JSON.stringify(state));
+    await updateChessGameById(roomId, {
+      status: "completed",
+      result: "timeout",
+      winnerId: winner
+    });
+
+    return {
+      serverMessages: [
+        {
+          type: "gameEvent",
+          content: { event: "timeout", winner, loser },
+          to: "all"
+        }
+      ]
+    };
+  }
+
+  // Broadcast clock update every second (ephemeral, not persisted)
+  return {
+    serverMessages: [
+      {
+        type: "gameEvent",
+        content: {
+          event: "clockUpdate",
+          whiteClock: state.whiteClock,
+          blackClock: state.blackClock
+        },
+        to: "all",
+        persist: false
+      }
+    ]
+  };
+}
+```
+
+#### Frontend Integration
+
+```javascript
+import { io } from "socket.io-client";
+
+const socket = io(`${baseUrl}/chess-api/hub/chessGame`, {
+  auth: { token: `Bearer ${accessToken}` },
+  transports: ["websocket"],
+});
+
+// ── Join a game room ──────────────────────────────────────────────────
+
+socket.emit("hub:join", { roomId: gameId });
+
+socket.on("hub:joined", ({ roomId, hubRole }) => {
+  isPlayer = hubRole === "player";
+  isSpectator = hubRole === "spectator";
+});
+
+// ── Receive board state (on join and on demand) ──────────────────────
+
+socket.on("hub:state", ({ roomId, state }) => {
+  renderBoard(state.board);
+  setClocks(state.whiteClock, state.blackClock);
+  setTurnIndicator(state.turn);
+  if (state.legalMoves) highlightLegalMoves(state.legalMoves);
+  setPlayerInfo(state.whitePlayer, state.blackPlayer);
+  setCapturedPieces(state.capturedPieces);
+});
+
+// ── Receive all messages (chat + moves + game events) ────────────────
+
+socket.on("hub:messageArrived", ({ sender, message }) => {
+  switch (message.messageType) {
+    case "chessMove":
+      animateMove(message.content.from, message.content.to);
+      updateBoardFromFen(message.content.fen);
+      addToMoveList(message.content.notation);
+      if (message.content.isCheck) flashCheck();
+      break;
+
+    case "gameEvent":
+      handleGameEvent(message.content);
+      break;
+
+    case "text":
+    case "sticker":
+      appendChatMessage(sender, message);
+      break;
+  }
+});
+
+// ── Handle rejected moves ────────────────────────────────────────────
+
+socket.on("hub:rejected", ({ messageType, reason }) => {
+  if (messageType === "chessMove") {
+    shakeBoard();
+    showToast(`Invalid move: ${reason}`);
+  }
+});
+
+// ── Make a move ──────────────────────────────────────────────────────
+
+function onPieceDrop(from, to, promotion) {
+  socket.emit("hub:send", {
+    roomId: gameId,
+    messageType: "chessMove",
+    content: { from, to, promotion }
+  });
+}
+
+// ── Chat messages (standard hub flow, no interception) ───────────────
+
+function sendChatMessage(text) {
+  socket.emit("hub:send", {
+    roomId: gameId,
+    messageType: "text",
+    content: { body: text }
+  });
+}
+
+// ── Game actions ─────────────────────────────────────────────────────
+
+function offerDraw() {
+  socket.emit("hub:send", {
+    roomId: gameId,
+    messageType: "drawOffer",
+    content: { action: "offer" }
+  });
+}
+
+function acceptDraw() {
+  socket.emit("hub:send", {
+    roomId: gameId,
+    messageType: "drawOffer",
+    content: { action: "accept" }
+  });
+}
+
+function resign() {
+  socket.emit("hub:send", {
+    roomId: gameId,
+    messageType: "resign",
+    content: {}
+  });
+}
+
+// ── Handle game events ───────────────────────────────────────────────
+
+function handleGameEvent(content) {
+  switch (content.event) {
+    case "check":
+      flashCheck();
+      break;
+    case "checkmate":
+      showGameOver(`Checkmate! ${getPlayerName(content.winner)} wins.`);
+      break;
+    case "draw":
+      showGameOver(`Draw by ${content.reason}.`);
+      break;
+    case "resignation":
+      showGameOver(`${getPlayerName(content.resigned)} resigned. ${getPlayerName(content.winner)} wins.`);
+      break;
+    case "timeout":
+      showGameOver(`Time's up! ${getPlayerName(content.winner)} wins on time.`);
+      break;
+    case "clockUpdate":
+      setClocks(content.whiteClock, content.blackClock);
+      break;
+    case "drawOffered":
+      if (content.by !== myUserId) showDrawOfferDialog();
+      break;
+    case "drawDeclined":
+      showToast("Draw offer declined.");
+      break;
+  }
+}
+
+// ── Resync after reconnect ───────────────────────────────────────────
+
+socket.on("connect", () => {
+  socket.emit("hub:join", { roomId: gameId });
+});
+
+socket.on("hub:requestState", { roomId: gameId });
+
+// ── Chat history on join ─────────────────────────────────────────────
+
+socket.on("hub:history", ({ messages }) => {
+  for (const msg of messages.reverse()) {
+    if (msg.messageType === "text" || msg.messageType === "sticker") {
+      appendChatMessage(msg.sender, msg);
+    }
+  }
+});
+```
+
+#### Architecture Summary
+
+```
+Frontend (Chess Board + Chat Panel)
+    │
+    │  Single Socket.IO connection
+    │
+    ▼
+RealtimeHub: chessGame (Socket.IO namespace)
+    │
+    ├── text, sticker messages ──────► Standard flow (persist + broadcast)
+    │
+    ├── chessMove ──────────────────► HubLogic interception
+    │   │                                │
+    │   │   Per-room queue (sequential)  │
+    │   │                                ▼
+    │   │                         lib.chessEngine.processMove()
+    │   │                                │
+    │   │                    ┌───────────┼───────────┐
+    │   │                    │           │           │
+    │   │                Read state   Validate   Write state
+    │   │                from Redis    move      to Redis
+    │   │                                │
+    │   │                    ┌───────────┼───────────┐
+    │   │                    │           │           │
+    │   │             Save ChessMove  Return     Generate
+    │   │             to DataObject   result    serverMessages
+    │   │                                │
+    │   ◄────────────────────────────────┘
+    │   │
+    │   ├── accept: true ──► broadcast chessMove to all players
+    │   ├── accept: false ─► hub:rejected to sender only
+    │   └── serverMessages ► gameEvent (check, checkmate) to all
+    │
+    ├── drawOffer, resign ──────────► HubLogic interception (same pattern)
+    │
+    └── clockTick (every 1s) ───────► Scheduled action
+        │
+        └── lib.chessEngine.clockTick()
+            │
+            ├── Decrement active player's clock in Redis
+            ├── If time expired → gameEvent: timeout
+            └── clockUpdate → all (persist: false)
+```
+
+#### Using External Libraries: chess.js
+
+Instead of writing a chess engine from scratch, you can use the [chess.js](https://www.npmjs.com/package/chess.js) npm library for move validation, legal move generation, and game-over detection. This example shows how to integrate an external npm package into the service and call it from the HubLogic MScript hooks.
+
+**Step 1: Add chess.js to the service's npm packages**
+
+In Service Settings, add the package to `nodejsPackages`:
+
+```json
+{
+  "serviceSettings": {
+    "serviceBasics": {
+      "name": "chess",
+      "nodejsPackages": [
+        {
+          "packageName": "chess.js",
+          "version": "^1.0.0",
+          "defaultImportConst": "chessjs"
+        }
+      ]
+    }
+  }
+}
+```
+
+This adds `"chess.js": "^1.0.0"` to the service's `package.json` and makes it available for `require("chess.js")` in library functions.
+
+**Step 2: Rewrite the service library to use chess.js**
+
+The entire custom `validateAndApplyMove` function from the previous example is replaced by chess.js calls:
+
+**`lib.chessEngine.getState(roomId, session)`**:
+
+```javascript
+const { Chess } = require("chess.js");
+const { getRedisData } = require("common");
+
+async function getState(roomId, session) {
+  const fen = await getRedisData(`chess:fen:${roomId}`);
+  const meta = JSON.parse(await getRedisData(`chess:meta:${roomId}`) || "{}");
+  if (!fen) return null;
+
+  const game = new Chess(fen);
+
+  const turnColor = game.turn(); // 'w' or 'b'
+  const turnUserId = turnColor === "w" ? meta.whitePlayer : meta.blackPlayer;
+
+  return {
+    fen,
+    board: game.board(),
+    turn: turnUserId,
+    turnColor,
+    moveCount: game.moveNumber(),
+    isCheck: game.isCheck(),
+    isGameOver: game.isGameOver(),
+    whitePlayer: meta.whitePlayer,
+    blackPlayer: meta.blackPlayer,
+    whiteClock: meta.whiteClock,
+    blackClock: meta.blackClock,
+    status: meta.status,
+    capturedPieces: meta.capturedPieces || { w: [], b: [] },
+    legalMoves: turnUserId === session.userId
+      ? game.moves({ verbose: true }).map(m => ({ from: m.from, to: m.to, promotion: m.promotion }))
+      : undefined
+  };
+}
+```
+
+**`lib.chessEngine.processMove(roomId, session, message, lib)`**:
+
+```javascript
+const { Chess } = require("chess.js");
+const { getRedisData, setRedisData } = require("common");
+const { createChessMove, updateChessGameById } = require("dbLayer");
+
+async function processMove(roomId, session, message, lib) {
+  const fen = await getRedisData(`chess:fen:${roomId}`);
+  const meta = JSON.parse(await getRedisData(`chess:meta:${roomId}`) || "{}");
+  if (!fen) return { accept: false, rejectReason: "Game not initialized" };
+
+  if (meta.status !== "active") {
+    return { accept: false, rejectReason: "Game is not active" };
+  }
+
+  const game = new Chess(fen);
+
+  // Verify it's the sender's turn
+  const expectedPlayer = game.turn() === "w" ? meta.whitePlayer : meta.blackPlayer;
+  if (expectedPlayer !== session.userId) {
+    return { accept: false, rejectReason: "Not your turn" };
+  }
+
+  // Attempt the move using chess.js — it validates everything:
+  // legal squares, pins, checks, en passant, castling, promotion
+  const { from, to, promotion } = message.content;
+  let moveResult;
+  try {
+    moveResult = game.move({ from, to, promotion });
+  } catch (err) {
+    return { accept: false, rejectReason: "Illegal move" };
+  }
+
+  if (!moveResult) {
+    return { accept: false, rejectReason: "Illegal move" };
+  }
+
+  const newFen = game.fen();
+
+  // Track captured pieces
+  if (moveResult.captured) {
+    const capturedBy = moveResult.color; // 'w' or 'b'
+    meta.capturedPieces = meta.capturedPieces || { w: [], b: [] };
+    meta.capturedPieces[capturedBy].push(moveResult.captured);
+  }
+
+  // Persist the move to ChessMove DataObject
+  await createChessMove({
+    chessGameId: roomId,
+    moveNumber: game.moveNumber(),
+    playerId: session.userId,
+    from: moveResult.from,
+    to: moveResult.to,
+    piece: moveResult.piece,
+    captured: moveResult.captured || null,
+    promotion: moveResult.promotion || null,
+    notation: moveResult.san,
+    fen: newFen,
+    timestamp: new Date().toISOString()
+  });
+
+  // Save new FEN and meta to Redis
+  await setRedisData(`chess:fen:${roomId}`, newFen);
+
+  // Build server messages based on game state
+  const serverMessages = [];
+
+  if (game.isCheckmate()) {
+    meta.status = "completed";
+    serverMessages.push({
+      type: "gameEvent",
+      content: { event: "checkmate", winner: session.userId, reason: "checkmate" },
+      to: "all"
+    });
+    await updateChessGameById(roomId, {
+      status: "completed", result: "checkmate", winnerId: session.userId
+    });
+  } else if (game.isStalemate()) {
+    meta.status = "completed";
+    serverMessages.push({
+      type: "gameEvent",
+      content: { event: "draw", reason: "stalemate" },
+      to: "all"
+    });
+    await updateChessGameById(roomId, {
+      status: "completed", result: "draw", reason: "stalemate"
+    });
+  } else if (game.isDraw()) {
+    meta.status = "completed";
+    const reason = game.isInsufficientMaterial()
+      ? "insufficient material"
+      : game.isThreefoldRepetition()
+        ? "threefold repetition"
+        : "50-move rule";
+    serverMessages.push({
+      type: "gameEvent",
+      content: { event: "draw", reason },
+      to: "all"
+    });
+    await updateChessGameById(roomId, {
+      status: "completed", result: "draw", reason
+    });
+  } else if (game.isCheck()) {
+    serverMessages.push({
+      type: "gameEvent",
+      content: { event: "check" },
+      to: "all",
+      persist: false
+    });
+  }
+
+  await setRedisData(`chess:meta:${roomId}`, JSON.stringify(meta));
+
+  return {
+    accept: true,
+    broadcast: true,
+    broadcastTo: "all",
+    modifiedContent: {
+      from: moveResult.from,
+      to: moveResult.to,
+      piece: moveResult.piece,
+      captured: moveResult.captured || null,
+      promotion: moveResult.promotion || null,
+      notation: moveResult.san,
+      fen: newFen,
+      isCheck: game.isCheck(),
+      flags: moveResult.flags
+    },
+    serverMessages
+  };
+}
+```
+
+**What chess.js handles automatically:**
+- All legal move generation (pins, discovered checks, en passant, castling rights)
+- Move validation — `game.move()` throws if the move is illegal
+- Check, checkmate, stalemate, draw detection (50-move rule, insufficient material, threefold repetition)
+- FEN generation after each move
+- SAN notation (`e4`, `Nxf3+`, `O-O`, `e8=Q`)
+- Turn management (`game.turn()` returns `'w'` or `'b'`)
+
+**What you still handle in your lib functions:**
+- State storage (Redis for live FEN, DB for move history)
+- Player identity mapping (userId to color)
+- Clock management (chess.js doesn't handle time controls)
+- Game lifecycle (creating games, matching players, handling resignations/draw offers)
+- Persisting moves to the ChessMove DataObject for replay
+
+**Step 3: Initialize game state when a game is created**
+
+When a new `ChessGame` DataObject is created (via Business API), a post-create action seeds the Redis state:
+
+```javascript
+const { Chess } = require("chess.js");
+const { setRedisData } = require("common");
+
+async function initializeChessGame(gameId, whitePlayerId, blackPlayerId, timeControlSeconds) {
+  const game = new Chess(); // standard starting position
+
+  await setRedisData(`chess:fen:${gameId}`, game.fen());
+  await setRedisData(`chess:meta:${gameId}`, JSON.stringify({
+    whitePlayer: whitePlayerId,
+    blackPlayer: blackPlayerId,
+    whiteClock: timeControlSeconds,
+    blackClock: timeControlSeconds,
+    status: "active",
+    capturedPieces: { w: [], b: [] }
+  }));
+}
+```
+
+This pattern — **npm package in service settings, require in lib function, call from MScript** — works for any external library. The same approach applies to game engines, physics simulations, math libraries, AI/ML clients, or domain-specific validators.
+
 ---
 
 ## Best Practices
@@ -1116,4 +2188,10 @@ A hub for live auctions with a custom `bid` message type, Kafka-bridged timer ev
 9. **Order authSources by privilege.** Place the highest-privilege source first (e.g., owner before moderator before member). The pipeline stops at the first match, so ordering determines which role a user receives when they match multiple sources.
 
 10. **Use roomEligibility to gate the UI.** If a room can toggle chat on/off, use `roomEligibility` so the frontend can check the same field to show/hide the chat widget -- and the backend enforces the same rule at join time.
+
+11. **Keep HubLogic scripts thin.** The MScript in `messageHandlers` and `scheduledActions` should be a single function call like `lib.chess.processMove(roomId, session, message, lib)`. Put all business logic in service library functions where you have full JavaScript, imports, and testability.
+
+12. **Store fast state in Redis, history in DB.** For games and stateful hubs, use Redis for the live state (board position, clocks, scores) and persist significant events to a DataObject (moves, bids, transactions) for replay and analysis. The `stateScript` reads from Redis; the message handler writes to both.
+
+13. **Use `persist: false` for ephemeral server messages.** Clock ticks, typing-like indicators, and transient notifications don't need to be stored. Set `persist: false` on serverMessages that are only relevant in real time.
 

@@ -13,6 +13,7 @@ interface RealtimeHub = {
   eventSettings : HubEventSettings;
   historySettings : HubHistorySettings;
   guardrails : HubGuardrails;
+  hubLogic : HubLogic;
 }
 ```
 
@@ -25,6 +26,7 @@ interface RealtimeHub = {
 | eventSettings   | undefined   |
 | historySettings | undefined   |
 | guardrails      | undefined   |
+| hubLogic        | undefined   |
 
 ## HubBasics
 
@@ -421,3 +423,63 @@ interface HubGuardrails = {
 | authCacheTTL      | Time-to-live in seconds for the Redis auth cache. After a user's authorization is resolved, the result (hubRole, permissions) is cached in Redis. Subsequent joins within the TTL skip auth source checks. Set to 0 to disable caching. Default: 300 (5 minutes).                                      |
 | globalModeration  | When true, ALL messages in the hub require moderator approval before being broadcast, regardless of the sender's hubRole. When false, only messages from roles with 'moderated: true' go through moderation. Default: false.                                                                           |
 | defaultSilenced   | When true, all users join rooms in a silenced state (canSend overridden to false) regardless of their hubRole. Users with canModerate permission are exempt. Other users must request speak permission, which a moderator can grant. Useful for webinar/classroom/town-hall scenarios. Default: false. |
+
+## HubLogic
+
+**MPO Version:** 1.3.0
+
+Server-side logic hooks for the hub. Allows intercepting custom message types with MScript before broadcast, fetching room state on join or on demand, and running scheduled actions on an interval. MScript hooks can call service library functions, Redis, DB, Business APIs, or external services -- the hub just provides the hook points and acts on the return values. Intercepted messages are queued per-room to prevent race conditions.
+
+```typescript
+interface HubLogic = {
+  stateScript : MScript;
+  messageHandlers : HubMessageHandler[];
+  scheduledActions : HubScheduledAction[];
+}
+```
+
+| Field            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| stateScript      | MScript called when a user joins a room or emits 'hub:requestState'. Must return the current room state (any shape). The return value is sent to the requesting client only via 'hub:state' event. Context: 'session' (user session), 'roomId', 'room' (room DataObject record), 'lib' (service library). Example: 'lib.chess.getState(roomId)'. Leave empty if the hub doesn't need state management.                                         |
+| messageHandlers  | Array of message type interceptors. When a client sends a custom message type that matches a handler, the message is NOT broadcast immediately. Instead, the handler's script is called and the return value determines accept/reject, broadcast behavior, and server-generated messages. Unmatched message types follow the standard flow (immediate broadcast + persist). Handlers are processed sequentially per room (no race conditions). |
+| scheduledActions | Array of interval-based actions that run while a room has connected users (or always if keepAlive is true). Each action calls its script on the configured interval. The script can return serverMessages to broadcast to the room. Use for game ticks, world updates, auction countdowns, or periodic state broadcasts.                                                                                                                       |
+
+### HubMessageHandler
+
+**MPO Version:** 1.3.0
+
+Intercepts a specific custom message type and routes it through an MScript before broadcast. The script receives the message, sender session, room record, and service library, and returns an object controlling accept/reject, broadcast targets, message modifications, persistence, and server-generated messages. Use for game moves, bids, collaborative edits, or any message that needs server-side validation or state management.
+
+```typescript
+interface HubMessageHandler = {
+  messageType : String;
+  script : MScript;
+}
+```
+
+| Field       | Description                                                                                                                                                                                                                                                                                               |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------- | -------- | -------- | --------------------------------------------------------------------------------------------- |
+| messageType | The custom message type name to intercept. Must match a name from customMessageTypes in HubMessageSettings. When a client sends a message of this type, the handler script is called instead of the standard broadcast flow.                                                                              |
+| script      | MScript called when a message of this type is received. Context: 'session' (sender session), 'message' ({ type, content }), 'roomId', 'room' (room DataObject record), 'lib' (service library). Must return an object: { accept: Boolean, rejectReason?: String, broadcast?: Boolean, broadcastTo?: 'all' | 'others' | 'sender' | String[], modifiedContent?: Object, persist?: Boolean, serverMessages?: [{ type: String, content: Object, to: 'all' | 'others' | 'sender' | String[], persist?: Boolean }] }. Example: 'lib.chess.processMove(roomId, session, message)'. |
+
+### HubScheduledAction
+
+**MPO Version:** 1.3.0
+
+A recurring action that runs on an interval for each active room. The script is called every intervalMs milliseconds and can return serverMessages to broadcast. The interval starts when the first user joins the room and stops when the last user disconnects, unless keepAlive is true. Use for game world ticks, NPC movement, countdown timers, or periodic state sync.
+
+```typescript
+interface HubScheduledAction = {
+  name : String;
+  intervalMs : Integer;
+  keepAlive : Boolean;
+  script : MScript;
+}
+```
+
+| Field      | Description                                                                                                                                                                                                                                                       |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| name       | Unique identifier for this scheduled action. Used for logging and lifecycle management.                                                                                                                                                                           |
+| intervalMs | Interval in milliseconds between script invocations. Example: 1000 for a 1-second game tick, 60000 for a 1-minute cycle. Minimum recommended: 100ms.                                                                                                              |
+| keepAlive  | When true, the scheduled action keeps running even when no users are connected to the room. Use for game worlds that need to evolve independently of player presence. When false (default), the action starts on the first join and stops on the last disconnect. |
+| script     | MScript called on each interval tick. Context: 'roomId', 'room' (room DataObject record), 'lib' (service library). Must return an object: { serverMessages?: [{ type: String, content: Object, to: 'all'                                                          | String[], persist?: Boolean }] }. Example: 'lib.world.tick(roomId)'. |
