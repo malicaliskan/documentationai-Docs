@@ -1,3 +1,8 @@
+---
+title: Shopping Cart Config
+description: Configure service-level shopping cart behavior including pricing, promotions, loyalty, logistics, Redis caching, and checkout mapping to orders.
+---
+
 # ShoppingCartConfig
 
 **MPO Version:** 1.3.0
@@ -828,15 +833,15 @@ interface CartItemEvents = {
 }
 ```
 
-| Field              | Description                                                                                                           |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| onBeforeAddItem    | Before adding item. Context: { cart, itemData, session }. Return modified itemData or throw CartEventError to reject. |
-| onAfterAddItem     | After item added. Context: { cart, item, session }                                                                    |
-| onBeforeUpdateItem | Before updating item. Context: { cart, item, changes, session }                                                       |
-| onAfterUpdateItem  | After item updated. Context: { cart, item, session }                                                                  |
-| onBeforeRemoveItem | Before removing item. Context: { cart, item, session }                                                                |
-| onAfterRemoveItem  | After item removed. Context: { cart, removedItem, session }                                                           |
-| onStockValidation  | Validate stock availability. Context: { items, session }. Return { itemId: { available: bool, maxQty: int } }         |
+| Field              | Description                                                                                                                 |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| onBeforeAddItem    | Before adding item. Context: { cart, itemData, session }. Return modified itemData or throw CartEventError to reject.       |
+| onAfterAddItem     | After item added. Context: { cart, item, session }                                                                          |
+| onBeforeUpdateItem | Before updating item. Context: { cart, item, changes, session }                                                             |
+| onAfterUpdateItem  | After item updated. Context: { cart, item, session }                                                                        |
+| onBeforeRemoveItem | Before removing item. Context: { cart, item, session }                                                                      |
+| onAfterRemoveItem  | After item removed. Context: { cart, removedItem, session }                                                                 |
+| onStockValidation  | Validate stock availability. Context: { items, session }. Return `{ itemId: { available: bool, maxQty: int } }`             |
 
 ### CartPricingEvents
 
