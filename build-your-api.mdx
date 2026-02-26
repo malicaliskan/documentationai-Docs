@@ -200,7 +200,9 @@ These are defined under the `ApiOptions` pattern and include attributes like `na
 
 ```json
 "ApiOptions": {
-  "__dataObjectName.doc": "Specifies the primary data object that this Business API interacts with. This object is the core target of the API's operation, such as reading, updating, or deleting records.",
+  "__dataObjectName.doc": "Specifies the primary data object that this Business API interacts with. This object is the core target of the API's operation, such as reading, updating, or deleting records. Required even when dataViewName is set — the DataView's mainObject must match this dataObject.",
+
+  "__dataViewName.doc": "Optional. Specifies the name of a DataView defined in the BFF service whose mainObject matches this API's dataObject. When set, all read/fetch operations (get, list, and fetchInstance for update/delete) use ElasticIndexer to query the DataView's Elasticsearch index. Write operations (create, update, delete) still execute against the database. For create, the result is enriched from the DataView after the DB insert.",
 
   "__crudType.doc": "Defines the primary operation type for this API. Possible values are `get`, `list`, `create`, `update`, and `delete`. This classification drives the behavior and flow of the API lifecycle.",
 
@@ -222,6 +224,7 @@ These are defined under the `ApiOptions` pattern and include attributes like `na
   "__readFromEntityCache.default": false,
 
   "dataObjectName": "DataObjectName",
+  "dataViewName": "String",
   "crudType": "CrudTypes",
   "name": "String",
   "apiDescription": "Text",
@@ -246,6 +249,58 @@ These two attributes define the *core identity* of a Business API.
 - **`crudType`** defines the **type of operation**, determining which workflow milestones and clauses are activated — such as `create`, `update`, `delete`, `get`, or `list`.
 
 Together, these two options tell Mindbricks **what the API does** and **where it applies**, serving as the foundation for route generation, workflow selection, and automated logic scaffolding.
+
+---
+
+### **Using DataViews with Business APIs**
+
+Mindbricks supports an optional **DataView overlay** on any Business API. A **DataView** is a read-optimized, denormalized view defined in the **BFF Service** and stored in Elasticsearch. By setting the `dataViewName` attribute in `ApiOptions`, a Business API can leverage the DataView's enriched data for all read and fetch operations while continuing to use the database for write operations.
+
+#### **How It Works**
+
+The `dataObjectName` is always required — it identifies the local Data Object that the API targets. The `dataViewName` is optional and must reference a DataView whose `mainObject` matches the selected `dataObjectName`. Mindbricks validates this consistency at build time; if the DataView's main object does not match, the DataView setting is ignored with a warning.
+
+When a Business API has a valid `dataViewName`, its behavior changes depending on the CRUD type:
+
+| CRUD Type    | Read/Fetch Source         | Write Target | Result Source             |
+| ------------ | ------------------------- | ------------ | ------------------------- |
+| **get**      | Elasticsearch (DataView)  | —            | Elasticsearch (DataView)  |
+| **list**     | Elasticsearch (DataView)  | —            | Elasticsearch (DataView)  |
+| **update**   | Elasticsearch (DataView)  | Database     | Database                  |
+| **delete**   | Elasticsearch (DataView)  | Database     | Database                  |
+| **create**   | —                         | Database     | Elasticsearch (DataView)  |
+
+- **Get and List** — The database script is replaced entirely. Data is fetched from the DataView's Elasticsearch index using `ElasticIndexer`. Where clause filters, pagination, and sorting are converted to Elasticsearch queries automatically.
+
+- **Update and Delete** — The `fetchInstance` step (which retrieves the current record before modification) reads from Elasticsearch, giving the API access to the full DataView data including joined and computed fields. This allows validation and ownership checks against the enriched view. The actual update or delete operation still executes against the database. The where clause used for `fetchInstance` is converted to an Elastic query while the where clause for the DB operation remains in the native database format.
+
+- **Create** — The record is created in the database as usual. After a successful insert, the API automatically attempts to fetch the newly created record from the DataView's Elasticsearch index to return the enriched result (with all joined and extended data) in the response.
+
+#### **Security and Where Clause Handling**
+
+All security filters — tenant isolation, ownership checks, conditional clauses — are fully respected in DataView mode. The where clause builder produces both a database-compatible query (for write operations) and an Elastic-compatible query (for read operations from the DataView). This ensures that `fetchInstance` in update/delete flows enforces the same access control as standard database-backed APIs.
+
+#### **Configuration Example**
+
+```json
+{
+  "apiOptions": {
+    "dataObjectName": "product",
+    "dataViewName": "ProductDetailView",
+    "crudType": "list",
+    "name": "listProductDetails"
+  }
+}
+```
+
+In this example, the `listProductDetails` API targets the `product` Data Object but reads from the `ProductDetailView` DataView in Elasticsearch. The DataView might include joined data such as category names, supplier details, or computed fields — all returned without additional fetch actions.
+
+#### **Requirements**
+
+- The `dataObjectName` must always be set and must be a **local Data Object** within the current service.
+- The `dataViewName` must reference a DataView defined in the project's **BFF Service**.
+- The DataView's `mainObject` must match the selected `dataObjectName`.
+- The DataView's Elasticsearch index must be maintained and kept in sync (typically handled by the BFF service's indexing pipeline).
 
 ---
 
