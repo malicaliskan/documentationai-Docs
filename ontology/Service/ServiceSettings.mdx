@@ -12,11 +12,11 @@ interface ServiceSettings = {
 }
 ```
 
-| Field          | Description                                                                                                                                                                                                                                            |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| serviceBasics  | Defines the basic metadata of the service, including its unique name, description, and optional custom configuration variables. These basics are used throughout code generation, routing, and documentation.                                          |
-| serviceOptions | Defines basic options of the service for authentication, http and data model                                                                                                                                                                           |
-| realtimeConfig | Configures the Socket.IO server for realtime hubs. Only relevant when the service has one or more RealtimeHub definitions. Controls the scaling adapter (Redis for multi-instance, memory for dev), heartbeat timings, and per-user connection limits. |
+| Field          | Description                                                                                                                                                                                                                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| serviceBasics  | Defines the basic metadata of the service, including its unique name, description, and optional custom configuration variables. These basics are used throughout code generation, routing, and documentation.                                                                                                |
+| serviceOptions | Defines basic options of the service for authentication, http and data model                                                                                                                                                                                                                                 |
+| realtimeConfig | Configures the Socket.IO server for realtime hubs and WebSocket event subscriptions. Only relevant when the service has at least one RealtimeHub or WebSocket EventSubscription. Controls the scaling adapter (Redis for multi-instance, memory for dev), heartbeat timings, and per-user connection limits. |
 
 ## ServiceBasics
 
