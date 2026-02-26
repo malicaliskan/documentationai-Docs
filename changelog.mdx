@@ -4,6 +4,393 @@ description: Release history and updates for Mindbricks
 ---
 ## Release History
 
+<Update label="2026-02-26" description="v2.0.0" tags={["Major Release", "AI Agents", "Realtime", "SSE", "MCP", "API Keys"]}>
+  ## Mindbricks Genesis v2.0.0 — Realtime & Intelligence
+
+  This is a major release spanning **108 commits**, **355 files changed**, **119,322 insertions** and **31,803 deletions**. It introduces four new patterns, a complete MCP server overhaul, full-stack API key authentication, and dozens of code-generation quality improvements.
+
+  ### Highlights
+
+  - **AI Agent Pattern** — Design intelligent agents with multi-provider support (OpenAI, Anthropic, DeepSeek, Moonshot, xAI, Fal AI, ElevenLabs, Runway, custom) and automatic code generation for runtime, tool registry, and conversation management.
+
+  - **RealtimeHub Pattern** — Bidirectional Socket.IO communication with built-in message types, layered authorization, moderation, hub roles, server-side logic (HubLogic), and auto-bridged CRUD events.
+
+  - **EventSubscription Pattern** — Client-facing Kafka event channels via WebSocket or SSE with DataObject-based authorization and payload transformation.
+
+  - **SSE Streaming for Business APIs** — Cursor-based pagination, AI response streaming, progress tracking, and a hybrid stream+events protocol.
+
+  - **API Key Authentication** — Full-stack `sk_mbx_` secret key management across auth service, MCP-BFF, and genesis service.
+
+  - **MCP Server v2** — StreamableHTTP transport, unified endpoint, frontend prompts, deployment tools, and intelligent tool filtering.
+
+  - **DataView Support** — Elasticsearch-backed read overlay on Business API data objects for joined/aggregated field queries.
+
+  - **Kafka Topic Alias System** — Intuitive aliases (e.g., `createUser:done`, `user.created`) resolved at both design-time and runtime.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["New Pattern", "AI Agents"]}>
+  ## AI Agent Pattern
+
+  Introduce a standalone AI Agent chapter pattern at the service level, enabling designers to define intelligent agents with automatic code generation.
+
+  - 13 section patterns, 3 sub-object patterns, and 12 enum types for comprehensive agent configuration.
+
+  - Provider adapter family covering OpenAI, Anthropic, DeepSeek, Moonshot, xAI, Fal AI, ElevenLabs, Runway, and custom endpoints.
+
+  - Agent runtime with tool calling, conversation store, and file upload manager — all generated from EJS templates.
+
+  - Three execution modes: **task** (single request/response), **chat** (multi-turn conversations), and **orchestrator** (agent-to-agent delegation).
+
+  - Supports text, image, audio, and video modalities.
+
+  - Frontend prompt generation with per-agent documentation covering REST + SSE streaming endpoints, request/response formats, file uploads, and conversation management.
+
+  - `outputSettings` and `baseUrl` made optional with sensible defaults so agents work out of the box.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["New Pattern", "Realtime", "Socket.IO"]}>
+  ## RealtimeHub Pattern
+
+  Fully redesigned RealtimeHub pattern for bidirectional Socket.IO communication with rich messaging, authorization, and server-side logic.
+
+  ### Messaging
+  - 9 built-in message types: text, image, video, audio, document, sticker, contact, location, system.
+  - Custom message types for app-specific structured data (e.g., chess moves, auction bids).
+  - Standard event toggles: typing indicators, recording indicators, read/delivery receipts, presence.
+  - Auto-bridge CRUD events from room, membership, and message DataObjects.
+  - Auto-generated message DataObject with roomId, senderId, messageType enum, content (JSONB), timestamp, replyTo, reaction, and forwarded fields.
+  - Auto-generated list, get, update, and delete Business APIs for message administration.
+
+  ### Authorization & Moderation
+  - Layered 10-step authorization pipeline with HubAuthSource, HubAuthScript, and HubRole sub-groups.
+  - Room eligibility with absoluteRoles, checkRoles, checkScript, and MScript-based authSources.
+  - Elasticsearch-based membership checks supporting cross-service DataObject lookups.
+  - `membershipCondition` MScript field for post-fetch record validation (e.g., `membership.status === 'paid'`).
+  - HubGuardrails moderation: authCacheTTL, globalModeration, defaultSilenced, persistent block/silence records.
+  - Auto-generated HubModeration DataObject and `hub:unblocked` event.
+
+  ### HubLogic (Server-Side Logic)
+  - Message handlers: intercept custom message types with MScript before broadcast — accept, reject, transform, or inject server messages.
+  - State script: deliver room state on join and on-demand via `hub:requestState`.
+  - Scheduled actions: interval-based ticks with keepAlive option.
+  - Per-room sequential queue preventing race conditions on state mutations.
+
+  ### Developer Experience
+  - DataObject names used as MScript context variables (e.g., `issuedTicket.status` instead of generic `record`).
+  - Typed references (LocalDataObjectName, DataObjectName, PropRefer with loadfrom) for auth source properties.
+  - Sender identity enrichment: fullname and avatar on all events and persisted messages.
+  - Frontend prompt with full Socket.IO protocol docs, per-hub message types, standard events, REST endpoints, and integration examples.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["New Pattern", "Kafka", "Event Streaming"]}>
+  ## EventSubscription Pattern
+
+  New pattern enabling clients to subscribe to Kafka events via WebSocket or SSE with authorization and payload transformation.
+
+  - EventSubscription chapter with EventSubBasics, EventSubTopic, EventSubAuth sections and EventSubTransport enum.
+
+  - EventSubscriptionController runtime with auth, subscribe, distribute, and SSE handling.
+
+  - Conditional Socket.IO server creation and namespace registration.
+
+  - SSE route mounting for Server-Sent Events transport.
+
+  - Lazy consumer pattern — Kafka consumers are created on first subscription to avoid idle resource usage.
+
+  - Frontend prompt with dynamic code examples for both WebSocket and SSE transports.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["New Feature", "SSE", "Streaming"]}>
+  ## SSE Streaming for Business APIs
+
+  Add Server-Sent Events streaming to Business APIs, enabling real-time data delivery and AI response streaming through declarative configuration.
+
+  - SSE Controller layer with **stream** and **events** response modes.
+
+  - Declarative stream sources: `libFunction`, `iteratorAction`, `sseRelay`, `wsRelay`.
+
+  - Cursor-based pagination for list streaming using `createdAt` + `id` keyset.
+
+  - SSE-aware actions: `AiCallAction` and `RefineByAiAction` auto-stream, `LoopAction` and `CreateBulkCrudAction` emit granular progress.
+
+  - New action patterns: `EmitSseEventAction` for custom events and `IteratorAction` for streaming iteration.
+
+  - Kafka progress listeners for tracking remote process completion.
+
+  - Hybrid stream+events flow with `meta` / `chunk` / `progress` / `complete` event protocol.
+
+  - ApiManager extended with stream mode, output channel, and `emitProgress` capabilities.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["New Feature", "Authentication", "API Keys"]}>
+  ## API Key Authentication
+
+  Full-stack API key management enabling external tool access (MCP clients, third-party integrations) via secret API keys.
+
+  - New `apiKey` data object with keyHash, keyPrefix, userId, and expiry fields.
+
+  - Business APIs: `createSecretApiKey`, `deleteApiKey`, `listApiKeys` with clean REST routes (`/v1/apikeys`).
+
+  - Tokenless API key sessions — no JWT or cookie needed, 1-day Redis TTL.
+
+  - Bearer token discrimination via `sk_mbx_` prefix across all services.
+
+  - Redis-first session caching with auth service `/validateapikey` fallback.
+
+  - API key type support: secret, public, or both — with separate location settings.
+
+  - Tenant context auto-resolution from API key record for external callers.
+
+  - Frontend ProfilePage integration: ApiKeysSection (create/list/delete with one-time secret display) and McpConnectionSection (endpoint URLs, copy-to-clipboard Cursor/Claude Desktop configs).
+
+  - **Breaking:** `APIKeyAuthConfig.apiKeyLocation` replaced by `secretApiKeyLocation` and `publicApiKeyLocation`. Automatic cleanup migration included.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["New Feature", "MCP", "Tooling"]}>
+  ## MCP Server v2 — Unified Endpoint & Enhanced Tooling
+
+  Major upgrade to the Model Context Protocol server infrastructure with modern transport, unified endpoint, and intelligent tool management.
+
+  - **StreamableHTTP** as primary transport (`POST /mcp`) alongside legacy SSE fallback (`GET /mcp/sse`) — supports Cursor, Claude Desktop, and other modern MCP clients.
+
+  - Unified MCP server endpoint in MCP-BFF aggregating all service tools through a single protocol-compliant endpoint with per-user role-filtered tool instances.
+
+  - Frontend prompt tools: `listFrontendPrompts` and `getFrontendPrompt` for serving rendered frontend development guides via MCP.
+
+  - Native MCP prompts: `frontendPrompt`, `projectOverview`, `ontologyTree` for direct context injection.
+
+  - Deployment tools: async `deployProject` and `getDeploymentStatus` with per-service status tracking.
+
+  - **Three-stage tool filtering** to stay within the 128-tool LLM limit: auto-remove grid APIs, user service toggles in ToolsPanel, auto-cap at 120 tools.
+
+  - Dedicated **MCP Connection Logs page** in frontgate with live SSE stream and historical log viewer.
+
+  - Detailed connection attempt logging: IP, user-agent, auth status, and outcome for every MCP request — broadcast to Redis and Elasticsearch.
+
+  - Visualization tools (`showQrCode`, `showBusinessApiList/Gallery/MapInFrontEnd`) moved to MCP-BFF for cross-service API catalog access.
+
+  - Project codename supported as alias for `projectId` with 5-minute in-memory cache.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["New Feature", "DataView", "Elasticsearch"]}>
+  ## DataView Support for Business APIs
+
+  DataView is an optional Elasticsearch-backed read overlay on a local DataObject, enabling efficient queries on joined and aggregated fields.
+
+  - When `dataViewName` is set, all **read/fetch** operations use ElasticIndexer against the DataView's Elasticsearch index.
+
+  - **Write** operations (create, update, delete) continue against the database unchanged.
+
+  - Create operations write to DB then enrich the result from the DataView index.
+
+  - MScript query validation updated to allow dot-notation fields when querying DataView APIs for joined/aggregated fields.
+
+  - Validates that the DataView's `mainObject` matches the selected `dataObjectName`.
+
+  - All CRUD types are supported.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["New Feature", "Kafka", "Topic Aliases"]}>
+  ## Kafka Topic Alias System
+
+  Intuitive alias resolution for Kafka topics at both design-time and runtime, eliminating the need to remember full topic names.
+
+  - Alias formats like `createUser:done`, `user.created`, `review_updated` resolve to full topic names automatically.
+
+  - Cross-service topic alias resolution support.
+
+  - Design-time integration: aliases resolved in BusinessApi, PublishEventAction, RealtimeHub, and Edge Controllers during build.
+
+  - Runtime resolution via pre-computed `ALIAS_MAP` in generated `topic-alias-resolver.js`.
+
+  - Explicit `dbEvent:` prefix to force DB-level topic resolution (e.g., `dbEvent:user:created`).
+
+  - Single API name aliases: `createUser` resolves to its default event topic.
+
+  - Two-segment shorthand: `dbEvent:createUser` resolves to the API's underlying DB event.
+
+  - All Kafka infrastructure (ServicePublisher, KafkaController, createConsumer, KafkaListener) is alias-aware at runtime.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["Improvement", "Payment", "Stripe"]}>
+  ## Stripe Payment Flow Overhaul
+
+  Simplified configuration, improved tenant isolation, and added validation guards for the Stripe payment workflow.
+
+  - **StripeOrderConfig refactored:** MScript fields replaced with PropRefer property references — `orderId` → `orderIdProperty`, `amount` → `amountProperty`, `currency` → `currencyProperty`.
+
+  - New `cuurencyStaticValue` field for static currency override, taking precedence over `currencyProperty`.
+
+  - Removed `frontendAmountField` / `frontendCurrencyField` — the new PropRefer fields serve both backend and frontend.
+
+  - Backward-compatible migration included: contextual key renames, MScript-to-PropRefer transformation, and precedence rules via ConfigMigrator.
+
+  - Tenant scope preserved across checkout and result redirects.
+
+  - `paymentUserParams` made required and `checkPaymentMethodId` validation added to catch missing data early with proper 400 errors.
+
+  - PropRefer property access corrected across PaymentAction, CheckoutPage, ServicePage, and unit test templates.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["Improvement", "Auth", "Social Login"]}>
+  ## Authentication & Auth Service Enhancements
+
+  Custom business logic in the auth service, social login improvements, and multi-tenant routing fixes.
+
+  - **Custom BusinessApi support** in ProjectAuthentication — designers can define project-specific auth operations with reserved-name dedup.
+
+  - `FRONTEND_URL` env var added to BasicProjectSettings for runtime social login redirect derivation: `SOCIAL_LOGIN_REDIRECT_URL || FRONTEND_URL + /auth/callback`.
+
+  - `currentService` correctly set to `auth` for all authentication paths (businessLogic, loginDefinition, accessControl, etc.).
+
+  - Auth `businessLogic` now rendered in frontend sidebar.
+
+  - Helper API refactored to use actual system modules instead of duplicated conditional logic.
+
+  - Reserved tenant routing segments extended with `verify-email`, `verify-mobile`, `tenant-profile`, `mcp-logs`, and dynamic `select-{tenantName}` to prevent misinterpretation as tenant codenames.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["Improvement", "Frontend Prompts", "AI"]}>
+  ## Frontend Prompt System Enhancements
+
+  Enhanced AI-assisted frontend development with structured prompts, architect docs, and sequential workflow.
+
+  - New `frontend-prompt-intro` as the entry prompt with project overview, architect doc injection, and initial setup guide.
+
+  - Architect docs loaded from remote genesis API and rendered as readable markdown.
+
+  - Sequential one-at-a-time frontend prompt workflow enforced in MCP server instructions and tool descriptions.
+
+  - Frontend prompt for Realtime Hubs with full Socket.IO protocol docs and integration examples.
+
+  - Frontend prompt for AI Agents with endpoints, SSE streaming, file upload, and conversation management.
+
+  - Updated MCP connection info and profile page prompts for the unified endpoint.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["Improvement", "Code Generation", "Templates"]}>
+  ## Code Generation Quality & Template Fixes
+
+  Systematic fixes to EJS templates, naming conventions, and generated code correctness.
+
+  - **HTML entity escaping fixed** — systematic replacement of `<%= %>` with `<%- %>` for all `JSON.stringify` and `jsStr()` calls in templates, preventing `&#34;` and `&#39;` entities in generated JavaScript.
+
+  - Action template filename typos fixed: `SendPushNotification.ejs`, `CreateJWTTokenAction.ejs` (case fix).
+
+  - Missing templates added: `WriteToRedisAction.ejs`, `RedirectAction.ejs`.
+
+  - **camelCase normalization** enforced for submodule and asset names on create/rename — handles PascalCase, snake_case, kebab-case, and mixed inputs.
+
+  - Auto-strip version prefix from `routePath` to prevent `/v1/v1/` double-prefixing.
+
+  - UUID alias quality improved: prioritize unique identifier fields (orderNumber, code, email) over generic name/title.
+
+  - Real UUIDs preserved inside `__frontendAction` subtrees for frontend API calls.
+
+  - Text/String values properly quoted with `JSON.stringify` when injected into generated JS code.
+
+  - Sequelize `contains` / `notContains` operators fixed: scalar values wrapped in array to prevent crash on PostgreSQL ARRAY columns.
+
+  - ID fallback added to ApiManager generation when design uses `id` instead of true `idName`.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["Improvement", "Socket.IO", "Stability"]}>
+  ## Socket.IO Connection & Session Stability
+
+  Comprehensive fixes across 11 commits to Socket.IO namespace routing, session resolution, and CORS configuration.
+
+  - Hub session now resolved via `RestController.init()` — same flow as REST APIs, including JWT verification, Redis session lookup, and tenant resolution.
+
+  - Tenant codename passed via auth payload for WebSocket transport (browsers cannot send custom headers over WS).
+
+  - Service name lowercased in namespace to match client URL casing.
+
+  - Redis adapter env vars aligned with `common/redis.js` and error listeners added on pub/sub clients.
+
+  - Kafka consumer lifecycle fixed: proper `connect()` → `subscribe()` → `run()` sequence.
+
+  - Socket.IO CORS aligned with Express: comma-separated `ALLOWED_ORIGINS` parsed into array with tenant-specific headers.
+
+  - Mock request objects enriched with body, path, url, and requestId for session resolution.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["Improvement", "Data Management"]}>
+  ## Data Management & Persistence Improvements
+
+  Fixes to section data merging, path cascading, and write behavior.
+
+  - **Arrays within sections always replaced** (not merged) even in merge mode — a post-merge pass overrides array properties the caller explicitly included.
+
+  - Chapter-level `writeData` passes `replace:true` to `writeSection` so sections are fully replaced instead of deep-merged. Direct section-level writes (MCP partial updates) still default to merge behavior.
+
+  - Automatic unwrapping in `writeDataByPath` when data is a single-key object matching the last path segment — prevents double-nesting from common AI mistakes.
+
+  - **Cascade path rename** when DataObject name changes via `writeData` — updates ProjectSubModule, ProjectChapter, and ProjectSection table keys.
+
+  - Auto-generate action IDs (deterministic 5-char hash) and remap workflow name-references to IDs on write, with cross-write resolution by reading stored actions from DB.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["Improvement", "Infrastructure", "Performance"]}>
+  ## Infrastructure & Performance
+
+  Memory optimization, logging improvements, and service stability.
+
+  - Node.js heap limit increased from 1 GB to **4 GB** (`--max-old-space-size=4096`) with `--expose-gc` flag.
+
+  - Doc server memory optimization: release `htmlContent` after queuing, transform links in-place, GC hint before file generation.
+
+  - `syncModels` fallback with `alter:true` when migration fails or doesn't exist — prevents startup failures in development.
+
+  - `winston.Transport` used instead of separate `winston-transport` module to eliminate dependency.
+
+  - Missing `tldts` import added to notification and BFF services for CORS subdomain matching.
+
+  - MCP-BFF CORS aligned with business service pattern: `CORS_CONTROL_ACTIVE` gated system, preview mode allows all origins.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["Breaking Changes", "Migration"]}>
+  ## Breaking Changes & Deprecations
+
+  ### Removed Patterns
+  - `ApiSocketSettings` / `ApiSocketSettingsConfig` — fully removed. Use `sseSettings` for SSE and `RealtimeHub` for WebSocket.
+
+  ### Restructured Patterns
+  - `APIKeyAuthConfig.apiKeyLocation` replaced by `secretApiKeyLocation` and `publicApiKeyLocation`. Automatic cleanup migration included.
+
+  - `StripeOrderConfig` MScript fields (`orderId`, `amount`, `currency`) replaced by PropRefer fields (`orderIdProperty`, `amountProperty`, `currencyProperty`) + `cuurencyStaticValue`. Automatic migration via ConfigMigrator included.
+
+  ### Migration Notes
+  - All breaking changes include **automatic migrations** — existing projects are updated transparently on load.
+  - `socketSettings` defaults are cleaned up by the deprecation migration (baseline date 23.02.2026).
+  - RealtimeHub auth source properties now use typed references (`DataObjectName`, `PropRefer`) instead of plain strings.
+</Update>
+
+<Update label="2026-02-26" description="v2.0.0" tags={["Bug Fixes"]}>
+  ## Notable Bug Fixes
+
+  - **Agent route 401 failure** — Agent router now delegates to `RestController` for session resolution instead of hand-rolling extraction logic.
+
+  - **Agent runtime missing files** — AgentRuntime.js, ToolRegistry.js, ConversationStore.js and ai-providers subdirectory now included in generated output.
+
+  - **DataObject rename path cascade** — Renaming a DataObject now cascades through all metadata tables, preventing the object from becoming unreachable.
+
+  - **Double version prefix** — Custom `routePath` values with version prefix no longer produce `/v1/v1/...` routes.
+
+  - **Payment flow crashes** — `paymentUserParams` and `paymentMethodId` validated before reaching Stripe gateway. Previously caused `Cannot read properties of undefined` disguised as a 200 response.
+
+  - **CORS subdomain matching broken** — Missing `tldts` import in notification and BFF services silently broke `sameBaseDomain` checks.
+
+  - **MCP tool regex mismatch** — Auto-generated list API tool names matched with corrected regex (`/^_fetchList/` instead of `/^_fetch.+List$/`).
+
+  - **MCP-BFF generated file errors** — Missing `mcp-server.js` route and `tool-filters.js` in generator causing MODULE_NOT_FOUND at startup.
+
+  - **Database startup failure** — Added `syncModels` fallback when migration scripts fail or don't exist.
+
+  - **Sequelize contains/notContains crash** — Scalar values now wrapped in array for PostgreSQL ARRAY column queries.
+
+  - **Reserved tenant routing** — Added `verify-email`, `verify-mobile`, `tenant-profile`, `mcp-logs` to reserved segments to prevent redirect loops in multi-tenant projects.
+</Update>
+
 <Update label="2026-02-16" description="v1.4.0" tags={["Documentation Update", "Project Management", "MCP-BFF"]}>
   ## Architecture and Operations Documentation Expansion
 
