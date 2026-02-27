@@ -50,31 +50,51 @@ Two transports are supported:
 ### Schema Tools
 | Tool | Description |
 |------|-------------|
-| `getTypeSchema` | Get the JSON Schema for any Mindbricks pattern type (Service, DataObject, BusinessApi, etc.) |
+| `getTypeSchema` | Get JSON Schema for a specific Mindbricks pattern type |
 | `listTypeNames` | List all available pattern type names |
 
-### Project Data Tools
+### Navigation & Read Tools
 | Tool | Description |
 |------|-------------|
-| `readPath` | Read project configuration at a specific path (e.g., `/services/customer/dataObjects/order`) |
-| `writePath` | Update project configuration at a specific path |
-| `deletePath` | Delete a configuration item (property, data object, business API, service) |
-| `listPath` | List children at a path level |
-| `getFullProject` | Get the complete project JSON |
-| `saveFullProject` | Save a complete project JSON |
-| `getProjectOverview` | Get a lightweight summary of the project structure |
+| `listAt` | List child items at a project path |
+| `getPathInfo` | Get metadata/type info for a specific path |
+| `readAt` | Read full data at a specific path |
+
+### Write Tools
+| Tool | Description |
+|------|-------------|
+| `updateAt` | Create or update data at a path |
+| `deleteAt` | Delete data at a path |
+
+### Project Tools
+| Tool | Description |
+|------|-------------|
+| `createProject` | Create a new Mindbricks project |
+| `getProjectOverview` | Get high-level project structure |
+| `getProjectByGroupId` | Get project metadata by GitLab `groupId` (namespace ID) |
+| `getFullProject` | Get complete project JSON |
+| `saveFullProject` | Save/replace complete project JSON |
 
 ### Documentation Tools
 | Tool | Description |
 |------|-------------|
-| `getOntologyDocs` | Get the full Mindbricks Pattern Ontology documentation |
-| `getOntologyIndex` | Get the ontology table of contents |
+| `getOntologyDocs` | Get full Mindbricks ontology documentation |
+| `getOntologyIndex` | Get ontology documentation index (table of contents) |
+| `getOntologyTree` | Get ontology hierarchy tree (modules, chapters, sections, pattern types) |
+| `getOntologyDocByPath` | Get ontology docs resolved from a project path |
+| `getOntologyDocByPatternName` | Get ontology docs by pattern class name |
 
 ### Frontend Prompt Tools
 | Tool | Description |
 |------|-------------|
-| `listFrontendPrompts` | List all frontend prompt documents for a project |
+| `listFrontendPrompts` | List frontend prompt documents for a project |
 | `getFrontendPrompt` | Get a specific frontend prompt rendered as markdown |
+
+### Deployment Tools
+| Tool | Description |
+|------|-------------|
+| `deployProject` | Start asynchronous deployment for project services |
+| `getDeploymentStatus` | Get per-service deployment status |
 
 ### MCP Prompts (Native)
 
@@ -84,8 +104,13 @@ In addition to tools, the Genesis MCP server exposes **native MCP prompts** — 
 |--------|-------------|
 | `frontendPrompt` | Select a frontend development guide by project and index. The full rendered guide is injected into the conversation. |
 | `projectOverview` | Load the complete project structure as context — services, data objects, APIs, and configuration. |
+| `ontologyTree` | Load the ontology hierarchy map (modules, chapters, sections, pattern types). |
 
 Native MCP prompts are the preferred way to load frontend guides interactively, while the tool versions (`listFrontendPrompts`, `getFrontendPrompt`) are better for programmatic or automated workflows.
+
+> `ontologyTree` exists in **both** forms:
+> - Tool: `getOntologyTree` (returns tree text as tool output)
+> - Prompt: `ontologyTree` (injects the tree directly into model context)
 
 ---
 
