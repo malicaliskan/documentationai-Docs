@@ -4,7 +4,7 @@ description: Release history and updates for Mindbricks
 ---
 ## Release History
 
-<Update label="2026-02-26" description="v2.0.0" tags={["Major Release", "AI Agents", "Realtime", "SSE", "MCP", "API Keys"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["Major Release","AI Agents","Realtime","SSE","MCP","API Keys"]}>
   ## Mindbricks Genesis v2.0.0 — Realtime & Intelligence
 
   This is a major release spanning **108 commits**, **355 files changed**, **119,322 insertions** and **31,803 deletions**. It introduces four new patterns, a complete MCP server overhaul, full-stack API key authentication, and dozens of code-generation quality improvements.
@@ -21,14 +21,14 @@ description: Release history and updates for Mindbricks
 
   - **API Key Authentication** — Full-stack `sk_mbx_` secret key management across auth service, MCP-BFF, and genesis service.
 
-  - **MCP Server v2** — StreamableHTTP transport, unified endpoint, frontend prompts, deployment tools, and intelligent tool filtering.
+  - **MCP Server v2** — StreamableHTTP transport, unified endpoint, frontend prompts, deployment tools, and intelligent tool filtering..
 
   - **DataView Support** — Elasticsearch-backed read overlay on Business API data objects for joined/aggregated field queries.
 
   - **Kafka Topic Alias System** — Intuitive aliases (e.g., `createUser:done`, `user.created`) resolved at both design-time and runtime.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["New Pattern", "AI Agents"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["New Pattern","AI Agents"]}>
   ## AI Agent Pattern
 
   Introduce a standalone AI Agent chapter pattern at the service level, enabling designers to define intelligent agents with automatic code generation.
@@ -48,41 +48,61 @@ description: Release history and updates for Mindbricks
   - `outputSettings` and `baseUrl` made optional with sensible defaults so agents work out of the box.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["New Pattern", "Realtime", "Socket.IO"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["New Pattern","Realtime","Socket.IO"]}>
   ## RealtimeHub Pattern
 
   Fully redesigned RealtimeHub pattern for bidirectional Socket.IO communication with rich messaging, authorization, and server-side logic.
 
   ### Messaging
+
   - 9 built-in message types: text, image, video, audio, document, sticker, contact, location, system.
+
   - Custom message types for app-specific structured data (e.g., chess moves, auction bids).
+
   - Standard event toggles: typing indicators, recording indicators, read/delivery receipts, presence.
+
   - Auto-bridge CRUD events from room, membership, and message DataObjects.
+
   - Auto-generated message DataObject with roomId, senderId, messageType enum, content (JSONB), timestamp, replyTo, reaction, and forwarded fields.
+
   - Auto-generated list, get, update, and delete Business APIs for message administration.
 
   ### Authorization & Moderation
+
   - Layered 10-step authorization pipeline with HubAuthSource, HubAuthScript, and HubRole sub-groups.
+
   - Room eligibility with absoluteRoles, checkRoles, checkScript, and MScript-based authSources.
+
   - Elasticsearch-based membership checks supporting cross-service DataObject lookups.
+
   - `membershipCondition` MScript field for post-fetch record validation (e.g., `membership.status === 'paid'`).
+
   - HubGuardrails moderation: authCacheTTL, globalModeration, defaultSilenced, persistent block/silence records.
+
   - Auto-generated HubModeration DataObject and `hub:unblocked` event.
 
   ### HubLogic (Server-Side Logic)
+
   - Message handlers: intercept custom message types with MScript before broadcast — accept, reject, transform, or inject server messages.
+
   - State script: deliver room state on join and on-demand via `hub:requestState`.
+
   - Scheduled actions: interval-based ticks with keepAlive option.
+
   - Per-room sequential queue preventing race conditions on state mutations.
 
   ### Developer Experience
+
   - DataObject names used as MScript context variables (e.g., `issuedTicket.status` instead of generic `record`).
+
   - Typed references (LocalDataObjectName, DataObjectName, PropRefer with loadfrom) for auth source properties.
+
   - Sender identity enrichment: fullname and avatar on all events and persisted messages.
+
   - Frontend prompt with full Socket.IO protocol docs, per-hub message types, standard events, REST endpoints, and integration examples.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["New Pattern", "Kafka", "Event Streaming"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["New Pattern","Kafka","Event Streaming"]}>
   ## EventSubscription Pattern
 
   New pattern enabling clients to subscribe to Kafka events via WebSocket or SSE with authorization and payload transformation.
@@ -100,7 +120,7 @@ description: Release history and updates for Mindbricks
   - Frontend prompt with dynamic code examples for both WebSocket and SSE transports.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["New Feature", "SSE", "Streaming"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["New Feature","SSE","Streaming"]}>
   ## SSE Streaming for Business APIs
 
   Add Server-Sent Events streaming to Business APIs, enabling real-time data delivery and AI response streaming through declarative configuration.
@@ -122,7 +142,7 @@ description: Release history and updates for Mindbricks
   - ApiManager extended with stream mode, output channel, and `emitProgress` capabilities.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["New Feature", "Authentication", "API Keys"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["New Feature","Authentication","API Keys"]}>
   ## API Key Authentication
 
   Full-stack API key management enabling external tool access (MCP clients, third-party integrations) via secret API keys.
@@ -146,7 +166,7 @@ description: Release history and updates for Mindbricks
   - **Breaking:** `APIKeyAuthConfig.apiKeyLocation` replaced by `secretApiKeyLocation` and `publicApiKeyLocation`. Automatic cleanup migration included.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["New Feature", "MCP", "Tooling"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["New Feature","MCP","Tooling"]}>
   ## MCP Server v2 — Unified Endpoint & Enhanced Tooling
 
   Major upgrade to the Model Context Protocol server infrastructure with modern transport, unified endpoint, and intelligent tool management.
@@ -172,7 +192,7 @@ description: Release history and updates for Mindbricks
   - Project codename supported as alias for `projectId` with 5-minute in-memory cache.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["New Feature", "DataView", "Elasticsearch"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["New Feature","DataView","Elasticsearch"]}>
   ## DataView Support for Business APIs
 
   DataView is an optional Elasticsearch-backed read overlay on a local DataObject, enabling efficient queries on joined and aggregated fields.
@@ -190,7 +210,7 @@ description: Release history and updates for Mindbricks
   - All CRUD types are supported.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["New Feature", "Kafka", "Topic Aliases"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["New Feature","Kafka","Topic Aliases"]}>
   ## Kafka Topic Alias System
 
   Intuitive alias resolution for Kafka topics at both design-time and runtime, eliminating the need to remember full topic names.
@@ -212,7 +232,7 @@ description: Release history and updates for Mindbricks
   - All Kafka infrastructure (ServicePublisher, KafkaController, createConsumer, KafkaListener) is alias-aware at runtime.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["Improvement", "Payment", "Stripe"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["Improvement","Payment","Stripe"]}>
   ## Stripe Payment Flow Overhaul
 
   Simplified configuration, improved tenant isolation, and added validation guards for the Stripe payment workflow.
@@ -232,7 +252,7 @@ description: Release history and updates for Mindbricks
   - PropRefer property access corrected across PaymentAction, CheckoutPage, ServicePage, and unit test templates.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["Improvement", "Auth", "Social Login"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["Improvement","Auth","Social Login"]}>
   ## Authentication & Auth Service Enhancements
 
   Custom business logic in the auth service, social login improvements, and multi-tenant routing fixes.
@@ -250,7 +270,7 @@ description: Release history and updates for Mindbricks
   - Reserved tenant routing segments extended with `verify-email`, `verify-mobile`, `tenant-profile`, `mcp-logs`, and dynamic `select-{tenantName}` to prevent misinterpretation as tenant codenames.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["Improvement", "Frontend Prompts", "AI"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["Improvement","Frontend Prompts","AI"]}>
   ## Frontend Prompt System Enhancements
 
   Enhanced AI-assisted frontend development with structured prompts, architect docs, and sequential workflow.
@@ -268,7 +288,7 @@ description: Release history and updates for Mindbricks
   - Updated MCP connection info and profile page prompts for the unified endpoint.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["Improvement", "Code Generation", "Templates"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["Improvement","Code Generation","Templates"]}>
   ## Code Generation Quality & Template Fixes
 
   Systematic fixes to EJS templates, naming conventions, and generated code correctness.
@@ -279,7 +299,7 @@ description: Release history and updates for Mindbricks
 
   - Missing templates added: `WriteToRedisAction.ejs`, `RedirectAction.ejs`.
 
-  - **camelCase normalization** enforced for submodule and asset names on create/rename — handles PascalCase, snake_case, kebab-case, and mixed inputs.
+  - **camelCase normalization** enforced for submodule and asset names on create/rename — handles PascalCase, snake\_case, kebab-case, and mixed inputs.
 
   - Auto-strip version prefix from `routePath` to prevent `/v1/v1/` double-prefixing.
 
@@ -294,7 +314,7 @@ description: Release history and updates for Mindbricks
   - ID fallback added to ApiManager generation when design uses `id` instead of true `idName`.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["Improvement", "Socket.IO", "Stability"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["Improvement","Socket.IO","Stability"]}>
   ## Socket.IO Connection & Session Stability
 
   Comprehensive fixes across 11 commits to Socket.IO namespace routing, session resolution, and CORS configuration.
@@ -314,7 +334,7 @@ description: Release history and updates for Mindbricks
   - Mock request objects enriched with body, path, url, and requestId for session resolution.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["Improvement", "Data Management"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["Improvement","Data Management"]}>
   ## Data Management & Persistence Improvements
 
   Fixes to section data merging, path cascading, and write behavior.
@@ -330,7 +350,7 @@ description: Release history and updates for Mindbricks
   - Auto-generate action IDs (deterministic 5-char hash) and remap workflow name-references to IDs on write, with cross-write resolution by reading stored actions from DB.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["Improvement", "Infrastructure", "Performance"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["Improvement","Infrastructure","Performance"]}>
   ## Infrastructure & Performance
 
   Memory optimization, logging improvements, and service stability.
@@ -348,20 +368,25 @@ description: Release history and updates for Mindbricks
   - MCP-BFF CORS aligned with business service pattern: `CORS_CONTROL_ACTIVE` gated system, preview mode allows all origins.
 </Update>
 
-<Update label="2026-02-26" description="v2.0.0" tags={["Breaking Changes", "Migration"]}>
+<Update label="2026-02-26" description="v2.0.0" tags={["Breaking Changes","Migration"]}>
   ## Breaking Changes & Deprecations
 
   ### Removed Patterns
+
   - `ApiSocketSettings` / `ApiSocketSettingsConfig` — fully removed. Use `sseSettings` for SSE and `RealtimeHub` for WebSocket.
 
   ### Restructured Patterns
+
   - `APIKeyAuthConfig.apiKeyLocation` replaced by `secretApiKeyLocation` and `publicApiKeyLocation`. Automatic cleanup migration included.
 
   - `StripeOrderConfig` MScript fields (`orderId`, `amount`, `currency`) replaced by PropRefer fields (`orderIdProperty`, `amountProperty`, `currencyProperty`) + `cuurencyStaticValue`. Automatic migration via ConfigMigrator included.
 
   ### Migration Notes
+
   - All breaking changes include **automatic migrations** — existing projects are updated transparently on load.
+
   - `socketSettings` defaults are cleaned up by the deprecation migration (baseline date 23.02.2026).
+
   - RealtimeHub auth source properties now use typed references (`DataObjectName`, `PropRefer`) instead of plain strings.
 </Update>
 
@@ -382,7 +407,7 @@ description: Release history and updates for Mindbricks
 
   - **MCP tool regex mismatch** — Auto-generated list API tool names matched with corrected regex (`/^_fetchList/` instead of `/^_fetch.+List$/`).
 
-  - **MCP-BFF generated file errors** — Missing `mcp-server.js` route and `tool-filters.js` in generator causing MODULE_NOT_FOUND at startup.
+  - **MCP-BFF generated file errors** — Missing `mcp-server.js` route and `tool-filters.js` in generator causing MODULE\_NOT\_FOUND at startup.
 
   - **Database startup failure** — Added `syncModels` fallback when migration scripts fail or don't exist.
 
@@ -391,7 +416,7 @@ description: Release history and updates for Mindbricks
   - **Reserved tenant routing** — Added `verify-email`, `verify-mobile`, `tenant-profile`, `mcp-logs` to reserved segments to prevent redirect loops in multi-tenant projects.
 </Update>
 
-<Update label="2026-02-16" description="v1.4.0" tags={["Documentation Update", "Project Management", "MCP-BFF"]}>
+<Update label="2026-02-16" description="v1.4.0" tags={["Documentation Update","Project Management","MCP-BFF"]}>
   ## Architecture and Operations Documentation Expansion
 
   - Added new deep-dive pages for Genesis project-management APIs, project versioning/history, and issue + architect-doc collaboration flows.
@@ -401,7 +426,7 @@ description: Release history and updates for Mindbricks
   - Updated navigation in **Mastering Mindbricks** to expose these new operational capabilities directly.
 </Update>
 
-<Update label="2026-02-16" description="v1.3.1" tags={["Payment", "Route Compatibility"]}>
+<Update label="2026-02-16" description="v1.3.1" tags={["Payment","Route Compatibility"]}>
   ## Payment and Route-Generation Clarifications
 
   - Expanded payment documentation to include `edgeFunctionPaymentDone`, `afterPaymentCreations`, and `orderItemRelation` behavior.
@@ -411,7 +436,7 @@ description: Release history and updates for Mindbricks
   - Replaced brittle hardcoded `/v1/...` route assumptions with generated-route guidance across payment and cart workflow docs.
 </Update>
 
-<Update label="2026-02-16" description="v1.3.0" tags={["Auth", "Social Login"]}>
+<Update label="2026-02-16" description="v1.3.0" tags={["Auth","Social Login"]}>
   ## Social Login Flow Accuracy Update
 
   - Updated social login documentation to reflect current two-step registration behavior using `socialCode`.
