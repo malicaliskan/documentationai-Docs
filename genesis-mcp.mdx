@@ -1,18 +1,21 @@
 ---
 title: Genesis MCP
 description: >-
-  The Mindbricks Genesis MCP server allows AI agents and external tools to design, configure,
-  and manage Mindbricks projects, and to access frontend development prompts for building
-  frontends against Mindbricks-generated backends.
+  The Mindbricks Genesis MCP server allows AI agents and external tools to
+  design, configure, and manage Mindbricks projects, and to access frontend
+  development prompts for building frontends against Mindbricks-generated
+  backends.
 ---
-
 ## Overview
 
 The **Mindbricks Genesis MCP Server** is a dedicated MCP endpoint exposed by the Mindbricks platform itself. It allows AI agents, external tools, and automation workflows to:
 
 - Read and modify project configurations
+
 - Access the Mindbricks Pattern Ontology documentation
-- Generate frontend prompts for any project
+
+- Fetch frontend prompts for any project and use them for frontend building.
+
 - Create, update, or delete entire projects
 
 This is the same engine that powers the Ada assistant in the Mindbricks dashboard, now accessible to any MCP-compatible client.
@@ -23,12 +26,13 @@ This is the same engine that powers the Ada assistant in the Mindbricks dashboar
 
 Two transports are supported:
 
-| Transport | Endpoint | Recommendation |
-|-----------|----------|----------------|
-| **StreamableHTTP** (primary) | `https://app.mindbricks.com/api/genesis/mcp` | Preferred for modern MCP clients (Cursor, Claude Desktop) |
-| **SSE** (legacy fallback) | `https://app.mindbricks.com/api/genesis/mcp/sse` | For older MCP clients that don't support StreamableHTTP |
+| Transport                    | Endpoint                                         | Recommendation                                            |
+| ---------------------------- | ------------------------------------------------ | --------------------------------------------------------- |
+| **StreamableHTTP** (primary) | `https://app.mindbricks.com/api/genesis/mcp`     | Preferred for modern MCP clients (Cursor, Claude Desktop) |
+| **SSE** (legacy fallback)    | `https://app.mindbricks.com/api/genesis/mcp/sse` | For older MCP clients that don't support StreamableHTTP   |
 
 > **Authentication Required**: You must use an **API Key** for authentication. Pass it as a bearer token:
+>
 > ```
 > Authorization: Bearer sk_mbx_your_api_key_here
 > ```
@@ -38,9 +42,13 @@ Two transports are supported:
 ## How to Create an API Key
 
 1. Log into the Mindbricks dashboard at `https://app.mindbricks.com`
+
 2. Navigate to your **Profile** page
+
 3. Open the **API Keys** section
+
 4. Create a new secret API key with a descriptive name (e.g., "Cursor MCP", "Lovable Agent")
+
 5. Copy the key immediately — it is shown only once
 
 ---
@@ -48,68 +56,77 @@ Two transports are supported:
 ## Available Tools
 
 ### Schema Tools
-| Tool | Description |
-|------|-------------|
+
+| Tool            | Description                                            |
+| --------------- | ------------------------------------------------------ |
 | `getTypeSchema` | Get JSON Schema for a specific Mindbricks pattern type |
-| `listTypeNames` | List all available pattern type names |
+| `listTypeNames` | List all available pattern type names                  |
 
 ### Navigation & Read Tools
-| Tool | Description |
-|------|-------------|
-| `listAt` | List child items at a project path |
+
+| Tool          | Description                                |
+| ------------- | ------------------------------------------ |
+| `listAt`      | List child items at a project path         |
 | `getPathInfo` | Get metadata/type info for a specific path |
-| `readAt` | Read full data at a specific path |
+| `readAt`      | Read full data at a specific path          |
 
 ### Write Tools
-| Tool | Description |
-|------|-------------|
+
+| Tool       | Description                     |
+| ---------- | ------------------------------- |
 | `updateAt` | Create or update data at a path |
-| `deleteAt` | Delete data at a path |
+| `deleteAt` | Delete data at a path           |
 
 ### Project Tools
-| Tool | Description |
-|------|-------------|
-| `createProject` | Create a new Mindbricks project |
-| `getProjectOverview` | Get high-level project structure |
+
+| Tool                  | Description                                             |
+| --------------------- | ------------------------------------------------------- |
+| `createProject`       | Create a new Mindbricks project                         |
+| `getProjectOverview`  | Get high-level project structure                        |
 | `getProjectByGroupId` | Get project metadata by GitLab `groupId` (namespace ID) |
-| `getFullProject` | Get complete project JSON |
-| `saveFullProject` | Save/replace complete project JSON |
+| `getFullProject`      | Get complete project JSON                               |
+| `saveFullProject`     | Save/replace complete project JSON                      |
 
 ### Documentation Tools
-| Tool | Description |
-|------|-------------|
-| `getOntologyDocs` | Get full Mindbricks ontology documentation |
-| `getOntologyIndex` | Get ontology documentation index (table of contents) |
-| `getOntologyTree` | Get ontology hierarchy tree (modules, chapters, sections, pattern types) |
-| `getOntologyDocByPath` | Get ontology docs resolved from a project path |
-| `getOntologyDocByPatternName` | Get ontology docs by pattern class name |
+
+| Tool                          | Description                                                              |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| `getOntologyDocs`             | Get full Mindbricks ontology documentation                               |
+| `getOntologyIndex`            | Get ontology documentation index (table of contents)                     |
+| `getOntologyTree`             | Get ontology hierarchy tree (modules, chapters, sections, pattern types) |
+| `getOntologyDocByPath`        | Get ontology docs resolved from a project path                           |
+| `getOntologyDocByPatternName` | Get ontology docs by pattern class name                                  |
 
 ### Frontend Prompt Tools
-| Tool | Description |
-|------|-------------|
-| `listFrontendPrompts` | List frontend prompt documents for a project |
-| `getFrontendPrompt` | Get a specific frontend prompt rendered as markdown |
+
+| Tool                  | Description                                         |
+| --------------------- | --------------------------------------------------- |
+| `listFrontendPrompts` | List frontend prompt documents for a project        |
+| `getFrontendPrompt`   | Get a specific frontend prompt rendered as markdown |
 
 ### Deployment Tools
-| Tool | Description |
-|------|-------------|
-| `deployProject` | Start asynchronous deployment for project services |
-| `getDeploymentStatus` | Get per-service deployment status |
+
+| Tool                  | Description                                        |
+| --------------------- | -------------------------------------------------- |
+| `deployProject`       | Start asynchronous deployment for project services |
+| `getDeploymentStatus` | Get per-service deployment status                  |
 
 ### MCP Prompts (Native)
 
 In addition to tools, the Genesis MCP server exposes **native MCP prompts** — a first-class MCP primitive that injects content directly into the AI conversation context. In compatible clients (Claude Desktop, Cursor), these appear as selectable items:
 
-| Prompt | Description |
-|--------|-------------|
-| `frontendPrompt` | Select a frontend development guide by project and index. The full rendered guide is injected into the conversation. |
-| `projectOverview` | Load the complete project structure as context — services, data objects, APIs, and configuration. |
-| `ontologyTree` | Load the ontology hierarchy map (modules, chapters, sections, pattern types). |
+| Prompt            | Description                                                                                                          |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `frontendPrompt`  | Select a frontend development guide by project and index. The full rendered guide is injected into the conversation. |
+| `projectOverview` | Load the complete project structure as context — services, data objects, APIs, and configuration.                    |
+| `ontologyTree`    | Load the ontology hierarchy map (modules, chapters, sections, pattern types).                                        |
 
 Native MCP prompts are the preferred way to load frontend guides interactively, while the tool versions (`listFrontendPrompts`, `getFrontendPrompt`) are better for programmatic or automated workflows.
 
 > `ontologyTree` exists in **both** forms:
+>
 > - Tool: `getOntologyTree` (returns tree text as tool output)
+>
 > - Prompt: `ontologyTree` (injects the tree directly into model context)
 
 ---
@@ -121,8 +138,11 @@ Native MCP prompts are the preferred way to load frontend guides interactively, 
 AI coding agents (Lovable, Bolt, Cursor) can use the Genesis MCP to understand your backend and build a matching frontend:
 
 1. Connect the AI agent to the Genesis MCP server
+
 2. The agent calls `getProjectOverview` to understand the project structure
+
 3. The agent calls `listFrontendPrompts` and `getFrontendPrompt` to get detailed UI requirements and API documentation
+
 4. The agent uses the prompts to generate frontend pages with correct API integration
 
 Frontend prompts include complete REST API documentation (endpoints, request/response schemas, authentication headers) so the AI agent can produce working frontend code immediately.
@@ -132,9 +152,13 @@ Frontend prompts include complete REST API documentation (endpoints, request/res
 When building a frontend, you often discover that the backend needs adjustments — new fields, new APIs, or different query patterns. With the Genesis MCP:
 
 1. The AI agent identifies that a new field or API is needed
+
 2. It calls `readPath` to see the current configuration
+
 3. It calls `getOntologyDocs` to understand the pattern structure
+
 4. It calls `writePath` to add the new field, API, or configuration
+
 5. The project is automatically versioned and ready for regeneration
 
 This creates a feedback loop where frontend development drives backend evolution, all through AI agents.
@@ -144,7 +168,9 @@ This creates a feedback loop where frontend development drives backend evolution
 You can describe your project requirements to an AI agent connected to the Genesis MCP, and it can create or modify the entire project configuration:
 
 - "Add a `comments` data object to the blog service with userId, content, and createdAt fields"
+
 - "Create a new `analytics` service with pageView tracking and daily aggregation APIs"
+
 - "Enable API key authentication and add rate limiting to the public APIs"
 
 ---
@@ -206,7 +232,9 @@ If your Claude Desktop version does not support StreamableHTTP, use the SSE fall
 Any MCP-compatible client can connect using either transport:
 
 - **StreamableHTTP (preferred)**: `POST https://app.mindbricks.com/api/genesis/mcp`
+
 - **SSE (legacy fallback)**: `GET https://app.mindbricks.com/api/genesis/mcp/sse`
+
 - **Authentication**: `Authorization: Bearer sk_mbx_...` header
 
 ---
@@ -214,7 +242,12 @@ Any MCP-compatible client can connect using either transport:
 ## Related Pages
 
 - [Application MCP](./application-mcp) — How generated projects expose Business APIs as MCP tools
+
 - [MCP-BFF Service](./mcp-bff-service) — MCP-BFF behavior and configuration
+
 - [Auth Service Assets](./generated-assets-reference/auth-service-assets) — Auth service generated assets including API key management
+
 - [Authentication and Authorization](./authentication-and-authorization) — Authentication configuration including API key setup
+
 - [Build Your API](./build-your-api) — Business API configuration and MCP tool exposure
+
