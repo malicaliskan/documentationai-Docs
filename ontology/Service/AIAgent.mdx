@@ -55,7 +55,7 @@ interface AgentBasics = {
 
 | Field         | Description                                                                                                                                                             |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| name          | Unique agent name within the service. Used in endpoint paths (/agents/{name}), inter-agent tool references, and generated code file names. Must be camelCase.           |
+| name          | Unique agent name within the service. Used in endpoint paths (`/agents/{name}`), inter-agent tool references, and generated code file names. Must be camelCase.         |
 | description   | Human-readable description of what this agent does. Used in documentation, MCP tool descriptions, and the design UI.                                                    |
 | executionMode | How the agent processes requests: 'task' for one-shot execution, 'chat' for multi-turn conversations with history, 'orchestrator' for coordinating multiple sub-agents. |
 | modality      | The primary input/output modality: 'text' for text generation with tool calling, 'vision' for text+image input, 'image'/'audio'/'video' for media generation.           |
@@ -162,11 +162,11 @@ interface AgentContextSource = {
 }
 ```
 
-| Field      | Description                                                                                                                                                                                                                                |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| name       | Variable name used to reference this source's data in MScript templates. Example: if name is 'userProfile', access it as 'userProfile.email' in the promptTemplate.                                                                        |
-| sourceType | How data is fetched: 'dataObject' queries a DataObject, 'libraryFunction' calls a library function, 'apiCall' invokes a BusinessApi or external endpoint.                                                                                  |
-| config     | Source-specific configuration as an MScript expression. For 'dataObject': a query expression (e.g., '{ where: { id: this.request.body.userId } }'). For 'libraryFunction': the function name and args. For 'apiCall': the API name or URL. |
+| Field      | Description                                                                                                                                                                                                                                   |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name       | Variable name used to reference this source's data in MScript templates. Example: if name is 'userProfile', access it as 'userProfile.email' in the promptTemplate.                                                                           |
+| sourceType | How data is fetched: 'dataObject' queries a DataObject, 'libraryFunction' calls a library function, 'apiCall' invokes a BusinessApi or external endpoint.                                                                                     |
+| config     | Source-specific configuration as an MScript expression. For 'dataObject': a query expression (e.g., `({ where: { id: this.request.body.userId } })`). For 'libraryFunction': the function name and args. For 'apiCall': the API name or URL. |
 
 #### AgentContextSourceType
 
@@ -226,11 +226,11 @@ interface AgentOutputSettings = {
 }
 ```
 
-| Field            | Description                                                                                                                                                                                                                                                                                                                          |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| responseProperty | When the model returns JSON, extract this property as the response value. Example: 'result' extracts the 'result' field from the model's JSON output. Leave null to return the full response.                                                                                                                                        |
-| postProcess      | MScript expression to transform the model's output before sending to the client. The raw response is available as 'result'. Example: 'result.trim().toUpperCase()' or a more complex transformation function.                                                                                                                        |
-| storeTo          | MScript expression that evaluates to a bucket storage path. When set, generated media (images, audio, video) is auto-downloaded from the provider's temporary URL and stored permanently in the service's bucket. The permanent URL is returned instead. Example: 'agents/images/' + this.request.body.category + '/' + Date.now()'. |
+| Field            | Description                                                                                                                                                                                                                                                                                   |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| responseProperty | When the model returns JSON, extract this property as the response value. Example: 'result' extracts the 'result' field from the model's JSON output. Leave null to return the full response.                                                                                                 |
+| postProcess      | MScript expression to transform the model's output before sending to the client. The raw response is available as 'result'. Example: 'result.trim().toUpperCase()' or a more complex transformation function.                                                                                 |
+| storeTo          | MScript expression that evaluates to a bucket storage path. When set, generated media (images, audio, video) is auto-downloaded from the provider's temporary URL and stored permanently in the service's bucket. The permanent URL is returned instead. Example: `'agents/images/' + this.request.body.category + '/' + Date.now()`. |
 
 ## AgentToolSettings
 
@@ -273,12 +273,12 @@ interface AgentCustomTool = {
 }
 ```
 
-| Field       | Description                                                                                                                                                                                              |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| name        | Tool name as exposed to the AI model. Should be descriptive and unique within the agent's tool set. Example: 'searchProducts', 'sendEmail'.                                                              |
-| description | Human-readable description of what the tool does. This text is included in the tool definition sent to the AI model and helps it decide when to use the tool.                                            |
-| parameters  | JSON Schema defining the tool's input parameters. The AI model uses this schema to generate valid arguments. Example: '{"type":"object","properties":{"query":{"type":"string"}},"required":["query"]}'. |
-| handler     | MScript reference to a library function that implements the tool. Example: 'lib.searchProducts' or 'lib.sendEmail'. The function receives the parsed parameters as its argument.                         |
+| Field       | Description                                                                                                                                                                                                                                   |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name        | Tool name as exposed to the AI model. Should be descriptive and unique within the agent's tool set. Example: 'searchProducts', 'sendEmail'.                                                                                                  |
+| description | Human-readable description of what the tool does. This text is included in the tool definition sent to the AI model and helps it decide when to use the tool.                                                                               |
+| parameters  | JSON Schema defining the tool's input parameters. The AI model uses this schema to generate valid arguments. Example: `{"type":"object","properties":{"query":{"type":"string"}},"required":["query"]}`.                                      |
+| handler     | MScript reference to a library function that implements the tool. Example: 'lib.searchProducts' or 'lib.sendEmail'. The function receives the parsed parameters as its argument.                                                              |
 
 ## AgentChatSettings
 
@@ -333,12 +333,12 @@ interface AgentOrchestrationSettings = {
 }
 ```
 
-| Field               | Description                                                                                                                                                                                                                             |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| strategy            | How steps are executed: 'sequential' runs steps one after another, 'parallel' runs steps marked as parallel concurrently, 'adaptive' lets the orchestrator AI decide which steps to run next based on intermediate results.             |
-| maxIterations       | Safety limit for the orchestrator loop. Prevents infinite loops in adaptive mode. Default: 10.                                                                                                                                          |
-| completionCondition | MScript expression evaluated after each iteration in adaptive mode. The orchestrator stops when this evaluates to true. Has access to 'stepResults' (all completed step outputs). Example: 'stepResults.validation?.approved === true'. |
-| orchestrationSteps  | The sequence of steps the orchestrator executes. Each step invokes a sub-agent with mapped input, captures its output, and optionally runs conditionally or in parallel with other steps.                                               |
+| Field               | Description                                                                                                                                                                                                                         |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| strategy            | How steps are executed: 'sequential' runs steps one after another, 'parallel' runs steps marked as parallel concurrently, 'adaptive' lets the orchestrator AI decide which steps to run next based on intermediate results.         |
+| maxIterations       | Safety limit for the orchestrator loop. Prevents infinite loops in adaptive mode. Default: 10.                                                                                                                                      |
+| completionCondition | MScript expression evaluated after each iteration in adaptive mode. The orchestrator stops when this evaluates to true. Has access to 'stepResults' (all completed step outputs). Example: `stepResults.validation?.approved === true`. |
+| orchestrationSteps  | The sequence of steps the orchestrator executes. Each step invokes a sub-agent with mapped input, captures its output, and optionally runs conditionally or in parallel with other steps.                                           |
 
 ### AgentOrchestrationStrategy
 
@@ -379,7 +379,7 @@ interface AgentOrchestrationStep = {
 | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | name          | Unique step identifier within the orchestration workflow. Used in logging, progress events, and result references.                                                                                                               |
 | agentName     | Name of the sub-agent to invoke for this step. Must reference another AIAgent defined in the same service.                                                                                                                       |
-| inputMapping  | MScript expression that prepares the input for the sub-agent. Has access to 'this.request' (original request) and 'stepResults' (outputs from previously completed steps). Example: '{ message: stepResults.research.summary }'. |
+| inputMapping  | MScript expression that prepares the input for the sub-agent. Has access to 'this.request' (original request) and 'stepResults' (outputs from previously completed steps). Example: `{ message: stepResults.research.summary }`. |
 | outputMapping | MScript expression that transforms the sub-agent's output before storing it in stepResults. Has access to 'result' (the sub-agent's raw response). Example: 'result.choices[0].message.content'.                                 |
 | condition     | MScript expression evaluated before executing this step. The step is skipped if it evaluates to false. Has access to 'stepResults'. Example: 'stepResults.triage?.needsReview === true'.                                         |
 | parallel      | When true, this step can run concurrently with other parallel steps. Sequential steps wait for all preceding parallel steps to complete before running.                                                                          |
@@ -530,10 +530,10 @@ interface AgentCustomEndpoint = {
 }
 ```
 
-| Field        | Description                                                                                                                                                        |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| baseUrl      | Base URL of the custom API (e.g., 'https://my-model.example.com/v1' or 'http://localhost:11434/v1').                                                               |
-| apiKeyEnvVar | Name of the environment variable containing the API key for the custom endpoint (e.g., 'CUSTOM_AI_API_KEY'). The key is read from process.env at runtime.          |
+| Field        | Description                                                                                                                                                       |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| baseUrl      | Base URL of the custom API (e.g., 'https://my-model.example.com/v1' or 'http://localhost:11434/v1').                                                              |
+| apiKeyEnvVar | Name of the environment variable containing the API key for the custom endpoint (e.g., 'CUSTOM_AI_API_KEY'). The key is read from process.env at runtime.         |
 | apiFormat    | API format to use: 'openai' for OpenAI-compatible chat completions, 'anthropic' for Anthropic Messages format, 'raw' for full control over request/response shape. |
 
 ### AgentApiFormat
@@ -569,12 +569,12 @@ interface AgentEndpointSettings = {
 }
 ```
 
-| Field           | Description                                                                                                                                                                |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| hasRestEndpoint | When true, generates a POST REST endpoint at /agents/{name} (or custom basePath). Returns the full response synchronously.                                                 |
-| hasSseEndpoint  | When true, generates a POST SSE endpoint at /agents/{name}/stream. Streams tokens (text), progress events (media generation), or step results (orchestrator) in real-time. |
-| basePath        | Custom base path override for the agent's endpoints. Default: '/agents/{name}'. Example: '/ai/chat' generates POST /ai/chat and POST /ai/chat/stream.                      |
-| authRequired    | When true, the agent's endpoints require a valid JWT token. Set to false for public-facing agents (e.g., a chatbot widget).                                                |
+| Field           | Description                                                                                                                                                                   |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| hasRestEndpoint | When true, generates a POST REST endpoint at `/agents/{name}` (or custom basePath). Returns the full response synchronously.                                                |
+| hasSseEndpoint  | When true, generates a POST SSE endpoint at `/agents/{name}/stream`. Streams tokens (text), progress events (media generation), or step results (orchestrator) in real-time. |
+| basePath        | Custom base path override for the agent's endpoints. Default: `/agents/{name}`. Example: `/ai/chat` generates POST `/ai/chat` and POST `/ai/chat/stream`.                    |
+| authRequired    | When true, the agent's endpoints require a valid JWT token. Set to false for public-facing agents (e.g., a chatbot widget).                                                   |
 
 ## AgentGuardrails
 
