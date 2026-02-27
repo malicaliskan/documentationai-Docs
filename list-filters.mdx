@@ -26,6 +26,7 @@ From the ontology, `ListOptions` are defined as:
 "ListOptions": {
   "listSortBy": ["SortByItem"],
   "listGroupBy": ["PropRefer"],
+  "topPick": "Integer",
   "queryCache": "Boolean",
   "setAsRead": ["DataMapItem"],
   "permissionFilters": ["ListPermissionFilter"],
@@ -35,6 +36,7 @@ From the ontology, `ListOptions` are defined as:
   "__nullables": [
     "listSortBy",
     "listGroupBy",
+    "topPick",
     "setAsRead",
     "permissionFilter",
     "membershipFilters",
@@ -43,6 +45,8 @@ From the ontology, `ListOptions` are defined as:
   ]
 }
 ```
+
+`topPick` is also part of `ListOptions` and can be combined with filters/pagination to cap ranked results before pagination is applied.
 
 This document focuses on the **four filter-related features**:
 
@@ -53,6 +57,23 @@ This document focuses on the **four filter-related features**:
 3. `searchFilter` – full-text search using Elasticsearch
 
 4. `jointFilters` – join-like filters using secondary objects
+
+---
+
+## 1.1 Ranked Cap with `topPick`
+
+Use `topPick` to limit the ranked candidate set before pagination.  
+This is especially useful with `listSortBy` for “latest/most relevant N” use cases.
+
+```json
+"listOptions": {
+  "listSortBy": [{ "property": "updatedAt", "order": "desc" }],
+  "topPick": 1000
+}
+```
+
+With `pageRowCount = 25`, users can paginate only inside the first 1000 sorted rows.  
+If `topPick` is `0` or `null`, no cap is applied.
 
 ---
 

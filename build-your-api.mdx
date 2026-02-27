@@ -1822,6 +1822,7 @@ The **List Options** section customizes how a list API behaves — controlling d
 "ListOptions": {
   "listSortBy": ["SortByItem"],
   "listGroupBy": ["PropRefer"],
+  "topPick": "Integer",
   "queryCache": false,
   "setAsRead": ["DataMapItem"],
   "permissionFilters": ["ListPermissionFilter"],
@@ -1833,6 +1834,7 @@ The **List Options** section customizes how a list API behaves — controlling d
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **listSortBy**        | Defines sorting rules for the result set (supports multiple fields with direction).                                                                       |
 | **listGroupBy**       | Groups records logically, often used for reports or visual structures.                                                                                    |
+| **topPick**           | Optional cap for ranked results. If `null` or `0`, no cap is applied. If set (e.g. `1000`), only the first N sorted records are eligible for pagination. |
 | **queryCache**        | Enables temporary caching of query results to optimize repeated calls.                                                                                    |
 | **setAsRead**         | Allows updating specified fields after listing (e.g., marking records as viewed).                                                                         |
 | **permissionFilters** | Applies permission-based visibility logic. Generates a list of allowed object IDs based on the user’s permissions and limits the query scope accordingly. |
@@ -1852,6 +1854,25 @@ You can specify one or more sort fields using `SortByItem` objects:
 ```
 
 Records are ordered according to the given sequence. Sorting is applied at the database query level.
+
+---
+
+#### **Top Pick (rank cap)**
+
+Use `topPick` when your list is ranking-based and you want to paginate only within the first ranked items.
+
+```json
+"listOptions": {
+  "listSortBy": [{ "property": "updatedAt", "order": "desc" }],
+  "topPick": 1000
+}
+```
+
+Example behavior:
+
+- `topPick = 1000` and `pageRowCount = 25` means users can browse pages only within the first 1000 sorted records.
+- `topPick = 1` with descending activity/order sorting is useful for “latest active basket/order” style reads.
+- `topPick = 0` or `null` keeps standard list behavior (no cap).
 
 ---
 
@@ -1988,6 +2009,7 @@ The **Pagination Options** define how list results are segmented into pages and 
 ```json
 "listOptions": {
   "listSortBy": [{ "property": "createdAt", "order": "desc" }],
+  "topPick": 1000,
   "permissionFilters": [
     { "name": "canViewProjects", "permission": "viewProject" }
   ],
