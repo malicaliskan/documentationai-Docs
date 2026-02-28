@@ -330,6 +330,7 @@ interface PropertyStaticJoinConfig = {
   jointRead : PropRefer;
   jointSourceKey : PropRefer;
   jointForeignKey : PropRefer;
+  defaultValue : MScript;
 }
 ```
 
@@ -339,6 +340,7 @@ interface PropertyStaticJoinConfig = {
 | jointRead       | The name of the property in the source object whose value will be copied into the current property. Defaults to the same name as this property if not specified.                                                 |
 | jointSourceKey  | The key in the source object used to identify the matching record. This is typically 'id' as the primary identifier of the source object. This field acts as the join source in the static join relationship.    |
 | jointForeignKey | The property in the current object used as a reference to the source object (i.e., the foreign key). For example, if joining user.clientId via userId, the foreign key is 'userId'.                              |
+| defaultValue    | An optional fallback MScript value to use when static join cannot find a source record, or when the joined read value resolves to null/undefined.                                                                |
 
 ## PropertyFormulaSettings
 

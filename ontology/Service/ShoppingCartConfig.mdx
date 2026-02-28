@@ -1,8 +1,3 @@
----
-title: Shopping Cart Config
-description: Configure service-level shopping cart behavior including pricing, promotions, loyalty, logistics, Redis caching, and checkout mapping to orders.
----
-
 # ShoppingCartConfig
 
 **MPO Version:** 1.3.0
@@ -61,7 +56,7 @@ interface ShoppingCartBasicSettings = {
 | Field                  | Description                                                                                                                                                         |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | useShoppingCartFeature | Enables shopping cart functionality for this service. When true, auto-generates Cart and CartItem DataObjects with all pricing, status, and calculation properties. |
-| cartObjectName         | Name for the auto-generated Cart DataObject (e.g., 'cart', 'shoppingCart'). Related objects are named based on this: {name}Item, {name}Campaign, etc.               |
+| cartObjectName         | Name for the auto-generated Cart DataObject (e.g., 'cart', 'shoppingCart'). Related objects are named based on this: \{name\}Item, \{name\}Campaign, etc.           |
 | currency               | The currency code for this cart (e.g., USD, EUR, TRY). All monetary calculations use this currency.                                                                 |
 | supportGuestCart       | Whether to support anonymous/guest carts before user login. Adds sessionId property for session binding.                                                            |
 | supportNotes           | Whether to include a notes field for customer special instructions.                                                                                                 |
@@ -807,13 +802,13 @@ interface CartLifecycleEvents = {
 }
 ```
 
-| Field          | Description                                                                                                                                                                       |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| onCartCreate   | Called when a new cart is created. Context: { cart, session }                                                                                                                     |
-| onCartLoad     | Called when an existing cart is loaded. Context: { cart, items, session }                                                                                                         |
-| onCartDestroy  | Called when a cart is destroyed. Context: { cartId, session }                                                                                                                     |
-| onCartChurning | Called when a cart transitions to 'churning' status (inactive for churningPeriodDays). Use this to send reminder emails. Context: { cart, daysSinceLastActivity, session }        |
-| onCartAbandon  | Called when a cart transitions to 'abandoned' status (inactive for abandonmentPeriodDays). Use this to archive or delete carts. Context: { cart, daysSinceLastActivity, session } |
+| Field          | Description                                                                                                                                                                         |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| onCartCreate   | Called when a new cart is created. Context: \{ cart, session \}                                                                                                                     |
+| onCartLoad     | Called when an existing cart is loaded. Context: \{ cart, items, session \}                                                                                                         |
+| onCartDestroy  | Called when a cart is destroyed. Context: \{ cartId, session \}                                                                                                                     |
+| onCartChurning | Called when a cart transitions to 'churning' status (inactive for churningPeriodDays). Use this to send reminder emails. Context: \{ cart, daysSinceLastActivity, session \}        |
+| onCartAbandon  | Called when a cart transitions to 'abandoned' status (inactive for abandonmentPeriodDays). Use this to archive or delete carts. Context: \{ cart, daysSinceLastActivity, session \} |
 
 ### CartItemEvents
 
@@ -833,15 +828,15 @@ interface CartItemEvents = {
 }
 ```
 
-| Field              | Description                                                                                                                 |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| onBeforeAddItem    | Before adding item. Context: { cart, itemData, session }. Return modified itemData or throw CartEventError to reject.       |
-| onAfterAddItem     | After item added. Context: { cart, item, session }                                                                          |
-| onBeforeUpdateItem | Before updating item. Context: { cart, item, changes, session }                                                             |
-| onAfterUpdateItem  | After item updated. Context: { cart, item, session }                                                                        |
-| onBeforeRemoveItem | Before removing item. Context: { cart, item, session }                                                                      |
-| onAfterRemoveItem  | After item removed. Context: { cart, removedItem, session }                                                                 |
-| onStockValidation  | Validate stock availability. Context: { items, session }. Return `{ itemId: { available: bool, maxQty: int } }`             |
+| Field              | Description                                                                                                             |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| onBeforeAddItem    | Before adding item. Context: \{ cart, itemData, session \}. Return modified itemData or throw CartEventError to reject. |
+| onAfterAddItem     | After item added. Context: \{ cart, item, session \}                                                                    |
+| onBeforeUpdateItem | Before updating item. Context: \{ cart, item, changes, session \}                                                       |
+| onAfterUpdateItem  | After item updated. Context: \{ cart, item, session \}                                                                  |
+| onBeforeRemoveItem | Before removing item. Context: \{ cart, item, session \}                                                                |
+| onAfterRemoveItem  | After item removed. Context: \{ cart, removedItem, session \}                                                           |
+| onStockValidation  | Validate stock availability. Context: \{ items, session \}. Return \{ itemId: \{ available: bool, maxQty: int \} \}     |
 
 ### CartPricingEvents
 
@@ -859,13 +854,13 @@ interface CartPricingEvents = {
 }
 ```
 
-| Field                | Description                                                                                                    |
-| -------------------- | -------------------------------------------------------------------------------------------------------------- |
-| onBeforeCalculate    | Before calculation starts. Context: { cart, items, session }                                                   |
-| onCalculateItemPrice | For each item. Context: { cart, item, session }. Return modified pricing or null.                              |
-| onCalculateVat       | During VAT calculation. Context: { cart, item, session }. Return { vatRate, exempt } for tax-exempt scenarios. |
-| onCalculateShipping  | Calculate shipping. Context: { cart, items, session }. Return { chargeExVat, vatRate }                         |
-| onAfterCalculate     | After all calculations. Context: { cart, items, totals, session }. Return modified totals.                     |
+| Field                | Description                                                                                                        |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| onBeforeCalculate    | Before calculation starts. Context: \{ cart, items, session \}                                                     |
+| onCalculateItemPrice | For each item. Context: \{ cart, item, session \}. Return modified pricing or null.                                |
+| onCalculateVat       | During VAT calculation. Context: \{ cart, item, session \}. Return \{ vatRate, exempt \} for tax-exempt scenarios. |
+| onCalculateShipping  | Calculate shipping. Context: \{ cart, items, session \}. Return \{ chargeExVat, vatRate \}                         |
+| onAfterCalculate     | After all calculations. Context: \{ cart, items, totals, session \}. Return modified totals.                       |
 
 ### CartPromotionEvents
 
@@ -882,12 +877,12 @@ interface CartPromotionEvents = {
 }
 ```
 
-| Field                       | Description                                                                                                |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| onBeforePromotionEvaluation | Before engine runs. Context: { cart, items, session }                                                      |
-| onPromotionEvaluation       | Add custom promotions. Context: { cart, items, appliedPromotions, session }. Return additional promotions. |
-| onAfterPromotionEvaluation  | After promotions determined. Context: { cart, items, promotions, session }. Can filter/modify.             |
-| onApplyCoupon               | Coupon validation. Context: { cart, couponCode, session }. Return { valid, message } or throw error.       |
+| Field                       | Description                                                                                                  |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| onBeforePromotionEvaluation | Before engine runs. Context: \{ cart, items, session \}                                                      |
+| onPromotionEvaluation       | Add custom promotions. Context: \{ cart, items, appliedPromotions, session \}. Return additional promotions. |
+| onAfterPromotionEvaluation  | After promotions determined. Context: \{ cart, items, promotions, session \}. Can filter/modify.             |
+| onApplyCoupon               | Coupon validation. Context: \{ cart, couponCode, session \}. Return \{ valid, message \} or throw error.     |
 
 ### CartCheckoutEvents
 
@@ -905,13 +900,13 @@ interface CartCheckoutEvents = {
 }
 ```
 
-| Field            | Description                                                                           |
-| ---------------- | ------------------------------------------------------------------------------------- |
-| onBeforeCheckout | Before checkout. Context: { cart, items, session }. Throw CartEventError to block.    |
-| onReserveStock   | Reserve inventory. Context: { cart, items, session }. Return { success, failedItems } |
-| onCreateOrder    | Create order from cart. Context: { cart, items, session }. Return { orderId }         |
-| onAfterCheckout  | After successful checkout. Context: { cart, orderId, session }                        |
-| onCheckoutFailed | On failure. Context: { cart, error, session }. Handle cleanup.                        |
+| Field            | Description                                                                               |
+| ---------------- | ----------------------------------------------------------------------------------------- |
+| onBeforeCheckout | Before checkout. Context: \{ cart, items, session \}. Throw CartEventError to block.      |
+| onReserveStock   | Reserve inventory. Context: \{ cart, items, session \}. Return \{ success, failedItems \} |
+| onCreateOrder    | Create order from cart. Context: \{ cart, items, session \}. Return \{ orderId \}         |
+| onAfterCheckout  | After successful checkout. Context: \{ cart, orderId, session \}                          |
+| onCheckoutFailed | On failure. Context: \{ cart, error, session \}. Handle cleanup.                          |
 
 ## ShoppingCartApiSettings
 
@@ -929,13 +924,13 @@ interface ShoppingCartApiSettings = {
 }
 ```
 
-| Field                  | Description                                                               |
-| ---------------------- | ------------------------------------------------------------------------- |
-| routePrefix            | URL prefix for cart routes (e.g., '/cart'). Default: '/{cartObjectName}'. |
-| authenticationRequired | Whether authentication is required. False allows guest carts.             |
-| rateLimiting           | Enable rate limiting on cart APIs.                                        |
-| maxRequestsPerMinute   | Rate limit: max requests per minute per user/session.                     |
-| enabledRoutes          | Which cart routes to generate.                                            |
+| Field                  | Description                                                                 |
+| ---------------------- | --------------------------------------------------------------------------- |
+| routePrefix            | URL prefix for cart routes (e.g., '/cart'). Default: '/\{cartObjectName\}'. |
+| authenticationRequired | Whether authentication is required. False allows guest carts.               |
+| rateLimiting           | Enable rate limiting on cart APIs.                                          |
+| maxRequestsPerMinute   | Rate limit: max requests per minute per user/session.                       |
+| enabledRoutes          | Which cart routes to generate.                                              |
 
 ### CartApiRoutes
 
@@ -958,18 +953,18 @@ interface CartApiRoutes = {
 }
 ```
 
-| Field        | Description                                                         |
-| ------------ | ------------------------------------------------------------------- |
-| getCart      | GET /{prefix} - Retrieve current cart with items and totals.        |
-| addItem      | POST /{prefix}/items - Add item to cart by productId or barcode.    |
-| updateItem   | PUT /{prefix}/items/:itemId - Update item quantity.                 |
-| removeItem   | DELETE /{prefix}/items/:itemId - Remove item from cart.             |
-| clearCart    | DELETE /{prefix}/items - Clear all items from cart.                 |
-| applyCoupon  | POST /{prefix}/coupon - Apply a coupon code.                        |
-| removeCoupon | DELETE /{prefix}/coupon - Remove applied coupon.                    |
-| redeemPoints | POST /{prefix}/points - Redeem loyalty points (if loyalty enabled). |
-| checkout     | POST /{prefix}/checkout - Begin checkout process.                   |
-| recalculate  | POST /{prefix}/recalculate - Force recalculation.                   |
+| Field        | Description                                                           |
+| ------------ | --------------------------------------------------------------------- |
+| getCart      | GET /\{prefix\} - Retrieve current cart with items and totals.        |
+| addItem      | POST /\{prefix\}/items - Add item to cart by productId or barcode.    |
+| updateItem   | PUT /\{prefix\}/items/:itemId - Update item quantity.                 |
+| removeItem   | DELETE /\{prefix\}/items/:itemId - Remove item from cart.             |
+| clearCart    | DELETE /\{prefix\}/items - Clear all items from cart.                 |
+| applyCoupon  | POST /\{prefix\}/coupon - Apply a coupon code.                        |
+| removeCoupon | DELETE /\{prefix\}/coupon - Remove applied coupon.                    |
+| redeemPoints | POST /\{prefix\}/points - Redeem loyalty points (if loyalty enabled). |
+| checkout     | POST /\{prefix\}/checkout - Begin checkout process.                   |
+| recalculate  | POST /\{prefix\}/recalculate - Force recalculation.                   |
 
 ## ShoppingCartCheckoutSettings
 
@@ -998,7 +993,7 @@ interface ShoppingCartCheckoutSettings = {
 | propertyMappings     | Override specific cart-to-order property mappings when autoMapProperties isn't sufficient.                                                                                                                            |
 | orderDataClause      | JavaScript code injected into order creation for custom properties. Access cart as 'cart', items as 'cartItems', and session context as 'this'. Example: 'salesChannel: "web", referralCode: this.metadata?.referral' |
 | publishCheckoutEvent | Whether to publish a checkout completed event to Kafka. Always true when orderCreationMode is 'remote'.                                                                                                               |
-| checkoutEventTopic   | Kafka topic for checkout events. Default: '{serviceCodename}-cart-checkout-completed'                                                                                                                                 |
+| checkoutEventTopic   | Kafka topic for checkout events. Default: '\{serviceCodename\}-cart-checkout-completed'                                                                                                                               |
 | initialOrderStatus   | Initial status to set on created orders. Usually 'pending' or 'awaiting_payment'.                                                                                                                                     |
 
 ### OrderCreationMode
