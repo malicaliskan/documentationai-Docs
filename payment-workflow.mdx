@@ -801,12 +801,12 @@ Login is necessary **but not sufficient**, as additional role, permission, or ot
 
 ## Where Clause
 
-Defines the criteria used to locate the target record(s) for the main operation. This is expressed as a query object and applies to `get`, `list`, `update`, and `delete` APIs. All API types except `list` are expected to affect a single record.
+Defines the criteria used to locate the target record(s) for the main operation. This is expressed as a query object and applies to `get`, `list`, `update`, and `delete` APIs. All API types except `list` are expected to target a single record. For `update` and `delete`, the WHERE clause is used to fetch the target instance, and the actual database mutation is performed using the fetched instance's ID to guarantee single-record safety.
 
 *If nothing is configured for (get, update, delete) the id fields will be the select criteria.*
 
 **Select By**:
-A list of fields that must be matched exactly as part of the WHERE clause. This is not a filter — it is a required selection rule. In single-record APIs (`get`, `update`, `delete`), it defines how a unique record is located. In `list` APIs, it scopes the results to only entries matching the given values.
+A list of fields that must be matched exactly as part of the WHERE clause. This is not a filter — it is a required selection rule. In single-record APIs (`get`, `update`, `delete`), it defines how a unique record is located. In `list` APIs, it scopes the results to only entries matching the given values. When a single non-ID field is specified (e.g., `['slug']`), the default route path uses that field instead of `/:objectId`, and the ID parameter is not auto-created.
 Note that `selectBy` fields will be ignored if `fullWhereClause` is set.
 
 *The business api configuration has no&#x20;*\`\`*&#x20;setting.*
