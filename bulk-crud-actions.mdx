@@ -64,6 +64,8 @@ Currently, Mindbricks provides:
 
 **Note**: `UpdateCrudAction` and `DeleteCrudAction` already support bulk operations through query-based matching. `CreateBulkCrudAction` is specifically designed for bulk creation scenarios.
 
+For array field updates in `UpdateCrudAction`/db utilities, use array mutation operators (`$add`, `$rem`, `$addIf`) as documented in [Array Mutation Syntax Guide](./array-mutation-syntax-guide).
+
 ### CreateBulkCrudAction Structure
 
 ```json

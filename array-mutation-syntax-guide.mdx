@@ -1,0 +1,85 @@
+---
+title: Array Mutation Syntax Guide
+description: Using update dataClause array mutation operators across generated db utility functions.
+---
+
+## Array Mutation Syntax Guide
+
+Mindbricks update utilities now support array mutation operators in `dataClause`.
+
+Supported forms:
+
+- `arrayField: [ ... ]` => full replace
+- `arrayField: { "$add": [ ... ] }` => append values
+- `arrayField: { "$rem": [ ... ] }` => remove values
+- `arrayField: { "$addIf": [ ... ] }` => append only missing values
+- mixed object with any combination of these operators
+
+## Operator order
+
+When combined, operators are applied in this order:
+
+1. `$rem`
+2. `$add`
+3. `$addIf`
+
+Example:
+
+```js
+{
+  tags: {
+    $rem: ["legacy"],
+    $add: ["new"],
+    $addIf: ["core", "stable"]
+  }
+}
+```
+
+## Examples
+
+### Replace
+
+```js
+await updateOrderById(orderId, {
+  itemIds: ["a", "b", "c"]
+}, this);
+```
+
+### Add values
+
+```js
+await updateOrderById(orderId, {
+  itemIds: { $add: ["d", "e"] }
+}, this);
+```
+
+### Remove values
+
+```js
+await updateOrderById(orderId, {
+  itemIds: { $rem: ["c"] }
+}, this);
+```
+
+### Add only if missing
+
+```js
+await updateOrderById(orderId, {
+  itemIds: { $addIf: ["a", "x"] }
+}, this);
+```
+
+## Works in these generated update families
+
+- `update{Model}ById`
+- `update{Model}ByIdList`
+- `update{Model}ByQuery`
+- dbApi update scripts that apply `dataClause` before persistence
+
+## Notes and caveats
+
+- If a field value is a plain array, it is treated as full replacement.
+- Mutation operators are resolved against current record data before update.
+- For multi-record updates (`ByIdList`, `ByQuery`), operator resolution is per-record.
+- This gives consistent behavior but is still a read-modify-write flow; for high-contention cases, add DB concurrency controls.
+

@@ -914,6 +914,8 @@ For each data object in your service, Mindbricks automatically generates the fol
   - **Returns:** Array — Array of updated record data
   - **Auto-handles:** Elasticsearch indexing for all updated records
 
+Array field mutation in update functions is supported with `dataClause` operators (`$add`, `$rem`, `$addIf`). See [Array Mutation Syntax Guide](./array-mutation-syntax-guide).
+
 #### **Delete Functions**
 
 - **`delete${ModelName}ById(id, context)`** — Deletes a record by ID

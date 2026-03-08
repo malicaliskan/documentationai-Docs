@@ -391,6 +391,8 @@ const taggedOrderIds = await getIdListOfOrderByField("tags", "urgent", true);
 
 ## Update Functions
 
+For array field updates using mutation operators (`$add`, `$rem`, `$addIf`) in `dataClause`, see [Array Mutation Syntax Guide](./array-mutation-syntax-guide).
+
 ### `update${ModelName}ById(id, dataClause, context)`
 
 Updates a record by its ID.
@@ -418,6 +420,7 @@ update${ModelName}ById(
 - Automatically indexes updated record in Elasticsearch
 - Publishes Kafka events for the update (includes session and requestId from context if provided)
 - If `id` is an object, extracts `id` and uses remaining properties as `dataClause`
+- Supports array mutation syntax in `dataClause` via `$add`, `$rem`, `$addIf` (see [Array Mutation Syntax Guide](./array-mutation-syntax-guide))
 
 **Example:**
 ```js
@@ -472,6 +475,7 @@ update${ModelName}ByIdList(
 - Automatically indexes all updated records in Elasticsearch
 - Publishes Kafka events for each update (includes session and requestId from context if provided)
 - Returns IDs (not full records) for performance
+- Supports array mutation syntax in `dataClause` via `$add`, `$rem`, `$addIf` (see [Array Mutation Syntax Guide](./array-mutation-syntax-guide))
 
 **Example:**
 ```js
@@ -526,6 +530,7 @@ update${ModelName}ByQuery(
 - Automatically indexes all updated records in Elasticsearch
 - Publishes Kafka events for each update (includes session and requestId from context if provided)
 - Returns empty array if no records match
+- Supports array mutation syntax in `dataClause` via `$add`, `$rem`, `$addIf` (see [Array Mutation Syntax Guide](./array-mutation-syntax-guide))
 
 **Example:**
 ```js

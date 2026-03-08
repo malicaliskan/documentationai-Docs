@@ -1,0 +1,101 @@
+---
+title: LoopAction Step Context Guide
+description: How and why to use loop step signatures (`stepIndex`, `stepResults`) and `contextPropertyName`.
+---
+
+## LoopAction Step Context Guide
+
+This document explains practical `LoopAction` usage patterns with the newer loop step signature model.
+
+It is intentionally separate from ontology docs and focuses on runtime behavior and design guidance.
+
+## Why `stepIndex` and `stepResults` exist
+
+When `isParallel: true`, multiple loop iterations can run at the same time.  
+If every in-action writes to shared `this.*` context, updates can overwrite each other.
+
+`stepIndex` and `stepResults` solve this:
+
+- `stepIndex`: the numeric index of the current loop iteration
+- `stepResults`: a shared map keyed by action name + step index (for example: `validateCoupon_3`)
+
+This gives each loop step a unique slot for intermediate results, even when loop items are primitive values or when you intentionally avoid mutating the loop item.
+
+## Signature of in-actions inside a loop
+
+Loop-contained actions are invoked with:
+
+```ts
+(loopItem, stepIndex, stepResults)
+```
+
+So any action running under a `LoopAction` can reference:
+
+- the current item (`loopItemName`)
+- which iteration it belongs to (`stepIndex`)
+- results produced earlier in the same step, or in other steps if needed (`stepResults`)
+
+## Recommended data flow in loops
+
+### 1) Per-item state with `contextPropertyName` (preferred when item is object)
+
+If loop items are objects, set `contextPropertyName` in in-actions so each item carries its own computed data:
+
+- `customerItem.discountPreview`
+- `customerItem.validationResult`
+
+This minimizes cross-step interference and keeps data local to each item.
+
+### 2) Cross-action coordination with `stepResults`
+
+Use `stepResults` to:
+
+- read outputs that are automatically recorded per in-action and per step
+- read outputs when loop item is primitive (string/number/etc.)
+- avoid overusing shared `this.*` in parallel paths
+
+Example lookup pattern:
+
+```js
+stepResults[`calculatePrice_${stepIndex}`]
+```
+
+### 3) Shared context writes (`this.*`) only when truly global
+
+Use shared context for aggregate or final outputs, not for per-item intermediate state in parallel loops.
+
+## Common LoopAction patterns
+
+### Sequential processing (`isParallel: false`)
+
+Use when:
+
+- actions depend on strict global order
+- downstream systems require controlled write throughput
+- each iteration can safely read previous writes
+
+### Parallel processing (`isParallel: true`)
+
+Use when:
+
+- each step is mostly independent
+- you need throughput over strict ordering
+- external systems can handle concurrent load
+
+Ordering note: in-action order inside a single step is still strict and awaited; only the completion order between different steps is non-deterministic.
+
+Guardrails:
+
+- prefer item-local writes (`contextPropertyName`) and/or `stepResults`
+- avoid uncoordinated shared field writes (`this.someField = ...`) from many steps
+
+### Mixed pattern
+
+Keep `LoopAction` parallel for IO-heavy work, then run a follow-up sequential aggregation action after loop completion for deterministic final shaping.
+
+## Practical guidance
+
+- If loop item is object: prefer `contextPropertyName` for per-item output.
+- If loop item is primitive: read intermediate action outputs from the automatically populated `stepResults` map.
+- If you must update the same DB record from many parallel steps: use DB-level concurrency controls (transaction + row lock, optimistic versioning, or atomic update operators).
+

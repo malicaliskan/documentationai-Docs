@@ -150,6 +150,18 @@
                 "path": "db-utility-functions"
               },
               {
+                "title": "Array Mutation Syntax Guide",
+                "path": "array-mutation-syntax-guide"
+              },
+              {
+                "title": "LoopAction Step Context Guide",
+                "path": "loop-action-step-context-guide"
+              },
+              {
+                "title": "Race Condition Guide",
+                "path": "race-condition-guide-parallel-actions"
+              },
+              {
                 "title": "MScript Cookbook",
                 "path": "mscript-cookbook"
               },

@@ -1,0 +1,88 @@
+---
+title: Race Condition Guide for Parallel Actions
+description: Race-condition risks and mitigation for ParallelAction and parallel LoopAction workflows.
+---
+
+## Race Condition Guide for Parallel Actions
+
+Parallel execution improves performance, but introduces non-deterministic write order unless data flow is explicitly isolated.
+
+This guide covers:
+
+- `ParallelAction`
+- `LoopAction` with `isParallel: true`
+
+## Where races happen
+
+### Shared context writes
+
+If multiple concurrent actions write the same `this.*` field, final value depends on completion order (last writer wins).
+
+### Read-modify-write DB updates
+
+Classic pattern:
+
+1. Action A reads record
+2. Action B reads same record
+3. A writes updated value
+4. B writes from stale snapshot
+
+One update can be lost.
+
+### Mixed shared + per-item outputs
+
+Storing some values on loop item and some on global `this` can create hard-to-debug inconsistencies in parallel mode.
+
+## ParallelAction-specific risks
+
+`ParallelAction` is best for independent operations.
+
+Avoid inside a single `ParallelAction` branch set:
+
+- competing writes to same object field
+- dependent reads from fields that sibling actions are mutating
+- unordered side effects that require deterministic sequence
+
+## Parallel LoopAction-specific risks
+
+In `isParallel: true`, each loop step runs asynchronously.
+
+Safer approach:
+
+- use `contextPropertyName` for per-item output when item is object
+- use `stepResults` + `stepIndex` for step-scoped coordination
+- avoid writing per-step intermediate data to shared `this.*`
+
+## Mitigation strategies
+
+### 1) Isolate data by scope
+
+- per-item: loop item + `contextPropertyName`
+- per-step: `stepResults[${actionName}_${stepIndex}]`
+- global: only final aggregates
+
+### 2) Use deterministic merge stage
+
+Parallel branches compute first, then one sequential action merges and publishes final state.
+
+### 3) Use DB concurrency controls for same-row updates
+
+When concurrent actions can update same record:
+
+- transaction + row lock (`FOR UPDATE`)
+- optimistic locking/version checks
+- single atomic update operators where possible
+
+### 4) Design for idempotency
+
+Actions should tolerate retries and duplicate invocations without corrupting state.
+
+## Quick checklist before enabling parallel mode
+
+- Do parallel branches mutate the same field/object?
+- Do branches depend on each other's intermediate writes?
+- Are DB updates atomic or protected with locking/version checks?
+- Is there a deterministic final merge step?
+
+If any answer is unclear, keep flow sequential until the data flow is isolated.
+

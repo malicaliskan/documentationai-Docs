@@ -234,6 +234,8 @@ For each data object in your service, the following M2M edge functions are autom
 | `m2mDelete{ObjectName}ById` | Delete record by ID | `DELETE /m2m/{objectName}/delete-by-id` | `{serviceCodename}-m2m-{objectName}-delete-by-id` |
 | `m2mDelete{ObjectName}ByQuery` | Delete records by query | `DELETE /m2m/{objectName}/delete-by-query` | `{serviceCodename}-m2m-{objectName}-delete-by-query` |
 
+For update edge functions (`m2mUpdate*`), `dataClause` array-field mutations can use `$add`, `$rem`, and `$addIf`. See [Array Mutation Syntax Guide](./array-mutation-syntax-guide).
+
 ### Configuration
 
 All automatic M2M edge functions are configured with:

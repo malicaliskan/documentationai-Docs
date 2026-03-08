@@ -404,6 +404,8 @@ Updates related or child records based on a query. Used for propagating state ch
 
 **Inter-Service Support:** The `childObject` can be a local data object (same service) or a remote data object (different service). For remote objects, the action automatically routes to the target service's M2M edge function (`m2mUpdate{ObjectName}ByQuery`) using secure machine-to-machine authentication. The tenant codename is automatically propagated for multi-tenant scenarios.
 
+**Array field updates:** When update payloads target array fields, prefer mutation operators (`$add`, `$rem`, `$addIf`) in `dataClause`. See [Array Mutation Syntax Guide](./array-mutation-syntax-guide).
+
 ### **13. DeleteCrudAction**
 
 Deletes or soft-deletes related child entities conditionally.

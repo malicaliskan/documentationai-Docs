@@ -20,6 +20,10 @@ Used for propagating state changes or syncing dependent records after the main r
 | `whereClause` | MScript             | Query that selects which records to update.            |
 | `dataClause`  | \[ApiAggregateData] | Property–value assignments applied to matched records. |
 
+**Array updates**
+
+When your `dataClause` updates array fields through generated db utilities, you can use array mutation operators (`$add`, `$rem`, `$addIf`) instead of full replacement. See [Array Mutation Syntax Guide](../../array-mutation-syntax-guide).
+
 **Inter-Service Support**
 
 `UpdateCrudAction` supports both local and remote data objects:
