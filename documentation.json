@@ -42,23 +42,31 @@
             "group": "Design Your App",
             "pages": [
               {
-                "title": "Start Design",
+                "title": "Designing Apps with AI",
+                "path": "using-ai-to-design-an-app"
+              },
+              {
+                "title": "AI Architect",
+                "path": "ai-architect"
+              },
+              {
+                "title": "Project Structure",
                 "path": "start-building"
               },
               {
-                "title": "Manage Authentication",
+                "title": "Authentication & Authorization",
                 "path": "authentication-and-authorization"
               },
               {
-                "title": "Design Your Service",
+                "title": "Service Structure",
                 "path": "build-your-service"
               },
               {
-                "title": "Design Your Data Model",
+                "title": "Data Model Structure",
                 "path": "build-your-data-model"
               },
               {
-                "title": "Build Your API",
+                "title": "Business API Structure",
                 "path": "build-your-api"
               },
               {
@@ -68,15 +76,6 @@
               {
                 "title": "Bulk CRUD Operations",
                 "path": "bulk-crud-actions"
-              }
-            ]
-          },
-          {
-            "group": "Design With AI",
-            "pages": [
-              {
-                "title": "Using AI To Design An App",
-                "path": "using-ai-to-design-an-app"
               }
             ]
           },

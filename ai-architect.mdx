@@ -1,159 +1,162 @@
 ---
 title: AI Architect
-description: Learn how the AI Architect component generates complete backend architectures
+description: How the Mindbricks AI Architect transforms natural language into production-ready backend blueprints
 ---
-## AI Architect Overview
 
-The AI Architect is Mindbricks' core component that transforms natural language descriptions into complete, functional backend architectures. It uses advanced machine learning algorithms to understand requirements and generate optimized code structures.
+## What Is the AI Architect?
 
-<Columns cols="2">
-  <Card title="Natural Language Processing" href="#nlp" icon="message-square" cta="Explore" horizontal="false">
-    Convert plain English requirements into technical specifications.
-  </Card>
+The **AI Architect** is Mindbricks' core AI component—known as **Agent Ada** inside the platform. It is the project development leader that transforms your natural language business requirements into a complete, structured backend architecture expressed through the **Mindbricks Pattern Ontology (MPO)**.
 
-  <Card title="Architecture Generation" href="#generation" icon="layers" cta="See Examples" horizontal="false">
-    Automatically create APIs, databases, and business logic.
-  </Card>
-</Columns>
+Unlike generic AI code generators that produce free-form code, the AI Architect works within a **semantic framework**. It doesn't write code directly—it creates **pattern instances** that form the blueprint of your project. The **Genesis engine** then compiles this blueprint into production-ready, deterministic backend code.
 
-## How It Works
+This separation is what makes Mindbricks unique: the AI focuses on **architecture design**, while Genesis handles **code generation**. The result is structured, verifiable, and consistent—every time.
 
-The AI Architect processes your input through several stages:
+---
 
-<Tabs>
-  <Tab title="Input Processing" icon="file-text">
-    Parse natural language descriptions to extract entities, relationships, and requirements.
+## How the AI Architect Works
 
-    <CodeGroup show-lines="true" tabs={[]}>
-      ```json
-      {
-      "description": "Build a blog platform with user authentication, posts, and comments",
-      "features": ["auth", "posts", "comments", "categories"],
-      "database": "postgresql"
-      }
-      ```
+The AI Architect processes your input through a structured, multi-stage pipeline. Each stage builds on the output of the previous one, ensuring clarity, traceability, and architectural consistency.
 
-      ```yaml
-      description: "E-commerce platform with products, orders, and payments"
-      features:
-      - products
-      - orders
-      - payments
-      - inventory
-      database: postgresql
-      ```
-    </CodeGroup>
-  </Tab>
+### Stage 1: Requirements Understanding
 
-  <Tab title="Architecture Design" icon="layout">
-    Generate optimized architecture patterns based on requirements and best practices.
-  </Tab>
+When you create a new project, the AI Architect begins by engaging you in conversation to understand your business requirements. It asks targeted questions about:
 
-  <Tab title="Code Generation" icon="code">
-    Produce ready-to-deploy code in your preferred language and framework.
-  </Tab>
-</Tabs>
+- **Product type and domain** — What kind of system are you building?
+- **User roles and actors** — Who uses the system and what can they do?
+- **Business rules and constraints** — What must always be true?
+- **Functional scope** — What features are included in the initial release?
 
-The AI Architect supports multiple programming languages including Python, Node.js, Go, and Java.
+You describe your system in **business language**, not technical terms. The AI Architect determines the appropriate microservice boundaries, database strategies, messaging patterns, security rules, and integration points.
 
-## Supported Patterns
+> **Key principle:** Describe what you want to build, not how to build it.
 
-The AI Architect can generate various backend patterns:
+### Stage 2: Architecture Design with Patterns
 
-Generate RESTful APIs with CRUD operations, validation, and error handling.
+Based on the gathered requirements, the AI Architect translates your business intent into a complete backend architecture using the MPO. This is the core of what the AI Architect does—it creates structured **pattern instances** that together form the blueprint of your project.
 
-<Steps>
-  <Step title="REST API" icon="globe" title-type="p">
-    ```python
-    from flask import Flask, jsonify
+The AI Architect designs:
 
-    app = Flask(__name__)
+| Architecture Layer | What the AI Architect Creates |
+| --- | --- |
+| **Service Boundaries** | Identifies microservices based on domain analysis, data ownership, and scalability needs |
+| **Data Objects** | Defines entities with typed properties, relations, indexes, computed fields, and constraints |
+| **Business APIs** | Creates CRUD and custom endpoints with authorization, validation, actions, and response shaping |
+| **Authentication** | Configures login methods, user roles, permissions, API keys, and session management |
+| **Events & Messaging** | Defines domain events, Kafka topics, and cross-service event subscriptions |
+| **Integrations** | Sets up connections to external services (Stripe, S3, Google Maps, Telegram, etc.) |
+| **BFF & Notifications** | Configures the Backend-for-Frontend aggregation layer and notification templates |
 
-    @app.route('/users', methods=['GET'])
-    def get_users():
-    users = User.query.all()
-    return jsonify([user.to_dict() for user in users])
-    ```
-  </Step>
+Each of these is expressed as a set of MPO pattern instances—structured, typed, and semantically validated.
 
-  <Step title="GraphQL API" icon="network" title-type="p">
-    Create GraphQL schemas and resolvers for flexible data querying.
-  </Step>
+### Stage 3: Blueprint Handoff to Genesis
 
-  <Step title="Microservices" icon="grid" title-type="p">
-    Design microservice architectures with service discovery and communication.
-  </Step>
-</Steps>
+Once the architecture design is complete, the resulting pattern graph is the **project blueprint**—the complete, structured specification of your backend. This blueprint is what the **Genesis engine** compiles into production-ready code.
 
-## Customization Options
+The AI Architect does not generate code. It produces the **semantic input** that Genesis requires:
 
-While the AI Architect generates complete backends, you can customize various aspects:
+- Pattern instances conforming to the MPO schema
+- Correctly wired relationships between data objects, APIs, and services
+- Validated configurations for authentication, events, and integrations
 
-- Database schema modifications
+Genesis then deterministically transforms this blueprint into:
 
-- API endpoint adjustments
+- Type-safe Node.js backend code
+- Database schemas and migration scripts
+- RESTful API routes with full validation
+- Deployment scripts and Dockerfiles
+- OpenAPI documentation and Postman collections
 
-- Authentication method selection
+---
 
-- Middleware integration
+## What the AI Architect Optimizes For
 
-- Performance optimizations
+The AI Architect applies platform best practices and architectural patterns automatically. When designing your blueprint, it optimizes for:
 
-<Expandable title="Advanced Customization" default-open="false">
-  For complex requirements, you can provide detailed specifications or modify the generated code directly. The AI Architect learns from your customizations to improve future generations.
-</Expandable>
+- **Query performance** — Strategic indexing, composite indexes, and caching strategies are applied to data objects based on expected access patterns
 
-## Performance Considerations
+- **Scalability** — Services are bounded by domain, enabling independent scaling. Event-driven patterns (Kafka) are used for cross-service communication to avoid tight coupling
 
-The AI Architect optimizes generated code for:
+- **Security by default** — Role-based access control, ownership checks, field-level protection, and input validation are woven into every API the AI designs
 
-- Response times under 100ms for typical operations
+- **Data consistency** — Foreign key relationships, cascade rules, soft deletes, and audit trails are configured based on domain requirements
 
-- Scalability to handle thousands of concurrent users
+- **Separation of concerns** — Read-heavy queries are routed through the MCMQ/Elasticsearch layer, while write operations stay within service-local databases
 
-- Database query efficiency with proper indexing
+---
 
-- Memory usage optimization
+## Integration with the Mindbricks Platform
 
-- Caching strategies for improved performance
+The AI Architect is deeply integrated with every layer of the Mindbricks ecosystem:
 
-Generated backends include performance monitoring and can be optimized further based on real usage patterns.
+| Component | How the AI Architect Uses It |
+| --- | --- |
+| **Mindbricks Pattern Ontology** | The semantic schema that constrains and guides all AI-generated pattern instances |
+| **Genesis Engine** | Receives the AI-designed blueprint and compiles it into deployable backend code |
+| **Mindbricks Studio UI** | Displays the AI-generated architecture for review, with full manual editing capabilities |
+| **Cloud Infrastructure** | One-click deployment of the Genesis-compiled services to managed Kubernetes clusters |
+| **Auth Service** | AI configures login methods, roles, and permissions as part of the project blueprint |
+| **BFF & Notification Services** | AI designs data views and notification templates alongside the core services |
 
-## Integration Capabilities
+---
 
-The AI Architect seamlessly integrates with:
+## Customization After AI Design
 
-| Component              | Description                   |
-| ---------------------- | ----------------------------- |
-| Ontology Engine        | Automatic schema generation   |
-| Cloud Infrastructure   | One-click deployment          |
-| Monitoring Tools       | Built-in performance tracking |
-| Authentication Systems | JWT, OAuth2, SAML support     |
+The AI Architect produces a complete architecture, but you always retain full control. After the AI finishes designing:
+
+- **Review every pattern instance** — Inspect data objects, APIs, permissions, and events through the Studio UI
+
+- **Edit or refine** — Modify any property, add or remove fields, adjust business rules, or change configurations
+
+- **Extend with natural language** — Ask the AI to add new services, modify existing logic, or integrate additional features. The AI updates the blueprint while preserving what already exists
+
+- **Add custom code** — Use Lib functions and Edge Controllers to inject custom JavaScript logic at defined hook points, without breaking the generated architecture
+
+- **Manual pattern creation** — Create new pattern instances directly through the Studio UI or JSON editors for full hands-on control
+
+The AI Architect and manual editing are not mutually exclusive—they work together. The AI handles the heavy lifting of initial design and large-scale changes, while manual editing provides precision for fine-tuning.
+
+---
 
 ## Best Practices
 
 To get the best results from the AI Architect:
 
-1. Provide detailed, specific requirements
+1. **Speak in business terms** — Describe what the system does and who uses it, not how it should be implemented technically
 
-2. Include examples of desired functionality
+2. **State constraints clearly** — Business rules like "each store must be isolated" or "buyers must log in to purchase" help the AI make correct architectural decisions
 
-3. Specify performance and scalability needs
+3. **Use comparisons** — References like "like eBay" or "like Airbnb but single-tenant" activate known architectural patterns and accelerate design
 
-4. Mention integration requirements
+4. **Delegate when appropriate** — Phrases like "use best practices" or "standard setup" signal the AI to apply platform defaults and move forward
 
-5. Review and test generated code thoroughly
+5. **Review the summary checkpoint** — Before generating the architecture, the AI presents a project summary. This is the most important moment to confirm business correctness
+
+6. **Iterate incrementally** — After the initial design, use natural language to request changes rather than redesigning from scratch
+
+---
 
 ## Troubleshooting
 
 <ExpandableGroup>
-  <Expandable title="Generation takes too long" default-open="false">
-    Complex requirements may take longer to process. Try breaking down large projects into smaller components.
+  <Expandable title="The AI asks too many questions" default-open="false">
+    You can accelerate the process by providing more detail in your initial description, or by responding with "use best practices" or "proceed" to let the AI apply defaults and move forward.
   </Expandable>
 
-  <Expandable title="Generated code has errors" default-open="false">
-    Review your input requirements for clarity. The AI may need more specific details to generate accurate code.
+  <Expandable title="The generated architecture doesn't match my expectations" default-open="false">
+    Review the project summary checkpoint carefully before the AI begins designing services. If the architecture is already generated, describe the specific changes you need—the AI will update the blueprint incrementally without starting over.
+  </Expandable>
+
+  <Expandable title="Design takes longer than expected" default-open="false">
+    Complex projects with many services take more time to design. The AI designs services one by one, and you can monitor progress in real time. The estimated time is shown before design begins.
   </Expandable>
 </ExpandableGroup>
 
-The AI Architect continuously learns and improves, making each generation more accurate and efficient.
+---
+
+## What's Next
+
+- **[Using AI to Design an App](./using-ai-to-design-an-app)** — Detailed walkthrough of the full AI design process, including the three-agent pipeline and conversation strategies
+
+- **[Mindbricks SaaS Guide](./mindbricks-saas)** — Visual guide to the platform UI, including how Agent Ada appears in the project workspace
+
+- **[Genesis MCP](./genesis-mcp)** — Connect external AI agents (Cursor, Claude, Lovable) to design and modify Mindbricks projects programmatically
