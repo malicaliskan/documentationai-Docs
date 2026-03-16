@@ -1,4 +1,634 @@
 ---
-title: Using Integrations In Mindbricks
-description: Comming soon..
+title: Using Integrations in Mindbricks
+description: >-
+  Mindbricks integrations connect your application to third-party services like
+  AWS S3, Stripe, Slack, Telegram, and more. This guide covers adding
+  integrations to a project, configuring credentials, using IntegrationAction in
+  Business APIs, calling integrations from MScript, service library functions,
+  and edge controllers.
 ---
+
+## Overview
+
+Mindbricks provides a **built-in integration catalog** of pre-coded API clients for popular third-party services. Instead of writing boilerplate HTTP calls, you pick an integration from the catalog, supply your credentials, and immediately gain access to its methods — both declaratively in Business API workflows and programmatically in custom code.
+
+**Key concepts:**
+
+- **Integration Catalog** — a curated list of provider clients maintained by Mindbricks (e.g., Amazon S3, Stripe, Google Gemini, Slack).
+- **Project Integration** — an integration that has been added to your project with its configuration (API keys, regions, etc.).
+- **IntegrationAction** — a Business API action that calls an integration method declaratively within a workflow.
+- **`getIntegrationClient`** — a runtime function for calling integration methods from custom code (service library, edge controllers).
+- **`_providerKey` globals** — pre-initialized integration clients available in MScript expressions.
+
+---
+
+## Integration Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                Integration Catalog (DB)                  │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐   │
+│  │ amazonS3 │ │  Stripe  │ │  Slack   │ │ Telegram │   │
+│  │          │ │          │ │          │ │          │   │
+│  │ methods  │ │ methods  │ │ methods  │ │ methods  │   │
+│  │ config   │ │ config   │ │ config   │ │ config   │   │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘   │
+└─────────────────────────────────────────────────────────┘
+                          │
+                    pick + configure
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│              Your Project (project.integrations)         │
+│                                                          │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │ provider: "amazonS3"                                │ │
+│  │ configuration: { accessKeyId, secretAccessKey, ... }│ │
+│  └─────────────────────────────────────────────────────┘ │
+│                                                          │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │ provider: "Stripe"                                  │ │
+│  │ configuration: { apiKey: "sk_test_..." }            │ │
+│  └─────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────┘
+                          │
+              used by (at runtime)
+           ┌──────────────┼──────────────┐
+           ▼              ▼              ▼
+    IntegrationAction  MScript      Service Library
+    (Business API)    (_amazonS3)  (getIntegrationClient)
+```
+
+Each integration provider is a self-contained JavaScript class that wraps the provider's SDK. When Mindbricks generates your service code, it includes:
+
+1. The integration client class (from the catalog).
+2. An `integrations/index.js` module that exports `getIntegrationClient(provider)`.
+3. Global variables (`_providerKey`) initialized at startup for use in MScript.
+
+---
+
+## Step 1 — Browse the Integration Catalog
+
+Mindbricks groups integrations into categories:
+
+| Category | Examples |
+|---|---|
+| **Cloud Storage** | Amazon S3 |
+| **Payments** | Stripe |
+| **Email** | Amazon SES, Mailgun |
+| **Messaging** | Slack, Telegram |
+| **AI & ML** | Google Gemini, Hugging Face |
+| **Analytics** | Google Analytics, Amplitude |
+| **Maps & Geo** | Google Maps |
+| **Notifications** | Pusher |
+| **Support** | Intercom |
+| **Project Management** | Jira Service Management |
+
+See the [Integration Categories Reference](#integration-categories-reference) section below for the full list of categories.
+
+### For Human Designers (UI)
+
+Mindbricks provides a dedicated **Integrations** interface within the project workspace:
+
+1. Open your project in the Mindbricks UI.
+2. Navigate to the **Integrations** section in the project panel.
+3. Browse or search the integration catalog.
+4. View each provider's details — description, configuration requirements, and available methods.
+
+### For AI Agents (MCP Tools)
+
+AI agents interact with integrations through dedicated Genesis MCP tools:
+
+- `searchIntegrations({ query: "s3" })` — search the catalog by keyword.
+- `listIntegrationCategories()` — browse available categories.
+- `getIntegrationDetails({ providerKey: "amazonS3" })` — inspect configuration requirements and available methods before adding.
+
+---
+
+## Step 2 — Add an Integration to Your Project
+
+Integrations are a **project-level resource** in Mindbricks. They are managed directly under the project — not inside project settings. Each project maintains its own list of integrations with per-project configuration and credentials.
+
+### For Human Designers (UI)
+
+The Mindbricks UI provides a full integration management interface:
+
+1. Open your project in the Mindbricks workspace.
+2. Go to the **Integrations** section in the project panel.
+3. Click **Add Integration** to browse the catalog.
+4. Select a provider and fill in the configuration parameters (API keys, regions, endpoints, etc.).
+5. Click **Save**.
+
+From this same interface you can also view, update, and remove integrations that are already added to the project.
+
+### For AI Agents (MCP Tools)
+
+AI agents should always use the dedicated MCP tools to manage integrations:
+
+```
+searchIntegrations({ query: "s3" })
+→ finds amazonS3
+
+addIntegrationToProject({ providerKey: "amazonS3" })
+→ integration added to the project
+
+updateProjectIntegrationConfig({
+  projectIntegrationId: "...",
+  configuration: {
+    accessKeyId: "AKIA...",
+    secretAccessKey: "...",
+    region: "us-east-1"
+  }
+})
+→ credentials configured
+```
+
+The recommended workflow for AI agents:
+
+1. **Check existing**: Call `getProjectIntegrations` to see what is already added.
+2. **Search**: Use `searchIntegrations` to find a provider by keyword or category.
+3. **Inspect**: Use `getIntegrationDetails` to review methods and configuration requirements.
+4. **Add**: Use `addIntegrationToProject` to add the integration.
+5. **Configure**: Remind the user to configure credentials via the Integrations UI, or use `updateProjectIntegrationConfig` if credentials are provided.
+6. **Test**: Optionally use `testIntegrationConnection` to verify connectivity.
+
+### In the Project JSON
+
+At build time, integrations are resolved into the project configuration under `project.integrations`:
+
+```json
+{
+  "integrations": [
+    {
+      "provider": "amazonS3",
+      "configuration": {
+        "accessKeyId": "AKIA...",
+        "secretAccessKey": "...",
+        "region": "us-east-1"
+      },
+      "sdkList": ["@aws-sdk/client-s3@^3.943.0"],
+      "methods": [...]
+    },
+    {
+      "provider": "Stripe",
+      "configuration": {
+        "apiKey": "sk_test_..."
+      },
+      "sdkList": ["stripe@^20.1.0"],
+      "methods": [...]
+    }
+  ]
+}
+```
+
+Each entry contains the `provider` key, its `configuration` (credentials and options), the `sdkList` (npm packages required), and `methods` (available API operations).
+
+---
+
+## Step 3 — Configure Integration Credentials
+
+Each integration defines its own configuration parameters. Common patterns include:
+
+| Provider | Required Configuration |
+|---|---|
+| **amazonS3** | `accessKeyId`, `secretAccessKey`, `region` |
+| **Stripe** | `apiKey` |
+| **Slack** | `token` (xoxb-* or xoxp-*) |
+| **Telegram** | `botToken` |
+| **googleGemini** | `apiKey` |
+| **googleMaps** | `apiKey` |
+| **Mailgun** | `apiKey`, `domain` |
+| **amazonSES** | `accessKeyId`, `secretAccessKey`, `region` |
+
+Configuration values are injected into the integration client's constructor at runtime.
+
+### Testing the Connection
+
+After configuring, you can verify the connection:
+
+- **UI (Human Designers)**: Click the **Test Connection** button in the integration panel. The UI supports both quick connectivity tests and full method-level tests.
+- **MCP (AI Agents)**: Use `testIntegrationConnection({ providerKey: "amazonS3", mode: "connection" })`.
+
+The test mode can be `connection` (basic connectivity check) or `full` (runs all method tests).
+
+---
+
+## Step 4 — Use IntegrationAction in Business APIs
+
+`IntegrationAction` is a declarative action type that calls an integration method within a Business API workflow. It is defined in the `BusinessApiActionStore` under the `integrationActions` array and attached to a workflow milestone.
+
+### Action Definition
+
+```json
+{
+  "actions": {
+    "integrationActions": [
+      {
+        "extendClassName": "IntegrationAction",
+        "id": "a160-upload-to-s3",
+        "name": "uploadFileToS3",
+        "provider": "amazonS3",
+        "action": "uploadFile",
+        "parameters": [
+          { "parameterName": "bucketName", "parameterValue": "'my-bucket'" },
+          { "parameterName": "key", "parameterValue": "context.fileName" },
+          { "parameterName": "body", "parameterValue": "context.fileBuffer" }
+        ],
+        "contextPropertyName": "s3UploadResult"
+      }
+    ]
+  }
+}
+```
+
+### Field Reference
+
+| Field | Type | Description |
+|---|---|---|
+| `provider` | String | The integration's `providerKey` (must be added to the project). |
+| `action` | String | The method name on the integration client (e.g., `uploadFile`, `createCustomer`). |
+| `parameters` | IntegrationParameter[] | Array of parameter name/value pairs. Values are MScript expressions. |
+| `contextPropertyName` | String | Where the method's return value is stored in the workflow context. |
+| `condition` | MScript | Optional condition — action only executes when this evaluates to truthy. |
+| `onActionError` | String | Error handling strategy: `"ignore"`, `"throw"`, or `"addToContext"`. |
+| `writeToResponse` | Boolean | If true, writes the result directly to the API response. |
+
+### Attaching to a Workflow Milestone
+
+```json
+{
+  "workflow": {
+    "create": {
+      "afterMainCreateOperation": ["a160-upload-to-s3"]
+    }
+  }
+}
+```
+
+Common milestone placements for integration actions:
+
+| Milestone | Use Case |
+|---|---|
+| `afterMainCreateOperation` | Upload a file, create an external record after a local create. |
+| `afterMainUpdateOperation` | Sync changes to an external system after an update. |
+| `afterFetchInstance` | Enrich the fetched record with external data. |
+| `afterBuildOutput` | Attach external metadata to the response. |
+| `afterStartBusinessApi` | Pre-fetch external data needed for validation. |
+
+### Validation
+
+Mindbricks validates `IntegrationAction` at design time:
+
+- **Provider must exist** in `project.integrations`.
+- **Action must be a valid method** on that provider.
+- **Required parameters** must be supplied.
+- **Unknown parameters** trigger a warning.
+
+### Generated Code
+
+At build time, each `IntegrationAction` generates a method like:
+
+```javascript
+async uploadFileToS3() {
+  const input = {
+    bucketName: 'my-bucket',
+    key: context.fileName,
+    body: context.fileBuffer,
+  };
+  const amazonS3Client = await getIntegrationClient("amazonS3");
+  return await amazonS3Client.uploadFile(input);
+}
+```
+
+---
+
+## Step 5 — Use Integrations in MScript
+
+When an integration is added to your project, Mindbricks initializes a global variable `_providerKey` at service startup. This global is available in any MScript expression across all Business APIs in the service.
+
+### Global Variables
+
+For each project integration, a global is created:
+
+| Integration | Global Variable |
+|---|---|
+| amazonS3 | `_amazonS3` |
+| Stripe | `_Stripe` |
+| Slack | `_Slack` |
+| Telegram | `_Telegram` |
+| googleGemini | `_googleGemini` |
+| googleMaps | `_googleMaps` |
+
+### Calling Integration Methods from MScript
+
+MScript supports `await` for async calls. You can call any method on the integration client directly:
+
+```javascript
+await _amazonS3.uploadFile({
+  bucketName: 'my-bucket',
+  key: this.fileName,
+  body: this.fileBuffer
+})
+```
+
+```javascript
+await _Stripe.createCustomer({
+  email: this.email,
+  name: this.fullName
+})
+```
+
+```javascript
+await _Slack.sendMessage({
+  channel: '#notifications',
+  text: `New order created: ${this.orderId}`
+})
+```
+
+### MScript in Action Parameters
+
+The `parameterValue` field of `IntegrationParameter` is an MScript expression. This means you can use:
+
+- **Literals**: `'my-bucket'`, `42`, `true`
+- **Context references**: `this.fileName`, `context.userId`
+- **Template literals**: `` `uploads/${this.userId}/${this.fileName}` ``
+- **Expressions**: `this.amount * 100`
+- **Conditional expressions**: `this.isPremium ? 'premium-bucket' : 'standard-bucket'`
+
+---
+
+## Step 6 — Use Integrations in Service Library Functions
+
+The **service library** is where you write custom JavaScript modules for your service. Integration clients are accessible via the `getIntegrationClient` function.
+
+### Import and Usage
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+
+module.exports = async (context) => {
+  const s3 = await getIntegrationClient("amazonS3");
+
+  const result = await s3.uploadFile({
+    bucketName: "my-bucket",
+    key: context.fileName,
+    body: context.fileBuffer,
+  });
+
+  return result;
+};
+```
+
+### Multi-Integration Example
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+
+module.exports = async (context) => {
+  const stripe = await getIntegrationClient("Stripe");
+  const slack = await getIntegrationClient("Slack");
+
+  const charge = await stripe.createPaymentIntent({
+    amount: context.totalAmount,
+    currency: "usd",
+    customerId: context.stripeCustomerId,
+  });
+
+  await slack.sendMessage({
+    channel: "#payments",
+    text: `Payment of $${context.totalAmount / 100} received from ${context.customerName}`,
+  });
+
+  return charge;
+};
+```
+
+### Error Handling
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+
+module.exports = async (context) => {
+  const s3 = await getIntegrationClient("amazonS3");
+
+  try {
+    const result = await s3.uploadFile({
+      bucketName: "my-bucket",
+      key: context.fileName,
+      body: context.fileBuffer,
+    });
+    return { success: true, url: result.url };
+  } catch (err) {
+    console.error("S3 upload failed:", err.message);
+    return { success: false, error: err.message };
+  }
+};
+```
+
+### Using Globals in Service Library
+
+Since `_providerKey` globals are set at startup, you can also use them directly without importing:
+
+```javascript
+module.exports = async (context) => {
+  const result = await _amazonS3.uploadFile({
+    bucketName: "my-bucket",
+    key: context.fileName,
+    body: context.fileBuffer,
+  });
+  return result;
+};
+```
+
+However, using `getIntegrationClient` is preferred for explicit dependency tracking and better error messages if a provider is not configured.
+
+---
+
+## Step 7 — Use Integrations in Edge Controllers
+
+Edge controllers are custom HTTP endpoints defined at the service level. Integration clients are available exactly as in service library functions.
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+
+module.exports = async (req, res) => {
+  const gemini = await getIntegrationClient("googleGemini");
+
+  const response = await gemini.generateContent({
+    prompt: req.body.prompt,
+    model: "gemini-pro",
+  });
+
+  res.json({ result: response });
+};
+```
+
+Edge controllers are useful for building custom API endpoints that orchestrate multiple integration calls or implement complex business logic that doesn't fit the standard CRUD workflow pattern.
+
+---
+
+## How It Works Under the Hood
+
+### Build Time
+
+When your project is built, Mindbricks generates the following for each project integration:
+
+1. **`integrations/{provider}.js`** — the provider's full client class (copied from the catalog).
+2. **`integrations/index.js`** — a module that exports `getIntegrationClient(provider)` and `testProvider(provider)`.
+3. **SDK dependencies** — each provider's npm packages (defined in `sdkList`) are added to `package.json`.
+
+### Runtime (Service Startup)
+
+At service startup, for each project integration:
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+global._amazonS3 = await getIntegrationClient("amazonS3");
+global._Stripe = await getIntegrationClient("Stripe");
+```
+
+The `getIntegrationClient` function lazily creates and caches client instances. The first call constructs the client with the configured credentials; subsequent calls return the cached instance.
+
+### Client Lifecycle
+
+Each integration client class follows a standard pattern:
+
+- **Constructor** — accepts a config object and stores credentials.
+- **`_init()`** — optional async initialization (e.g., verifying connectivity).
+- **`_close()`** — optional cleanup method.
+- **`static test(config)`** — a static method for connection testing.
+- **Business methods** — the actual API operations (e.g., `uploadFile`, `createCustomer`).
+
+---
+
+## Integration Categories Reference
+
+Mindbricks organizes integrations into the following categories, covering the full spectrum of third-party API providers:
+
+| Category | Key | Description | Example Providers |
+|---|---|---|---|
+| **AI & Machine Learning** | `ai-ml` | AI models, NLP, computer vision, generative AI | OpenAI, Google Gemini, Hugging Face, Anthropic, Replicate |
+| **Analytics** | `analytics` | Product analytics, web analytics, tracking | Google Analytics, Amplitude, Mixpanel, Segment |
+| **Authentication** | `authentication` | Identity providers, SSO, MFA | Auth0, Okta, Firebase Auth, Clerk |
+| **Blockchain & Web3** | `blockchain` | Blockchain networks, crypto, smart contracts | Alchemy, Moralis, Infura, Etherscan |
+| **CDN** | `cdn` | Content delivery, edge caching | Cloudflare, Fastly, AWS CloudFront |
+| **CI/CD** | `ci-cd` | Build pipelines, deployment automation | GitHub Actions, GitLab CI, CircleCI |
+| **Cloud Infrastructure** | `cloud-infrastructure` | Compute, serverless, container orchestration | AWS Lambda, Google Cloud Functions, Azure |
+| **Cloud Storage** | `cloud-storage` | Object storage, file hosting, backup | Amazon S3, Google Cloud Storage, Azure Blob |
+| **Communication & Telephony** | `communication` | Voice calls, video conferencing, WebRTC | Twilio Voice, Vonage, Agora, Daily.co |
+| **CRM** | `crm` | Customer relationship management | Salesforce, HubSpot CRM, Pipedrive, Zoho |
+| **Data Enrichment** | `data-enrichment` | Identity verification, lead enrichment, data APIs | Clearbit, FullContact, Pipl, Hunter.io |
+| **Database** | `database` | Database-as-a-service, hosted databases | MongoDB Atlas, PlanetScale, Supabase, Fauna |
+| **Document Processing** | `document-processing` | PDF generation, OCR, e-signatures, document conversion | DocuSign, Adobe Sign, Cloudmersive, PDFMonkey |
+| **E-Commerce** | `ecommerce` | E-commerce platforms, product catalogs | Shopify, WooCommerce, BigCommerce |
+| **Email** | `email` | Transactional email delivery | Amazon SES, Mailgun, SendGrid, Postmark |
+| **ERP** | `erp` | Enterprise resource planning | SAP, Oracle, NetSuite, Odoo |
+| **Finance & Banking** | `finance` | Banking APIs, accounting, financial data | Plaid, Wise, QuickBooks, Xero |
+| **HR & Workforce** | `hr` | Human resources, payroll, recruiting | BambooHR, Gusto, Workday, Lever |
+| **IoT** | `iot` | Internet of Things platforms and device management | AWS IoT, Azure IoT, Particle, ThingsBoard |
+| **Maps & Geolocation** | `maps-geo` | Maps, geocoding, directions, places | Google Maps, Mapbox, HERE, OpenCage |
+| **Marketing & Automation** | `marketing` | Marketing campaigns, automation, CMS | Mailchimp, Brevo, ActiveCampaign, HubSpot Marketing |
+| **Messaging** | `messaging` | Chat platforms, team messaging, bots | Slack, Telegram, Discord, Microsoft Teams |
+| **Monitoring** | `monitoring` | Application monitoring, logging, alerting | Datadog, Sentry, New Relic, PagerDuty |
+| **Notifications** | `notifications` | Push notifications, real-time channels | Pusher, OneSignal, Firebase Cloud Messaging |
+| **Payments** | `payments` | Payment processing, subscriptions, billing | Stripe, PayPal, Square, Adyen |
+| **Productivity & Workspace** | `productivity` | Workspace tools, spreadsheets, notes, collaboration | Notion, Airtable, Google Sheets, Google Drive, Coda |
+| **Project Management** | `project-management` | Issue tracking, task management | Jira, Asana, Linear, Monday.com |
+| **Scheduling & Calendar** | `scheduling` | Appointment booking, calendar APIs | Calendly, Google Calendar, Cal.com |
+| **Search** | `search` | Search engines, full-text indexing | Algolia, Elasticsearch, Meilisearch, Typesense |
+| **Security** | `security` | Security scanning, compliance, threat detection | Snyk, CrowdStrike, Vault |
+| **Shipping & Logistics** | `shipping-logistics` | Shipping rates, tracking, fulfillment | EasyPost, ShipStation, FedEx, UPS |
+| **SMS** | `sms` | SMS messaging services | Twilio SMS, Vonage SMS, MessageBird |
+| **Social Media** | `social-media` | Social platform APIs, posting, analytics | Twitter/X, Facebook, Instagram, LinkedIn |
+| **Customer Support** | `support` | Help desk, ticketing, live chat | Intercom, Zendesk, Freshdesk |
+| **Translation & Localization** | `translation` | Machine translation, localization | DeepL, Google Translate, Lokalise |
+| **Video & Audio** | `video-audio` | Media processing, streaming, transcription | Mux, Cloudinary, AssemblyAI, ElevenLabs |
+
+---
+
+## Complete Workflow Example
+
+Here is a full example of adding Amazon S3 to a project and using it to upload files after a create operation.
+
+### 1. Add the Integration
+
+Add Amazon S3 to the project via the **Integrations** panel in the UI or using MCP tools:
+
+```
+addIntegrationToProject({ providerKey: "amazonS3" })
+
+updateProjectIntegrationConfig({
+  projectIntegrationId: "...",
+  configuration: {
+    accessKeyId: "AKIAIOSFODNN7EXAMPLE",
+    secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+    region: "us-east-1"
+  }
+})
+```
+
+### 2. Define the IntegrationAction
+
+In your `BusinessApi` for the `Document` data object's create API:
+
+```json
+{
+  "actions": {
+    "integrationActions": [
+      {
+        "extendClassName": "IntegrationAction",
+        "id": "a1-upload-doc",
+        "name": "uploadDocumentToS3",
+        "provider": "amazonS3",
+        "action": "uploadFile",
+        "parameters": [
+          { "parameterName": "bucketName", "parameterValue": "'documents-bucket'" },
+          { "parameterName": "key", "parameterValue": "`documents/${this.id}/${this.fileName}`" },
+          { "parameterName": "body", "parameterValue": "this.fileContent" },
+          { "parameterName": "contentType", "parameterValue": "this.mimeType" }
+        ],
+        "contextPropertyName": "s3Result"
+      }
+    ]
+  }
+}
+```
+
+### 3. Attach to the Workflow
+
+```json
+{
+  "workflow": {
+    "create": {
+      "afterMainCreateOperation": ["a1-upload-doc"]
+    }
+  }
+}
+```
+
+### 4. Use the Result
+
+The upload result is stored in `context.s3Result` and can be referenced by subsequent actions or returned in the response.
+
+---
+
+## Tips and Best Practices
+
+- **Check before adding**: Use `getProjectIntegrations` (MCP) or check the Integrations panel (UI) to see what is already added before adding duplicates.
+- **Test connections early**: After configuring credentials, test the connection before building your workflows.
+- **Use IntegrationAction for simple calls**: When you just need to call one method with parameters, IntegrationAction is simpler than writing custom code.
+- **Use service library for complex flows**: When you need conditional logic, loops, or multiple integration calls in sequence, a service library function gives you full JavaScript power.
+- **Error handling matters**: Set `onActionError` on your IntegrationAction to control what happens when an external call fails (`"throw"` for critical operations, `"ignore"` or `"addToContext"` for optional ones).
+- **Keep credentials out of code**: Always configure credentials through the Integrations panel or MCP tools, never hardcode them in MScript or service library code.
+- **Leverage MScript globals**: For quick one-liners in action parameters, `_providerKey.method(params)` is concise and readable.
+- **AI agents should use MCP tools**: AI agents should always prefer the dedicated integration MCP tools (`searchIntegrations`, `addIntegrationToProject`, etc.) over manual JSON editing for reliable integration management.
+
+---
+
+## Related Documentation
+
+- **[IntegrationAction Reference](/references/actions/integrationaction)** — detailed field reference for the IntegrationAction pattern.
+- **[Actions and Workflow](/actions-and-workflow)** — how actions and workflow milestones work.
+- **[Write Your Own Code](/write-your-own-code)** — service library and edge controller authoring guide.
+- **[MScript Cookbook](/mscript-cookbook)** — MScript expression examples and patterns.
+- **[Project Settings](/ontology/ProjectSettings)** — full reference for project configuration including integrations.

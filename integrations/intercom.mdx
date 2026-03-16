@@ -1,0 +1,3863 @@
+---
+title: "intercom Integration"
+description: >-
+  
+---
+
+## intercom
+
+**Category:** Customer Support  
+**Provider Key:** `intercom`  
+
+
+
+---
+
+## Configuration
+
+To use intercom in your project, add it to your project integrations and provide the following configuration:
+
+This integration requires no configuration parameters.
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Contacts**: `listContacts`, `getContact`, `createContact`, `updateContact`, `deleteContact`, `searchContacts`, `archiveContact`, `unarchiveContact`, `mergeContacts`
+- **Conversations**: `listConversations`, `getConversation`, `createConversation`, `replyToConversation`, `closeConversation`, `openConversation`, `assignConversation`, `snoozeConversation`, `searchConversations`, `tagConversation`, `untagConversation`
+- **Companies**: `listCompanies`, `getCompany`, `createOrUpdateCompany`, `deleteCompany`, `listCompanyContacts`, `attachContactToCompany`, `detachContactFromCompany`
+- **Articles**: `listArticles`, `getArticle`, `createArticle`, `updateArticle`, `deleteArticle`, `searchArticles`
+- **Help**: `listHelpCenters`, `getHelpCenter`
+- **Collections**: `listCollections`, `getCollection`, `createCollection`, `updateCollection`, `deleteCollection`
+- **Tags**: `listTags`, `getTag`, `createTag`, `updateTag`, `deleteTag`, `tagContact`, `untagContact`, `tagCompany`, `untagCompany`
+- **Admins**: `listAdmins`, `getAdmin`, `setAdminAway`
+- **Teams**: `listTeams`, `getTeam`
+- **Segments**: `listSegments`, `getSegment`
+- **Notes**: `listContactNotes`, `getNote`, `createNote`
+- **Events**: `createDataEvent`, `listUserEvents`
+- **Messages**: `sendInAppMessage`, `sendEmailMessage`
+- **Data**: `listDataAttributes`, `createDataAttribute`, `updateDataAttribute`
+- **Subscriptions**: `listSubscriptionTypes`
+- **Phone**: `createPhoneCallRedirect`
+- **Tickets**: `createTicket`, `getTicket`, `updateTicket`, `replyToTicket`, `searchTickets`, `listTicketTypes`, `getTicketType`
+
+---
+
+### Contacts
+
+#### `listContacts`
+
+**List Contacts**
+
+Lists all contacts with pagination support
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `perPage` | `number` | No | Number of results per page |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listContactsAction",
+  "provider": "intercom",
+  "action": "listContacts",
+  "parameters": [
+    { "parameterName": "perPage", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listContactsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.listContacts({
+  perPage: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listContacts({
+  perPage: /* number */,
+});
+```
+
+---
+
+#### `getContact`
+
+**Get Contact**
+
+Gets a specific contact by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Contact ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getContactAction",
+  "provider": "intercom",
+  "action": "getContact",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getContactResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.getContact({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.getContact({
+  id: /* string */,
+});
+```
+
+---
+
+#### `createContact`
+
+**Create Contact**
+
+Creates a new contact (user or lead)
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `role` | `string` | Yes | Contact role ('user' or 'lead') |
+| `externalId` | `string` | No | External ID for the contact |
+| `email` | `string` | No | Contact email address |
+| `phone` | `string` | No | Contact phone number |
+| `name` | `string` | No | Contact name |
+| `customAttributes` | `Object` | No | Custom attributes object |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createContactAction",
+  "provider": "intercom",
+  "action": "createContact",
+  "parameters": [
+    { "parameterName": "role", "parameterValue": "'your-role'" },
+    { "parameterName": "externalId", "parameterValue": "'your-externalId'" },
+    { "parameterName": "email", "parameterValue": "'your-email'" },
+    { "parameterName": "phone", "parameterValue": "'your-phone'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "customAttributes", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "createContactResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.createContact({
+  role: /* string */,
+  externalId: /* string */,
+  email: /* string */,
+  phone: /* string */,
+  name: /* string */,
+  customAttributes: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.createContact({
+  role: /* string */,
+  externalId: /* string */,
+  email: /* string */,
+  phone: /* string */,
+  name: /* string */,
+  customAttributes: /* Object */,
+});
+```
+
+---
+
+#### `updateContact`
+
+**Update Contact**
+
+Updates an existing contact
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Contact ID to update |
+| `email` | `string` | No | Updated email address |
+| `phone` | `string` | No | Updated phone number |
+| `name` | `string` | No | Updated name |
+| `customAttributes` | `Object` | No | Updated custom attributes |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateContactAction",
+  "provider": "intercom",
+  "action": "updateContact",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" },
+    { "parameterName": "email", "parameterValue": "'your-email'" },
+    { "parameterName": "phone", "parameterValue": "'your-phone'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "customAttributes", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "updateContactResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.updateContact({
+  id: /* string */,
+  email: /* string */,
+  phone: /* string */,
+  name: /* string */,
+  customAttributes: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.updateContact({
+  id: /* string */,
+  email: /* string */,
+  phone: /* string */,
+  name: /* string */,
+  customAttributes: /* Object */,
+});
+```
+
+---
+
+#### `deleteContact`
+
+**Delete Contact**
+
+Deletes a contact by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Contact ID to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteContactAction",
+  "provider": "intercom",
+  "action": "deleteContact",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "deleteContactResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.deleteContact({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.deleteContact({
+  id: /* string */,
+});
+```
+
+---
+
+#### `searchContacts`
+
+**Search Contacts**
+
+Searches for contacts based on query parameters
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | `Object` | Yes | Search query object |
+| `query` | `string` | Yes | Field to search on |
+| `query` | `string` | Yes | Search operator (e.g., '=', '!=', 'contains') |
+| `query` | `string` | Yes | Value to search for |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "searchContactsAction",
+  "provider": "intercom",
+  "action": "searchContacts",
+  "parameters": [
+    { "parameterName": "query", "parameterValue": "{}" },
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "query", "parameterValue": "'your-query'" }
+  ],
+  "contextPropertyName": "searchContactsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.searchContacts({
+  query: /* Object */,
+  query: /* string */,
+  query: /* string */,
+  query: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.searchContacts({
+  query: /* Object */,
+  query: /* string */,
+  query: /* string */,
+  query: /* string */,
+});
+```
+
+---
+
+#### `archiveContact`
+
+**Archive Contact**
+
+Archives a contact by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Contact ID to archive |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "archiveContactAction",
+  "provider": "intercom",
+  "action": "archiveContact",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "archiveContactResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.archiveContact({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.archiveContact({
+  id: /* string */,
+});
+```
+
+---
+
+#### `unarchiveContact`
+
+**Unarchive Contact**
+
+Unarchives a contact by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Contact ID to unarchive |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "unarchiveContactAction",
+  "provider": "intercom",
+  "action": "unarchiveContact",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "unarchiveContactResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.unarchiveContact({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.unarchiveContact({
+  id: /* string */,
+});
+```
+
+---
+
+#### `mergeContacts`
+
+**Merge Contacts**
+
+Merges two contacts together
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `fromId` | `string` | Yes | Contact ID to merge from (will be deleted) |
+| `intoId` | `string` | Yes | Contact ID to merge into (will be kept) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "mergeContactsAction",
+  "provider": "intercom",
+  "action": "mergeContacts",
+  "parameters": [
+    { "parameterName": "fromId", "parameterValue": "'your-fromId'" },
+    { "parameterName": "intoId", "parameterValue": "'your-intoId'" }
+  ],
+  "contextPropertyName": "mergeContactsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.mergeContacts({
+  fromId: /* string */,
+  intoId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.mergeContacts({
+  fromId: /* string */,
+  intoId: /* string */,
+});
+```
+
+---
+
+### Conversations
+
+#### `listConversations`
+
+**List Conversations**
+
+Lists all conversations with pagination support
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `perPage` | `number` | No | Number of results per page |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listConversationsAction",
+  "provider": "intercom",
+  "action": "listConversations",
+  "parameters": [
+    { "parameterName": "perPage", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listConversationsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.listConversations({
+  perPage: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listConversations({
+  perPage: /* number */,
+});
+```
+
+---
+
+#### `getConversation`
+
+**Get Conversation**
+
+Gets a specific conversation by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Conversation ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getConversationAction",
+  "provider": "intercom",
+  "action": "getConversation",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getConversationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.getConversation({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.getConversation({
+  id: /* string */,
+});
+```
+
+---
+
+#### `createConversation`
+
+**Create Conversation**
+
+Creates a new conversation
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `fromUserId` | `string` | Yes | User ID initiating the conversation |
+| `body` | `string` | Yes | Message body content |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createConversationAction",
+  "provider": "intercom",
+  "action": "createConversation",
+  "parameters": [
+    { "parameterName": "fromUserId", "parameterValue": "'your-fromUserId'" },
+    { "parameterName": "body", "parameterValue": "'your-body'" }
+  ],
+  "contextPropertyName": "createConversationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.createConversation({
+  fromUserId: /* string */,
+  body: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.createConversation({
+  fromUserId: /* string */,
+  body: /* string */,
+});
+```
+
+---
+
+#### `replyToConversation`
+
+**Reply to Conversation**
+
+Replies to a conversation
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `conversationId` | `string` | Yes | Conversation ID to reply to |
+| `body` | `string` | Yes | Reply message body |
+| `type` | `string` | Yes | Reply type ('admin' or 'user') |
+| `adminId` | `string` | No | Admin ID if type is 'admin' |
+| `userId` | `string` | No | User ID if type is 'user' |
+| `intercomUserId` | `string` | No | Intercom user ID if type is 'user' |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "replyToConversationAction",
+  "provider": "intercom",
+  "action": "replyToConversation",
+  "parameters": [
+    { "parameterName": "conversationId", "parameterValue": "'your-conversationId'" },
+    { "parameterName": "body", "parameterValue": "'your-body'" },
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "adminId", "parameterValue": "'your-adminId'" },
+    { "parameterName": "userId", "parameterValue": "'your-userId'" },
+    { "parameterName": "intercomUserId", "parameterValue": "'your-intercomUserId'" }
+  ],
+  "contextPropertyName": "replyToConversationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.replyToConversation({
+  conversationId: /* string */,
+  body: /* string */,
+  type: /* string */,
+  adminId: /* string */,
+  userId: /* string */,
+  intercomUserId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.replyToConversation({
+  conversationId: /* string */,
+  body: /* string */,
+  type: /* string */,
+  adminId: /* string */,
+  userId: /* string */,
+  intercomUserId: /* string */,
+});
+```
+
+---
+
+#### `closeConversation`
+
+**Close Conversation**
+
+Closes a conversation
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `conversationId` | `string` | Yes | Conversation ID to close |
+| `adminId` | `string` | Yes | Admin ID performing the action |
+| `body` | `string` | No | Optional closing message |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "closeConversationAction",
+  "provider": "intercom",
+  "action": "closeConversation",
+  "parameters": [
+    { "parameterName": "conversationId", "parameterValue": "'your-conversationId'" },
+    { "parameterName": "adminId", "parameterValue": "'your-adminId'" },
+    { "parameterName": "body", "parameterValue": "'your-body'" }
+  ],
+  "contextPropertyName": "closeConversationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.closeConversation({
+  conversationId: /* string */,
+  adminId: /* string */,
+  body: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.closeConversation({
+  conversationId: /* string */,
+  adminId: /* string */,
+  body: /* string */,
+});
+```
+
+---
+
+#### `openConversation`
+
+**Open Conversation**
+
+Opens/reopens a conversation
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `conversationId` | `string` | Yes | Conversation ID to open |
+| `adminId` | `string` | Yes | Admin ID performing the action |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "openConversationAction",
+  "provider": "intercom",
+  "action": "openConversation",
+  "parameters": [
+    { "parameterName": "conversationId", "parameterValue": "'your-conversationId'" },
+    { "parameterName": "adminId", "parameterValue": "'your-adminId'" }
+  ],
+  "contextPropertyName": "openConversationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.openConversation({
+  conversationId: /* string */,
+  adminId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.openConversation({
+  conversationId: /* string */,
+  adminId: /* string */,
+});
+```
+
+---
+
+#### `assignConversation`
+
+**Assign Conversation**
+
+Assigns a conversation to an admin or team
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `conversationId` | `string` | Yes | Conversation ID to assign |
+| `adminId` | `string` | Yes | Admin ID performing the assignment |
+| `assigneeId` | `string` | No | Admin ID to assign to |
+| `teamId` | `string` | No | Team ID to assign to |
+| `body` | `string` | No | Optional note about the assignment |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "assignConversationAction",
+  "provider": "intercom",
+  "action": "assignConversation",
+  "parameters": [
+    { "parameterName": "conversationId", "parameterValue": "'your-conversationId'" },
+    { "parameterName": "adminId", "parameterValue": "'your-adminId'" },
+    { "parameterName": "assigneeId", "parameterValue": "'your-assigneeId'" },
+    { "parameterName": "teamId", "parameterValue": "'your-teamId'" },
+    { "parameterName": "body", "parameterValue": "'your-body'" }
+  ],
+  "contextPropertyName": "assignConversationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.assignConversation({
+  conversationId: /* string */,
+  adminId: /* string */,
+  assigneeId: /* string */,
+  teamId: /* string */,
+  body: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.assignConversation({
+  conversationId: /* string */,
+  adminId: /* string */,
+  assigneeId: /* string */,
+  teamId: /* string */,
+  body: /* string */,
+});
+```
+
+---
+
+#### `snoozeConversation`
+
+**Snooze Conversation**
+
+Snoozes a conversation until a specified time
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `conversationId` | `string` | Yes | Conversation ID to snooze |
+| `adminId` | `string` | Yes | Admin ID performing the action |
+| `snoozedUntil` | `number` | Yes | Unix timestamp for when to unsnooze |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "snoozeConversationAction",
+  "provider": "intercom",
+  "action": "snoozeConversation",
+  "parameters": [
+    { "parameterName": "conversationId", "parameterValue": "'your-conversationId'" },
+    { "parameterName": "adminId", "parameterValue": "'your-adminId'" },
+    { "parameterName": "snoozedUntil", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "snoozeConversationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.snoozeConversation({
+  conversationId: /* string */,
+  adminId: /* string */,
+  snoozedUntil: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.snoozeConversation({
+  conversationId: /* string */,
+  adminId: /* string */,
+  snoozedUntil: /* number */,
+});
+```
+
+---
+
+#### `searchConversations`
+
+**Search Conversations**
+
+Searches for conversations based on query parameters
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | `Object` | Yes | Search query object |
+| `query` | `string` | Yes | Field to search on |
+| `query` | `string` | Yes | Search operator |
+| `query` | `string` | Yes | Value to search for |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "searchConversationsAction",
+  "provider": "intercom",
+  "action": "searchConversations",
+  "parameters": [
+    { "parameterName": "query", "parameterValue": "{}" },
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "query", "parameterValue": "'your-query'" }
+  ],
+  "contextPropertyName": "searchConversationsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.searchConversations({
+  query: /* Object */,
+  query: /* string */,
+  query: /* string */,
+  query: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.searchConversations({
+  query: /* Object */,
+  query: /* string */,
+  query: /* string */,
+  query: /* string */,
+});
+```
+
+---
+
+#### `tagConversation`
+
+**Tag Conversation**
+
+Adds tags to a conversation
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `conversationId` | `string` | Yes | Conversation ID to tag |
+| `tagId` | `string` | Yes | Tag ID to add |
+| `adminId` | `string` | Yes | Admin ID performing the action |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "tagConversationAction",
+  "provider": "intercom",
+  "action": "tagConversation",
+  "parameters": [
+    { "parameterName": "conversationId", "parameterValue": "'your-conversationId'" },
+    { "parameterName": "tagId", "parameterValue": "'your-tagId'" },
+    { "parameterName": "adminId", "parameterValue": "'your-adminId'" }
+  ],
+  "contextPropertyName": "tagConversationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.tagConversation({
+  conversationId: /* string */,
+  tagId: /* string */,
+  adminId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.tagConversation({
+  conversationId: /* string */,
+  tagId: /* string */,
+  adminId: /* string */,
+});
+```
+
+---
+
+#### `untagConversation`
+
+**Untag Conversation**
+
+Removes a tag from a conversation
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `conversationId` | `string` | Yes | Conversation ID to untag |
+| `tagId` | `string` | Yes | Tag ID to remove |
+| `adminId` | `string` | Yes | Admin ID performing the action |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "untagConversationAction",
+  "provider": "intercom",
+  "action": "untagConversation",
+  "parameters": [
+    { "parameterName": "conversationId", "parameterValue": "'your-conversationId'" },
+    { "parameterName": "tagId", "parameterValue": "'your-tagId'" },
+    { "parameterName": "adminId", "parameterValue": "'your-adminId'" }
+  ],
+  "contextPropertyName": "untagConversationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.untagConversation({
+  conversationId: /* string */,
+  tagId: /* string */,
+  adminId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.untagConversation({
+  conversationId: /* string */,
+  tagId: /* string */,
+  adminId: /* string */,
+});
+```
+
+---
+
+### Companies
+
+#### `listCompanies`
+
+**List Companies**
+
+Lists all companies with pagination support
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `perPage` | `number` | No | Number of results per page |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listCompaniesAction",
+  "provider": "intercom",
+  "action": "listCompanies",
+  "parameters": [
+    { "parameterName": "perPage", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listCompaniesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.listCompanies({
+  perPage: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listCompanies({
+  perPage: /* number */,
+});
+```
+
+---
+
+#### `getCompany`
+
+**Get Company**
+
+Gets a specific company by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Company ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getCompanyAction",
+  "provider": "intercom",
+  "action": "getCompany",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getCompanyResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.getCompany({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.getCompany({
+  id: /* string */,
+});
+```
+
+---
+
+#### `createOrUpdateCompany`
+
+**Create/Update Company**
+
+Creates or updates a company
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `companyId` | `string` | Yes | External company ID |
+| `name` | `string` | No | Company name |
+| `monthlySpend` | `number` | No | Monthly spend amount |
+| `plan` | `string` | No | Plan name |
+| `size` | `number` | No | Company size |
+| `website` | `string` | No | Company website |
+| `industry` | `string` | No | Industry name |
+| `customAttributes` | `Object` | No | Custom attributes |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createOrUpdateCompanyAction",
+  "provider": "intercom",
+  "action": "createOrUpdateCompany",
+  "parameters": [
+    { "parameterName": "companyId", "parameterValue": "'your-companyId'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "monthlySpend", "parameterValue": "0" },
+    { "parameterName": "plan", "parameterValue": "'your-plan'" },
+    { "parameterName": "size", "parameterValue": "0" },
+    { "parameterName": "website", "parameterValue": "'your-website'" },
+    { "parameterName": "industry", "parameterValue": "'your-industry'" },
+    { "parameterName": "customAttributes", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "createOrUpdateCompanyResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.createOrUpdateCompany({
+  companyId: /* string */,
+  name: /* string */,
+  monthlySpend: /* number */,
+  plan: /* string */,
+  size: /* number */,
+  website: /* string */,
+  industry: /* string */,
+  customAttributes: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.createOrUpdateCompany({
+  companyId: /* string */,
+  name: /* string */,
+  monthlySpend: /* number */,
+  plan: /* string */,
+  size: /* number */,
+  website: /* string */,
+  industry: /* string */,
+  customAttributes: /* Object */,
+});
+```
+
+---
+
+#### `deleteCompany`
+
+**Delete Company**
+
+Deletes a company by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Company ID to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteCompanyAction",
+  "provider": "intercom",
+  "action": "deleteCompany",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "deleteCompanyResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.deleteCompany({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.deleteCompany({
+  id: /* string */,
+});
+```
+
+---
+
+#### `listCompanyContacts`
+
+**List Company Contacts**
+
+Lists contacts attached to a company
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `companyId` | `string` | Yes | Company ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listCompanyContactsAction",
+  "provider": "intercom",
+  "action": "listCompanyContacts",
+  "parameters": [
+    { "parameterName": "companyId", "parameterValue": "'your-companyId'" }
+  ],
+  "contextPropertyName": "listCompanyContactsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.listCompanyContacts({
+  companyId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listCompanyContacts({
+  companyId: /* string */,
+});
+```
+
+---
+
+#### `attachContactToCompany`
+
+**Attach Contact to Company**
+
+Attaches a contact to a company
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `contactId` | `string` | Yes | Contact ID to attach |
+| `companyId` | `string` | Yes | Company ID to attach to |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "attachContactToCompanyAction",
+  "provider": "intercom",
+  "action": "attachContactToCompany",
+  "parameters": [
+    { "parameterName": "contactId", "parameterValue": "'your-contactId'" },
+    { "parameterName": "companyId", "parameterValue": "'your-companyId'" }
+  ],
+  "contextPropertyName": "attachContactToCompanyResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.attachContactToCompany({
+  contactId: /* string */,
+  companyId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.attachContactToCompany({
+  contactId: /* string */,
+  companyId: /* string */,
+});
+```
+
+---
+
+#### `detachContactFromCompany`
+
+**Detach Contact from Company**
+
+Detaches a contact from a company
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `contactId` | `string` | Yes | Contact ID to detach |
+| `companyId` | `string` | Yes | Company ID to detach from |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "detachContactFromCompanyAction",
+  "provider": "intercom",
+  "action": "detachContactFromCompany",
+  "parameters": [
+    { "parameterName": "contactId", "parameterValue": "'your-contactId'" },
+    { "parameterName": "companyId", "parameterValue": "'your-companyId'" }
+  ],
+  "contextPropertyName": "detachContactFromCompanyResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.detachContactFromCompany({
+  contactId: /* string */,
+  companyId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.detachContactFromCompany({
+  contactId: /* string */,
+  companyId: /* string */,
+});
+```
+
+---
+
+### Articles
+
+#### `listArticles`
+
+**List Articles**
+
+Lists all articles with pagination support
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `perPage` | `number` | No | Number of results per page |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listArticlesAction",
+  "provider": "intercom",
+  "action": "listArticles",
+  "parameters": [
+    { "parameterName": "perPage", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listArticlesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.listArticles({
+  perPage: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listArticles({
+  perPage: /* number */,
+});
+```
+
+---
+
+#### `getArticle`
+
+**Get Article**
+
+Gets a specific article by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Article ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getArticleAction",
+  "provider": "intercom",
+  "action": "getArticle",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getArticleResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.getArticle({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.getArticle({
+  id: /* string */,
+});
+```
+
+---
+
+#### `createArticle`
+
+**Create Article**
+
+Creates a new article
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `title` | `string` | Yes | Article title |
+| `authorId` | `string` | Yes | Author admin ID |
+| `description` | `string` | No | Article description |
+| `body` | `string` | No | Article body content (HTML) |
+| `state` | `string` | No | Article state ('draft' or 'published') |
+| `parentId` | `string` | No | Parent collection or section ID |
+| `parentType` | `string` | No | Parent type ('collection' or 'section') |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createArticleAction",
+  "provider": "intercom",
+  "action": "createArticle",
+  "parameters": [
+    { "parameterName": "title", "parameterValue": "'your-title'" },
+    { "parameterName": "authorId", "parameterValue": "'your-authorId'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "body", "parameterValue": "'your-body'" },
+    { "parameterName": "state", "parameterValue": "'your-state'" },
+    { "parameterName": "parentId", "parameterValue": "'your-parentId'" },
+    { "parameterName": "parentType", "parameterValue": "'your-parentType'" }
+  ],
+  "contextPropertyName": "createArticleResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.createArticle({
+  title: /* string */,
+  authorId: /* string */,
+  description: /* string */,
+  body: /* string */,
+  state: /* string */,
+  parentId: /* string */,
+  parentType: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.createArticle({
+  title: /* string */,
+  authorId: /* string */,
+  description: /* string */,
+  body: /* string */,
+  state: /* string */,
+  parentId: /* string */,
+  parentType: /* string */,
+});
+```
+
+---
+
+#### `updateArticle`
+
+**Update Article**
+
+Updates an existing article
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Article ID to update |
+| `title` | `string` | No | Updated title |
+| `description` | `string` | No | Updated description |
+| `body` | `string` | No | Updated body content |
+| `state` | `string` | No | Updated state |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateArticleAction",
+  "provider": "intercom",
+  "action": "updateArticle",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" },
+    { "parameterName": "title", "parameterValue": "'your-title'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "body", "parameterValue": "'your-body'" },
+    { "parameterName": "state", "parameterValue": "'your-state'" }
+  ],
+  "contextPropertyName": "updateArticleResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.updateArticle({
+  id: /* string */,
+  title: /* string */,
+  description: /* string */,
+  body: /* string */,
+  state: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.updateArticle({
+  id: /* string */,
+  title: /* string */,
+  description: /* string */,
+  body: /* string */,
+  state: /* string */,
+});
+```
+
+---
+
+#### `deleteArticle`
+
+**Delete Article**
+
+Deletes an article by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Article ID to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteArticleAction",
+  "provider": "intercom",
+  "action": "deleteArticle",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "deleteArticleResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.deleteArticle({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.deleteArticle({
+  id: /* string */,
+});
+```
+
+---
+
+#### `searchArticles`
+
+**Search Articles**
+
+Searches for articles based on query
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `phrase` | `string` | Yes | Search phrase |
+| `helpCenterId` | `string` | No | Help center ID to search in |
+| `highlight` | `boolean` | No | Whether to highlight search terms |
+| `state` | `string` | No | Filter by article state |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "searchArticlesAction",
+  "provider": "intercom",
+  "action": "searchArticles",
+  "parameters": [
+    { "parameterName": "phrase", "parameterValue": "'your-phrase'" },
+    { "parameterName": "helpCenterId", "parameterValue": "'your-helpCenterId'" },
+    { "parameterName": "highlight", "parameterValue": "true" },
+    { "parameterName": "state", "parameterValue": "'your-state'" }
+  ],
+  "contextPropertyName": "searchArticlesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.searchArticles({
+  phrase: /* string */,
+  helpCenterId: /* string */,
+  highlight: /* boolean */,
+  state: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.searchArticles({
+  phrase: /* string */,
+  helpCenterId: /* string */,
+  highlight: /* boolean */,
+  state: /* string */,
+});
+```
+
+---
+
+### Help
+
+#### `listHelpCenters`
+
+**List Help Centers**
+
+Lists all help centers
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _intercom.listHelpCenters()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listHelpCenters();
+```
+
+---
+
+#### `getHelpCenter`
+
+**Get Help Center**
+
+Gets a specific help center by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Help center ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getHelpCenterAction",
+  "provider": "intercom",
+  "action": "getHelpCenter",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getHelpCenterResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.getHelpCenter({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.getHelpCenter({
+  id: /* string */,
+});
+```
+
+---
+
+### Collections
+
+#### `listCollections`
+
+**List Collections**
+
+Lists all collections
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _intercom.listCollections()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listCollections();
+```
+
+---
+
+#### `getCollection`
+
+**Get Collection**
+
+Gets a specific collection by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Collection ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getCollectionAction",
+  "provider": "intercom",
+  "action": "getCollection",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getCollectionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.getCollection({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.getCollection({
+  id: /* string */,
+});
+```
+
+---
+
+#### `createCollection`
+
+**Create Collection**
+
+Creates a new collection
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | Yes | Collection name |
+| `description` | `string` | No | Collection description |
+| `helpCenterId` | `string` | No | Help center ID to add collection to |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createCollectionAction",
+  "provider": "intercom",
+  "action": "createCollection",
+  "parameters": [
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "helpCenterId", "parameterValue": "'your-helpCenterId'" }
+  ],
+  "contextPropertyName": "createCollectionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.createCollection({
+  name: /* string */,
+  description: /* string */,
+  helpCenterId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.createCollection({
+  name: /* string */,
+  description: /* string */,
+  helpCenterId: /* string */,
+});
+```
+
+---
+
+#### `updateCollection`
+
+**Update Collection**
+
+Updates a collection
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Collection ID to update |
+| `name` | `string` | No | Updated name |
+| `description` | `string` | No | Updated description |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateCollectionAction",
+  "provider": "intercom",
+  "action": "updateCollection",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" }
+  ],
+  "contextPropertyName": "updateCollectionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.updateCollection({
+  id: /* string */,
+  name: /* string */,
+  description: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.updateCollection({
+  id: /* string */,
+  name: /* string */,
+  description: /* string */,
+});
+```
+
+---
+
+#### `deleteCollection`
+
+**Delete Collection**
+
+Deletes a collection by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Collection ID to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteCollectionAction",
+  "provider": "intercom",
+  "action": "deleteCollection",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "deleteCollectionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.deleteCollection({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.deleteCollection({
+  id: /* string */,
+});
+```
+
+---
+
+### Tags
+
+#### `listTags`
+
+**List Tags**
+
+Lists all tags
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _intercom.listTags()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listTags();
+```
+
+---
+
+#### `getTag`
+
+**Get Tag**
+
+Gets a specific tag by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Tag ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getTagAction",
+  "provider": "intercom",
+  "action": "getTag",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getTagResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.getTag({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.getTag({
+  id: /* string */,
+});
+```
+
+---
+
+#### `createTag`
+
+**Create Tag**
+
+Creates a new tag
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | Yes | Tag name |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createTagAction",
+  "provider": "intercom",
+  "action": "createTag",
+  "parameters": [
+    { "parameterName": "name", "parameterValue": "'your-name'" }
+  ],
+  "contextPropertyName": "createTagResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.createTag({
+  name: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.createTag({
+  name: /* string */,
+});
+```
+
+---
+
+#### `updateTag`
+
+**Update Tag**
+
+Updates a tag name
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Tag ID to update |
+| `name` | `string` | Yes | New tag name |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateTagAction",
+  "provider": "intercom",
+  "action": "updateTag",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" }
+  ],
+  "contextPropertyName": "updateTagResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.updateTag({
+  id: /* string */,
+  name: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.updateTag({
+  id: /* string */,
+  name: /* string */,
+});
+```
+
+---
+
+#### `deleteTag`
+
+**Delete Tag**
+
+Deletes a tag by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Tag ID to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteTagAction",
+  "provider": "intercom",
+  "action": "deleteTag",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "deleteTagResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.deleteTag({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.deleteTag({
+  id: /* string */,
+});
+```
+
+---
+
+#### `tagContact`
+
+**Tag Contact**
+
+Tags a contact with a specific tag
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `contactId` | `string` | Yes | Contact ID to tag |
+| `tagId` | `string` | Yes | Tag ID to apply |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "tagContactAction",
+  "provider": "intercom",
+  "action": "tagContact",
+  "parameters": [
+    { "parameterName": "contactId", "parameterValue": "'your-contactId'" },
+    { "parameterName": "tagId", "parameterValue": "'your-tagId'" }
+  ],
+  "contextPropertyName": "tagContactResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.tagContact({
+  contactId: /* string */,
+  tagId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.tagContact({
+  contactId: /* string */,
+  tagId: /* string */,
+});
+```
+
+---
+
+#### `untagContact`
+
+**Untag Contact**
+
+Removes a tag from a contact
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `contactId` | `string` | Yes | Contact ID to untag |
+| `tagId` | `string` | Yes | Tag ID to remove |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "untagContactAction",
+  "provider": "intercom",
+  "action": "untagContact",
+  "parameters": [
+    { "parameterName": "contactId", "parameterValue": "'your-contactId'" },
+    { "parameterName": "tagId", "parameterValue": "'your-tagId'" }
+  ],
+  "contextPropertyName": "untagContactResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.untagContact({
+  contactId: /* string */,
+  tagId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.untagContact({
+  contactId: /* string */,
+  tagId: /* string */,
+});
+```
+
+---
+
+#### `tagCompany`
+
+**Tag Company**
+
+Tags a company with a specific tag
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `companyId` | `string` | Yes | Company ID to tag |
+| `tagName` | `string` | Yes | Tag name to apply |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "tagCompanyAction",
+  "provider": "intercom",
+  "action": "tagCompany",
+  "parameters": [
+    { "parameterName": "companyId", "parameterValue": "'your-companyId'" },
+    { "parameterName": "tagName", "parameterValue": "'your-tagName'" }
+  ],
+  "contextPropertyName": "tagCompanyResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.tagCompany({
+  companyId: /* string */,
+  tagName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.tagCompany({
+  companyId: /* string */,
+  tagName: /* string */,
+});
+```
+
+---
+
+#### `untagCompany`
+
+**Untag Company**
+
+Removes a tag from a company
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `companyId` | `string` | Yes | Company ID to untag |
+| `tagName` | `string` | Yes | Tag name to remove |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "untagCompanyAction",
+  "provider": "intercom",
+  "action": "untagCompany",
+  "parameters": [
+    { "parameterName": "companyId", "parameterValue": "'your-companyId'" },
+    { "parameterName": "tagName", "parameterValue": "'your-tagName'" }
+  ],
+  "contextPropertyName": "untagCompanyResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.untagCompany({
+  companyId: /* string */,
+  tagName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.untagCompany({
+  companyId: /* string */,
+  tagName: /* string */,
+});
+```
+
+---
+
+### Admins
+
+#### `listAdmins`
+
+**List Admins**
+
+Lists all admins
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _intercom.listAdmins()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listAdmins();
+```
+
+---
+
+#### `getAdmin`
+
+**Get Admin**
+
+Gets a specific admin by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Admin ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getAdminAction",
+  "provider": "intercom",
+  "action": "getAdmin",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getAdminResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.getAdmin({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.getAdmin({
+  id: /* string */,
+});
+```
+
+---
+
+#### `setAdminAway`
+
+**Set Admin Away**
+
+Sets an admin as away with optional reassignment
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `adminId` | `string` | Yes | Admin ID to set away |
+| `away` | `boolean` | Yes | Whether to set away (true) or available (false) |
+| `reassignConversations` | `boolean` | Yes | Whether to reassign open conversations |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "setAdminAwayAction",
+  "provider": "intercom",
+  "action": "setAdminAway",
+  "parameters": [
+    { "parameterName": "adminId", "parameterValue": "'your-adminId'" },
+    { "parameterName": "away", "parameterValue": "true" },
+    { "parameterName": "reassignConversations", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "setAdminAwayResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.setAdminAway({
+  adminId: /* string */,
+  away: /* boolean */,
+  reassignConversations: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.setAdminAway({
+  adminId: /* string */,
+  away: /* boolean */,
+  reassignConversations: /* boolean */,
+});
+```
+
+---
+
+### Teams
+
+#### `listTeams`
+
+**List Teams**
+
+Lists all teams
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _intercom.listTeams()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listTeams();
+```
+
+---
+
+#### `getTeam`
+
+**Get Team**
+
+Gets a specific team by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Team ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getTeamAction",
+  "provider": "intercom",
+  "action": "getTeam",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getTeamResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.getTeam({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.getTeam({
+  id: /* string */,
+});
+```
+
+---
+
+### Segments
+
+#### `listSegments`
+
+**List Segments**
+
+Lists all segments
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _intercom.listSegments()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listSegments();
+```
+
+---
+
+#### `getSegment`
+
+**Get Segment**
+
+Gets a specific segment by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Segment ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getSegmentAction",
+  "provider": "intercom",
+  "action": "getSegment",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getSegmentResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.getSegment({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.getSegment({
+  id: /* string */,
+});
+```
+
+---
+
+### Notes
+
+#### `listContactNotes`
+
+**List Contact Notes**
+
+Lists notes for a contact
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `contactId` | `string` | Yes | Contact ID to list notes for |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listContactNotesAction",
+  "provider": "intercom",
+  "action": "listContactNotes",
+  "parameters": [
+    { "parameterName": "contactId", "parameterValue": "'your-contactId'" }
+  ],
+  "contextPropertyName": "listContactNotesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.listContactNotes({
+  contactId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listContactNotes({
+  contactId: /* string */,
+});
+```
+
+---
+
+#### `getNote`
+
+**Get Note**
+
+Gets a specific note by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Note ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getNoteAction",
+  "provider": "intercom",
+  "action": "getNote",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getNoteResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.getNote({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.getNote({
+  id: /* string */,
+});
+```
+
+---
+
+#### `createNote`
+
+**Create Note**
+
+Creates a note on a contact
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `contactId` | `string` | Yes | Contact ID to add note to |
+| `body` | `string` | Yes | Note content |
+| `adminId` | `string` | No | Admin ID creating the note |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createNoteAction",
+  "provider": "intercom",
+  "action": "createNote",
+  "parameters": [
+    { "parameterName": "contactId", "parameterValue": "'your-contactId'" },
+    { "parameterName": "body", "parameterValue": "'your-body'" },
+    { "parameterName": "adminId", "parameterValue": "'your-adminId'" }
+  ],
+  "contextPropertyName": "createNoteResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.createNote({
+  contactId: /* string */,
+  body: /* string */,
+  adminId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.createNote({
+  contactId: /* string */,
+  body: /* string */,
+  adminId: /* string */,
+});
+```
+
+---
+
+### Events
+
+#### `createDataEvent`
+
+**Create Data Event**
+
+Creates a data event for tracking
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `eventName` | `string` | Yes | Name of the event |
+| `createdAt` | `number` | Yes | Unix timestamp of when event occurred |
+| `userId` | `string` | No | User ID |
+| `email` | `string` | No | User email |
+| `intercomUserId` | `string` | No | Intercom user ID |
+| `metadata` | `Object` | No | Additional event metadata |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createDataEventAction",
+  "provider": "intercom",
+  "action": "createDataEvent",
+  "parameters": [
+    { "parameterName": "eventName", "parameterValue": "'your-eventName'" },
+    { "parameterName": "createdAt", "parameterValue": "0" },
+    { "parameterName": "userId", "parameterValue": "'your-userId'" },
+    { "parameterName": "email", "parameterValue": "'your-email'" },
+    { "parameterName": "intercomUserId", "parameterValue": "'your-intercomUserId'" },
+    { "parameterName": "metadata", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "createDataEventResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.createDataEvent({
+  eventName: /* string */,
+  createdAt: /* number */,
+  userId: /* string */,
+  email: /* string */,
+  intercomUserId: /* string */,
+  metadata: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.createDataEvent({
+  eventName: /* string */,
+  createdAt: /* number */,
+  userId: /* string */,
+  email: /* string */,
+  intercomUserId: /* string */,
+  metadata: /* Object */,
+});
+```
+
+---
+
+#### `listUserEvents`
+
+**List User Events**
+
+Lists events for a user
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `type` | `string` | Yes | Identifier type ('user_id', 'email', or 'intercom_user_id') |
+| `value` | `string` | Yes | Identifier value |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listUserEventsAction",
+  "provider": "intercom",
+  "action": "listUserEvents",
+  "parameters": [
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "value", "parameterValue": "'your-value'" }
+  ],
+  "contextPropertyName": "listUserEventsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.listUserEvents({
+  type: /* string */,
+  value: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listUserEvents({
+  type: /* string */,
+  value: /* string */,
+});
+```
+
+---
+
+### Messages
+
+#### `sendInAppMessage`
+
+**Send In-App Message**
+
+Sends an in-app message to a user
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `fromAdminId` | `string` | Yes | Admin ID sending the message |
+| `toUserId` | `string` | Yes | User ID to send message to |
+| `body` | `string` | Yes | Message body |
+| `subject` | `string` | No | Message subject |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "sendInAppMessageAction",
+  "provider": "intercom",
+  "action": "sendInAppMessage",
+  "parameters": [
+    { "parameterName": "fromAdminId", "parameterValue": "'your-fromAdminId'" },
+    { "parameterName": "toUserId", "parameterValue": "'your-toUserId'" },
+    { "parameterName": "body", "parameterValue": "'your-body'" },
+    { "parameterName": "subject", "parameterValue": "'your-subject'" }
+  ],
+  "contextPropertyName": "sendInAppMessageResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.sendInAppMessage({
+  fromAdminId: /* string */,
+  toUserId: /* string */,
+  body: /* string */,
+  subject: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.sendInAppMessage({
+  fromAdminId: /* string */,
+  toUserId: /* string */,
+  body: /* string */,
+  subject: /* string */,
+});
+```
+
+---
+
+#### `sendEmailMessage`
+
+**Send Email Message**
+
+Sends an email message to a user
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `fromAdminId` | `string` | Yes | Admin ID sending the email |
+| `toUserId` | `string` | Yes | User ID to send email to |
+| `body` | `string` | Yes | Email body |
+| `subject` | `string` | Yes | Email subject |
+| `template` | `string` | No | Email template ('plain' or 'personal') |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "sendEmailMessageAction",
+  "provider": "intercom",
+  "action": "sendEmailMessage",
+  "parameters": [
+    { "parameterName": "fromAdminId", "parameterValue": "'your-fromAdminId'" },
+    { "parameterName": "toUserId", "parameterValue": "'your-toUserId'" },
+    { "parameterName": "body", "parameterValue": "'your-body'" },
+    { "parameterName": "subject", "parameterValue": "'your-subject'" },
+    { "parameterName": "template", "parameterValue": "'your-template'" }
+  ],
+  "contextPropertyName": "sendEmailMessageResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.sendEmailMessage({
+  fromAdminId: /* string */,
+  toUserId: /* string */,
+  body: /* string */,
+  subject: /* string */,
+  template: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.sendEmailMessage({
+  fromAdminId: /* string */,
+  toUserId: /* string */,
+  body: /* string */,
+  subject: /* string */,
+  template: /* string */,
+});
+```
+
+---
+
+### Data
+
+#### `listDataAttributes`
+
+**List Data Attributes**
+
+Lists all data attributes
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `model` | `string` | No | Model type ('contact', 'company', or 'conversation') |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listDataAttributesAction",
+  "provider": "intercom",
+  "action": "listDataAttributes",
+  "parameters": [
+    { "parameterName": "model", "parameterValue": "'your-model'" }
+  ],
+  "contextPropertyName": "listDataAttributesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.listDataAttributes({
+  model: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listDataAttributes({
+  model: /* string */,
+});
+```
+
+---
+
+#### `createDataAttribute`
+
+**Create Data Attribute**
+
+Creates a new data attribute
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | Yes | Attribute name |
+| `model` | `string` | Yes | Model type ('contact', 'company', or 'conversation') |
+| `dataType` | `string` | Yes | Data type ('string', 'integer', 'float', 'boolean', 'date') |
+| `description` | `string` | No | Attribute description |
+| `options` | `Array<string>` | No | Options for list type attributes |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createDataAttributeAction",
+  "provider": "intercom",
+  "action": "createDataAttribute",
+  "parameters": [
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "model", "parameterValue": "'your-model'" },
+    { "parameterName": "dataType", "parameterValue": "'your-dataType'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "options", "parameterValue": "'your-options'" }
+  ],
+  "contextPropertyName": "createDataAttributeResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.createDataAttribute({
+  name: /* string */,
+  model: /* string */,
+  dataType: /* string */,
+  description: /* string */,
+  options: /* Array<string> */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.createDataAttribute({
+  name: /* string */,
+  model: /* string */,
+  dataType: /* string */,
+  description: /* string */,
+  options: /* Array<string> */,
+});
+```
+
+---
+
+#### `updateDataAttribute`
+
+**Update Data Attribute**
+
+Updates a data attribute
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Attribute ID to update |
+| `description` | `string` | No | Updated description |
+| `options` | `Array<string>` | No | Updated options |
+| `archived` | `boolean` | No | Whether to archive the attribute |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateDataAttributeAction",
+  "provider": "intercom",
+  "action": "updateDataAttribute",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "options", "parameterValue": "'your-options'" },
+    { "parameterName": "archived", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "updateDataAttributeResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.updateDataAttribute({
+  id: /* string */,
+  description: /* string */,
+  options: /* Array<string> */,
+  archived: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.updateDataAttribute({
+  id: /* string */,
+  description: /* string */,
+  options: /* Array<string> */,
+  archived: /* boolean */,
+});
+```
+
+---
+
+### Subscriptions
+
+#### `listSubscriptionTypes`
+
+**List Subscription Types**
+
+Lists all subscription types
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _intercom.listSubscriptionTypes()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listSubscriptionTypes();
+```
+
+---
+
+### Phone
+
+#### `createPhoneCallRedirect`
+
+**Create Phone Call Redirect**
+
+Redirects a phone call
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `phoneNumber` | `string` | Yes | Phone number to redirect |
+| `customAttributes` | `Object` | No | Custom attributes for the call |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createPhoneCallRedirectAction",
+  "provider": "intercom",
+  "action": "createPhoneCallRedirect",
+  "parameters": [
+    { "parameterName": "phoneNumber", "parameterValue": "'your-phoneNumber'" },
+    { "parameterName": "customAttributes", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "createPhoneCallRedirectResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.createPhoneCallRedirect({
+  phoneNumber: /* string */,
+  customAttributes: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.createPhoneCallRedirect({
+  phoneNumber: /* string */,
+  customAttributes: /* Object */,
+});
+```
+
+---
+
+### Tickets
+
+#### `createTicket`
+
+**Create Ticket**
+
+Creates a new ticket
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `ticketTypeId` | `string` | Yes | Ticket type ID |
+| `contacts` | `Object` | Yes | Contact information |
+| `contacts` | `string` | No | Contact ID |
+| `contacts` | `string` | No | Contact email |
+| `ticketAttributes` | `Object` | No | Ticket custom attributes |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createTicketAction",
+  "provider": "intercom",
+  "action": "createTicket",
+  "parameters": [
+    { "parameterName": "ticketTypeId", "parameterValue": "'your-ticketTypeId'" },
+    { "parameterName": "contacts", "parameterValue": "{}" },
+    { "parameterName": "contacts", "parameterValue": "'your-contacts'" },
+    { "parameterName": "contacts", "parameterValue": "'your-contacts'" },
+    { "parameterName": "ticketAttributes", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "createTicketResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.createTicket({
+  ticketTypeId: /* string */,
+  contacts: /* Object */,
+  contacts: /* string */,
+  contacts: /* string */,
+  ticketAttributes: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.createTicket({
+  ticketTypeId: /* string */,
+  contacts: /* Object */,
+  contacts: /* string */,
+  contacts: /* string */,
+  ticketAttributes: /* Object */,
+});
+```
+
+---
+
+#### `getTicket`
+
+**Get Ticket**
+
+Gets a specific ticket by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Ticket ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getTicketAction",
+  "provider": "intercom",
+  "action": "getTicket",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getTicketResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.getTicket({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.getTicket({
+  id: /* string */,
+});
+```
+
+---
+
+#### `updateTicket`
+
+**Update Ticket**
+
+Updates a ticket
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Ticket ID to update |
+| `ticketAttributes` | `Object` | No | Updated ticket attributes |
+| `state` | `string` | No | Updated state |
+| `assigneeId` | `string` | No | Admin ID to assign to |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateTicketAction",
+  "provider": "intercom",
+  "action": "updateTicket",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" },
+    { "parameterName": "ticketAttributes", "parameterValue": "{}" },
+    { "parameterName": "state", "parameterValue": "'your-state'" },
+    { "parameterName": "assigneeId", "parameterValue": "'your-assigneeId'" }
+  ],
+  "contextPropertyName": "updateTicketResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.updateTicket({
+  id: /* string */,
+  ticketAttributes: /* Object */,
+  state: /* string */,
+  assigneeId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.updateTicket({
+  id: /* string */,
+  ticketAttributes: /* Object */,
+  state: /* string */,
+  assigneeId: /* string */,
+});
+```
+
+---
+
+#### `replyToTicket`
+
+**Reply to Ticket**
+
+Replies to a ticket
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `ticketId` | `string` | Yes | Ticket ID to reply to |
+| `body` | `string` | Yes | Reply message body |
+| `type` | `string` | Yes | Reply type ('admin' or 'user') |
+| `adminId` | `string` | No | Admin ID if type is 'admin' |
+| `intercomUserId` | `string` | No | Intercom user ID if type is 'user' |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "replyToTicketAction",
+  "provider": "intercom",
+  "action": "replyToTicket",
+  "parameters": [
+    { "parameterName": "ticketId", "parameterValue": "'your-ticketId'" },
+    { "parameterName": "body", "parameterValue": "'your-body'" },
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "adminId", "parameterValue": "'your-adminId'" },
+    { "parameterName": "intercomUserId", "parameterValue": "'your-intercomUserId'" }
+  ],
+  "contextPropertyName": "replyToTicketResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.replyToTicket({
+  ticketId: /* string */,
+  body: /* string */,
+  type: /* string */,
+  adminId: /* string */,
+  intercomUserId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.replyToTicket({
+  ticketId: /* string */,
+  body: /* string */,
+  type: /* string */,
+  adminId: /* string */,
+  intercomUserId: /* string */,
+});
+```
+
+---
+
+#### `searchTickets`
+
+**Search Tickets**
+
+Searches for tickets based on query parameters
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | `Object` | Yes | Search query object |
+| `query` | `string` | Yes | Field to search on |
+| `query` | `string` | Yes | Search operator |
+| `query` | `string` | Yes | Value to search for |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "searchTicketsAction",
+  "provider": "intercom",
+  "action": "searchTickets",
+  "parameters": [
+    { "parameterName": "query", "parameterValue": "{}" },
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "query", "parameterValue": "'your-query'" }
+  ],
+  "contextPropertyName": "searchTicketsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.searchTickets({
+  query: /* Object */,
+  query: /* string */,
+  query: /* string */,
+  query: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.searchTickets({
+  query: /* Object */,
+  query: /* string */,
+  query: /* string */,
+  query: /* string */,
+});
+```
+
+---
+
+#### `listTicketTypes`
+
+**List Ticket Types**
+
+Lists all ticket types
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _intercom.listTicketTypes()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.listTicketTypes();
+```
+
+---
+
+#### `getTicketType`
+
+**Get Ticket Type**
+
+Gets a specific ticket type by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Ticket type ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getTicketTypeAction",
+  "provider": "intercom",
+  "action": "getTicketType",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getTicketTypeResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _intercom.getTicketType({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("intercom");
+const result = await client.getTicketType({
+  id: /* string */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

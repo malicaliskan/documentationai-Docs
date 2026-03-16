@@ -1,0 +1,385 @@
+---
+title: "Google Gemini Integration"
+description: >-
+  Google Gemini API client for AI text generation, chat conversations, and content creation. Provides access to Google's advanced language models for various generative AI tasks.
+---
+
+## Google Gemini
+
+**Category:** AI & Machine Learning  
+**Provider Key:** `googleGemini`  
+**SDK Packages:** `@google/generative-ai@^0.24.1`  
+
+Google Gemini API client for AI text generation, chat conversations, and content creation. Provides access to Google's advanced language models for various generative AI tasks.
+
+---
+
+## Configuration
+
+To use Google Gemini in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `string` | Yes | Google AI Studio API key |
+| `model` | `string` | No | Model to use (e.g., 'gemini-pro', 'gemini-pro-vision') |
+| `temperature` | `number` | No | Temperature for generation (0.0 to 1.0) |
+| `maxOutputTokens` | `number` | No | Maximum tokens in response |
+| `topP` | `number` | No | Top-p sampling value |
+| `topK` | `number` | No | Top-k sampling value |
+
+### Example Configuration
+
+```json
+{
+  "provider": "googleGemini",
+  "configuration": [
+    { "name": "apiKey", "value": "your-apiKey" },
+    { "name": "model", "value": "your-model" },
+    { "name": "temperature", "value": 0 },
+    { "name": "maxOutputTokens", "value": 0 },
+    { "name": "topP", "value": 0 },
+    { "name": "topK", "value": 0 }
+  ]
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Generation**: `generateContent`, `generateContentStream`
+- **Chat**: `startChat`
+- **Utilities**: `countTokens`
+- **Embeddings**: `embedContent`, `batchEmbedContents`
+
+---
+
+### Generation
+
+#### `generateContent`
+
+**Generate Content**
+
+Generate text content from a prompt
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `prompt` | `string` | Yes | The text prompt for generation |
+| `images` | `Array` | No | Array of image data (base64 or URLs) for vision models |
+| `safetySettings` | `Object` | No | Safety settings for content filtering |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "generateContentAction",
+  "provider": "googleGemini",
+  "action": "generateContent",
+  "parameters": [
+    { "parameterName": "prompt", "parameterValue": "'your-prompt'" },
+    { "parameterName": "images", "parameterValue": "[]" },
+    { "parameterName": "safetySettings", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "generateContentResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleGemini.generateContent({
+  prompt: /* string */,
+  images: /* Array */,
+  safetySettings: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleGemini");
+const result = await client.generateContent({
+  prompt: /* string */,
+  images: /* Array */,
+  safetySettings: /* Object */,
+});
+```
+
+---
+
+#### `generateContentStream`
+
+**Generate Content Stream**
+
+Stream generated content for longer responses
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `prompt` | `string` | Yes | The text prompt for generation |
+| `onChunk` | `Function` | Yes | Callback function for each streamed chunk |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "generateContentStreamAction",
+  "provider": "googleGemini",
+  "action": "generateContentStream",
+  "parameters": [
+    { "parameterName": "prompt", "parameterValue": "'your-prompt'" },
+    { "parameterName": "onChunk", "parameterValue": "'your-onChunk'" }
+  ],
+  "contextPropertyName": "generateContentStreamResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleGemini.generateContentStream({
+  prompt: /* string */,
+  onChunk: /* Function */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleGemini");
+const result = await client.generateContentStream({
+  prompt: /* string */,
+  onChunk: /* Function */,
+});
+```
+
+---
+
+### Chat
+
+#### `startChat`
+
+**Start Chat**
+
+Start a multi-turn chat conversation
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `history` | `Array` | No | Previous conversation history |
+| `generationConfig` | `Object` | No | Generation configuration for this chat |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "startChatAction",
+  "provider": "googleGemini",
+  "action": "startChat",
+  "parameters": [
+    { "parameterName": "history", "parameterValue": "[]" },
+    { "parameterName": "generationConfig", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "startChatResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleGemini.startChat({
+  history: /* Array */,
+  generationConfig: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleGemini");
+const result = await client.startChat({
+  history: /* Array */,
+  generationConfig: /* Object */,
+});
+```
+
+---
+
+### Utilities
+
+#### `countTokens`
+
+**Count Tokens**
+
+Count tokens in a text prompt
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `text` | `string` | Yes | Text to count tokens for |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "countTokensAction",
+  "provider": "googleGemini",
+  "action": "countTokens",
+  "parameters": [
+    { "parameterName": "text", "parameterValue": "'your-text'" }
+  ],
+  "contextPropertyName": "countTokensResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleGemini.countTokens({
+  text: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleGemini");
+const result = await client.countTokens({
+  text: /* string */,
+});
+```
+
+---
+
+### Embeddings
+
+#### `embedContent`
+
+**Embed Content**
+
+Embed text for semantic search or similarity
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `content` | `string` | Yes | Text content to embed |
+| `taskType` | `string (`"RETRIEVAL_QUERY"`, `"RETRIEVAL_DOCUMENT"`, `"SEMANTIC_SIMILARITY"`, `"CLASSIFICATION"`, `"CLUSTERING"`)` | No | Task type for embedding (e.g., 'RETRIEVAL_QUERY', 'RETRIEVAL_DOCUMENT') |
+| `model` | `string` | No | Embedding model to use (default: 'embedding-001') |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "embedContentAction",
+  "provider": "googleGemini",
+  "action": "embedContent",
+  "parameters": [
+    { "parameterName": "content", "parameterValue": "'your-content'" },
+    { "parameterName": "taskType", "parameterValue": "'your-taskType'" },
+    { "parameterName": "model", "parameterValue": "'your-model'" }
+  ],
+  "contextPropertyName": "embedContentResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleGemini.embedContent({
+  content: /* string */,
+  taskType: /* string */,
+  model: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleGemini");
+const result = await client.embedContent({
+  content: /* string */,
+  taskType: /* string */,
+  model: /* string */,
+});
+```
+
+---
+
+#### `batchEmbedContents`
+
+**Batch Embed Contents**
+
+Batch embed multiple texts
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `contents` | `Array<string>` | Yes | Array of text contents to embed |
+| `taskType` | `string (`"RETRIEVAL_QUERY"`, `"RETRIEVAL_DOCUMENT"`, `"SEMANTIC_SIMILARITY"`, `"CLASSIFICATION"`, `"CLUSTERING"`)` | No | Task type for embedding |
+| `model` | `string` | No | Embedding model to use |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "batchEmbedContentsAction",
+  "provider": "googleGemini",
+  "action": "batchEmbedContents",
+  "parameters": [
+    { "parameterName": "contents", "parameterValue": "'your-contents'" },
+    { "parameterName": "taskType", "parameterValue": "'your-taskType'" },
+    { "parameterName": "model", "parameterValue": "'your-model'" }
+  ],
+  "contextPropertyName": "batchEmbedContentsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleGemini.batchEmbedContents({
+  contents: /* Array<string> */,
+  taskType: /* string */,
+  model: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleGemini");
+const result = await client.batchEmbedContents({
+  contents: /* Array<string> */,
+  taskType: /* string */,
+  model: /* string */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

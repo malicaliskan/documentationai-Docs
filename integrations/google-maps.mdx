@@ -1,0 +1,664 @@
+---
+title: "Google Maps Integration"
+description: >-
+  Google Maps API client for geocoding, places, directions, and distance matrix services. Provides comprehensive location-based services including address lookup, place search, and routing.
+---
+
+## Google Maps
+
+**Category:** Maps & Geolocation  
+**Provider Key:** `googleMaps`  
+
+Google Maps API client for geocoding, places, directions, and distance matrix services. Provides comprehensive location-based services including address lookup, place search, and routing.
+
+---
+
+## Configuration
+
+To use Google Maps in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `string` | Yes | Google Maps API key |
+| `timeout` | `number` | No | Request timeout in milliseconds (default: 30000) |
+| `baseUrl` | `string` | No | Base URL for the API (default: https://maps.googleapis.com) |
+
+### Example Configuration
+
+```json
+{
+  "provider": "googleMaps",
+  "configuration": [
+    { "name": "apiKey", "value": "your-apiKey" },
+    { "name": "timeout", "value": 0 },
+    { "name": "baseUrl", "value": "your-baseUrl" }
+  ]
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Geocoding**: `geocodeAddress`, `reverseGeocode`
+- **Places**: `searchPlaces`, `findPlacesNearby`, `getPlaceDetails`, `getPlaceAutocomplete`
+- **Directions**: `getDirections`
+- **Distance**: `getDistanceMatrix`
+- **Timezone**: `getTimezone`
+- **Elevation**: `getElevation`
+
+---
+
+### Geocoding
+
+#### `geocodeAddress`
+
+**Geocode Address**
+
+Geocode an address to get latitude and longitude coordinates
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `address` | `string` | Yes | The address to geocode |
+| `region` | `string` | No | Region code for biasing results (e.g., 'us', 'uk') |
+| `language` | `string` | No | Language for results (e.g., 'en', 'es') |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "geocodeAddressAction",
+  "provider": "googleMaps",
+  "action": "geocodeAddress",
+  "parameters": [
+    { "parameterName": "address", "parameterValue": "'your-address'" },
+    { "parameterName": "region", "parameterValue": "'your-region'" },
+    { "parameterName": "language", "parameterValue": "'your-language'" }
+  ],
+  "contextPropertyName": "geocodeAddressResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleMaps.geocodeAddress({
+  address: /* string */,
+  region: /* string */,
+  language: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleMaps");
+const result = await client.geocodeAddress({
+  address: /* string */,
+  region: /* string */,
+  language: /* string */,
+});
+```
+
+---
+
+#### `reverseGeocode`
+
+**Reverse Geocode**
+
+Reverse geocode coordinates to get address information
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `latitude` | `number` | Yes | Latitude coordinate |
+| `longitude` | `number` | Yes | Longitude coordinate |
+| `language` | `string` | No | Language for results |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "reverseGeocodeAction",
+  "provider": "googleMaps",
+  "action": "reverseGeocode",
+  "parameters": [
+    { "parameterName": "latitude", "parameterValue": "0" },
+    { "parameterName": "longitude", "parameterValue": "0" },
+    { "parameterName": "language", "parameterValue": "'your-language'" }
+  ],
+  "contextPropertyName": "reverseGeocodeResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleMaps.reverseGeocode({
+  latitude: /* number */,
+  longitude: /* number */,
+  language: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleMaps");
+const result = await client.reverseGeocode({
+  latitude: /* number */,
+  longitude: /* number */,
+  language: /* string */,
+});
+```
+
+---
+
+### Places
+
+#### `searchPlaces`
+
+**Search Places**
+
+Search for places by text query
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | `string` | Yes | Search query text |
+| `location` | `string` | No | Lat,lng around which to search |
+| `radius` | `number` | No | Search radius in meters |
+| `language` | `string` | No | Language for results |
+| `type` | `string` | No | Place type to filter results |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "searchPlacesAction",
+  "provider": "googleMaps",
+  "action": "searchPlaces",
+  "parameters": [
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "location", "parameterValue": "'your-location'" },
+    { "parameterName": "radius", "parameterValue": "0" },
+    { "parameterName": "language", "parameterValue": "'your-language'" },
+    { "parameterName": "type", "parameterValue": "'your-type'" }
+  ],
+  "contextPropertyName": "searchPlacesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleMaps.searchPlaces({
+  query: /* string */,
+  location: /* string */,
+  radius: /* number */,
+  language: /* string */,
+  type: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleMaps");
+const result = await client.searchPlaces({
+  query: /* string */,
+  location: /* string */,
+  radius: /* number */,
+  language: /* string */,
+  type: /* string */,
+});
+```
+
+---
+
+#### `findPlacesNearby`
+
+**Find Places Nearby**
+
+Find places near a location
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `latitude` | `number` | Yes | Center latitude |
+| `longitude` | `number` | Yes | Center longitude |
+| `radius` | `number` | Yes | Search radius in meters (max 50000) |
+| `type` | `string` | No | Place type to search for |
+| `keyword` | `string` | No | Keyword to search for |
+| `language` | `string` | No | Language for results |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "findPlacesNearbyAction",
+  "provider": "googleMaps",
+  "action": "findPlacesNearby",
+  "parameters": [
+    { "parameterName": "latitude", "parameterValue": "0" },
+    { "parameterName": "longitude", "parameterValue": "0" },
+    { "parameterName": "radius", "parameterValue": "0" },
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "keyword", "parameterValue": "'your-keyword'" },
+    { "parameterName": "language", "parameterValue": "'your-language'" }
+  ],
+  "contextPropertyName": "findPlacesNearbyResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleMaps.findPlacesNearby({
+  latitude: /* number */,
+  longitude: /* number */,
+  radius: /* number */,
+  type: /* string */,
+  keyword: /* string */,
+  language: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleMaps");
+const result = await client.findPlacesNearby({
+  latitude: /* number */,
+  longitude: /* number */,
+  radius: /* number */,
+  type: /* string */,
+  keyword: /* string */,
+  language: /* string */,
+});
+```
+
+---
+
+#### `getPlaceDetails`
+
+**Get Place Details**
+
+Get detailed information about a place
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `placeId` | `string` | Yes | The place ID to get details for |
+| `fields` | `string` | No | Comma-separated list of fields to return |
+| `language` | `string` | No | Language for results |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getPlaceDetailsAction",
+  "provider": "googleMaps",
+  "action": "getPlaceDetails",
+  "parameters": [
+    { "parameterName": "placeId", "parameterValue": "'your-placeId'" },
+    { "parameterName": "fields", "parameterValue": "'your-fields'" },
+    { "parameterName": "language", "parameterValue": "'your-language'" }
+  ],
+  "contextPropertyName": "getPlaceDetailsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleMaps.getPlaceDetails({
+  placeId: /* string */,
+  fields: /* string */,
+  language: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleMaps");
+const result = await client.getPlaceDetails({
+  placeId: /* string */,
+  fields: /* string */,
+  language: /* string */,
+});
+```
+
+---
+
+#### `getPlaceAutocomplete`
+
+**Place Autocomplete**
+
+Autocomplete place predictions based on user input
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `location` | `string` | No | Lat,lng for biasing results |
+| `radius` | `number` | No | Radius for biasing results |
+| `types` | `string` | No | Place types to filter |
+| `language` | `string` | No | Language for results |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getPlaceAutocompleteAction",
+  "provider": "googleMaps",
+  "action": "getPlaceAutocomplete",
+  "parameters": [
+    { "parameterName": "location", "parameterValue": "'your-location'" },
+    { "parameterName": "radius", "parameterValue": "0" },
+    { "parameterName": "types", "parameterValue": "'your-types'" },
+    { "parameterName": "language", "parameterValue": "'your-language'" }
+  ],
+  "contextPropertyName": "getPlaceAutocompleteResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleMaps.getPlaceAutocomplete({
+  location: /* string */,
+  radius: /* number */,
+  types: /* string */,
+  language: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleMaps");
+const result = await client.getPlaceAutocomplete({
+  location: /* string */,
+  radius: /* number */,
+  types: /* string */,
+  language: /* string */,
+});
+```
+
+---
+
+### Directions
+
+#### `getDirections`
+
+**Get Directions**
+
+Get directions between two or more locations
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `origin` | `string` | Yes | Starting point (address or lat,lng) |
+| `destination` | `string` | Yes | Ending point (address or lat,lng) |
+| `mode` | `string` | No | Travel mode: driving, walking, bicycling, transit |
+| `waypoints` | `string` | No | Intermediate waypoints |
+| `alternatives` | `boolean` | No | Request alternative routes |
+| `language` | `string` | No | Language for results |
+| `units` | `string` | No | Unit system: metric or imperial |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getDirectionsAction",
+  "provider": "googleMaps",
+  "action": "getDirections",
+  "parameters": [
+    { "parameterName": "origin", "parameterValue": "'your-origin'" },
+    { "parameterName": "destination", "parameterValue": "'your-destination'" },
+    { "parameterName": "mode", "parameterValue": "'your-mode'" },
+    { "parameterName": "waypoints", "parameterValue": "'your-waypoints'" },
+    { "parameterName": "alternatives", "parameterValue": "true" },
+    { "parameterName": "language", "parameterValue": "'your-language'" },
+    { "parameterName": "units", "parameterValue": "'your-units'" }
+  ],
+  "contextPropertyName": "getDirectionsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleMaps.getDirections({
+  origin: /* string */,
+  destination: /* string */,
+  mode: /* string */,
+  waypoints: /* string */,
+  alternatives: /* boolean */,
+  language: /* string */,
+  units: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleMaps");
+const result = await client.getDirections({
+  origin: /* string */,
+  destination: /* string */,
+  mode: /* string */,
+  waypoints: /* string */,
+  alternatives: /* boolean */,
+  language: /* string */,
+  units: /* string */,
+});
+```
+
+---
+
+### Distance
+
+#### `getDistanceMatrix`
+
+**Get Distance Matrix**
+
+Calculate distance and travel time between multiple origins and destinations
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `origins` | `string[]` | Yes | Array of origin addresses or coordinates |
+| `destinations` | `string[]` | Yes | Array of destination addresses or coordinates |
+| `mode` | `string` | No | Travel mode: driving, walking, bicycling, transit |
+| `units` | `string` | No | Unit system: metric or imperial |
+| `language` | `string` | No | Language for results |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getDistanceMatrixAction",
+  "provider": "googleMaps",
+  "action": "getDistanceMatrix",
+  "parameters": [
+    { "parameterName": "origins", "parameterValue": "[]" },
+    { "parameterName": "destinations", "parameterValue": "[]" },
+    { "parameterName": "mode", "parameterValue": "'your-mode'" },
+    { "parameterName": "units", "parameterValue": "'your-units'" },
+    { "parameterName": "language", "parameterValue": "'your-language'" }
+  ],
+  "contextPropertyName": "getDistanceMatrixResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleMaps.getDistanceMatrix({
+  origins: /* string[] */,
+  destinations: /* string[] */,
+  mode: /* string */,
+  units: /* string */,
+  language: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleMaps");
+const result = await client.getDistanceMatrix({
+  origins: /* string[] */,
+  destinations: /* string[] */,
+  mode: /* string */,
+  units: /* string */,
+  language: /* string */,
+});
+```
+
+---
+
+### Timezone
+
+#### `getTimezone`
+
+**Get Timezone**
+
+Get timezone information for a location
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `latitude` | `number` | Yes | Location latitude |
+| `longitude` | `number` | Yes | Location longitude |
+| `timestamp` | `number` | No | Unix timestamp (defaults to current time) |
+| `language` | `string` | No | Language for results |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getTimezoneAction",
+  "provider": "googleMaps",
+  "action": "getTimezone",
+  "parameters": [
+    { "parameterName": "latitude", "parameterValue": "0" },
+    { "parameterName": "longitude", "parameterValue": "0" },
+    { "parameterName": "timestamp", "parameterValue": "0" },
+    { "parameterName": "language", "parameterValue": "'your-language'" }
+  ],
+  "contextPropertyName": "getTimezoneResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleMaps.getTimezone({
+  latitude: /* number */,
+  longitude: /* number */,
+  timestamp: /* number */,
+  language: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleMaps");
+const result = await client.getTimezone({
+  latitude: /* number */,
+  longitude: /* number */,
+  timestamp: /* number */,
+  language: /* string */,
+});
+```
+
+---
+
+### Elevation
+
+#### `getElevation`
+
+**Get Elevation**
+
+Get elevation data for locations
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `locations` | `Array` | Yes | Array of {lat, lng} objects or "lat,lng" strings |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getElevationAction",
+  "provider": "googleMaps",
+  "action": "getElevation",
+  "parameters": [
+    { "parameterName": "locations", "parameterValue": "[]" }
+  ],
+  "contextPropertyName": "getElevationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleMaps.getElevation({
+  locations: /* Array */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleMaps");
+const result = await client.getElevation({
+  locations: /* Array */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

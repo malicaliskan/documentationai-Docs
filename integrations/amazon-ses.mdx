@@ -1,0 +1,2780 @@
+---
+title: "Amazon SES Integration"
+description: >-
+  Amazon SES API Client for sending emails, managing identities, and handling email configurations. Supports email sending, identity verification, templates, and configuration sets.
+---
+
+## Amazon SES
+
+**Category:** Email  
+**Provider Key:** `amazonSES`  
+**SDK Packages:** `@aws-sdk/client-ses@^3.954.0`  
+
+Amazon SES API Client for sending emails, managing identities, and handling email configurations. Supports email sending, identity verification, templates, and configuration sets.
+
+---
+
+## Configuration
+
+To use Amazon SES in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `region` | `string` | Yes | AWS region (e.g., 'us-east-1') |
+| `accessKeyId` | `string` | Yes | AWS access key ID |
+| `secretAccessKey` | `string` | Yes | AWS secret access key |
+| `sessionToken` | `string` | No | AWS session token (optional, for temporary credentials) |
+| `endpoint` | `string` | No | Custom endpoint URL (optional) |
+| `maxAttempts` | `number` | No | Maximum number of retry attempts |
+
+### Example Configuration
+
+```json
+{
+  "provider": "amazonSES",
+  "configuration": [
+    { "name": "region", "value": "your-region" },
+    { "name": "accessKeyId", "value": "your-accessKeyId" },
+    { "name": "secretAccessKey", "value": "your-secretAccessKey" },
+    { "name": "sessionToken", "value": "your-sessionToken" },
+    { "name": "endpoint", "value": "your-endpoint" },
+    { "name": "maxAttempts", "value": 0 }
+  ]
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Email**: `sendEmail`, `sendRawEmail`, `sendTemplatedEmail`, `sendBulkTemplatedEmail`
+- **Identity**: `verifyEmailIdentity`, `verifyDomainIdentity`, `verifyDomainDkim`, `deleteIdentity`, `getIdentityVerificationAttributes`, `getIdentityDkimAttributes`, `listIdentities`, `setIdentityMailFromDomain`, `getIdentityMailFromDomainAttributes`, `putIdentityPolicy`, `getIdentityPolicies`, `deleteIdentityPolicy`, `listIdentityPolicies`
+- **Statistics**: `getSendQuota`, `getSendStatistics`, `getAccountSendingEnabled`, `updateAccountSendingEnabled`
+- **Templates**: `createTemplate`, `updateTemplate`, `deleteTemplate`, `getTemplate`, `listTemplates`, `testRenderTemplate`
+- **Configuration**: `createConfigurationSet`, `deleteConfigurationSet`, `describeConfigurationSet`, `listConfigurationSets`, `createConfigurationSetEventDestination`, `updateConfigurationSetEventDestination`, `deleteConfigurationSetEventDestination`
+- **Notifications**: `setIdentityFeedbackForwardingEnabled`, `setIdentityNotificationTopic`, `getIdentityNotificationAttributes`
+- **Receipt**: `createReceiptRuleSet`, `deleteReceiptRuleSet`, `cloneReceiptRuleSet`, `listReceiptRuleSets`, `describeActiveReceiptRuleSet`, `setActiveReceiptRuleSet`, `createReceiptRule`, `updateReceiptRule`, `deleteReceiptRule`, `describeReceiptRule`, `reorderReceiptRules`, `createReceiptFilter`, `deleteReceiptFilter`, `listReceiptFilters`
+
+---
+
+### Email
+
+#### `sendEmail`
+
+**Send Email**
+
+Sends an email message using Amazon SES
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `source` | `string` | Yes | The email address that is sending the email |
+| `toAddresses` | `string[]` | Yes | An array of recipient email addresses |
+| `ccAddresses` | `string[]` | No | An array of CC recipient email addresses |
+| `bccAddresses` | `string[]` | No | An array of BCC recipient email addresses |
+| `subject` | `string` | Yes | The subject of the email |
+| `bodyText` | `string` | No | The plain text body of the email |
+| `bodyHtml` | `string` | No | The HTML body of the email |
+| `replyToAddresses` | `string` | No | An array of reply-to email addresses |
+| `returnPath` | `string` | No | The email address to which bounces and complaints are sent |
+| `sourceArn` | `string` | No | The ARN of the identity used for authorization |
+| `returnPathArn` | `string` | No | The ARN of the identity used for the return path |
+| `configurationSetName` | `string` | No | The name of the configuration set to use |
+| `tags` | `Object[]` | No | Message tags in format [{Name: 'string', Value: 'string'}] |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "sendEmailAction",
+  "provider": "amazonSES",
+  "action": "sendEmail",
+  "parameters": [
+    { "parameterName": "source", "parameterValue": "'your-source'" },
+    { "parameterName": "toAddresses", "parameterValue": "[]" },
+    { "parameterName": "ccAddresses", "parameterValue": "[]" },
+    { "parameterName": "bccAddresses", "parameterValue": "[]" },
+    { "parameterName": "subject", "parameterValue": "'your-subject'" },
+    { "parameterName": "bodyText", "parameterValue": "'your-bodyText'" },
+    { "parameterName": "bodyHtml", "parameterValue": "'your-bodyHtml'" },
+    { "parameterName": "replyToAddresses", "parameterValue": "'your-replyToAddresses'" },
+    { "parameterName": "returnPath", "parameterValue": "'your-returnPath'" },
+    { "parameterName": "sourceArn", "parameterValue": "'your-sourceArn'" },
+    { "parameterName": "returnPathArn", "parameterValue": "'your-returnPathArn'" },
+    { "parameterName": "configurationSetName", "parameterValue": "'your-configurationSetName'" },
+    { "parameterName": "tags", "parameterValue": "'your-tags'" }
+  ],
+  "contextPropertyName": "sendEmailResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.sendEmail({
+  source: /* string */,
+  toAddresses: /* string[] */,
+  ccAddresses: /* string[] */,
+  bccAddresses: /* string[] */,
+  subject: /* string */,
+  bodyText: /* string */,
+  bodyHtml: /* string */,
+  replyToAddresses: /* string */,
+  returnPath: /* string */,
+  sourceArn: /* string */,
+  returnPathArn: /* string */,
+  configurationSetName: /* string */,
+  tags: /* Object[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.sendEmail({
+  source: /* string */,
+  toAddresses: /* string[] */,
+  ccAddresses: /* string[] */,
+  bccAddresses: /* string[] */,
+  subject: /* string */,
+  bodyText: /* string */,
+  bodyHtml: /* string */,
+  replyToAddresses: /* string */,
+  returnPath: /* string */,
+  sourceArn: /* string */,
+  returnPathArn: /* string */,
+  configurationSetName: /* string */,
+  tags: /* Object[] */,
+});
+```
+
+---
+
+#### `sendRawEmail`
+
+**Send Raw Email**
+
+Sends a raw email message using Amazon SES
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `rawMessage` | `string|Buffer` | Yes | The raw email message data (MIME format) |
+| `source` | `string` | No | The identity's email address (optional if specified in raw message) |
+| `destinations` | `string[]` | No | A list of destinations for the message |
+| `sourceArn` | `string` | No | The ARN of the identity used for authorization |
+| `fromArn` | `string` | No | The ARN of the identity used for the From header |
+| `returnPathArn` | `string` | No | The ARN of the identity used for the return path |
+| `configurationSetName` | `string` | No | The name of the configuration set to use |
+| `tags` | `Object[]` | No | Message tags in format [{Name: 'string', Value: 'string'}] |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "sendRawEmailAction",
+  "provider": "amazonSES",
+  "action": "sendRawEmail",
+  "parameters": [
+    { "parameterName": "rawMessage", "parameterValue": "'your-rawMessage'" },
+    { "parameterName": "source", "parameterValue": "'your-source'" },
+    { "parameterName": "destinations", "parameterValue": "[]" },
+    { "parameterName": "sourceArn", "parameterValue": "'your-sourceArn'" },
+    { "parameterName": "fromArn", "parameterValue": "'your-fromArn'" },
+    { "parameterName": "returnPathArn", "parameterValue": "'your-returnPathArn'" },
+    { "parameterName": "configurationSetName", "parameterValue": "'your-configurationSetName'" },
+    { "parameterName": "tags", "parameterValue": "'your-tags'" }
+  ],
+  "contextPropertyName": "sendRawEmailResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.sendRawEmail({
+  rawMessage: /* string|Buffer */,
+  source: /* string */,
+  destinations: /* string[] */,
+  sourceArn: /* string */,
+  fromArn: /* string */,
+  returnPathArn: /* string */,
+  configurationSetName: /* string */,
+  tags: /* Object[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.sendRawEmail({
+  rawMessage: /* string|Buffer */,
+  source: /* string */,
+  destinations: /* string[] */,
+  sourceArn: /* string */,
+  fromArn: /* string */,
+  returnPathArn: /* string */,
+  configurationSetName: /* string */,
+  tags: /* Object[] */,
+});
+```
+
+---
+
+#### `sendTemplatedEmail`
+
+**Send Templated Email**
+
+Sends an email using a template
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `source` | `string` | Yes | The email address that is sending the email |
+| `toAddresses` | `string[]` | Yes | An array of recipient email addresses |
+| `ccAddresses` | `string[]` | No | An array of CC recipient email addresses |
+| `bccAddresses` | `string[]` | No | An array of BCC recipient email addresses |
+| `template` | `string` | Yes | The name of the template to use |
+| `templateData` | `Object|string` | Yes | The template data as an object or JSON string |
+| `replyToAddresses` | `string` | No | An array of reply-to email addresses |
+| `returnPath` | `string` | No | The email address to which bounces are sent |
+| `sourceArn` | `string` | No | The ARN of the identity used for authorization |
+| `templateArn` | `string` | No | The ARN of the template to use |
+| `returnPathArn` | `string` | No | The ARN of the identity used for the return path |
+| `configurationSetName` | `string` | No | The name of the configuration set to use |
+| `tags` | `Object[]` | No | Message tags in format [{Name: 'string', Value: 'string'}] |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "sendTemplatedEmailAction",
+  "provider": "amazonSES",
+  "action": "sendTemplatedEmail",
+  "parameters": [
+    { "parameterName": "source", "parameterValue": "'your-source'" },
+    { "parameterName": "toAddresses", "parameterValue": "[]" },
+    { "parameterName": "ccAddresses", "parameterValue": "[]" },
+    { "parameterName": "bccAddresses", "parameterValue": "[]" },
+    { "parameterName": "template", "parameterValue": "'your-template'" },
+    { "parameterName": "templateData", "parameterValue": "'your-templateData'" },
+    { "parameterName": "replyToAddresses", "parameterValue": "'your-replyToAddresses'" },
+    { "parameterName": "returnPath", "parameterValue": "'your-returnPath'" },
+    { "parameterName": "sourceArn", "parameterValue": "'your-sourceArn'" },
+    { "parameterName": "templateArn", "parameterValue": "'your-templateArn'" },
+    { "parameterName": "returnPathArn", "parameterValue": "'your-returnPathArn'" },
+    { "parameterName": "configurationSetName", "parameterValue": "'your-configurationSetName'" },
+    { "parameterName": "tags", "parameterValue": "'your-tags'" }
+  ],
+  "contextPropertyName": "sendTemplatedEmailResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.sendTemplatedEmail({
+  source: /* string */,
+  toAddresses: /* string[] */,
+  ccAddresses: /* string[] */,
+  bccAddresses: /* string[] */,
+  template: /* string */,
+  templateData: /* Object|string */,
+  replyToAddresses: /* string */,
+  returnPath: /* string */,
+  sourceArn: /* string */,
+  templateArn: /* string */,
+  returnPathArn: /* string */,
+  configurationSetName: /* string */,
+  tags: /* Object[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.sendTemplatedEmail({
+  source: /* string */,
+  toAddresses: /* string[] */,
+  ccAddresses: /* string[] */,
+  bccAddresses: /* string[] */,
+  template: /* string */,
+  templateData: /* Object|string */,
+  replyToAddresses: /* string */,
+  returnPath: /* string */,
+  sourceArn: /* string */,
+  templateArn: /* string */,
+  returnPathArn: /* string */,
+  configurationSetName: /* string */,
+  tags: /* Object[] */,
+});
+```
+
+---
+
+#### `sendBulkTemplatedEmail`
+
+**Send Bulk Templated Email**
+
+Sends templated emails to multiple destinations in bulk
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `source` | `string` | Yes | The email address that is sending the email |
+| `template` | `string` | Yes | The name of the template to use |
+| `destinations` | `Object[]` | Yes | Array of destination objects |
+| `destinations` | `string[]` | Yes | Recipient email addresses |
+| `destinations` | `string[]` | No | CC recipient email addresses |
+| `destinations` | `string[]` | No | BCC recipient email addresses |
+| `destinations` | `Object|string` | Yes | Template data for this recipient |
+| `defaultTemplateData` | `Object|string` | No | Default template data |
+| `replyToAddresses` | `string[]` | No | An array of reply-to email addresses |
+| `returnPath` | `string` | No | The email address to which bounces are sent |
+| `sourceArn` | `string` | No | The ARN of the identity used for authorization |
+| `templateArn` | `string` | No | The ARN of the template to use |
+| `returnPathArn` | `string` | No | The ARN of the identity used for the return path |
+| `configurationSetName` | `string` | No | The name of the configuration set to use |
+| `defaultTags` | `Object[]` | No | Default message tags |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "sendBulkTemplatedEmailAction",
+  "provider": "amazonSES",
+  "action": "sendBulkTemplatedEmail",
+  "parameters": [
+    { "parameterName": "source", "parameterValue": "'your-source'" },
+    { "parameterName": "template", "parameterValue": "'your-template'" },
+    { "parameterName": "destinations", "parameterValue": "'your-destinations'" },
+    { "parameterName": "destinations", "parameterValue": "[]" },
+    { "parameterName": "destinations", "parameterValue": "[]" },
+    { "parameterName": "destinations", "parameterValue": "[]" },
+    { "parameterName": "destinations", "parameterValue": "'your-destinations'" },
+    { "parameterName": "defaultTemplateData", "parameterValue": "'your-defaultTemplateData'" },
+    { "parameterName": "replyToAddresses", "parameterValue": "[]" },
+    { "parameterName": "returnPath", "parameterValue": "'your-returnPath'" },
+    { "parameterName": "sourceArn", "parameterValue": "'your-sourceArn'" },
+    { "parameterName": "templateArn", "parameterValue": "'your-templateArn'" },
+    { "parameterName": "returnPathArn", "parameterValue": "'your-returnPathArn'" },
+    { "parameterName": "configurationSetName", "parameterValue": "'your-configurationSetName'" },
+    { "parameterName": "defaultTags", "parameterValue": "'your-defaultTags'" }
+  ],
+  "contextPropertyName": "sendBulkTemplatedEmailResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.sendBulkTemplatedEmail({
+  source: /* string */,
+  template: /* string */,
+  destinations: /* Object[] */,
+  destinations: /* string[] */,
+  destinations: /* string[] */,
+  destinations: /* string[] */,
+  destinations: /* Object|string */,
+  defaultTemplateData: /* Object|string */,
+  replyToAddresses: /* string[] */,
+  returnPath: /* string */,
+  sourceArn: /* string */,
+  templateArn: /* string */,
+  returnPathArn: /* string */,
+  configurationSetName: /* string */,
+  defaultTags: /* Object[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.sendBulkTemplatedEmail({
+  source: /* string */,
+  template: /* string */,
+  destinations: /* Object[] */,
+  destinations: /* string[] */,
+  destinations: /* string[] */,
+  destinations: /* string[] */,
+  destinations: /* Object|string */,
+  defaultTemplateData: /* Object|string */,
+  replyToAddresses: /* string[] */,
+  returnPath: /* string */,
+  sourceArn: /* string */,
+  templateArn: /* string */,
+  returnPathArn: /* string */,
+  configurationSetName: /* string */,
+  defaultTags: /* Object[] */,
+});
+```
+
+---
+
+### Identity
+
+#### `verifyEmailIdentity`
+
+**Verify Email Identity**
+
+Verifies an email address for sending emails
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `emailAddress` | `string` | Yes | The email address to verify |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "verifyEmailIdentityAction",
+  "provider": "amazonSES",
+  "action": "verifyEmailIdentity",
+  "parameters": [
+    { "parameterName": "emailAddress", "parameterValue": "'your-emailAddress'" }
+  ],
+  "contextPropertyName": "verifyEmailIdentityResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.verifyEmailIdentity({
+  emailAddress: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.verifyEmailIdentity({
+  emailAddress: /* string */,
+});
+```
+
+---
+
+#### `verifyDomainIdentity`
+
+**Verify Domain Identity**
+
+Verifies a domain for sending emails
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | Yes | The domain to verify |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "verifyDomainIdentityAction",
+  "provider": "amazonSES",
+  "action": "verifyDomainIdentity",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" }
+  ],
+  "contextPropertyName": "verifyDomainIdentityResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.verifyDomainIdentity({
+  domain: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.verifyDomainIdentity({
+  domain: /* string */,
+});
+```
+
+---
+
+#### `verifyDomainDkim`
+
+**Verify Domain DKIM**
+
+Generates DKIM tokens for a domain
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | Yes | The domain to generate DKIM tokens for |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "verifyDomainDkimAction",
+  "provider": "amazonSES",
+  "action": "verifyDomainDkim",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" }
+  ],
+  "contextPropertyName": "verifyDomainDkimResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.verifyDomainDkim({
+  domain: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.verifyDomainDkim({
+  domain: /* string */,
+});
+```
+
+---
+
+#### `deleteIdentity`
+
+**Delete Identity**
+
+Deletes an identity (email address or domain)
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `identity` | `string` | Yes | The identity to delete (email address or domain) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteIdentityAction",
+  "provider": "amazonSES",
+  "action": "deleteIdentity",
+  "parameters": [
+    { "parameterName": "identity", "parameterValue": "'your-identity'" }
+  ],
+  "contextPropertyName": "deleteIdentityResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.deleteIdentity({
+  identity: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.deleteIdentity({
+  identity: /* string */,
+});
+```
+
+---
+
+#### `getIdentityVerificationAttributes`
+
+**Get Identity Verification Attributes**
+
+Gets verification attributes for one or more identities
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `identities` | `string[]` | Yes | List of identities to check |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getIdentityVerificationAttributesAction",
+  "provider": "amazonSES",
+  "action": "getIdentityVerificationAttributes",
+  "parameters": [
+    { "parameterName": "identities", "parameterValue": "[]" }
+  ],
+  "contextPropertyName": "getIdentityVerificationAttributesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.getIdentityVerificationAttributes({
+  identities: /* string[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.getIdentityVerificationAttributes({
+  identities: /* string[] */,
+});
+```
+
+---
+
+#### `getIdentityDkimAttributes`
+
+**Get Identity DKIM Attributes**
+
+Gets DKIM attributes for one or more identities
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `identities` | `string[]` | Yes | List of identities to check |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getIdentityDkimAttributesAction",
+  "provider": "amazonSES",
+  "action": "getIdentityDkimAttributes",
+  "parameters": [
+    { "parameterName": "identities", "parameterValue": "[]" }
+  ],
+  "contextPropertyName": "getIdentityDkimAttributesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.getIdentityDkimAttributes({
+  identities: /* string[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.getIdentityDkimAttributes({
+  identities: /* string[] */,
+});
+```
+
+---
+
+#### `listIdentities`
+
+**List Identities**
+
+Lists verified identities (email addresses and/or domains)
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `identityType` | `string` | No | Filter by identity type: 'EmailAddress' or 'Domain' |
+| `maxItems` | `number` | No | Maximum number of identities to return |
+| `nextToken` | `string` | No | Token for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listIdentitiesAction",
+  "provider": "amazonSES",
+  "action": "listIdentities",
+  "parameters": [
+    { "parameterName": "identityType", "parameterValue": "'your-identityType'" },
+    { "parameterName": "maxItems", "parameterValue": "0" },
+    { "parameterName": "nextToken", "parameterValue": "'your-nextToken'" }
+  ],
+  "contextPropertyName": "listIdentitiesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.listIdentities({
+  identityType: /* string */,
+  maxItems: /* number */,
+  nextToken: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.listIdentities({
+  identityType: /* string */,
+  maxItems: /* number */,
+  nextToken: /* string */,
+});
+```
+
+---
+
+#### `setIdentityMailFromDomain`
+
+**Set Identity Mail From Domain**
+
+Sets the MAIL FROM domain for an identity
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `identity` | `string` | Yes | The verified identity |
+| `mailFromDomain` | `string` | No | The custom MAIL FROM domain |
+| `behaviorOnMXFailure` | `string` | No | Behavior when MX record not found |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "setIdentityMailFromDomainAction",
+  "provider": "amazonSES",
+  "action": "setIdentityMailFromDomain",
+  "parameters": [
+    { "parameterName": "identity", "parameterValue": "'your-identity'" },
+    { "parameterName": "mailFromDomain", "parameterValue": "'your-mailFromDomain'" },
+    { "parameterName": "behaviorOnMXFailure", "parameterValue": "'your-behaviorOnMXFailure'" }
+  ],
+  "contextPropertyName": "setIdentityMailFromDomainResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.setIdentityMailFromDomain({
+  identity: /* string */,
+  mailFromDomain: /* string */,
+  behaviorOnMXFailure: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.setIdentityMailFromDomain({
+  identity: /* string */,
+  mailFromDomain: /* string */,
+  behaviorOnMXFailure: /* string */,
+});
+```
+
+---
+
+#### `getIdentityMailFromDomainAttributes`
+
+**Get Identity Mail From Domain Attributes**
+
+Gets MAIL FROM domain attributes for identities
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `identities` | `string[]` | Yes | List of identities to check |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getIdentityMailFromDomainAttributesAction",
+  "provider": "amazonSES",
+  "action": "getIdentityMailFromDomainAttributes",
+  "parameters": [
+    { "parameterName": "identities", "parameterValue": "[]" }
+  ],
+  "contextPropertyName": "getIdentityMailFromDomainAttributesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.getIdentityMailFromDomainAttributes({
+  identities: /* string[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.getIdentityMailFromDomainAttributes({
+  identities: /* string[] */,
+});
+```
+
+---
+
+#### `putIdentityPolicy`
+
+**Put Identity Policy**
+
+Adds or updates an authorization policy for an identity
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `identity` | `string` | Yes | The identity to attach the policy to |
+| `policyName` | `string` | Yes | The name of the policy |
+| `policy` | `Object|string` | Yes | The policy document |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "putIdentityPolicyAction",
+  "provider": "amazonSES",
+  "action": "putIdentityPolicy",
+  "parameters": [
+    { "parameterName": "identity", "parameterValue": "'your-identity'" },
+    { "parameterName": "policyName", "parameterValue": "'your-policyName'" },
+    { "parameterName": "policy", "parameterValue": "'your-policy'" }
+  ],
+  "contextPropertyName": "putIdentityPolicyResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.putIdentityPolicy({
+  identity: /* string */,
+  policyName: /* string */,
+  policy: /* Object|string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.putIdentityPolicy({
+  identity: /* string */,
+  policyName: /* string */,
+  policy: /* Object|string */,
+});
+```
+
+---
+
+#### `getIdentityPolicies`
+
+**Get Identity Policies**
+
+Gets authorization policies for an identity
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `identity` | `string` | Yes | The identity to get policies for |
+| `policyNames` | `string[]` | Yes | Names of policies to retrieve |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getIdentityPoliciesAction",
+  "provider": "amazonSES",
+  "action": "getIdentityPolicies",
+  "parameters": [
+    { "parameterName": "identity", "parameterValue": "'your-identity'" },
+    { "parameterName": "policyNames", "parameterValue": "[]" }
+  ],
+  "contextPropertyName": "getIdentityPoliciesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.getIdentityPolicies({
+  identity: /* string */,
+  policyNames: /* string[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.getIdentityPolicies({
+  identity: /* string */,
+  policyNames: /* string[] */,
+});
+```
+
+---
+
+#### `deleteIdentityPolicy`
+
+**Delete Identity Policy**
+
+Deletes an authorization policy from an identity
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `identity` | `string` | Yes | The identity to delete the policy from |
+| `policyName` | `string` | Yes | The name of the policy to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteIdentityPolicyAction",
+  "provider": "amazonSES",
+  "action": "deleteIdentityPolicy",
+  "parameters": [
+    { "parameterName": "identity", "parameterValue": "'your-identity'" },
+    { "parameterName": "policyName", "parameterValue": "'your-policyName'" }
+  ],
+  "contextPropertyName": "deleteIdentityPolicyResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.deleteIdentityPolicy({
+  identity: /* string */,
+  policyName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.deleteIdentityPolicy({
+  identity: /* string */,
+  policyName: /* string */,
+});
+```
+
+---
+
+#### `listIdentityPolicies`
+
+**List Identity Policies**
+
+Lists authorization policy names for an identity
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `identity` | `string` | Yes | The identity to list policies for |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listIdentityPoliciesAction",
+  "provider": "amazonSES",
+  "action": "listIdentityPolicies",
+  "parameters": [
+    { "parameterName": "identity", "parameterValue": "'your-identity'" }
+  ],
+  "contextPropertyName": "listIdentityPoliciesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.listIdentityPolicies({
+  identity: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.listIdentityPolicies({
+  identity: /* string */,
+});
+```
+
+---
+
+### Statistics
+
+#### `getSendQuota`
+
+**Get Send Quota**
+
+Gets the sending quota for the account
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _amazonSES.getSendQuota()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.getSendQuota();
+```
+
+---
+
+#### `getSendStatistics`
+
+**Get Send Statistics**
+
+Gets sending statistics for the last two weeks
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _amazonSES.getSendStatistics()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.getSendStatistics();
+```
+
+---
+
+#### `getAccountSendingEnabled`
+
+**Get Account Sending Enabled**
+
+Gets whether account-level sending is enabled
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _amazonSES.getAccountSendingEnabled()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.getAccountSendingEnabled();
+```
+
+---
+
+#### `updateAccountSendingEnabled`
+
+**Update Account Sending Enabled**
+
+Enables or disables account-level sending
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `enabled` | `boolean` | Yes | Whether to enable sending |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateAccountSendingEnabledAction",
+  "provider": "amazonSES",
+  "action": "updateAccountSendingEnabled",
+  "parameters": [
+    { "parameterName": "enabled", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "updateAccountSendingEnabledResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.updateAccountSendingEnabled({
+  enabled: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.updateAccountSendingEnabled({
+  enabled: /* boolean */,
+});
+```
+
+---
+
+### Templates
+
+#### `createTemplate`
+
+**Create Template**
+
+Creates an email template
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `templateName` | `string` | Yes | The name of the template |
+| `subject` | `string` | Yes | The subject line of the template |
+| `textPart` | `string` | No | The plain text body of the template |
+| `htmlPart` | `string` | No | The HTML body of the template |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createTemplateAction",
+  "provider": "amazonSES",
+  "action": "createTemplate",
+  "parameters": [
+    { "parameterName": "templateName", "parameterValue": "'your-templateName'" },
+    { "parameterName": "subject", "parameterValue": "'your-subject'" },
+    { "parameterName": "textPart", "parameterValue": "'your-textPart'" },
+    { "parameterName": "htmlPart", "parameterValue": "'your-htmlPart'" }
+  ],
+  "contextPropertyName": "createTemplateResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.createTemplate({
+  templateName: /* string */,
+  subject: /* string */,
+  textPart: /* string */,
+  htmlPart: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.createTemplate({
+  templateName: /* string */,
+  subject: /* string */,
+  textPart: /* string */,
+  htmlPart: /* string */,
+});
+```
+
+---
+
+#### `updateTemplate`
+
+**Update Template**
+
+Updates an existing email template
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `templateName` | `string` | Yes | The name of the template to update |
+| `subject` | `string` | Yes | The subject line of the template |
+| `textPart` | `string` | No | The plain text body of the template |
+| `htmlPart` | `string` | No | The HTML body of the template |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateTemplateAction",
+  "provider": "amazonSES",
+  "action": "updateTemplate",
+  "parameters": [
+    { "parameterName": "templateName", "parameterValue": "'your-templateName'" },
+    { "parameterName": "subject", "parameterValue": "'your-subject'" },
+    { "parameterName": "textPart", "parameterValue": "'your-textPart'" },
+    { "parameterName": "htmlPart", "parameterValue": "'your-htmlPart'" }
+  ],
+  "contextPropertyName": "updateTemplateResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.updateTemplate({
+  templateName: /* string */,
+  subject: /* string */,
+  textPart: /* string */,
+  htmlPart: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.updateTemplate({
+  templateName: /* string */,
+  subject: /* string */,
+  textPart: /* string */,
+  htmlPart: /* string */,
+});
+```
+
+---
+
+#### `deleteTemplate`
+
+**Delete Template**
+
+Deletes an email template
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `templateName` | `string` | Yes | The name of the template to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteTemplateAction",
+  "provider": "amazonSES",
+  "action": "deleteTemplate",
+  "parameters": [
+    { "parameterName": "templateName", "parameterValue": "'your-templateName'" }
+  ],
+  "contextPropertyName": "deleteTemplateResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.deleteTemplate({
+  templateName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.deleteTemplate({
+  templateName: /* string */,
+});
+```
+
+---
+
+#### `getTemplate`
+
+**Get Template**
+
+Gets an email template by name
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `templateName` | `string` | Yes | The name of the template to retrieve |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getTemplateAction",
+  "provider": "amazonSES",
+  "action": "getTemplate",
+  "parameters": [
+    { "parameterName": "templateName", "parameterValue": "'your-templateName'" }
+  ],
+  "contextPropertyName": "getTemplateResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.getTemplate({
+  templateName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.getTemplate({
+  templateName: /* string */,
+});
+```
+
+---
+
+#### `listTemplates`
+
+**List Templates**
+
+Lists all email templates
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `maxItems` | `number` | No | Maximum number of templates to return |
+| `nextToken` | `string` | No | Token for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listTemplatesAction",
+  "provider": "amazonSES",
+  "action": "listTemplates",
+  "parameters": [
+    { "parameterName": "maxItems", "parameterValue": "0" },
+    { "parameterName": "nextToken", "parameterValue": "'your-nextToken'" }
+  ],
+  "contextPropertyName": "listTemplatesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.listTemplates({
+  maxItems: /* number */,
+  nextToken: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.listTemplates({
+  maxItems: /* number */,
+  nextToken: /* string */,
+});
+```
+
+---
+
+#### `testRenderTemplate`
+
+**Test Render Template**
+
+Tests rendering of a template with sample data
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `templateName` | `string` | Yes | The name of the template to test |
+| `templateData` | `Object|string` | Yes | The template data to use for rendering |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "testRenderTemplateAction",
+  "provider": "amazonSES",
+  "action": "testRenderTemplate",
+  "parameters": [
+    { "parameterName": "templateName", "parameterValue": "'your-templateName'" },
+    { "parameterName": "templateData", "parameterValue": "'your-templateData'" }
+  ],
+  "contextPropertyName": "testRenderTemplateResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.testRenderTemplate({
+  templateName: /* string */,
+  templateData: /* Object|string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.testRenderTemplate({
+  templateName: /* string */,
+  templateData: /* Object|string */,
+});
+```
+
+---
+
+### Configuration
+
+#### `createConfigurationSet`
+
+**Create Configuration Set**
+
+Creates a configuration set
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `configurationSetName` | `string` | Yes | The name of the configuration set |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createConfigurationSetAction",
+  "provider": "amazonSES",
+  "action": "createConfigurationSet",
+  "parameters": [
+    { "parameterName": "configurationSetName", "parameterValue": "'your-configurationSetName'" }
+  ],
+  "contextPropertyName": "createConfigurationSetResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.createConfigurationSet({
+  configurationSetName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.createConfigurationSet({
+  configurationSetName: /* string */,
+});
+```
+
+---
+
+#### `deleteConfigurationSet`
+
+**Delete Configuration Set**
+
+Deletes a configuration set
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `configurationSetName` | `string` | Yes | The name of the configuration set to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteConfigurationSetAction",
+  "provider": "amazonSES",
+  "action": "deleteConfigurationSet",
+  "parameters": [
+    { "parameterName": "configurationSetName", "parameterValue": "'your-configurationSetName'" }
+  ],
+  "contextPropertyName": "deleteConfigurationSetResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.deleteConfigurationSet({
+  configurationSetName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.deleteConfigurationSet({
+  configurationSetName: /* string */,
+});
+```
+
+---
+
+#### `describeConfigurationSet`
+
+**Describe Configuration Set**
+
+Gets details of a configuration set
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `configurationSetName` | `string` | Yes | The name of the configuration set |
+| `attributeNames` | `string[]` | No | Attributes to include in the response |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "describeConfigurationSetAction",
+  "provider": "amazonSES",
+  "action": "describeConfigurationSet",
+  "parameters": [
+    { "parameterName": "configurationSetName", "parameterValue": "'your-configurationSetName'" },
+    { "parameterName": "attributeNames", "parameterValue": "[]" }
+  ],
+  "contextPropertyName": "describeConfigurationSetResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.describeConfigurationSet({
+  configurationSetName: /* string */,
+  attributeNames: /* string[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.describeConfigurationSet({
+  configurationSetName: /* string */,
+  attributeNames: /* string[] */,
+});
+```
+
+---
+
+#### `listConfigurationSets`
+
+**List Configuration Sets**
+
+Lists all configuration sets
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `maxItems` | `number` | No | Maximum number of configuration sets to return |
+| `nextToken` | `string` | No | Token for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listConfigurationSetsAction",
+  "provider": "amazonSES",
+  "action": "listConfigurationSets",
+  "parameters": [
+    { "parameterName": "maxItems", "parameterValue": "0" },
+    { "parameterName": "nextToken", "parameterValue": "'your-nextToken'" }
+  ],
+  "contextPropertyName": "listConfigurationSetsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.listConfigurationSets({
+  maxItems: /* number */,
+  nextToken: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.listConfigurationSets({
+  maxItems: /* number */,
+  nextToken: /* string */,
+});
+```
+
+---
+
+#### `createConfigurationSetEventDestination`
+
+**Create Event Destination**
+
+Creates an event destination for a configuration set
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `configurationSetName` | `string` | Yes | The configuration set name |
+| `eventDestinationName` | `string` | Yes | The name for the event destination |
+| `enabled` | `boolean` | No | Whether the event destination is enabled |
+| `matchingEventTypes` | `string[]` | Yes | Event types to include |
+| `kinesisFirehoseDestination` | `Object` | No | Kinesis Firehose destination config |
+| `kinesisFirehoseDestination` | `string` | Yes | IAM role ARN |
+| `kinesisFirehoseDestination` | `string` | Yes | Delivery stream ARN |
+| `cloudWatchDestination` | `Object` | No | CloudWatch destination config |
+| `cloudWatchDestination` | `Object[]` | Yes | Dimension configurations |
+| `snsDestination` | `Object` | No | SNS destination config |
+| `snsDestination` | `string` | Yes | SNS topic ARN |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createConfigurationSetEventDestinationAction",
+  "provider": "amazonSES",
+  "action": "createConfigurationSetEventDestination",
+  "parameters": [
+    { "parameterName": "configurationSetName", "parameterValue": "'your-configurationSetName'" },
+    { "parameterName": "eventDestinationName", "parameterValue": "'your-eventDestinationName'" },
+    { "parameterName": "enabled", "parameterValue": "true" },
+    { "parameterName": "matchingEventTypes", "parameterValue": "[]" },
+    { "parameterName": "kinesisFirehoseDestination", "parameterValue": "{}" },
+    { "parameterName": "kinesisFirehoseDestination", "parameterValue": "'your-kinesisFirehoseDestination'" },
+    { "parameterName": "kinesisFirehoseDestination", "parameterValue": "'your-kinesisFirehoseDestination'" },
+    { "parameterName": "cloudWatchDestination", "parameterValue": "{}" },
+    { "parameterName": "cloudWatchDestination", "parameterValue": "'your-cloudWatchDestination'" },
+    { "parameterName": "snsDestination", "parameterValue": "{}" },
+    { "parameterName": "snsDestination", "parameterValue": "'your-snsDestination'" }
+  ],
+  "contextPropertyName": "createConfigurationSetEventDestinationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.createConfigurationSetEventDestination({
+  configurationSetName: /* string */,
+  eventDestinationName: /* string */,
+  enabled: /* boolean */,
+  matchingEventTypes: /* string[] */,
+  kinesisFirehoseDestination: /* Object */,
+  kinesisFirehoseDestination: /* string */,
+  kinesisFirehoseDestination: /* string */,
+  cloudWatchDestination: /* Object */,
+  cloudWatchDestination: /* Object[] */,
+  snsDestination: /* Object */,
+  snsDestination: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.createConfigurationSetEventDestination({
+  configurationSetName: /* string */,
+  eventDestinationName: /* string */,
+  enabled: /* boolean */,
+  matchingEventTypes: /* string[] */,
+  kinesisFirehoseDestination: /* Object */,
+  kinesisFirehoseDestination: /* string */,
+  kinesisFirehoseDestination: /* string */,
+  cloudWatchDestination: /* Object */,
+  cloudWatchDestination: /* Object[] */,
+  snsDestination: /* Object */,
+  snsDestination: /* string */,
+});
+```
+
+---
+
+#### `updateConfigurationSetEventDestination`
+
+**Update Event Destination**
+
+Updates an event destination for a configuration set
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `configurationSetName` | `string` | Yes | The configuration set name |
+| `eventDestinationName` | `string` | Yes | The name of the event destination |
+| `enabled` | `boolean` | No | Whether the event destination is enabled |
+| `matchingEventTypes` | `string[]` | Yes | Event types to include |
+| `kinesisFirehoseDestination` | `Object` | No | Kinesis Firehose destination config |
+| `cloudWatchDestination` | `Object` | No | CloudWatch destination config |
+| `snsDestination` | `Object` | No | SNS destination config |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateConfigurationSetEventDestinationAction",
+  "provider": "amazonSES",
+  "action": "updateConfigurationSetEventDestination",
+  "parameters": [
+    { "parameterName": "configurationSetName", "parameterValue": "'your-configurationSetName'" },
+    { "parameterName": "eventDestinationName", "parameterValue": "'your-eventDestinationName'" },
+    { "parameterName": "enabled", "parameterValue": "true" },
+    { "parameterName": "matchingEventTypes", "parameterValue": "[]" },
+    { "parameterName": "kinesisFirehoseDestination", "parameterValue": "{}" },
+    { "parameterName": "cloudWatchDestination", "parameterValue": "{}" },
+    { "parameterName": "snsDestination", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "updateConfigurationSetEventDestinationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.updateConfigurationSetEventDestination({
+  configurationSetName: /* string */,
+  eventDestinationName: /* string */,
+  enabled: /* boolean */,
+  matchingEventTypes: /* string[] */,
+  kinesisFirehoseDestination: /* Object */,
+  cloudWatchDestination: /* Object */,
+  snsDestination: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.updateConfigurationSetEventDestination({
+  configurationSetName: /* string */,
+  eventDestinationName: /* string */,
+  enabled: /* boolean */,
+  matchingEventTypes: /* string[] */,
+  kinesisFirehoseDestination: /* Object */,
+  cloudWatchDestination: /* Object */,
+  snsDestination: /* Object */,
+});
+```
+
+---
+
+#### `deleteConfigurationSetEventDestination`
+
+**Delete Event Destination**
+
+Deletes an event destination from a configuration set
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `configurationSetName` | `string` | Yes | The configuration set name |
+| `eventDestinationName` | `string` | Yes | The name of the event destination to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteConfigurationSetEventDestinationAction",
+  "provider": "amazonSES",
+  "action": "deleteConfigurationSetEventDestination",
+  "parameters": [
+    { "parameterName": "configurationSetName", "parameterValue": "'your-configurationSetName'" },
+    { "parameterName": "eventDestinationName", "parameterValue": "'your-eventDestinationName'" }
+  ],
+  "contextPropertyName": "deleteConfigurationSetEventDestinationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.deleteConfigurationSetEventDestination({
+  configurationSetName: /* string */,
+  eventDestinationName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.deleteConfigurationSetEventDestination({
+  configurationSetName: /* string */,
+  eventDestinationName: /* string */,
+});
+```
+
+---
+
+### Notifications
+
+#### `setIdentityFeedbackForwardingEnabled`
+
+**Set Feedback Forwarding**
+
+Enables or disables feedback forwarding for an identity
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `identity` | `string` | Yes | The verified identity |
+| `forwardingEnabled` | `boolean` | Yes | Whether to enable feedback forwarding |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "setIdentityFeedbackForwardingEnabledAction",
+  "provider": "amazonSES",
+  "action": "setIdentityFeedbackForwardingEnabled",
+  "parameters": [
+    { "parameterName": "identity", "parameterValue": "'your-identity'" },
+    { "parameterName": "forwardingEnabled", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "setIdentityFeedbackForwardingEnabledResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.setIdentityFeedbackForwardingEnabled({
+  identity: /* string */,
+  forwardingEnabled: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.setIdentityFeedbackForwardingEnabled({
+  identity: /* string */,
+  forwardingEnabled: /* boolean */,
+});
+```
+
+---
+
+#### `setIdentityNotificationTopic`
+
+**Set Notification Topic**
+
+Sets the SNS topic for identity notifications
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `identity` | `string` | Yes | The verified identity |
+| `notificationType` | `string` | Yes | The type of notification: 'Bounce', 'Complaint', or 'Delivery' |
+| `snsTopic` | `string` | No | The ARN of the SNS topic (omit to disable) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "setIdentityNotificationTopicAction",
+  "provider": "amazonSES",
+  "action": "setIdentityNotificationTopic",
+  "parameters": [
+    { "parameterName": "identity", "parameterValue": "'your-identity'" },
+    { "parameterName": "notificationType", "parameterValue": "'your-notificationType'" },
+    { "parameterName": "snsTopic", "parameterValue": "'your-snsTopic'" }
+  ],
+  "contextPropertyName": "setIdentityNotificationTopicResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.setIdentityNotificationTopic({
+  identity: /* string */,
+  notificationType: /* string */,
+  snsTopic: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.setIdentityNotificationTopic({
+  identity: /* string */,
+  notificationType: /* string */,
+  snsTopic: /* string */,
+});
+```
+
+---
+
+#### `getIdentityNotificationAttributes`
+
+**Get Notification Attributes**
+
+Gets notification attributes for identities
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `identities` | `string[]` | Yes | List of identities to check |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getIdentityNotificationAttributesAction",
+  "provider": "amazonSES",
+  "action": "getIdentityNotificationAttributes",
+  "parameters": [
+    { "parameterName": "identities", "parameterValue": "[]" }
+  ],
+  "contextPropertyName": "getIdentityNotificationAttributesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.getIdentityNotificationAttributes({
+  identities: /* string[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.getIdentityNotificationAttributes({
+  identities: /* string[] */,
+});
+```
+
+---
+
+### Receipt
+
+#### `createReceiptRuleSet`
+
+**Create Receipt Rule Set**
+
+Creates a new receipt rule set
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `ruleSetName` | `string` | Yes | The name of the rule set |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createReceiptRuleSetAction",
+  "provider": "amazonSES",
+  "action": "createReceiptRuleSet",
+  "parameters": [
+    { "parameterName": "ruleSetName", "parameterValue": "'your-ruleSetName'" }
+  ],
+  "contextPropertyName": "createReceiptRuleSetResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.createReceiptRuleSet({
+  ruleSetName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.createReceiptRuleSet({
+  ruleSetName: /* string */,
+});
+```
+
+---
+
+#### `deleteReceiptRuleSet`
+
+**Delete Receipt Rule Set**
+
+Deletes a receipt rule set
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `ruleSetName` | `string` | Yes | The name of the rule set to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteReceiptRuleSetAction",
+  "provider": "amazonSES",
+  "action": "deleteReceiptRuleSet",
+  "parameters": [
+    { "parameterName": "ruleSetName", "parameterValue": "'your-ruleSetName'" }
+  ],
+  "contextPropertyName": "deleteReceiptRuleSetResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.deleteReceiptRuleSet({
+  ruleSetName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.deleteReceiptRuleSet({
+  ruleSetName: /* string */,
+});
+```
+
+---
+
+#### `cloneReceiptRuleSet`
+
+**Clone Receipt Rule Set**
+
+Clones an existing receipt rule set
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `ruleSetName` | `string` | Yes | The name for the new rule set |
+| `originalRuleSetName` | `string` | Yes | The name of the rule set to clone |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "cloneReceiptRuleSetAction",
+  "provider": "amazonSES",
+  "action": "cloneReceiptRuleSet",
+  "parameters": [
+    { "parameterName": "ruleSetName", "parameterValue": "'your-ruleSetName'" },
+    { "parameterName": "originalRuleSetName", "parameterValue": "'your-originalRuleSetName'" }
+  ],
+  "contextPropertyName": "cloneReceiptRuleSetResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.cloneReceiptRuleSet({
+  ruleSetName: /* string */,
+  originalRuleSetName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.cloneReceiptRuleSet({
+  ruleSetName: /* string */,
+  originalRuleSetName: /* string */,
+});
+```
+
+---
+
+#### `listReceiptRuleSets`
+
+**List Receipt Rule Sets**
+
+Lists all receipt rule sets
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `nextToken` | `string` | No | Token for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listReceiptRuleSetsAction",
+  "provider": "amazonSES",
+  "action": "listReceiptRuleSets",
+  "parameters": [
+    { "parameterName": "nextToken", "parameterValue": "'your-nextToken'" }
+  ],
+  "contextPropertyName": "listReceiptRuleSetsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.listReceiptRuleSets({
+  nextToken: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.listReceiptRuleSets({
+  nextToken: /* string */,
+});
+```
+
+---
+
+#### `describeActiveReceiptRuleSet`
+
+**Describe Active Receipt Rule Set**
+
+Gets the active receipt rule set
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _amazonSES.describeActiveReceiptRuleSet()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.describeActiveReceiptRuleSet();
+```
+
+---
+
+#### `setActiveReceiptRuleSet`
+
+**Set Active Receipt Rule Set**
+
+Sets the active receipt rule set
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `ruleSetName` | `string` | No | The name of the rule set to activate (omit to deactivate) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "setActiveReceiptRuleSetAction",
+  "provider": "amazonSES",
+  "action": "setActiveReceiptRuleSet",
+  "parameters": [
+    { "parameterName": "ruleSetName", "parameterValue": "'your-ruleSetName'" }
+  ],
+  "contextPropertyName": "setActiveReceiptRuleSetResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.setActiveReceiptRuleSet({
+  ruleSetName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.setActiveReceiptRuleSet({
+  ruleSetName: /* string */,
+});
+```
+
+---
+
+#### `createReceiptRule`
+
+**Create Receipt Rule**
+
+Creates a receipt rule within a rule set
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `ruleSetName` | `string` | Yes | The name of the rule set |
+| `after` | `string` | No | The name of the rule to place this rule after |
+| `ruleName` | `string` | Yes | The name of the rule |
+| `enabled` | `boolean` | No | Whether the rule is enabled |
+| `recipients` | `string[]` | No | Recipients for the rule to match |
+| `tlsPolicy` | `string` | No | TLS policy: 'Require' or 'Optional' |
+| `scanEnabled` | `boolean` | No | Whether to enable spam and virus scanning |
+| `actions` | `Object[]` | No | Actions to perform |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createReceiptRuleAction",
+  "provider": "amazonSES",
+  "action": "createReceiptRule",
+  "parameters": [
+    { "parameterName": "ruleSetName", "parameterValue": "'your-ruleSetName'" },
+    { "parameterName": "after", "parameterValue": "'your-after'" },
+    { "parameterName": "ruleName", "parameterValue": "'your-ruleName'" },
+    { "parameterName": "enabled", "parameterValue": "true" },
+    { "parameterName": "recipients", "parameterValue": "[]" },
+    { "parameterName": "tlsPolicy", "parameterValue": "'your-tlsPolicy'" },
+    { "parameterName": "scanEnabled", "parameterValue": "true" },
+    { "parameterName": "actions", "parameterValue": "'your-actions'" }
+  ],
+  "contextPropertyName": "createReceiptRuleResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.createReceiptRule({
+  ruleSetName: /* string */,
+  after: /* string */,
+  ruleName: /* string */,
+  enabled: /* boolean */,
+  recipients: /* string[] */,
+  tlsPolicy: /* string */,
+  scanEnabled: /* boolean */,
+  actions: /* Object[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.createReceiptRule({
+  ruleSetName: /* string */,
+  after: /* string */,
+  ruleName: /* string */,
+  enabled: /* boolean */,
+  recipients: /* string[] */,
+  tlsPolicy: /* string */,
+  scanEnabled: /* boolean */,
+  actions: /* Object[] */,
+});
+```
+
+---
+
+#### `updateReceiptRule`
+
+**Update Receipt Rule**
+
+Updates an existing receipt rule
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `ruleSetName` | `string` | Yes | The name of the rule set |
+| `ruleName` | `string` | Yes | The name of the rule |
+| `enabled` | `boolean` | No | Whether the rule is enabled |
+| `recipients` | `string[]` | No | Recipients for the rule to match |
+| `tlsPolicy` | `string` | No | TLS policy: 'Require' or 'Optional' |
+| `scanEnabled` | `boolean` | No | Whether to enable spam and virus scanning |
+| `actions` | `Object[]` | No | Actions to perform |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateReceiptRuleAction",
+  "provider": "amazonSES",
+  "action": "updateReceiptRule",
+  "parameters": [
+    { "parameterName": "ruleSetName", "parameterValue": "'your-ruleSetName'" },
+    { "parameterName": "ruleName", "parameterValue": "'your-ruleName'" },
+    { "parameterName": "enabled", "parameterValue": "true" },
+    { "parameterName": "recipients", "parameterValue": "[]" },
+    { "parameterName": "tlsPolicy", "parameterValue": "'your-tlsPolicy'" },
+    { "parameterName": "scanEnabled", "parameterValue": "true" },
+    { "parameterName": "actions", "parameterValue": "'your-actions'" }
+  ],
+  "contextPropertyName": "updateReceiptRuleResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.updateReceiptRule({
+  ruleSetName: /* string */,
+  ruleName: /* string */,
+  enabled: /* boolean */,
+  recipients: /* string[] */,
+  tlsPolicy: /* string */,
+  scanEnabled: /* boolean */,
+  actions: /* Object[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.updateReceiptRule({
+  ruleSetName: /* string */,
+  ruleName: /* string */,
+  enabled: /* boolean */,
+  recipients: /* string[] */,
+  tlsPolicy: /* string */,
+  scanEnabled: /* boolean */,
+  actions: /* Object[] */,
+});
+```
+
+---
+
+#### `deleteReceiptRule`
+
+**Delete Receipt Rule**
+
+Deletes a receipt rule from a rule set
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `ruleSetName` | `string` | Yes | The name of the rule set |
+| `ruleName` | `string` | Yes | The name of the rule to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteReceiptRuleAction",
+  "provider": "amazonSES",
+  "action": "deleteReceiptRule",
+  "parameters": [
+    { "parameterName": "ruleSetName", "parameterValue": "'your-ruleSetName'" },
+    { "parameterName": "ruleName", "parameterValue": "'your-ruleName'" }
+  ],
+  "contextPropertyName": "deleteReceiptRuleResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.deleteReceiptRule({
+  ruleSetName: /* string */,
+  ruleName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.deleteReceiptRule({
+  ruleSetName: /* string */,
+  ruleName: /* string */,
+});
+```
+
+---
+
+#### `describeReceiptRule`
+
+**Describe Receipt Rule**
+
+Gets details of a receipt rule
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `ruleSetName` | `string` | Yes | The name of the rule set |
+| `ruleName` | `string` | Yes | The name of the rule |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "describeReceiptRuleAction",
+  "provider": "amazonSES",
+  "action": "describeReceiptRule",
+  "parameters": [
+    { "parameterName": "ruleSetName", "parameterValue": "'your-ruleSetName'" },
+    { "parameterName": "ruleName", "parameterValue": "'your-ruleName'" }
+  ],
+  "contextPropertyName": "describeReceiptRuleResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.describeReceiptRule({
+  ruleSetName: /* string */,
+  ruleName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.describeReceiptRule({
+  ruleSetName: /* string */,
+  ruleName: /* string */,
+});
+```
+
+---
+
+#### `reorderReceiptRules`
+
+**Reorder Receipt Rules**
+
+Reorders receipt rules within a rule set
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `ruleSetName` | `string` | Yes | The name of the rule set |
+| `ruleNames` | `string[]` | Yes | Rule names in the desired order |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "reorderReceiptRulesAction",
+  "provider": "amazonSES",
+  "action": "reorderReceiptRules",
+  "parameters": [
+    { "parameterName": "ruleSetName", "parameterValue": "'your-ruleSetName'" },
+    { "parameterName": "ruleNames", "parameterValue": "[]" }
+  ],
+  "contextPropertyName": "reorderReceiptRulesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.reorderReceiptRules({
+  ruleSetName: /* string */,
+  ruleNames: /* string[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.reorderReceiptRules({
+  ruleSetName: /* string */,
+  ruleNames: /* string[] */,
+});
+```
+
+---
+
+#### `createReceiptFilter`
+
+**Create Receipt Filter**
+
+Creates a receipt IP address filter
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `filterName` | `string` | Yes | The name of the filter |
+| `policy` | `string` | Yes | The filter policy: 'Block' or 'Allow' |
+| `cidr` | `string` | Yes | The IP address or range in CIDR notation |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createReceiptFilterAction",
+  "provider": "amazonSES",
+  "action": "createReceiptFilter",
+  "parameters": [
+    { "parameterName": "filterName", "parameterValue": "'your-filterName'" },
+    { "parameterName": "policy", "parameterValue": "'your-policy'" },
+    { "parameterName": "cidr", "parameterValue": "'your-cidr'" }
+  ],
+  "contextPropertyName": "createReceiptFilterResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.createReceiptFilter({
+  filterName: /* string */,
+  policy: /* string */,
+  cidr: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.createReceiptFilter({
+  filterName: /* string */,
+  policy: /* string */,
+  cidr: /* string */,
+});
+```
+
+---
+
+#### `deleteReceiptFilter`
+
+**Delete Receipt Filter**
+
+Deletes a receipt IP address filter
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `filterName` | `string` | Yes | The name of the filter to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteReceiptFilterAction",
+  "provider": "amazonSES",
+  "action": "deleteReceiptFilter",
+  "parameters": [
+    { "parameterName": "filterName", "parameterValue": "'your-filterName'" }
+  ],
+  "contextPropertyName": "deleteReceiptFilterResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonSES.deleteReceiptFilter({
+  filterName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.deleteReceiptFilter({
+  filterName: /* string */,
+});
+```
+
+---
+
+#### `listReceiptFilters`
+
+**List Receipt Filters**
+
+Lists all receipt IP address filters
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _amazonSES.listReceiptFilters()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonSES");
+const result = await client.listReceiptFilters();
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

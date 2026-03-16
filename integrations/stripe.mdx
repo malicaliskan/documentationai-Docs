@@ -1,0 +1,3250 @@
+---
+title: "Stripe Integration"
+description: >-
+  Stripe API Client for managing payments, customers, subscriptions, and more. Provides comprehensive access to Stripe's payment infrastructure including customers, products, prices, subscriptions, invo
+---
+
+## Stripe
+
+**Category:** Payments  
+**Provider Key:** `Stripe`  
+**SDK Packages:** `stripe@^20.1.0`  
+
+Stripe API Client for managing payments, customers, subscriptions, and more. Provides comprehensive access to Stripe's payment infrastructure including customers, products, prices, subscriptions, invoices, and payment intents.
+
+---
+
+## Configuration
+
+To use Stripe in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `string` | Yes | Stripe secret API key (starts with sk_test_ or sk_live_) |
+| `apiVersion` | `string` | No | Optional Stripe API version to use |
+| `timeout` | `number` | No | Request timeout in milliseconds |
+| `maxNetworkRetries` | `number` | No | Maximum number of network retries |
+| `telemetry` | `boolean` | No | Enable/disable telemetry |
+
+### Example Configuration
+
+```json
+{
+  "provider": "Stripe",
+  "configuration": [
+    { "name": "apiKey", "value": "your-apiKey" },
+    { "name": "apiVersion", "value": "your-apiVersion" },
+    { "name": "timeout", "value": 0 },
+    { "name": "maxNetworkRetries", "value": 0 },
+    { "name": "telemetry", "value": false }
+  ]
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Customers**: `createCustomer`, `getCustomer`, `updateCustomer`, `deleteCustomer`, `listCustomers`, `searchCustomers`
+- **Products**: `createProduct`, `getProduct`, `updateProduct`, `deleteProduct`, `listProducts`
+- **Prices**: `createPrice`, `getPrice`, `updatePrice`, `listPrices`
+- **Payments**: `createPaymentIntent`, `getPaymentIntent`, `updatePaymentIntent`, `confirmPaymentIntent`, `capturePaymentIntent`, `cancelPaymentIntent`, `listPaymentIntents`, `createRefund`, `getRefund`, `listRefunds`, `getCharge`, `listCharges`
+- **Subscriptions**: `createSubscription`, `getSubscription`, `updateSubscription`, `cancelSubscription`, `listSubscriptions`
+- **Invoices**: `createInvoice`, `getInvoice`, `finalizeInvoice`, `payInvoice`, `voidInvoice`, `sendInvoice`, `listInvoices`, `createInvoiceItem`, `deleteInvoiceItem`
+- **Payment**: `attachPaymentMethod`, `detachPaymentMethod`, `getPaymentMethod`, `listPaymentMethods`
+- **Balance**: `getBalance`, `listBalanceTransactions`
+- **Coupons**: `createCoupon`, `getCoupon`, `deleteCoupon`, `listCoupons`
+- **Checkout**: `createCheckoutSession`, `getCheckoutSession`, `listCheckoutSessions`
+- **Webhooks**: `constructWebhookEvent`
+
+---
+
+### Customers
+
+#### `createCustomer`
+
+**Create Customer**
+
+Creates a new customer in Stripe
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `email` | `string` | No | Customer's email address |
+| `name` | `string` | No | Customer's full name |
+| `description` | `string` | No | Description of the customer |
+| `phone` | `string` | No | Customer's phone number |
+| `address` | `Object` | No | Customer's address |
+| `metadata` | `Object` | No | Set of key-value pairs for additional data |
+| `paymentMethod` | `string` | No | Default payment method ID to attach |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createCustomerAction",
+  "provider": "Stripe",
+  "action": "createCustomer",
+  "parameters": [
+    { "parameterName": "email", "parameterValue": "'your-email'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "phone", "parameterValue": "'your-phone'" },
+    { "parameterName": "address", "parameterValue": "{}" },
+    { "parameterName": "metadata", "parameterValue": "{}" },
+    { "parameterName": "paymentMethod", "parameterValue": "'your-paymentMethod'" }
+  ],
+  "contextPropertyName": "createCustomerResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.createCustomer({
+  email: /* string */,
+  name: /* string */,
+  description: /* string */,
+  phone: /* string */,
+  address: /* Object */,
+  metadata: /* Object */,
+  paymentMethod: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.createCustomer({
+  email: /* string */,
+  name: /* string */,
+  description: /* string */,
+  phone: /* string */,
+  address: /* Object */,
+  metadata: /* Object */,
+  paymentMethod: /* string */,
+});
+```
+
+---
+
+#### `getCustomer`
+
+**Get Customer**
+
+Retrieves a customer by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `customerId` | `string` | Yes | The ID of the customer to retrieve |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getCustomerAction",
+  "provider": "Stripe",
+  "action": "getCustomer",
+  "parameters": [
+    { "parameterName": "customerId", "parameterValue": "'your-customerId'" }
+  ],
+  "contextPropertyName": "getCustomerResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.getCustomer({
+  customerId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.getCustomer({
+  customerId: /* string */,
+});
+```
+
+---
+
+#### `updateCustomer`
+
+**Update Customer**
+
+Updates an existing customer
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `customerId` | `string` | Yes | The ID of the customer to update |
+| `email` | `string` | No | Updated email address |
+| `name` | `string` | No | Updated name |
+| `description` | `string` | No | Updated description |
+| `phone` | `string` | No | Updated phone number |
+| `address` | `Object` | No | Updated address |
+| `metadata` | `Object` | No | Updated metadata |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateCustomerAction",
+  "provider": "Stripe",
+  "action": "updateCustomer",
+  "parameters": [
+    { "parameterName": "customerId", "parameterValue": "'your-customerId'" },
+    { "parameterName": "email", "parameterValue": "'your-email'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "phone", "parameterValue": "'your-phone'" },
+    { "parameterName": "address", "parameterValue": "{}" },
+    { "parameterName": "metadata", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "updateCustomerResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.updateCustomer({
+  customerId: /* string */,
+  email: /* string */,
+  name: /* string */,
+  description: /* string */,
+  phone: /* string */,
+  address: /* Object */,
+  metadata: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.updateCustomer({
+  customerId: /* string */,
+  email: /* string */,
+  name: /* string */,
+  description: /* string */,
+  phone: /* string */,
+  address: /* Object */,
+  metadata: /* Object */,
+});
+```
+
+---
+
+#### `deleteCustomer`
+
+**Delete Customer**
+
+Deletes a customer
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `customerId` | `string` | Yes | The ID of the customer to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteCustomerAction",
+  "provider": "Stripe",
+  "action": "deleteCustomer",
+  "parameters": [
+    { "parameterName": "customerId", "parameterValue": "'your-customerId'" }
+  ],
+  "contextPropertyName": "deleteCustomerResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.deleteCustomer({
+  customerId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.deleteCustomer({
+  customerId: /* string */,
+});
+```
+
+---
+
+#### `listCustomers`
+
+**List Customers**
+
+Lists customers with optional filtering
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum number of customers to return (1-100) |
+| `startingAfter` | `string` | No | Cursor for pagination (customer ID) |
+| `endingBefore` | `string` | No | Cursor for pagination (customer ID) |
+| `email` | `string` | No | Filter by email address |
+| `createdAfter` | `number` | No | Filter by creation date (Unix timestamp) |
+| `createdBefore` | `number` | No | Filter by creation date (Unix timestamp) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listCustomersAction",
+  "provider": "Stripe",
+  "action": "listCustomers",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "startingAfter", "parameterValue": "'your-startingAfter'" },
+    { "parameterName": "endingBefore", "parameterValue": "'your-endingBefore'" },
+    { "parameterName": "email", "parameterValue": "'your-email'" },
+    { "parameterName": "createdAfter", "parameterValue": "0" },
+    { "parameterName": "createdBefore", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listCustomersResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.listCustomers({
+  limit: /* number */,
+  startingAfter: /* string */,
+  endingBefore: /* string */,
+  email: /* string */,
+  createdAfter: /* number */,
+  createdBefore: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.listCustomers({
+  limit: /* number */,
+  startingAfter: /* string */,
+  endingBefore: /* string */,
+  email: /* string */,
+  createdAfter: /* number */,
+  createdBefore: /* number */,
+});
+```
+
+---
+
+#### `searchCustomers`
+
+**Search Customers**
+
+Searches customers using Stripe's search API
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | `string` | Yes | Search query string (e.g., "email:'test@example.com'") |
+| `limit` | `number` | No | Maximum number of results |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "searchCustomersAction",
+  "provider": "Stripe",
+  "action": "searchCustomers",
+  "parameters": [
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "searchCustomersResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.searchCustomers({
+  query: /* string */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.searchCustomers({
+  query: /* string */,
+  limit: /* number */,
+});
+```
+
+---
+
+### Products
+
+#### `createProduct`
+
+**Create Product**
+
+Creates a new product
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | Yes | Name of the product |
+| `description` | `string` | No | Description of the product |
+| `active` | `boolean` | No | Whether the product is active |
+| `images` | `string[]` | No | Array of image URLs |
+| `metadata` | `Object` | No | Set of key-value pairs |
+| `statementDescriptor` | `string` | No | Statement descriptor for card transactions |
+| `unitLabel` | `string` | No | Label for the product's unit of measurement |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createProductAction",
+  "provider": "Stripe",
+  "action": "createProduct",
+  "parameters": [
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "active", "parameterValue": "true" },
+    { "parameterName": "images", "parameterValue": "[]" },
+    { "parameterName": "metadata", "parameterValue": "{}" },
+    { "parameterName": "statementDescriptor", "parameterValue": "'your-statementDescriptor'" },
+    { "parameterName": "unitLabel", "parameterValue": "'your-unitLabel'" }
+  ],
+  "contextPropertyName": "createProductResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.createProduct({
+  name: /* string */,
+  description: /* string */,
+  active: /* boolean */,
+  images: /* string[] */,
+  metadata: /* Object */,
+  statementDescriptor: /* string */,
+  unitLabel: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.createProduct({
+  name: /* string */,
+  description: /* string */,
+  active: /* boolean */,
+  images: /* string[] */,
+  metadata: /* Object */,
+  statementDescriptor: /* string */,
+  unitLabel: /* string */,
+});
+```
+
+---
+
+#### `getProduct`
+
+**Get Product**
+
+Retrieves a product by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `productId` | `string` | Yes | The ID of the product to retrieve |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getProductAction",
+  "provider": "Stripe",
+  "action": "getProduct",
+  "parameters": [
+    { "parameterName": "productId", "parameterValue": "'your-productId'" }
+  ],
+  "contextPropertyName": "getProductResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.getProduct({
+  productId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.getProduct({
+  productId: /* string */,
+});
+```
+
+---
+
+#### `updateProduct`
+
+**Update Product**
+
+Updates an existing product
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `productId` | `string` | Yes | The ID of the product to update |
+| `name` | `string` | No | Updated name |
+| `description` | `string` | No | Updated description |
+| `active` | `boolean` | No | Updated active status |
+| `images` | `string[]` | No | Updated image URLs |
+| `metadata` | `Object` | No | Updated metadata |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateProductAction",
+  "provider": "Stripe",
+  "action": "updateProduct",
+  "parameters": [
+    { "parameterName": "productId", "parameterValue": "'your-productId'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "active", "parameterValue": "true" },
+    { "parameterName": "images", "parameterValue": "[]" },
+    { "parameterName": "metadata", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "updateProductResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.updateProduct({
+  productId: /* string */,
+  name: /* string */,
+  description: /* string */,
+  active: /* boolean */,
+  images: /* string[] */,
+  metadata: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.updateProduct({
+  productId: /* string */,
+  name: /* string */,
+  description: /* string */,
+  active: /* boolean */,
+  images: /* string[] */,
+  metadata: /* Object */,
+});
+```
+
+---
+
+#### `deleteProduct`
+
+**Delete Product**
+
+Deletes a product
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `productId` | `string` | Yes | The ID of the product to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteProductAction",
+  "provider": "Stripe",
+  "action": "deleteProduct",
+  "parameters": [
+    { "parameterName": "productId", "parameterValue": "'your-productId'" }
+  ],
+  "contextPropertyName": "deleteProductResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.deleteProduct({
+  productId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.deleteProduct({
+  productId: /* string */,
+});
+```
+
+---
+
+#### `listProducts`
+
+**List Products**
+
+Lists products with optional filtering
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum number of products to return |
+| `active` | `boolean` | No | Filter by active status |
+| `startingAfter` | `string` | No | Cursor for pagination |
+| `endingBefore` | `string` | No | Cursor for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listProductsAction",
+  "provider": "Stripe",
+  "action": "listProducts",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "active", "parameterValue": "true" },
+    { "parameterName": "startingAfter", "parameterValue": "'your-startingAfter'" },
+    { "parameterName": "endingBefore", "parameterValue": "'your-endingBefore'" }
+  ],
+  "contextPropertyName": "listProductsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.listProducts({
+  limit: /* number */,
+  active: /* boolean */,
+  startingAfter: /* string */,
+  endingBefore: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.listProducts({
+  limit: /* number */,
+  active: /* boolean */,
+  startingAfter: /* string */,
+  endingBefore: /* string */,
+});
+```
+
+---
+
+### Prices
+
+#### `createPrice`
+
+**Create Price**
+
+Creates a new price for a product
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `productId` | `string` | Yes | ID of the product this price belongs to |
+| `currency` | `string` | Yes | Three-letter ISO currency code |
+| `unitAmount` | `number` | No | Price in cents (required for one-time prices) |
+| `billingScheme` | `string` | No | Billing scheme (per_unit or tiered) |
+| `recurring` | `Object` | No | Recurring price configuration |
+| `recurring` | `string` | No | Billing interval |
+| `recurring` | `number` | No | Number of intervals between billings |
+| `active` | `boolean` | No | Whether the price is active |
+| `metadata` | `Object` | No | Set of key-value pairs |
+| `nickname` | `string` | No | Brief description of the price |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createPriceAction",
+  "provider": "Stripe",
+  "action": "createPrice",
+  "parameters": [
+    { "parameterName": "productId", "parameterValue": "'your-productId'" },
+    { "parameterName": "currency", "parameterValue": "'your-currency'" },
+    { "parameterName": "unitAmount", "parameterValue": "0" },
+    { "parameterName": "billingScheme", "parameterValue": "'your-billingScheme'" },
+    { "parameterName": "recurring", "parameterValue": "{}" },
+    { "parameterName": "recurring", "parameterValue": "'your-recurring'" },
+    { "parameterName": "recurring", "parameterValue": "0" },
+    { "parameterName": "active", "parameterValue": "true" },
+    { "parameterName": "metadata", "parameterValue": "{}" },
+    { "parameterName": "nickname", "parameterValue": "'your-nickname'" }
+  ],
+  "contextPropertyName": "createPriceResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.createPrice({
+  productId: /* string */,
+  currency: /* string */,
+  unitAmount: /* number */,
+  billingScheme: /* string */,
+  recurring: /* Object */,
+  recurring: /* string */,
+  recurring: /* number */,
+  active: /* boolean */,
+  metadata: /* Object */,
+  nickname: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.createPrice({
+  productId: /* string */,
+  currency: /* string */,
+  unitAmount: /* number */,
+  billingScheme: /* string */,
+  recurring: /* Object */,
+  recurring: /* string */,
+  recurring: /* number */,
+  active: /* boolean */,
+  metadata: /* Object */,
+  nickname: /* string */,
+});
+```
+
+---
+
+#### `getPrice`
+
+**Get Price**
+
+Retrieves a price by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `priceId` | `string` | Yes | The ID of the price to retrieve |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getPriceAction",
+  "provider": "Stripe",
+  "action": "getPrice",
+  "parameters": [
+    { "parameterName": "priceId", "parameterValue": "'your-priceId'" }
+  ],
+  "contextPropertyName": "getPriceResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.getPrice({
+  priceId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.getPrice({
+  priceId: /* string */,
+});
+```
+
+---
+
+#### `updatePrice`
+
+**Update Price**
+
+Updates an existing price
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `priceId` | `string` | Yes | The ID of the price to update |
+| `active` | `boolean` | No | Updated active status |
+| `metadata` | `Object` | No | Updated metadata |
+| `nickname` | `string` | No | Updated nickname |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updatePriceAction",
+  "provider": "Stripe",
+  "action": "updatePrice",
+  "parameters": [
+    { "parameterName": "priceId", "parameterValue": "'your-priceId'" },
+    { "parameterName": "active", "parameterValue": "true" },
+    { "parameterName": "metadata", "parameterValue": "{}" },
+    { "parameterName": "nickname", "parameterValue": "'your-nickname'" }
+  ],
+  "contextPropertyName": "updatePriceResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.updatePrice({
+  priceId: /* string */,
+  active: /* boolean */,
+  metadata: /* Object */,
+  nickname: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.updatePrice({
+  priceId: /* string */,
+  active: /* boolean */,
+  metadata: /* Object */,
+  nickname: /* string */,
+});
+```
+
+---
+
+#### `listPrices`
+
+**List Prices**
+
+Lists prices with optional filtering
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum number of prices to return |
+| `active` | `boolean` | No | Filter by active status |
+| `productId` | `string` | No | Filter by product ID |
+| `type` | `string` | No | Filter by type |
+| `currency` | `string` | No | Filter by currency |
+| `startingAfter` | `string` | No | Cursor for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listPricesAction",
+  "provider": "Stripe",
+  "action": "listPrices",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "active", "parameterValue": "true" },
+    { "parameterName": "productId", "parameterValue": "'your-productId'" },
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "currency", "parameterValue": "'your-currency'" },
+    { "parameterName": "startingAfter", "parameterValue": "'your-startingAfter'" }
+  ],
+  "contextPropertyName": "listPricesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.listPrices({
+  limit: /* number */,
+  active: /* boolean */,
+  productId: /* string */,
+  type: /* string */,
+  currency: /* string */,
+  startingAfter: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.listPrices({
+  limit: /* number */,
+  active: /* boolean */,
+  productId: /* string */,
+  type: /* string */,
+  currency: /* string */,
+  startingAfter: /* string */,
+});
+```
+
+---
+
+### Payments
+
+#### `createPaymentIntent`
+
+**Create Payment Intent**
+
+Creates a new payment intent
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `amount` | `number` | Yes | Amount in cents to charge |
+| `currency` | `string` | Yes | Three-letter ISO currency code |
+| `customerId` | `string` | No | ID of the customer |
+| `description` | `string` | No | Description of the payment |
+| `paymentMethodTypes` | `string[]` | No | Allowed payment method types |
+| `metadata` | `Object` | No | Set of key-value pairs |
+| `automaticPaymentMethods` | `boolean` | No | Enable automatic payment methods |
+| `receiptEmail` | `string` | No | Email to send receipt to |
+| `statementDescriptor` | `string` | No | Statement descriptor |
+| `captureMethod` | `boolean` | No | 'automatic' or 'manual' |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createPaymentIntentAction",
+  "provider": "Stripe",
+  "action": "createPaymentIntent",
+  "parameters": [
+    { "parameterName": "amount", "parameterValue": "0" },
+    { "parameterName": "currency", "parameterValue": "'your-currency'" },
+    { "parameterName": "customerId", "parameterValue": "'your-customerId'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "paymentMethodTypes", "parameterValue": "[]" },
+    { "parameterName": "metadata", "parameterValue": "{}" },
+    { "parameterName": "automaticPaymentMethods", "parameterValue": "true" },
+    { "parameterName": "receiptEmail", "parameterValue": "'your-receiptEmail'" },
+    { "parameterName": "statementDescriptor", "parameterValue": "'your-statementDescriptor'" },
+    { "parameterName": "captureMethod", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "createPaymentIntentResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.createPaymentIntent({
+  amount: /* number */,
+  currency: /* string */,
+  customerId: /* string */,
+  description: /* string */,
+  paymentMethodTypes: /* string[] */,
+  metadata: /* Object */,
+  automaticPaymentMethods: /* boolean */,
+  receiptEmail: /* string */,
+  statementDescriptor: /* string */,
+  captureMethod: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.createPaymentIntent({
+  amount: /* number */,
+  currency: /* string */,
+  customerId: /* string */,
+  description: /* string */,
+  paymentMethodTypes: /* string[] */,
+  metadata: /* Object */,
+  automaticPaymentMethods: /* boolean */,
+  receiptEmail: /* string */,
+  statementDescriptor: /* string */,
+  captureMethod: /* boolean */,
+});
+```
+
+---
+
+#### `getPaymentIntent`
+
+**Get Payment Intent**
+
+Retrieves a payment intent by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `paymentIntentId` | `string` | Yes | The ID of the payment intent |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getPaymentIntentAction",
+  "provider": "Stripe",
+  "action": "getPaymentIntent",
+  "parameters": [
+    { "parameterName": "paymentIntentId", "parameterValue": "'your-paymentIntentId'" }
+  ],
+  "contextPropertyName": "getPaymentIntentResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.getPaymentIntent({
+  paymentIntentId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.getPaymentIntent({
+  paymentIntentId: /* string */,
+});
+```
+
+---
+
+#### `updatePaymentIntent`
+
+**Update Payment Intent**
+
+Updates a payment intent
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `paymentIntentId` | `string` | Yes | The ID of the payment intent |
+| `amount` | `number` | No | Updated amount in cents |
+| `currency` | `string` | No | Updated currency |
+| `description` | `string` | No | Updated description |
+| `metadata` | `Object` | No | Updated metadata |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updatePaymentIntentAction",
+  "provider": "Stripe",
+  "action": "updatePaymentIntent",
+  "parameters": [
+    { "parameterName": "paymentIntentId", "parameterValue": "'your-paymentIntentId'" },
+    { "parameterName": "amount", "parameterValue": "0" },
+    { "parameterName": "currency", "parameterValue": "'your-currency'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "metadata", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "updatePaymentIntentResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.updatePaymentIntent({
+  paymentIntentId: /* string */,
+  amount: /* number */,
+  currency: /* string */,
+  description: /* string */,
+  metadata: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.updatePaymentIntent({
+  paymentIntentId: /* string */,
+  amount: /* number */,
+  currency: /* string */,
+  description: /* string */,
+  metadata: /* Object */,
+});
+```
+
+---
+
+#### `confirmPaymentIntent`
+
+**Confirm Payment Intent**
+
+Confirms a payment intent
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `paymentIntentId` | `string` | Yes | The ID of the payment intent |
+| `paymentMethod` | `string` | No | Payment method ID to use |
+| `returnUrl` | `string` | No | URL to redirect after payment |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "confirmPaymentIntentAction",
+  "provider": "Stripe",
+  "action": "confirmPaymentIntent",
+  "parameters": [
+    { "parameterName": "paymentIntentId", "parameterValue": "'your-paymentIntentId'" },
+    { "parameterName": "paymentMethod", "parameterValue": "'your-paymentMethod'" },
+    { "parameterName": "returnUrl", "parameterValue": "'your-returnUrl'" }
+  ],
+  "contextPropertyName": "confirmPaymentIntentResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.confirmPaymentIntent({
+  paymentIntentId: /* string */,
+  paymentMethod: /* string */,
+  returnUrl: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.confirmPaymentIntent({
+  paymentIntentId: /* string */,
+  paymentMethod: /* string */,
+  returnUrl: /* string */,
+});
+```
+
+---
+
+#### `capturePaymentIntent`
+
+**Capture Payment Intent**
+
+Captures a payment intent
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `paymentIntentId` | `string` | Yes | The ID of the payment intent |
+| `amountToCapture` | `number` | No | Amount to capture (for partial captures) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "capturePaymentIntentAction",
+  "provider": "Stripe",
+  "action": "capturePaymentIntent",
+  "parameters": [
+    { "parameterName": "paymentIntentId", "parameterValue": "'your-paymentIntentId'" },
+    { "parameterName": "amountToCapture", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "capturePaymentIntentResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.capturePaymentIntent({
+  paymentIntentId: /* string */,
+  amountToCapture: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.capturePaymentIntent({
+  paymentIntentId: /* string */,
+  amountToCapture: /* number */,
+});
+```
+
+---
+
+#### `cancelPaymentIntent`
+
+**Cancel Payment Intent**
+
+Cancels a payment intent
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `paymentIntentId` | `string` | Yes | The ID of the payment intent |
+| `cancellationReason` | `string` | No | Reason for cancellation |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "cancelPaymentIntentAction",
+  "provider": "Stripe",
+  "action": "cancelPaymentIntent",
+  "parameters": [
+    { "parameterName": "paymentIntentId", "parameterValue": "'your-paymentIntentId'" },
+    { "parameterName": "cancellationReason", "parameterValue": "'your-cancellationReason'" }
+  ],
+  "contextPropertyName": "cancelPaymentIntentResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.cancelPaymentIntent({
+  paymentIntentId: /* string */,
+  cancellationReason: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.cancelPaymentIntent({
+  paymentIntentId: /* string */,
+  cancellationReason: /* string */,
+});
+```
+
+---
+
+#### `listPaymentIntents`
+
+**List Payment Intents**
+
+Lists payment intents with optional filtering
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum number of payment intents |
+| `customerId` | `string` | No | Filter by customer ID |
+| `startingAfter` | `string` | No | Cursor for pagination |
+| `createdAfter` | `number` | No | Filter by creation date (Unix timestamp) |
+| `createdBefore` | `number` | No | Filter by creation date (Unix timestamp) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listPaymentIntentsAction",
+  "provider": "Stripe",
+  "action": "listPaymentIntents",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "customerId", "parameterValue": "'your-customerId'" },
+    { "parameterName": "startingAfter", "parameterValue": "'your-startingAfter'" },
+    { "parameterName": "createdAfter", "parameterValue": "0" },
+    { "parameterName": "createdBefore", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listPaymentIntentsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.listPaymentIntents({
+  limit: /* number */,
+  customerId: /* string */,
+  startingAfter: /* string */,
+  createdAfter: /* number */,
+  createdBefore: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.listPaymentIntents({
+  limit: /* number */,
+  customerId: /* string */,
+  startingAfter: /* string */,
+  createdAfter: /* number */,
+  createdBefore: /* number */,
+});
+```
+
+---
+
+#### `createRefund`
+
+**Create Refund**
+
+Creates a refund
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `paymentIntentId` | `string` | No | Payment intent ID to refund |
+| `chargeId` | `string` | No | Charge ID to refund |
+| `amount` | `number` | No | Amount to refund in cents (partial refund) |
+| `reason` | `string` | No | Reason for the refund |
+| `metadata` | `Object` | No | Set of key-value pairs |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createRefundAction",
+  "provider": "Stripe",
+  "action": "createRefund",
+  "parameters": [
+    { "parameterName": "paymentIntentId", "parameterValue": "'your-paymentIntentId'" },
+    { "parameterName": "chargeId", "parameterValue": "'your-chargeId'" },
+    { "parameterName": "amount", "parameterValue": "0" },
+    { "parameterName": "reason", "parameterValue": "'your-reason'" },
+    { "parameterName": "metadata", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "createRefundResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.createRefund({
+  paymentIntentId: /* string */,
+  chargeId: /* string */,
+  amount: /* number */,
+  reason: /* string */,
+  metadata: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.createRefund({
+  paymentIntentId: /* string */,
+  chargeId: /* string */,
+  amount: /* number */,
+  reason: /* string */,
+  metadata: /* Object */,
+});
+```
+
+---
+
+#### `getRefund`
+
+**Get Refund**
+
+Retrieves a refund by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `refundId` | `string` | Yes | The ID of the refund |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getRefundAction",
+  "provider": "Stripe",
+  "action": "getRefund",
+  "parameters": [
+    { "parameterName": "refundId", "parameterValue": "'your-refundId'" }
+  ],
+  "contextPropertyName": "getRefundResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.getRefund({
+  refundId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.getRefund({
+  refundId: /* string */,
+});
+```
+
+---
+
+#### `listRefunds`
+
+**List Refunds**
+
+Lists refunds with optional filtering
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum number of refunds |
+| `paymentIntentId` | `string` | No | Filter by payment intent ID |
+| `chargeId` | `string` | No | Filter by charge ID |
+| `startingAfter` | `string` | No | Cursor for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listRefundsAction",
+  "provider": "Stripe",
+  "action": "listRefunds",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "paymentIntentId", "parameterValue": "'your-paymentIntentId'" },
+    { "parameterName": "chargeId", "parameterValue": "'your-chargeId'" },
+    { "parameterName": "startingAfter", "parameterValue": "'your-startingAfter'" }
+  ],
+  "contextPropertyName": "listRefundsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.listRefunds({
+  limit: /* number */,
+  paymentIntentId: /* string */,
+  chargeId: /* string */,
+  startingAfter: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.listRefunds({
+  limit: /* number */,
+  paymentIntentId: /* string */,
+  chargeId: /* string */,
+  startingAfter: /* string */,
+});
+```
+
+---
+
+#### `getCharge`
+
+**Get Charge**
+
+Retrieves a charge by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `chargeId` | `string` | Yes | The ID of the charge |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getChargeAction",
+  "provider": "Stripe",
+  "action": "getCharge",
+  "parameters": [
+    { "parameterName": "chargeId", "parameterValue": "'your-chargeId'" }
+  ],
+  "contextPropertyName": "getChargeResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.getCharge({
+  chargeId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.getCharge({
+  chargeId: /* string */,
+});
+```
+
+---
+
+#### `listCharges`
+
+**List Charges**
+
+Lists charges with optional filtering
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum number of charges |
+| `customerId` | `string` | No | Filter by customer ID |
+| `paymentIntentId` | `string` | No | Filter by payment intent ID |
+| `startingAfter` | `string` | No | Cursor for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listChargesAction",
+  "provider": "Stripe",
+  "action": "listCharges",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "customerId", "parameterValue": "'your-customerId'" },
+    { "parameterName": "paymentIntentId", "parameterValue": "'your-paymentIntentId'" },
+    { "parameterName": "startingAfter", "parameterValue": "'your-startingAfter'" }
+  ],
+  "contextPropertyName": "listChargesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.listCharges({
+  limit: /* number */,
+  customerId: /* string */,
+  paymentIntentId: /* string */,
+  startingAfter: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.listCharges({
+  limit: /* number */,
+  customerId: /* string */,
+  paymentIntentId: /* string */,
+  startingAfter: /* string */,
+});
+```
+
+---
+
+### Subscriptions
+
+#### `createSubscription`
+
+**Create Subscription**
+
+Creates a new subscription
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `customerId` | `string` | Yes | ID of the customer |
+| `items` | `Array<Object>` | Yes | Array of subscription items |
+| `items` | `string` | Yes | Price ID for the item |
+| `items` | `number` | No | Quantity for the item |
+| `collectionMethod` | `string` | No | Collection method |
+| `trialPeriodDays` | `number` | No | Number of trial days |
+| `metadata` | `Object` | No | Set of key-value pairs |
+| `cancelAtPeriodEnd` | `boolean` | No | Cancel at period end |
+| `defaultPaymentMethod` | `string` | No | Default payment method ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createSubscriptionAction",
+  "provider": "Stripe",
+  "action": "createSubscription",
+  "parameters": [
+    { "parameterName": "customerId", "parameterValue": "'your-customerId'" },
+    { "parameterName": "items", "parameterValue": "'your-items'" },
+    { "parameterName": "items", "parameterValue": "'your-items'" },
+    { "parameterName": "items", "parameterValue": "0" },
+    { "parameterName": "collectionMethod", "parameterValue": "'your-collectionMethod'" },
+    { "parameterName": "trialPeriodDays", "parameterValue": "0" },
+    { "parameterName": "metadata", "parameterValue": "{}" },
+    { "parameterName": "cancelAtPeriodEnd", "parameterValue": "true" },
+    { "parameterName": "defaultPaymentMethod", "parameterValue": "'your-defaultPaymentMethod'" }
+  ],
+  "contextPropertyName": "createSubscriptionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.createSubscription({
+  customerId: /* string */,
+  items: /* Array<Object> */,
+  items: /* string */,
+  items: /* number */,
+  collectionMethod: /* string */,
+  trialPeriodDays: /* number */,
+  metadata: /* Object */,
+  cancelAtPeriodEnd: /* boolean */,
+  defaultPaymentMethod: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.createSubscription({
+  customerId: /* string */,
+  items: /* Array<Object> */,
+  items: /* string */,
+  items: /* number */,
+  collectionMethod: /* string */,
+  trialPeriodDays: /* number */,
+  metadata: /* Object */,
+  cancelAtPeriodEnd: /* boolean */,
+  defaultPaymentMethod: /* string */,
+});
+```
+
+---
+
+#### `getSubscription`
+
+**Get Subscription**
+
+Retrieves a subscription by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `subscriptionId` | `string` | Yes | The ID of the subscription |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getSubscriptionAction",
+  "provider": "Stripe",
+  "action": "getSubscription",
+  "parameters": [
+    { "parameterName": "subscriptionId", "parameterValue": "'your-subscriptionId'" }
+  ],
+  "contextPropertyName": "getSubscriptionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.getSubscription({
+  subscriptionId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.getSubscription({
+  subscriptionId: /* string */,
+});
+```
+
+---
+
+#### `updateSubscription`
+
+**Update Subscription**
+
+Updates a subscription
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `subscriptionId` | `string` | Yes | The ID of the subscription |
+| `items` | `Array<Object>` | No | Updated subscription items |
+| `metadata` | `Object` | No | Updated metadata |
+| `cancelAtPeriodEnd` | `boolean` | No | Cancel at period end |
+| `defaultPaymentMethod` | `string` | No | Default payment method ID |
+| `prorationBehavior` | `string` | No | Proration behavior |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateSubscriptionAction",
+  "provider": "Stripe",
+  "action": "updateSubscription",
+  "parameters": [
+    { "parameterName": "subscriptionId", "parameterValue": "'your-subscriptionId'" },
+    { "parameterName": "items", "parameterValue": "'your-items'" },
+    { "parameterName": "metadata", "parameterValue": "{}" },
+    { "parameterName": "cancelAtPeriodEnd", "parameterValue": "true" },
+    { "parameterName": "defaultPaymentMethod", "parameterValue": "'your-defaultPaymentMethod'" },
+    { "parameterName": "prorationBehavior", "parameterValue": "'your-prorationBehavior'" }
+  ],
+  "contextPropertyName": "updateSubscriptionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.updateSubscription({
+  subscriptionId: /* string */,
+  items: /* Array<Object> */,
+  metadata: /* Object */,
+  cancelAtPeriodEnd: /* boolean */,
+  defaultPaymentMethod: /* string */,
+  prorationBehavior: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.updateSubscription({
+  subscriptionId: /* string */,
+  items: /* Array<Object> */,
+  metadata: /* Object */,
+  cancelAtPeriodEnd: /* boolean */,
+  defaultPaymentMethod: /* string */,
+  prorationBehavior: /* string */,
+});
+```
+
+---
+
+#### `cancelSubscription`
+
+**Cancel Subscription**
+
+Cancels a subscription
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `subscriptionId` | `string` | Yes | The ID of the subscription |
+| `invoiceNow` | `boolean` | No | Generate final invoice immediately |
+| `prorate` | `boolean` | No | Prorate final invoice |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "cancelSubscriptionAction",
+  "provider": "Stripe",
+  "action": "cancelSubscription",
+  "parameters": [
+    { "parameterName": "subscriptionId", "parameterValue": "'your-subscriptionId'" },
+    { "parameterName": "invoiceNow", "parameterValue": "true" },
+    { "parameterName": "prorate", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "cancelSubscriptionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.cancelSubscription({
+  subscriptionId: /* string */,
+  invoiceNow: /* boolean */,
+  prorate: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.cancelSubscription({
+  subscriptionId: /* string */,
+  invoiceNow: /* boolean */,
+  prorate: /* boolean */,
+});
+```
+
+---
+
+#### `listSubscriptions`
+
+**List Subscriptions**
+
+Lists subscriptions with optional filtering
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum number of subscriptions |
+| `customerId` | `string` | No | Filter by customer ID |
+| `priceId` | `string` | No | Filter by price ID |
+| `status` | `string` | No | Filter by status |
+| `startingAfter` | `string` | No | Cursor for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listSubscriptionsAction",
+  "provider": "Stripe",
+  "action": "listSubscriptions",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "customerId", "parameterValue": "'your-customerId'" },
+    { "parameterName": "priceId", "parameterValue": "'your-priceId'" },
+    { "parameterName": "status", "parameterValue": "'your-status'" },
+    { "parameterName": "startingAfter", "parameterValue": "'your-startingAfter'" }
+  ],
+  "contextPropertyName": "listSubscriptionsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.listSubscriptions({
+  limit: /* number */,
+  customerId: /* string */,
+  priceId: /* string */,
+  status: /* string */,
+  startingAfter: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.listSubscriptions({
+  limit: /* number */,
+  customerId: /* string */,
+  priceId: /* string */,
+  status: /* string */,
+  startingAfter: /* string */,
+});
+```
+
+---
+
+### Invoices
+
+#### `createInvoice`
+
+**Create Invoice**
+
+Creates a new invoice
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `customerId` | `string` | Yes | ID of the customer |
+| `description` | `string` | No | Description of the invoice |
+| `metadata` | `Object` | No | Set of key-value pairs |
+| `collectionMethod` | `string` | No | Collection method |
+| `dueDate` | `number` | No | Due date as Unix timestamp |
+| `autoAdvance` | `boolean` | No | Auto-finalize invoice |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createInvoiceAction",
+  "provider": "Stripe",
+  "action": "createInvoice",
+  "parameters": [
+    { "parameterName": "customerId", "parameterValue": "'your-customerId'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "metadata", "parameterValue": "{}" },
+    { "parameterName": "collectionMethod", "parameterValue": "'your-collectionMethod'" },
+    { "parameterName": "dueDate", "parameterValue": "0" },
+    { "parameterName": "autoAdvance", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "createInvoiceResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.createInvoice({
+  customerId: /* string */,
+  description: /* string */,
+  metadata: /* Object */,
+  collectionMethod: /* string */,
+  dueDate: /* number */,
+  autoAdvance: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.createInvoice({
+  customerId: /* string */,
+  description: /* string */,
+  metadata: /* Object */,
+  collectionMethod: /* string */,
+  dueDate: /* number */,
+  autoAdvance: /* boolean */,
+});
+```
+
+---
+
+#### `getInvoice`
+
+**Get Invoice**
+
+Retrieves an invoice by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `invoiceId` | `string` | Yes | The ID of the invoice |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getInvoiceAction",
+  "provider": "Stripe",
+  "action": "getInvoice",
+  "parameters": [
+    { "parameterName": "invoiceId", "parameterValue": "'your-invoiceId'" }
+  ],
+  "contextPropertyName": "getInvoiceResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.getInvoice({
+  invoiceId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.getInvoice({
+  invoiceId: /* string */,
+});
+```
+
+---
+
+#### `finalizeInvoice`
+
+**Finalize Invoice**
+
+Finalizes a draft invoice
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `invoiceId` | `string` | Yes | The ID of the invoice |
+| `autoAdvance` | `boolean` | No | Auto-advance after finalization |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "finalizeInvoiceAction",
+  "provider": "Stripe",
+  "action": "finalizeInvoice",
+  "parameters": [
+    { "parameterName": "invoiceId", "parameterValue": "'your-invoiceId'" },
+    { "parameterName": "autoAdvance", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "finalizeInvoiceResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.finalizeInvoice({
+  invoiceId: /* string */,
+  autoAdvance: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.finalizeInvoice({
+  invoiceId: /* string */,
+  autoAdvance: /* boolean */,
+});
+```
+
+---
+
+#### `payInvoice`
+
+**Pay Invoice**
+
+Pays an invoice
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `invoiceId` | `string` | Yes | The ID of the invoice |
+| `paymentMethod` | `string` | No | Payment method ID to use |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "payInvoiceAction",
+  "provider": "Stripe",
+  "action": "payInvoice",
+  "parameters": [
+    { "parameterName": "invoiceId", "parameterValue": "'your-invoiceId'" },
+    { "parameterName": "paymentMethod", "parameterValue": "'your-paymentMethod'" }
+  ],
+  "contextPropertyName": "payInvoiceResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.payInvoice({
+  invoiceId: /* string */,
+  paymentMethod: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.payInvoice({
+  invoiceId: /* string */,
+  paymentMethod: /* string */,
+});
+```
+
+---
+
+#### `voidInvoice`
+
+**Void Invoice**
+
+Voids an invoice
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `invoiceId` | `string` | Yes | The ID of the invoice |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "voidInvoiceAction",
+  "provider": "Stripe",
+  "action": "voidInvoice",
+  "parameters": [
+    { "parameterName": "invoiceId", "parameterValue": "'your-invoiceId'" }
+  ],
+  "contextPropertyName": "voidInvoiceResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.voidInvoice({
+  invoiceId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.voidInvoice({
+  invoiceId: /* string */,
+});
+```
+
+---
+
+#### `sendInvoice`
+
+**Send Invoice**
+
+Sends an invoice to the customer
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `invoiceId` | `string` | Yes | The ID of the invoice |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "sendInvoiceAction",
+  "provider": "Stripe",
+  "action": "sendInvoice",
+  "parameters": [
+    { "parameterName": "invoiceId", "parameterValue": "'your-invoiceId'" }
+  ],
+  "contextPropertyName": "sendInvoiceResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.sendInvoice({
+  invoiceId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.sendInvoice({
+  invoiceId: /* string */,
+});
+```
+
+---
+
+#### `listInvoices`
+
+**List Invoices**
+
+Lists invoices with optional filtering
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum number of invoices |
+| `customerId` | `string` | No | Filter by customer ID |
+| `subscriptionId` | `string` | No | Filter by subscription ID |
+| `status` | `string` | No | Filter by status |
+| `startingAfter` | `string` | No | Cursor for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listInvoicesAction",
+  "provider": "Stripe",
+  "action": "listInvoices",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "customerId", "parameterValue": "'your-customerId'" },
+    { "parameterName": "subscriptionId", "parameterValue": "'your-subscriptionId'" },
+    { "parameterName": "status", "parameterValue": "'your-status'" },
+    { "parameterName": "startingAfter", "parameterValue": "'your-startingAfter'" }
+  ],
+  "contextPropertyName": "listInvoicesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.listInvoices({
+  limit: /* number */,
+  customerId: /* string */,
+  subscriptionId: /* string */,
+  status: /* string */,
+  startingAfter: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.listInvoices({
+  limit: /* number */,
+  customerId: /* string */,
+  subscriptionId: /* string */,
+  status: /* string */,
+  startingAfter: /* string */,
+});
+```
+
+---
+
+#### `createInvoiceItem`
+
+**Create Invoice Item**
+
+Creates a new invoice item
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `customerId` | `string` | Yes | ID of the customer |
+| `amount` | `number` | No | Amount in cents |
+| `currency` | `string` | No | Currency code |
+| `priceId` | `string` | No | Price ID to use |
+| `invoiceId` | `string` | No | Invoice ID to attach to |
+| `description` | `string` | No | Description of the item |
+| `quantity` | `number` | No | Quantity |
+| `metadata` | `Object` | No | Set of key-value pairs |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createInvoiceItemAction",
+  "provider": "Stripe",
+  "action": "createInvoiceItem",
+  "parameters": [
+    { "parameterName": "customerId", "parameterValue": "'your-customerId'" },
+    { "parameterName": "amount", "parameterValue": "0" },
+    { "parameterName": "currency", "parameterValue": "'your-currency'" },
+    { "parameterName": "priceId", "parameterValue": "'your-priceId'" },
+    { "parameterName": "invoiceId", "parameterValue": "'your-invoiceId'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "quantity", "parameterValue": "0" },
+    { "parameterName": "metadata", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "createInvoiceItemResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.createInvoiceItem({
+  customerId: /* string */,
+  amount: /* number */,
+  currency: /* string */,
+  priceId: /* string */,
+  invoiceId: /* string */,
+  description: /* string */,
+  quantity: /* number */,
+  metadata: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.createInvoiceItem({
+  customerId: /* string */,
+  amount: /* number */,
+  currency: /* string */,
+  priceId: /* string */,
+  invoiceId: /* string */,
+  description: /* string */,
+  quantity: /* number */,
+  metadata: /* Object */,
+});
+```
+
+---
+
+#### `deleteInvoiceItem`
+
+**Delete Invoice Item**
+
+Deletes an invoice item
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `invoiceItemId` | `string` | Yes | The ID of the invoice item |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteInvoiceItemAction",
+  "provider": "Stripe",
+  "action": "deleteInvoiceItem",
+  "parameters": [
+    { "parameterName": "invoiceItemId", "parameterValue": "'your-invoiceItemId'" }
+  ],
+  "contextPropertyName": "deleteInvoiceItemResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.deleteInvoiceItem({
+  invoiceItemId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.deleteInvoiceItem({
+  invoiceItemId: /* string */,
+});
+```
+
+---
+
+### Payment
+
+#### `attachPaymentMethod`
+
+**Attach Payment Method**
+
+Attaches a payment method to a customer
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `paymentMethodId` | `string` | Yes | The ID of the payment method |
+| `customerId` | `string` | Yes | The ID of the customer |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "attachPaymentMethodAction",
+  "provider": "Stripe",
+  "action": "attachPaymentMethod",
+  "parameters": [
+    { "parameterName": "paymentMethodId", "parameterValue": "'your-paymentMethodId'" },
+    { "parameterName": "customerId", "parameterValue": "'your-customerId'" }
+  ],
+  "contextPropertyName": "attachPaymentMethodResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.attachPaymentMethod({
+  paymentMethodId: /* string */,
+  customerId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.attachPaymentMethod({
+  paymentMethodId: /* string */,
+  customerId: /* string */,
+});
+```
+
+---
+
+#### `detachPaymentMethod`
+
+**Detach Payment Method**
+
+Detaches a payment method from a customer
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `paymentMethodId` | `string` | Yes | The ID of the payment method |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "detachPaymentMethodAction",
+  "provider": "Stripe",
+  "action": "detachPaymentMethod",
+  "parameters": [
+    { "parameterName": "paymentMethodId", "parameterValue": "'your-paymentMethodId'" }
+  ],
+  "contextPropertyName": "detachPaymentMethodResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.detachPaymentMethod({
+  paymentMethodId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.detachPaymentMethod({
+  paymentMethodId: /* string */,
+});
+```
+
+---
+
+#### `getPaymentMethod`
+
+**Get Payment Method**
+
+Retrieves a payment method by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `paymentMethodId` | `string` | Yes | The ID of the payment method |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getPaymentMethodAction",
+  "provider": "Stripe",
+  "action": "getPaymentMethod",
+  "parameters": [
+    { "parameterName": "paymentMethodId", "parameterValue": "'your-paymentMethodId'" }
+  ],
+  "contextPropertyName": "getPaymentMethodResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.getPaymentMethod({
+  paymentMethodId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.getPaymentMethod({
+  paymentMethodId: /* string */,
+});
+```
+
+---
+
+#### `listPaymentMethods`
+
+**List Payment Methods**
+
+Lists payment methods for a customer
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `customerId` | `string` | Yes | The ID of the customer |
+| `type` | `string` | No | Type of payment method |
+| `limit` | `number` | No | Maximum number of payment methods |
+| `startingAfter` | `string` | No | Cursor for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listPaymentMethodsAction",
+  "provider": "Stripe",
+  "action": "listPaymentMethods",
+  "parameters": [
+    { "parameterName": "customerId", "parameterValue": "'your-customerId'" },
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "startingAfter", "parameterValue": "'your-startingAfter'" }
+  ],
+  "contextPropertyName": "listPaymentMethodsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.listPaymentMethods({
+  customerId: /* string */,
+  type: /* string */,
+  limit: /* number */,
+  startingAfter: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.listPaymentMethods({
+  customerId: /* string */,
+  type: /* string */,
+  limit: /* number */,
+  startingAfter: /* string */,
+});
+```
+
+---
+
+### Balance
+
+#### `getBalance`
+
+**Get Balance**
+
+Retrieves the current account balance
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _Stripe.getBalance()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.getBalance();
+```
+
+---
+
+#### `listBalanceTransactions`
+
+**List Balance Transactions**
+
+Lists balance transactions with optional filtering
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum number of transactions |
+| `type` | `string` | No | Filter by transaction type |
+| `startingAfter` | `string` | No | Cursor for pagination |
+| `createdAfter` | `number` | No | Filter by creation date (Unix timestamp) |
+| `createdBefore` | `number` | No | Filter by creation date (Unix timestamp) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listBalanceTransactionsAction",
+  "provider": "Stripe",
+  "action": "listBalanceTransactions",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "startingAfter", "parameterValue": "'your-startingAfter'" },
+    { "parameterName": "createdAfter", "parameterValue": "0" },
+    { "parameterName": "createdBefore", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listBalanceTransactionsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.listBalanceTransactions({
+  limit: /* number */,
+  type: /* string */,
+  startingAfter: /* string */,
+  createdAfter: /* number */,
+  createdBefore: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.listBalanceTransactions({
+  limit: /* number */,
+  type: /* string */,
+  startingAfter: /* string */,
+  createdAfter: /* number */,
+  createdBefore: /* number */,
+});
+```
+
+---
+
+### Coupons
+
+#### `createCoupon`
+
+**Create Coupon**
+
+Creates a new coupon
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `percentOff` | `number` | No | Percentage discount (0-100) |
+| `amountOff` | `number` | No | Amount discount in cents |
+| `currency` | `string` | No | Currency for amount_off |
+| `duration` | `string` | No | Duration (forever, once, repeating) |
+| `durationInMonths` | `number` | No | Months for repeating duration |
+| `name` | `string` | No | Name of the coupon |
+| `id` | `string` | No | Custom coupon ID |
+| `metadata` | `Object` | No | Set of key-value pairs |
+| `maxRedemptions` | `number` | No | Maximum times coupon can be used |
+| `redeemBy` | `number` | No | Unix timestamp for expiration |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createCouponAction",
+  "provider": "Stripe",
+  "action": "createCoupon",
+  "parameters": [
+    { "parameterName": "percentOff", "parameterValue": "0" },
+    { "parameterName": "amountOff", "parameterValue": "0" },
+    { "parameterName": "currency", "parameterValue": "'your-currency'" },
+    { "parameterName": "duration", "parameterValue": "'your-duration'" },
+    { "parameterName": "durationInMonths", "parameterValue": "0" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "id", "parameterValue": "'your-id'" },
+    { "parameterName": "metadata", "parameterValue": "{}" },
+    { "parameterName": "maxRedemptions", "parameterValue": "0" },
+    { "parameterName": "redeemBy", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "createCouponResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.createCoupon({
+  percentOff: /* number */,
+  amountOff: /* number */,
+  currency: /* string */,
+  duration: /* string */,
+  durationInMonths: /* number */,
+  name: /* string */,
+  id: /* string */,
+  metadata: /* Object */,
+  maxRedemptions: /* number */,
+  redeemBy: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.createCoupon({
+  percentOff: /* number */,
+  amountOff: /* number */,
+  currency: /* string */,
+  duration: /* string */,
+  durationInMonths: /* number */,
+  name: /* string */,
+  id: /* string */,
+  metadata: /* Object */,
+  maxRedemptions: /* number */,
+  redeemBy: /* number */,
+});
+```
+
+---
+
+#### `getCoupon`
+
+**Get Coupon**
+
+Retrieves a coupon by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `couponId` | `string` | Yes | The ID of the coupon |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getCouponAction",
+  "provider": "Stripe",
+  "action": "getCoupon",
+  "parameters": [
+    { "parameterName": "couponId", "parameterValue": "'your-couponId'" }
+  ],
+  "contextPropertyName": "getCouponResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.getCoupon({
+  couponId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.getCoupon({
+  couponId: /* string */,
+});
+```
+
+---
+
+#### `deleteCoupon`
+
+**Delete Coupon**
+
+Deletes a coupon
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `couponId` | `string` | Yes | The ID of the coupon |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteCouponAction",
+  "provider": "Stripe",
+  "action": "deleteCoupon",
+  "parameters": [
+    { "parameterName": "couponId", "parameterValue": "'your-couponId'" }
+  ],
+  "contextPropertyName": "deleteCouponResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.deleteCoupon({
+  couponId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.deleteCoupon({
+  couponId: /* string */,
+});
+```
+
+---
+
+#### `listCoupons`
+
+**List Coupons**
+
+Lists coupons
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum number of coupons |
+| `startingAfter` | `string` | No | Cursor for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listCouponsAction",
+  "provider": "Stripe",
+  "action": "listCoupons",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "startingAfter", "parameterValue": "'your-startingAfter'" }
+  ],
+  "contextPropertyName": "listCouponsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.listCoupons({
+  limit: /* number */,
+  startingAfter: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.listCoupons({
+  limit: /* number */,
+  startingAfter: /* string */,
+});
+```
+
+---
+
+### Checkout
+
+#### `createCheckoutSession`
+
+**Create Checkout Session**
+
+Creates a checkout session
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `successUrl` | `string` | Yes | URL to redirect on success |
+| `cancelUrl` | `string` | No | URL to redirect on cancel |
+| `mode` | `string` | No | Session mode (payment, setup, subscription) |
+| `lineItems` | `Array<Object>` | No | Line items for the session |
+| `lineItems` | `string` | Yes | Price ID |
+| `lineItems` | `number` | No | Quantity |
+| `customerId` | `string` | No | Customer ID |
+| `customerEmail` | `string` | No | Customer email |
+| `metadata` | `Object` | No | Set of key-value pairs |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createCheckoutSessionAction",
+  "provider": "Stripe",
+  "action": "createCheckoutSession",
+  "parameters": [
+    { "parameterName": "successUrl", "parameterValue": "'your-successUrl'" },
+    { "parameterName": "cancelUrl", "parameterValue": "'your-cancelUrl'" },
+    { "parameterName": "mode", "parameterValue": "'your-mode'" },
+    { "parameterName": "lineItems", "parameterValue": "'your-lineItems'" },
+    { "parameterName": "lineItems", "parameterValue": "'your-lineItems'" },
+    { "parameterName": "lineItems", "parameterValue": "0" },
+    { "parameterName": "customerId", "parameterValue": "'your-customerId'" },
+    { "parameterName": "customerEmail", "parameterValue": "'your-customerEmail'" },
+    { "parameterName": "metadata", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "createCheckoutSessionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.createCheckoutSession({
+  successUrl: /* string */,
+  cancelUrl: /* string */,
+  mode: /* string */,
+  lineItems: /* Array<Object> */,
+  lineItems: /* string */,
+  lineItems: /* number */,
+  customerId: /* string */,
+  customerEmail: /* string */,
+  metadata: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.createCheckoutSession({
+  successUrl: /* string */,
+  cancelUrl: /* string */,
+  mode: /* string */,
+  lineItems: /* Array<Object> */,
+  lineItems: /* string */,
+  lineItems: /* number */,
+  customerId: /* string */,
+  customerEmail: /* string */,
+  metadata: /* Object */,
+});
+```
+
+---
+
+#### `getCheckoutSession`
+
+**Get Checkout Session**
+
+Retrieves a checkout session
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `sessionId` | `string` | Yes | The ID of the session |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getCheckoutSessionAction",
+  "provider": "Stripe",
+  "action": "getCheckoutSession",
+  "parameters": [
+    { "parameterName": "sessionId", "parameterValue": "'your-sessionId'" }
+  ],
+  "contextPropertyName": "getCheckoutSessionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.getCheckoutSession({
+  sessionId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.getCheckoutSession({
+  sessionId: /* string */,
+});
+```
+
+---
+
+#### `listCheckoutSessions`
+
+**List Checkout Sessions**
+
+Lists checkout sessions
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum number of sessions |
+| `customerId` | `string` | No | Filter by customer ID |
+| `paymentIntentId` | `string` | No | Filter by payment intent ID |
+| `subscriptionId` | `string` | No | Filter by subscription ID |
+| `startingAfter` | `string` | No | Cursor for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listCheckoutSessionsAction",
+  "provider": "Stripe",
+  "action": "listCheckoutSessions",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "customerId", "parameterValue": "'your-customerId'" },
+    { "parameterName": "paymentIntentId", "parameterValue": "'your-paymentIntentId'" },
+    { "parameterName": "subscriptionId", "parameterValue": "'your-subscriptionId'" },
+    { "parameterName": "startingAfter", "parameterValue": "'your-startingAfter'" }
+  ],
+  "contextPropertyName": "listCheckoutSessionsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.listCheckoutSessions({
+  limit: /* number */,
+  customerId: /* string */,
+  paymentIntentId: /* string */,
+  subscriptionId: /* string */,
+  startingAfter: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.listCheckoutSessions({
+  limit: /* number */,
+  customerId: /* string */,
+  paymentIntentId: /* string */,
+  subscriptionId: /* string */,
+  startingAfter: /* string */,
+});
+```
+
+---
+
+### Webhooks
+
+#### `constructWebhookEvent`
+
+**Construct Webhook Event**
+
+Constructs and verifies a webhook event from raw payload and signature
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `payload` | `string|Buffer` | Yes | Raw request body |
+| `signature` | `string` | Yes | Stripe-Signature header value |
+| `webhookSecret` | `string` | Yes | Webhook endpoint secret |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "constructWebhookEventAction",
+  "provider": "Stripe",
+  "action": "constructWebhookEvent",
+  "parameters": [
+    { "parameterName": "payload", "parameterValue": "'your-payload'" },
+    { "parameterName": "signature", "parameterValue": "'your-signature'" },
+    { "parameterName": "webhookSecret", "parameterValue": "'your-webhookSecret'" }
+  ],
+  "contextPropertyName": "constructWebhookEventResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Stripe.constructWebhookEvent({
+  payload: /* string|Buffer */,
+  signature: /* string */,
+  webhookSecret: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Stripe");
+const result = await client.constructWebhookEvent({
+  payload: /* string|Buffer */,
+  signature: /* string */,
+  webhookSecret: /* string */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

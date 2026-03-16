@@ -1,0 +1,1305 @@
+---
+title: "Jira Service Management Integration"
+description: >-
+  Jira Service Management API client for managing service requests, incidents, and customer interactions. Provides full CRUD operations for requests, customers, organizations, and service desk configura
+---
+
+## Jira Service Management
+
+**Category:** Project Management  
+**Provider Key:** `jiraServiceManagement`  
+
+Jira Service Management API client for managing service requests, incidents, and customer interactions. Provides full CRUD operations for requests, customers, organizations, and service desk configuration.
+
+---
+
+## Configuration
+
+To use Jira Service Management in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | Yes | Your Atlassian domain (e.g., 'your-domain.atlassian.net') |
+| `email` | `string` | Yes | Email address for authentication |
+| `apiToken` | `string` | Yes | API token from Atlassian account settings |
+| `serviceDeskId` | `string` | Yes | Default service desk ID for operations |
+| `timeout` | `number` | No | Request timeout in milliseconds |
+
+### Example Configuration
+
+```json
+{
+  "provider": "jiraServiceManagement",
+  "configuration": [
+    { "name": "domain", "value": "your-domain" },
+    { "name": "email", "value": "your-email" },
+    { "name": "apiToken", "value": "your-apiToken" },
+    { "name": "serviceDeskId", "value": "your-serviceDeskId" },
+    { "name": "timeout", "value": 0 }
+  ]
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Service**: `listServiceDesks`, `getServiceDesk`, `getRequestTypes`, `getQueues`, `getQueueIssues`
+- **Requests**: `createRequest`, `getRequest`, `listRequests`, `addComment`, `listComments`, `getRequestStatus`, `transitionRequest`, `attachFile`
+- **Customers**: `createCustomer`, `listCustomers`, `addCustomerToServiceDesk`, `removeCustomerFromServiceDesk`
+- **Organizations**: `createOrganization`, `listOrganizations`, `getOrganization`, `deleteOrganization`, `addUsersToOrganization`, `removeUsersFromOrganization`
+
+---
+
+### Service
+
+#### `listServiceDesks`
+
+**List Service Desks**
+
+List all service desks accessible to the authenticated user
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `start` | `number` | No | Starting index for pagination |
+| `limit` | `number` | No | Maximum results to return |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listServiceDesksAction",
+  "provider": "jiraServiceManagement",
+  "action": "listServiceDesks",
+  "parameters": [
+    { "parameterName": "start", "parameterValue": "0" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listServiceDesksResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.listServiceDesks({
+  start: /* number */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.listServiceDesks({
+  start: /* number */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `getServiceDesk`
+
+**Get Service Desk**
+
+Get details of a specific service desk
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `serviceDeskId` | `string` | No | Service desk ID (uses default if not provided) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getServiceDeskAction",
+  "provider": "jiraServiceManagement",
+  "action": "getServiceDesk",
+  "parameters": [
+    { "parameterName": "serviceDeskId", "parameterValue": "'your-serviceDeskId'" }
+  ],
+  "contextPropertyName": "getServiceDeskResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.getServiceDesk({
+  serviceDeskId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.getServiceDesk({
+  serviceDeskId: /* string */,
+});
+```
+
+---
+
+#### `getRequestTypes`
+
+**Get Request Types**
+
+Get request types for a service desk
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `serviceDeskId` | `string` | No | Service desk ID (uses default if not provided) |
+| `start` | `number` | No | Starting index for pagination |
+| `limit` | `number` | No | Maximum results to return |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getRequestTypesAction",
+  "provider": "jiraServiceManagement",
+  "action": "getRequestTypes",
+  "parameters": [
+    { "parameterName": "serviceDeskId", "parameterValue": "'your-serviceDeskId'" },
+    { "parameterName": "start", "parameterValue": "0" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getRequestTypesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.getRequestTypes({
+  serviceDeskId: /* string */,
+  start: /* number */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.getRequestTypes({
+  serviceDeskId: /* string */,
+  start: /* number */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `getQueues`
+
+**Get Queues**
+
+Get queues for a service desk
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `serviceDeskId` | `string` | No | Service desk ID (uses default if not provided) |
+| `includeCount` | `boolean` | No | Include issue count |
+| `start` | `number` | No | Starting index for pagination |
+| `limit` | `number` | No | Maximum results to return |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getQueuesAction",
+  "provider": "jiraServiceManagement",
+  "action": "getQueues",
+  "parameters": [
+    { "parameterName": "serviceDeskId", "parameterValue": "'your-serviceDeskId'" },
+    { "parameterName": "includeCount", "parameterValue": "true" },
+    { "parameterName": "start", "parameterValue": "0" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getQueuesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.getQueues({
+  serviceDeskId: /* string */,
+  includeCount: /* boolean */,
+  start: /* number */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.getQueues({
+  serviceDeskId: /* string */,
+  includeCount: /* boolean */,
+  start: /* number */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `getQueueIssues`
+
+**Get Queue Issues**
+
+Get issues in a queue
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `queueId` | `string` | Yes | Queue ID |
+| `serviceDeskId` | `string` | No | Service desk ID (uses default if not provided) |
+| `start` | `number` | No | Starting index for pagination |
+| `limit` | `number` | No | Maximum results to return |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getQueueIssuesAction",
+  "provider": "jiraServiceManagement",
+  "action": "getQueueIssues",
+  "parameters": [
+    { "parameterName": "queueId", "parameterValue": "'your-queueId'" },
+    { "parameterName": "serviceDeskId", "parameterValue": "'your-serviceDeskId'" },
+    { "parameterName": "start", "parameterValue": "0" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getQueueIssuesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.getQueueIssues({
+  queueId: /* string */,
+  serviceDeskId: /* string */,
+  start: /* number */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.getQueueIssues({
+  queueId: /* string */,
+  serviceDeskId: /* string */,
+  start: /* number */,
+  limit: /* number */,
+});
+```
+
+---
+
+### Requests
+
+#### `createRequest`
+
+**Create Request**
+
+Create a new customer request (ticket)
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `requestTypeId` | `string` | Yes | Request type ID |
+| `summary` | `string` | Yes | Request summary/title |
+| `description` | `string` | No | Request description |
+| `serviceDeskId` | `string` | No | Service desk ID (uses default if not provided) |
+| `requestFieldValues` | `Object` | No | Additional field values |
+| `requestParticipants` | `Array<string>` | No | Account IDs of participants |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createRequestAction",
+  "provider": "jiraServiceManagement",
+  "action": "createRequest",
+  "parameters": [
+    { "parameterName": "requestTypeId", "parameterValue": "'your-requestTypeId'" },
+    { "parameterName": "summary", "parameterValue": "'your-summary'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "serviceDeskId", "parameterValue": "'your-serviceDeskId'" },
+    { "parameterName": "requestFieldValues", "parameterValue": "{}" },
+    { "parameterName": "requestParticipants", "parameterValue": "'your-requestParticipants'" }
+  ],
+  "contextPropertyName": "createRequestResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.createRequest({
+  requestTypeId: /* string */,
+  summary: /* string */,
+  description: /* string */,
+  serviceDeskId: /* string */,
+  requestFieldValues: /* Object */,
+  requestParticipants: /* Array<string> */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.createRequest({
+  requestTypeId: /* string */,
+  summary: /* string */,
+  description: /* string */,
+  serviceDeskId: /* string */,
+  requestFieldValues: /* Object */,
+  requestParticipants: /* Array<string> */,
+});
+```
+
+---
+
+#### `getRequest`
+
+**Get Request**
+
+Get details of a specific request
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `issueIdOrKey` | `string` | Yes | Issue ID or key |
+| `expand` | `Array<string>` | No | Fields to expand in response |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getRequestAction",
+  "provider": "jiraServiceManagement",
+  "action": "getRequest",
+  "parameters": [
+    { "parameterName": "issueIdOrKey", "parameterValue": "'your-issueIdOrKey'" },
+    { "parameterName": "expand", "parameterValue": "'your-expand'" }
+  ],
+  "contextPropertyName": "getRequestResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.getRequest({
+  issueIdOrKey: /* string */,
+  expand: /* Array<string> */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.getRequest({
+  issueIdOrKey: /* string */,
+  expand: /* Array<string> */,
+});
+```
+
+---
+
+#### `listRequests`
+
+**List Requests**
+
+List all customer requests
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `searchTerm` | `string` | No | Search term to filter requests |
+| `requestStatus` | `Array<string> (`"CLOSED"`, `"OPEN_AWAITING_CUSTOMER"`, `"OPEN_AWAITING_SUPPORT"`, `"RESOLVED"`, `"ALL_OPEN"`)` | No | Filter by status |
+| `serviceDeskId` | `string` | No | Service desk ID (uses default if not provided) |
+| `start` | `number` | No | Starting index for pagination |
+| `limit` | `number` | No | Maximum results to return |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listRequestsAction",
+  "provider": "jiraServiceManagement",
+  "action": "listRequests",
+  "parameters": [
+    { "parameterName": "searchTerm", "parameterValue": "'your-searchTerm'" },
+    { "parameterName": "requestStatus", "parameterValue": "'your-requestStatus'" },
+    { "parameterName": "serviceDeskId", "parameterValue": "'your-serviceDeskId'" },
+    { "parameterName": "start", "parameterValue": "0" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listRequestsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.listRequests({
+  searchTerm: /* string */,
+  requestStatus: /* Array<string> */,
+  serviceDeskId: /* string */,
+  start: /* number */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.listRequests({
+  searchTerm: /* string */,
+  requestStatus: /* Array<string> */,
+  serviceDeskId: /* string */,
+  start: /* number */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `addComment`
+
+**Add Comment**
+
+Add a comment to a request
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `issueIdOrKey` | `string` | Yes | Issue ID or key |
+| `body` | `string` | Yes | Comment body text |
+| `public` | `boolean` | No | Whether comment is public |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "addCommentAction",
+  "provider": "jiraServiceManagement",
+  "action": "addComment",
+  "parameters": [
+    { "parameterName": "issueIdOrKey", "parameterValue": "'your-issueIdOrKey'" },
+    { "parameterName": "body", "parameterValue": "'your-body'" },
+    { "parameterName": "public", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "addCommentResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.addComment({
+  issueIdOrKey: /* string */,
+  body: /* string */,
+  public: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.addComment({
+  issueIdOrKey: /* string */,
+  body: /* string */,
+  public: /* boolean */,
+});
+```
+
+---
+
+#### `listComments`
+
+**List Comments**
+
+List comments on a request
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `issueIdOrKey` | `string` | Yes | Issue ID or key |
+| `public` | `boolean` | No | Filter by public/internal comments |
+| `internal` | `boolean` | No | Include internal comments |
+| `start` | `number` | No | Starting index for pagination |
+| `limit` | `number` | No | Maximum results to return |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listCommentsAction",
+  "provider": "jiraServiceManagement",
+  "action": "listComments",
+  "parameters": [
+    { "parameterName": "issueIdOrKey", "parameterValue": "'your-issueIdOrKey'" },
+    { "parameterName": "public", "parameterValue": "true" },
+    { "parameterName": "internal", "parameterValue": "true" },
+    { "parameterName": "start", "parameterValue": "0" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listCommentsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.listComments({
+  issueIdOrKey: /* string */,
+  public: /* boolean */,
+  internal: /* boolean */,
+  start: /* number */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.listComments({
+  issueIdOrKey: /* string */,
+  public: /* boolean */,
+  internal: /* boolean */,
+  start: /* number */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `getRequestStatus`
+
+**Get Request Status**
+
+Get request status details
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `issueIdOrKey` | `string` | Yes | Issue ID or key |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getRequestStatusAction",
+  "provider": "jiraServiceManagement",
+  "action": "getRequestStatus",
+  "parameters": [
+    { "parameterName": "issueIdOrKey", "parameterValue": "'your-issueIdOrKey'" }
+  ],
+  "contextPropertyName": "getRequestStatusResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.getRequestStatus({
+  issueIdOrKey: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.getRequestStatus({
+  issueIdOrKey: /* string */,
+});
+```
+
+---
+
+#### `transitionRequest`
+
+**Transition Request**
+
+Transition a request to a new status
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `issueIdOrKey` | `string` | Yes | Issue ID or key |
+| `transitionId` | `string` | Yes | Transition ID |
+| `comment` | `string` | No | Optional comment for the transition |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "transitionRequestAction",
+  "provider": "jiraServiceManagement",
+  "action": "transitionRequest",
+  "parameters": [
+    { "parameterName": "issueIdOrKey", "parameterValue": "'your-issueIdOrKey'" },
+    { "parameterName": "transitionId", "parameterValue": "'your-transitionId'" },
+    { "parameterName": "comment", "parameterValue": "'your-comment'" }
+  ],
+  "contextPropertyName": "transitionRequestResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.transitionRequest({
+  issueIdOrKey: /* string */,
+  transitionId: /* string */,
+  comment: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.transitionRequest({
+  issueIdOrKey: /* string */,
+  transitionId: /* string */,
+  comment: /* string */,
+});
+```
+
+---
+
+#### `attachFile`
+
+**Attach File**
+
+Attach file to a request
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `issueIdOrKey` | `string` | Yes | Issue ID or key |
+| `file` | `Buffer|string` | Yes | File content |
+| `filename` | `string` | Yes | File name |
+| `comment` | `string` | No | Optional comment with attachment |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "attachFileAction",
+  "provider": "jiraServiceManagement",
+  "action": "attachFile",
+  "parameters": [
+    { "parameterName": "issueIdOrKey", "parameterValue": "'your-issueIdOrKey'" },
+    { "parameterName": "file", "parameterValue": "'your-file'" },
+    { "parameterName": "filename", "parameterValue": "'your-filename'" },
+    { "parameterName": "comment", "parameterValue": "'your-comment'" }
+  ],
+  "contextPropertyName": "attachFileResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.attachFile({
+  issueIdOrKey: /* string */,
+  file: /* Buffer|string */,
+  filename: /* string */,
+  comment: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.attachFile({
+  issueIdOrKey: /* string */,
+  file: /* Buffer|string */,
+  filename: /* string */,
+  comment: /* string */,
+});
+```
+
+---
+
+### Customers
+
+#### `createCustomer`
+
+**Create Customer**
+
+Create a new customer
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `email` | `string` | Yes | Customer email address |
+| `displayName` | `string` | Yes | Customer display name |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createCustomerAction",
+  "provider": "jiraServiceManagement",
+  "action": "createCustomer",
+  "parameters": [
+    { "parameterName": "email", "parameterValue": "'your-email'" },
+    { "parameterName": "displayName", "parameterValue": "'your-displayName'" }
+  ],
+  "contextPropertyName": "createCustomerResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.createCustomer({
+  email: /* string */,
+  displayName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.createCustomer({
+  email: /* string */,
+  displayName: /* string */,
+});
+```
+
+---
+
+#### `listCustomers`
+
+**List Customers**
+
+List all customers
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | `string` | No | Search query for customers |
+| `start` | `number` | No | Starting index for pagination |
+| `limit` | `number` | No | Maximum results to return |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listCustomersAction",
+  "provider": "jiraServiceManagement",
+  "action": "listCustomers",
+  "parameters": [
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "start", "parameterValue": "0" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listCustomersResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.listCustomers({
+  query: /* string */,
+  start: /* number */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.listCustomers({
+  query: /* string */,
+  start: /* number */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `addCustomerToServiceDesk`
+
+**Add Customer to Service Desk**
+
+Add customer to service desk
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `accountIds` | `Array<string>` | Yes | Account IDs to add |
+| `serviceDeskId` | `string` | No | Service desk ID (uses default if not provided) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "addCustomerToServiceDeskAction",
+  "provider": "jiraServiceManagement",
+  "action": "addCustomerToServiceDesk",
+  "parameters": [
+    { "parameterName": "accountIds", "parameterValue": "'your-accountIds'" },
+    { "parameterName": "serviceDeskId", "parameterValue": "'your-serviceDeskId'" }
+  ],
+  "contextPropertyName": "addCustomerToServiceDeskResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.addCustomerToServiceDesk({
+  accountIds: /* Array<string> */,
+  serviceDeskId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.addCustomerToServiceDesk({
+  accountIds: /* Array<string> */,
+  serviceDeskId: /* string */,
+});
+```
+
+---
+
+#### `removeCustomerFromServiceDesk`
+
+**Remove Customer from Service Desk**
+
+Remove customer from service desk
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `accountIds` | `Array<string>` | Yes | Account IDs to remove |
+| `serviceDeskId` | `string` | No | Service desk ID (uses default if not provided) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "removeCustomerFromServiceDeskAction",
+  "provider": "jiraServiceManagement",
+  "action": "removeCustomerFromServiceDesk",
+  "parameters": [
+    { "parameterName": "accountIds", "parameterValue": "'your-accountIds'" },
+    { "parameterName": "serviceDeskId", "parameterValue": "'your-serviceDeskId'" }
+  ],
+  "contextPropertyName": "removeCustomerFromServiceDeskResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.removeCustomerFromServiceDesk({
+  accountIds: /* Array<string> */,
+  serviceDeskId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.removeCustomerFromServiceDesk({
+  accountIds: /* Array<string> */,
+  serviceDeskId: /* string */,
+});
+```
+
+---
+
+### Organizations
+
+#### `createOrganization`
+
+**Create Organization**
+
+Create an organization
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | Yes | Organization name |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createOrganizationAction",
+  "provider": "jiraServiceManagement",
+  "action": "createOrganization",
+  "parameters": [
+    { "parameterName": "name", "parameterValue": "'your-name'" }
+  ],
+  "contextPropertyName": "createOrganizationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.createOrganization({
+  name: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.createOrganization({
+  name: /* string */,
+});
+```
+
+---
+
+#### `listOrganizations`
+
+**List Organizations**
+
+List all organizations
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `serviceDeskId` | `string` | No | Filter by service desk |
+| `start` | `number` | No | Starting index for pagination |
+| `limit` | `number` | No | Maximum results to return |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listOrganizationsAction",
+  "provider": "jiraServiceManagement",
+  "action": "listOrganizations",
+  "parameters": [
+    { "parameterName": "serviceDeskId", "parameterValue": "'your-serviceDeskId'" },
+    { "parameterName": "start", "parameterValue": "0" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listOrganizationsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.listOrganizations({
+  serviceDeskId: /* string */,
+  start: /* number */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.listOrganizations({
+  serviceDeskId: /* string */,
+  start: /* number */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `getOrganization`
+
+**Get Organization**
+
+Get organization details
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `organizationId` | `string` | Yes | Organization ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getOrganizationAction",
+  "provider": "jiraServiceManagement",
+  "action": "getOrganization",
+  "parameters": [
+    { "parameterName": "organizationId", "parameterValue": "'your-organizationId'" }
+  ],
+  "contextPropertyName": "getOrganizationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.getOrganization({
+  organizationId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.getOrganization({
+  organizationId: /* string */,
+});
+```
+
+---
+
+#### `deleteOrganization`
+
+**Delete Organization**
+
+Delete an organization
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `organizationId` | `string` | Yes | Organization ID to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteOrganizationAction",
+  "provider": "jiraServiceManagement",
+  "action": "deleteOrganization",
+  "parameters": [
+    { "parameterName": "organizationId", "parameterValue": "'your-organizationId'" }
+  ],
+  "contextPropertyName": "deleteOrganizationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.deleteOrganization({
+  organizationId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.deleteOrganization({
+  organizationId: /* string */,
+});
+```
+
+---
+
+#### `addUsersToOrganization`
+
+**Add Users to Organization**
+
+Add users to organization
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `organizationId` | `string` | Yes | Organization ID |
+| `accountIds` | `Array<string>` | Yes | Account IDs to add |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "addUsersToOrganizationAction",
+  "provider": "jiraServiceManagement",
+  "action": "addUsersToOrganization",
+  "parameters": [
+    { "parameterName": "organizationId", "parameterValue": "'your-organizationId'" },
+    { "parameterName": "accountIds", "parameterValue": "'your-accountIds'" }
+  ],
+  "contextPropertyName": "addUsersToOrganizationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.addUsersToOrganization({
+  organizationId: /* string */,
+  accountIds: /* Array<string> */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.addUsersToOrganization({
+  organizationId: /* string */,
+  accountIds: /* Array<string> */,
+});
+```
+
+---
+
+#### `removeUsersFromOrganization`
+
+**Remove Users from Organization**
+
+Remove users from organization
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `organizationId` | `string` | Yes | Organization ID |
+| `accountIds` | `Array<string>` | Yes | Account IDs to remove |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "removeUsersFromOrganizationAction",
+  "provider": "jiraServiceManagement",
+  "action": "removeUsersFromOrganization",
+  "parameters": [
+    { "parameterName": "organizationId", "parameterValue": "'your-organizationId'" },
+    { "parameterName": "accountIds", "parameterValue": "'your-accountIds'" }
+  ],
+  "contextPropertyName": "removeUsersFromOrganizationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _jiraServiceManagement.removeUsersFromOrganization({
+  organizationId: /* string */,
+  accountIds: /* Array<string> */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("jiraServiceManagement");
+const result = await client.removeUsersFromOrganization({
+  organizationId: /* string */,
+  accountIds: /* Array<string> */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

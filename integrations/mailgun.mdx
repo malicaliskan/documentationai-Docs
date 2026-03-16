@@ -1,0 +1,3020 @@
+---
+title: "Mailgun Integration"
+description: >-
+  Mailgun API Client for sending emails, managing domains, suppressions, webhooks, and more. Provides comprehensive access to Mailgun's email delivery and management services. Supports both US and EU re
+---
+
+## Mailgun
+
+**Category:** Email  
+**Provider Key:** `Mailgun`  
+**SDK Packages:** `mailgun.js@^12.4.0`, `form-data@^4.0.5`  
+
+Mailgun API Client for sending emails, managing domains, suppressions, webhooks, and more. Provides comprehensive access to Mailgun's email delivery and management services. Supports both US and EU regions with full CRUD operations on all major resources.
+
+---
+
+## Configuration
+
+To use Mailgun in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `string` | Yes | Mailgun API key (starts with 'key-' or is a private API key) |
+| `domain` | `string` | No | Default domain for sending emails |
+| `url` | `string` | No | API base URL (use 'https://api.eu.mailgun.net' for EU) |
+| `timeout` | `number` | No | Request timeout in milliseconds |
+
+### Example Configuration
+
+```json
+{
+  "provider": "Mailgun",
+  "configuration": [
+    { "name": "apiKey", "value": "your-apiKey" },
+    { "name": "domain", "value": "your-domain" },
+    { "name": "url", "value": "your-url" },
+    { "name": "timeout", "value": 0 }
+  ]
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Messages**: `sendMessage`, `getStoredMessage`, `resendMessage`
+- **Domains**: `listDomains`, `getDomain`, `createDomain`, `updateDomain`, `verifyDomain`, `deleteDomain`
+- **Domain**: `getDomainTracking`, `updateDomainTracking`
+- **Suppressions**: `listSuppressions`, `getSuppression`, `createSuppression`, `deleteSuppression`
+- **Webhooks**: `listWebhooks`, `getWebhook`, `createWebhook`, `updateWebhook`, `deleteWebhook`
+- **Routes**: `listRoutes`, `getRoute`, `createRoute`, `updateRoute`, `deleteRoute`
+- **Mailing**: `listMailingLists`, `getMailingList`, `createMailingList`, `updateMailingList`, `deleteMailingList`, `listMailingListMembers`, `getMailingListMember`, `createMailingListMember`, `createMailingListMembers`, `updateMailingListMember`, `deleteMailingListMember`
+- **Validation**: `validateEmail`
+- **Templates**: `listTemplates`, `getTemplate`, `createTemplate`, `updateTemplate`, `deleteTemplate`
+- **Subaccounts**: `listSubaccounts`, `getSubaccount`, `createSubaccount`, `enableSubaccount`, `disableSubaccount`, `deleteSubaccount`
+- **Metrics**: `getAccountMetrics`, `getAccountUsageMetrics`
+- **Logs**: `getLogs`
+
+---
+
+### Messages
+
+#### `sendMessage`
+
+**Send Email**
+
+Sends an email message through Mailgun
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain to send from (uses default if not specified) |
+| `from` | `string` | Yes | Sender email address (e.g., "Name <email@domain.com>") |
+| `to` | `string|string[]` | Yes | Recipient email address(es) |
+| `cc` | `string` | No | CC recipients |
+| `bcc` | `string` | No | BCC recipients |
+| `subject` | `string` | Yes | Email subject |
+| `text` | `string` | No | Plain text body |
+| `html` | `string` | No | HTML body |
+| `attachment` | `Object[]` | No | Array of attachments with {data, filename} |
+| `inline` | `Object[]` | No | Array of inline images with {data, filename} |
+| `template` | `string` | No | Template name to use |
+| `variables` | `Object` | No | Template variables (h:X-Mailgun-Variables) |
+| `tags` | `string[]` | No | Tags for the message (o:tag) |
+| `tracking` | `boolean` | No | Enable/disable tracking |
+| `trackingClicks` | `boolean` | No | Enable/disable click tracking |
+| `trackingOpens` | `boolean` | No | Enable/disable open tracking |
+| `deliveryTime` | `Date` | No | Scheduled delivery time |
+| `testMode` | `boolean` | No | Send in test mode |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "sendMessageAction",
+  "provider": "Mailgun",
+  "action": "sendMessage",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "from", "parameterValue": "'your-from'" },
+    { "parameterName": "to", "parameterValue": "'your-to'" },
+    { "parameterName": "cc", "parameterValue": "'your-cc'" },
+    { "parameterName": "bcc", "parameterValue": "'your-bcc'" },
+    { "parameterName": "subject", "parameterValue": "'your-subject'" },
+    { "parameterName": "text", "parameterValue": "'your-text'" },
+    { "parameterName": "html", "parameterValue": "'your-html'" },
+    { "parameterName": "attachment", "parameterValue": "'your-attachment'" },
+    { "parameterName": "inline", "parameterValue": "'your-inline'" },
+    { "parameterName": "template", "parameterValue": "'your-template'" },
+    { "parameterName": "variables", "parameterValue": "{}" },
+    { "parameterName": "tags", "parameterValue": "[]" },
+    { "parameterName": "tracking", "parameterValue": "true" },
+    { "parameterName": "trackingClicks", "parameterValue": "true" },
+    { "parameterName": "trackingOpens", "parameterValue": "true" },
+    { "parameterName": "deliveryTime", "parameterValue": "'your-deliveryTime'" },
+    { "parameterName": "testMode", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "sendMessageResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.sendMessage({
+  domain: /* string */,
+  from: /* string */,
+  to: /* string|string[] */,
+  cc: /* string */,
+  bcc: /* string */,
+  subject: /* string */,
+  text: /* string */,
+  html: /* string */,
+  attachment: /* Object[] */,
+  inline: /* Object[] */,
+  template: /* string */,
+  variables: /* Object */,
+  tags: /* string[] */,
+  tracking: /* boolean */,
+  trackingClicks: /* boolean */,
+  trackingOpens: /* boolean */,
+  deliveryTime: /* Date */,
+  testMode: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.sendMessage({
+  domain: /* string */,
+  from: /* string */,
+  to: /* string|string[] */,
+  cc: /* string */,
+  bcc: /* string */,
+  subject: /* string */,
+  text: /* string */,
+  html: /* string */,
+  attachment: /* Object[] */,
+  inline: /* Object[] */,
+  template: /* string */,
+  variables: /* Object */,
+  tags: /* string[] */,
+  tracking: /* boolean */,
+  trackingClicks: /* boolean */,
+  trackingOpens: /* boolean */,
+  deliveryTime: /* Date */,
+  testMode: /* boolean */,
+});
+```
+
+---
+
+#### `getStoredMessage`
+
+**Get Stored Email**
+
+Retrieves a stored email by storage key
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+| `storageKey` | `string` | Yes | Storage key from email events |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getStoredMessageAction",
+  "provider": "Mailgun",
+  "action": "getStoredMessage",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "storageKey", "parameterValue": "'your-storageKey'" }
+  ],
+  "contextPropertyName": "getStoredMessageResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.getStoredMessage({
+  domain: /* string */,
+  storageKey: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.getStoredMessage({
+  domain: /* string */,
+  storageKey: /* string */,
+});
+```
+
+---
+
+#### `resendMessage`
+
+**Resend Email**
+
+Resends an email from storage to specified recipients
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+| `storageKey` | `string` | Yes | Storage key from email events |
+| `recipients` | `string` | Yes | Recipient email addresses (comma-separated) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "resendMessageAction",
+  "provider": "Mailgun",
+  "action": "resendMessage",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "storageKey", "parameterValue": "'your-storageKey'" },
+    { "parameterName": "recipients", "parameterValue": "'your-recipients'" }
+  ],
+  "contextPropertyName": "resendMessageResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.resendMessage({
+  domain: /* string */,
+  storageKey: /* string */,
+  recipients: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.resendMessage({
+  domain: /* string */,
+  storageKey: /* string */,
+  recipients: /* string */,
+});
+```
+
+---
+
+### Domains
+
+#### `listDomains`
+
+**List Domains**
+
+Lists all domains in the account
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum number of records to return |
+| `skip` | `number` | No | Number of records to skip |
+| `state` | `string` | No | Filter by state: 'active', 'unverified', or 'disabled' |
+| `sort` | `string` | No | Sort option: 'name', 'name:asc', or 'name:desc' |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listDomainsAction",
+  "provider": "Mailgun",
+  "action": "listDomains",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "skip", "parameterValue": "0" },
+    { "parameterName": "state", "parameterValue": "'your-state'" },
+    { "parameterName": "sort", "parameterValue": "'your-sort'" }
+  ],
+  "contextPropertyName": "listDomainsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.listDomains({
+  limit: /* number */,
+  skip: /* number */,
+  state: /* string */,
+  sort: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.listDomains({
+  limit: /* number */,
+  skip: /* number */,
+  state: /* string */,
+  sort: /* string */,
+});
+```
+
+---
+
+#### `getDomain`
+
+**Get Domain**
+
+Gets details for a specific domain
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | Yes | Domain name |
+| `extended` | `boolean` | No | Include extended info (dkim_host, mailfrom_host, pod) |
+| `withDns` | `boolean` | No | Include DNS records |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getDomainAction",
+  "provider": "Mailgun",
+  "action": "getDomain",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "extended", "parameterValue": "true" },
+    { "parameterName": "withDns", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "getDomainResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.getDomain({
+  domain: /* string */,
+  extended: /* boolean */,
+  withDns: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.getDomain({
+  domain: /* string */,
+  extended: /* boolean */,
+  withDns: /* boolean */,
+});
+```
+
+---
+
+#### `createDomain`
+
+**Create Domain**
+
+Creates a new domain for sending emails
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | Yes | Domain name (e.g., 'mail.example.com') |
+| `spamAction` | `string` | No | Spam action: 'disabled', 'block', or 'tag' |
+| `wildcard` | `boolean` | No | Accept email for sub-domains |
+| `smtpPassword` | `string` | No | Password for SMTP authentication |
+| `dkimKeySize` | `number` | No | DKIM key size: 1024 or 2048 |
+| `dkimSelector` | `string` | No | DKIM selector |
+| `webScheme` | `string` | No | Web scheme: 'http' or 'https' |
+| `webPrefix` | `string` | No | Web prefix for tracking URLs |
+| `useAutomaticSenderSecurity` | `boolean` | No | Enable automatic sender security |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createDomainAction",
+  "provider": "Mailgun",
+  "action": "createDomain",
+  "parameters": [
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "spamAction", "parameterValue": "'your-spamAction'" },
+    { "parameterName": "wildcard", "parameterValue": "true" },
+    { "parameterName": "smtpPassword", "parameterValue": "'your-smtpPassword'" },
+    { "parameterName": "dkimKeySize", "parameterValue": "0" },
+    { "parameterName": "dkimSelector", "parameterValue": "'your-dkimSelector'" },
+    { "parameterName": "webScheme", "parameterValue": "'your-webScheme'" },
+    { "parameterName": "webPrefix", "parameterValue": "'your-webPrefix'" },
+    { "parameterName": "useAutomaticSenderSecurity", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "createDomainResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.createDomain({
+  name: /* string */,
+  spamAction: /* string */,
+  wildcard: /* boolean */,
+  smtpPassword: /* string */,
+  dkimKeySize: /* number */,
+  dkimSelector: /* string */,
+  webScheme: /* string */,
+  webPrefix: /* string */,
+  useAutomaticSenderSecurity: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.createDomain({
+  name: /* string */,
+  spamAction: /* string */,
+  wildcard: /* boolean */,
+  smtpPassword: /* string */,
+  dkimKeySize: /* number */,
+  dkimSelector: /* string */,
+  webScheme: /* string */,
+  webPrefix: /* string */,
+  useAutomaticSenderSecurity: /* boolean */,
+});
+```
+
+---
+
+#### `updateDomain`
+
+**Update Domain**
+
+Updates domain settings
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | Yes | Domain name to update |
+| `spamAction` | `string` | No | Spam action: 'disabled', 'block', or 'tag' |
+| `wildcard` | `boolean` | No | Accept email for sub-domains |
+| `smtpPassword` | `string` | No | New SMTP password |
+| `webScheme` | `string` | No | Web scheme: 'http' or 'https' |
+| `webPrefix` | `string` | No | Web prefix for tracking URLs |
+| `useAutomaticSenderSecurity` | `boolean` | No | Enable automatic sender security |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateDomainAction",
+  "provider": "Mailgun",
+  "action": "updateDomain",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "spamAction", "parameterValue": "'your-spamAction'" },
+    { "parameterName": "wildcard", "parameterValue": "true" },
+    { "parameterName": "smtpPassword", "parameterValue": "'your-smtpPassword'" },
+    { "parameterName": "webScheme", "parameterValue": "'your-webScheme'" },
+    { "parameterName": "webPrefix", "parameterValue": "'your-webPrefix'" },
+    { "parameterName": "useAutomaticSenderSecurity", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "updateDomainResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.updateDomain({
+  domain: /* string */,
+  spamAction: /* string */,
+  wildcard: /* boolean */,
+  smtpPassword: /* string */,
+  webScheme: /* string */,
+  webPrefix: /* string */,
+  useAutomaticSenderSecurity: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.updateDomain({
+  domain: /* string */,
+  spamAction: /* string */,
+  wildcard: /* boolean */,
+  smtpPassword: /* string */,
+  webScheme: /* string */,
+  webPrefix: /* string */,
+  useAutomaticSenderSecurity: /* boolean */,
+});
+```
+
+---
+
+#### `verifyDomain`
+
+**Verify Domain**
+
+Verifies domain DNS records
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | Yes | Domain name to verify |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "verifyDomainAction",
+  "provider": "Mailgun",
+  "action": "verifyDomain",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" }
+  ],
+  "contextPropertyName": "verifyDomainResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.verifyDomain({
+  domain: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.verifyDomain({
+  domain: /* string */,
+});
+```
+
+---
+
+#### `deleteDomain`
+
+**Delete Domain**
+
+Deletes a domain
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | Yes | Domain name to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteDomainAction",
+  "provider": "Mailgun",
+  "action": "deleteDomain",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" }
+  ],
+  "contextPropertyName": "deleteDomainResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.deleteDomain({
+  domain: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.deleteDomain({
+  domain: /* string */,
+});
+```
+
+---
+
+### Domain
+
+#### `getDomainTracking`
+
+**Get Domain Tracking**
+
+Gets tracking settings for a domain
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | Yes | Domain name |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getDomainTrackingAction",
+  "provider": "Mailgun",
+  "action": "getDomainTracking",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" }
+  ],
+  "contextPropertyName": "getDomainTrackingResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.getDomainTracking({
+  domain: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.getDomainTracking({
+  domain: /* string */,
+});
+```
+
+---
+
+#### `updateDomainTracking`
+
+**Update Domain Tracking**
+
+Updates tracking settings for a domain
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | Yes | Domain name |
+| `type` | `string` | Yes | Tracking type: 'open', 'click', or 'unsubscribe' |
+| `active` | `boolean` | Yes | Enable or disable tracking |
+| `htmlFooter` | `string` | No | HTML footer for unsubscribe (only for type='unsubscribe') |
+| `textFooter` | `string` | No | Text footer for unsubscribe (only for type='unsubscribe') |
+| `placeAtTop` | `boolean` | No | Place open tracking pixel at top (only for type='open') |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateDomainTrackingAction",
+  "provider": "Mailgun",
+  "action": "updateDomainTracking",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "active", "parameterValue": "true" },
+    { "parameterName": "htmlFooter", "parameterValue": "'your-htmlFooter'" },
+    { "parameterName": "textFooter", "parameterValue": "'your-textFooter'" },
+    { "parameterName": "placeAtTop", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "updateDomainTrackingResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.updateDomainTracking({
+  domain: /* string */,
+  type: /* string */,
+  active: /* boolean */,
+  htmlFooter: /* string */,
+  textFooter: /* string */,
+  placeAtTop: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.updateDomainTracking({
+  domain: /* string */,
+  type: /* string */,
+  active: /* boolean */,
+  htmlFooter: /* string */,
+  textFooter: /* string */,
+  placeAtTop: /* boolean */,
+});
+```
+
+---
+
+### Suppressions
+
+#### `listSuppressions`
+
+**List Suppressions**
+
+Lists suppressions for a domain
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+| `type` | `string` | Yes | Suppression type: 'bounces', 'unsubscribes', or 'complaints' |
+| `limit` | `number` | No | Maximum records to return |
+| `page` | `string` | No | Page token for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listSuppressionsAction",
+  "provider": "Mailgun",
+  "action": "listSuppressions",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "page", "parameterValue": "'your-page'" }
+  ],
+  "contextPropertyName": "listSuppressionsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.listSuppressions({
+  domain: /* string */,
+  type: /* string */,
+  limit: /* number */,
+  page: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.listSuppressions({
+  domain: /* string */,
+  type: /* string */,
+  limit: /* number */,
+  page: /* string */,
+});
+```
+
+---
+
+#### `getSuppression`
+
+**Get Suppression**
+
+Gets a specific suppression entry
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+| `type` | `string` | Yes | Suppression type: 'bounces', 'unsubscribes', or 'complaints' |
+| `address` | `string` | Yes | Email address to look up |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getSuppressionAction",
+  "provider": "Mailgun",
+  "action": "getSuppression",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "address", "parameterValue": "'your-address'" }
+  ],
+  "contextPropertyName": "getSuppressionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.getSuppression({
+  domain: /* string */,
+  type: /* string */,
+  address: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.getSuppression({
+  domain: /* string */,
+  type: /* string */,
+  address: /* string */,
+});
+```
+
+---
+
+#### `createSuppression`
+
+**Create Suppression**
+
+Creates a suppression entry
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+| `type` | `string` | Yes | Suppression type: 'bounces', 'unsubscribes', or 'complaints' |
+| `address` | `string` | Yes | Email address to add |
+| `code` | `number` | No | Error code (for bounces, default: 550) |
+| `error` | `string` | No | Error description (for bounces) |
+| `tag` | `string` | No | Tag to unsubscribe from (for unsubscribes, default: '*') |
+| `tags` | `string[]` | No | Tags to unsubscribe from (for unsubscribes) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createSuppressionAction",
+  "provider": "Mailgun",
+  "action": "createSuppression",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "address", "parameterValue": "'your-address'" },
+    { "parameterName": "code", "parameterValue": "0" },
+    { "parameterName": "error", "parameterValue": "'your-error'" },
+    { "parameterName": "tag", "parameterValue": "'your-tag'" },
+    { "parameterName": "tags", "parameterValue": "[]" }
+  ],
+  "contextPropertyName": "createSuppressionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.createSuppression({
+  domain: /* string */,
+  type: /* string */,
+  address: /* string */,
+  code: /* number */,
+  error: /* string */,
+  tag: /* string */,
+  tags: /* string[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.createSuppression({
+  domain: /* string */,
+  type: /* string */,
+  address: /* string */,
+  code: /* number */,
+  error: /* string */,
+  tag: /* string */,
+  tags: /* string[] */,
+});
+```
+
+---
+
+#### `deleteSuppression`
+
+**Delete Suppression**
+
+Deletes a suppression entry
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+| `type` | `string` | Yes | Suppression type: 'bounces', 'unsubscribes', or 'complaints' |
+| `address` | `string` | Yes | Email address to remove |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteSuppressionAction",
+  "provider": "Mailgun",
+  "action": "deleteSuppression",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "address", "parameterValue": "'your-address'" }
+  ],
+  "contextPropertyName": "deleteSuppressionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.deleteSuppression({
+  domain: /* string */,
+  type: /* string */,
+  address: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.deleteSuppression({
+  domain: /* string */,
+  type: /* string */,
+  address: /* string */,
+});
+```
+
+---
+
+### Webhooks
+
+#### `listWebhooks`
+
+**List Webhooks**
+
+Lists all webhooks for a domain
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listWebhooksAction",
+  "provider": "Mailgun",
+  "action": "listWebhooks",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" }
+  ],
+  "contextPropertyName": "listWebhooksResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.listWebhooks({
+  domain: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.listWebhooks({
+  domain: /* string */,
+});
+```
+
+---
+
+#### `getWebhook`
+
+**Get Webhook**
+
+Gets a specific webhook configuration
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+| `id` | `string` | Yes | Webhook type (e.g., 'opened', 'clicked', 'delivered') |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getWebhookAction",
+  "provider": "Mailgun",
+  "action": "getWebhook",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getWebhookResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.getWebhook({
+  domain: /* string */,
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.getWebhook({
+  domain: /* string */,
+  id: /* string */,
+});
+```
+
+---
+
+#### `createWebhook`
+
+**Create Webhook**
+
+Creates a new webhook
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+| `id` | `string` | Yes | Webhook type (e.g., 'opened', 'clicked', 'delivered') |
+| `url` | `string|string[]` | Yes | Webhook URL(s) to receive events |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createWebhookAction",
+  "provider": "Mailgun",
+  "action": "createWebhook",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "id", "parameterValue": "'your-id'" },
+    { "parameterName": "url", "parameterValue": "'your-url'" }
+  ],
+  "contextPropertyName": "createWebhookResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.createWebhook({
+  domain: /* string */,
+  id: /* string */,
+  url: /* string|string[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.createWebhook({
+  domain: /* string */,
+  id: /* string */,
+  url: /* string|string[] */,
+});
+```
+
+---
+
+#### `updateWebhook`
+
+**Update Webhook**
+
+Updates an existing webhook
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+| `id` | `string` | Yes | Webhook type to update |
+| `url` | `string|string[]` | Yes | New webhook URL(s) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateWebhookAction",
+  "provider": "Mailgun",
+  "action": "updateWebhook",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "id", "parameterValue": "'your-id'" },
+    { "parameterName": "url", "parameterValue": "'your-url'" }
+  ],
+  "contextPropertyName": "updateWebhookResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.updateWebhook({
+  domain: /* string */,
+  id: /* string */,
+  url: /* string|string[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.updateWebhook({
+  domain: /* string */,
+  id: /* string */,
+  url: /* string|string[] */,
+});
+```
+
+---
+
+#### `deleteWebhook`
+
+**Delete Webhook**
+
+Deletes a webhook
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+| `id` | `string` | Yes | Webhook type to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteWebhookAction",
+  "provider": "Mailgun",
+  "action": "deleteWebhook",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "deleteWebhookResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.deleteWebhook({
+  domain: /* string */,
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.deleteWebhook({
+  domain: /* string */,
+  id: /* string */,
+});
+```
+
+---
+
+### Routes
+
+#### `listRoutes`
+
+**List Routes**
+
+Lists all routes
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum records to return |
+| `skip` | `number` | No | Number of records to skip |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listRoutesAction",
+  "provider": "Mailgun",
+  "action": "listRoutes",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "skip", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listRoutesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.listRoutes({
+  limit: /* number */,
+  skip: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.listRoutes({
+  limit: /* number */,
+  skip: /* number */,
+});
+```
+
+---
+
+#### `getRoute`
+
+**Get Route**
+
+Gets a specific route by ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Route ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getRouteAction",
+  "provider": "Mailgun",
+  "action": "getRoute",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getRouteResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.getRoute({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.getRoute({
+  id: /* string */,
+});
+```
+
+---
+
+#### `createRoute`
+
+**Create Route**
+
+Creates a new route
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `expression` | `string` | Yes | Route expression (e.g., 'match_recipient(".*@example.com")') |
+| `action` | `string[]` | Yes | Array of actions (e.g., ['forward("http://example.com")', 'stop()']) |
+| `description` | `string` | No | Route description |
+| `priority` | `number` | No | Route priority (lower = higher priority) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createRouteAction",
+  "provider": "Mailgun",
+  "action": "createRoute",
+  "parameters": [
+    { "parameterName": "expression", "parameterValue": "'your-expression'" },
+    { "parameterName": "action", "parameterValue": "[]" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "priority", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "createRouteResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.createRoute({
+  expression: /* string */,
+  action: /* string[] */,
+  description: /* string */,
+  priority: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.createRoute({
+  expression: /* string */,
+  action: /* string[] */,
+  description: /* string */,
+  priority: /* number */,
+});
+```
+
+---
+
+#### `updateRoute`
+
+**Update Route**
+
+Updates an existing route
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Route ID to update |
+| `expression` | `string` | No | New route expression |
+| `action` | `string[]` | No | New actions array |
+| `description` | `string` | No | New description |
+| `priority` | `number` | No | New priority |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateRouteAction",
+  "provider": "Mailgun",
+  "action": "updateRoute",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" },
+    { "parameterName": "expression", "parameterValue": "'your-expression'" },
+    { "parameterName": "action", "parameterValue": "[]" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "priority", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "updateRouteResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.updateRoute({
+  id: /* string */,
+  expression: /* string */,
+  action: /* string[] */,
+  description: /* string */,
+  priority: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.updateRoute({
+  id: /* string */,
+  expression: /* string */,
+  action: /* string[] */,
+  description: /* string */,
+  priority: /* number */,
+});
+```
+
+---
+
+#### `deleteRoute`
+
+**Delete Route**
+
+Deletes a route
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Route ID to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteRouteAction",
+  "provider": "Mailgun",
+  "action": "deleteRoute",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "deleteRouteResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.deleteRoute({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.deleteRoute({
+  id: /* string */,
+});
+```
+
+---
+
+### Mailing
+
+#### `listMailingLists`
+
+**List Mailing Lists**
+
+Lists all mailing lists
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum records to return |
+| `skip` | `number` | No | Number of records to skip |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listMailingListsAction",
+  "provider": "Mailgun",
+  "action": "listMailingLists",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "skip", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listMailingListsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.listMailingLists({
+  limit: /* number */,
+  skip: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.listMailingLists({
+  limit: /* number */,
+  skip: /* number */,
+});
+```
+
+---
+
+#### `getMailingList`
+
+**Get Mailing List**
+
+Gets a specific mailing list
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `address` | `string` | Yes | Mailing list address (e.g., 'list@example.com') |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getMailingListAction",
+  "provider": "Mailgun",
+  "action": "getMailingList",
+  "parameters": [
+    { "parameterName": "address", "parameterValue": "'your-address'" }
+  ],
+  "contextPropertyName": "getMailingListResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.getMailingList({
+  address: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.getMailingList({
+  address: /* string */,
+});
+```
+
+---
+
+#### `createMailingList`
+
+**Create Mailing List**
+
+Creates a new mailing list
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `address` | `string` | Yes | Mailing list address (e.g., 'list@example.com') |
+| `name` | `string` | No | Mailing list name |
+| `description` | `string` | No | Mailing list description |
+| `accessLevel` | `string` | No | Access level: 'readonly', 'members', or 'everyone' |
+| `replyPreference` | `string` | No | Reply preference: 'list' or 'sender' |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createMailingListAction",
+  "provider": "Mailgun",
+  "action": "createMailingList",
+  "parameters": [
+    { "parameterName": "address", "parameterValue": "'your-address'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "accessLevel", "parameterValue": "'your-accessLevel'" },
+    { "parameterName": "replyPreference", "parameterValue": "'your-replyPreference'" }
+  ],
+  "contextPropertyName": "createMailingListResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.createMailingList({
+  address: /* string */,
+  name: /* string */,
+  description: /* string */,
+  accessLevel: /* string */,
+  replyPreference: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.createMailingList({
+  address: /* string */,
+  name: /* string */,
+  description: /* string */,
+  accessLevel: /* string */,
+  replyPreference: /* string */,
+});
+```
+
+---
+
+#### `updateMailingList`
+
+**Update Mailing List**
+
+Updates a mailing list
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `address` | `string` | Yes | Current mailing list address |
+| `newAddress` | `string` | No | New mailing list address |
+| `name` | `string` | No | New name |
+| `description` | `string` | No | New description |
+| `accessLevel` | `string` | No | New access level |
+| `replyPreference` | `string` | No | New reply preference |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateMailingListAction",
+  "provider": "Mailgun",
+  "action": "updateMailingList",
+  "parameters": [
+    { "parameterName": "address", "parameterValue": "'your-address'" },
+    { "parameterName": "newAddress", "parameterValue": "'your-newAddress'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "accessLevel", "parameterValue": "'your-accessLevel'" },
+    { "parameterName": "replyPreference", "parameterValue": "'your-replyPreference'" }
+  ],
+  "contextPropertyName": "updateMailingListResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.updateMailingList({
+  address: /* string */,
+  newAddress: /* string */,
+  name: /* string */,
+  description: /* string */,
+  accessLevel: /* string */,
+  replyPreference: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.updateMailingList({
+  address: /* string */,
+  newAddress: /* string */,
+  name: /* string */,
+  description: /* string */,
+  accessLevel: /* string */,
+  replyPreference: /* string */,
+});
+```
+
+---
+
+#### `deleteMailingList`
+
+**Delete Mailing List**
+
+Deletes a mailing list
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `address` | `string` | Yes | Mailing list address to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteMailingListAction",
+  "provider": "Mailgun",
+  "action": "deleteMailingList",
+  "parameters": [
+    { "parameterName": "address", "parameterValue": "'your-address'" }
+  ],
+  "contextPropertyName": "deleteMailingListResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.deleteMailingList({
+  address: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.deleteMailingList({
+  address: /* string */,
+});
+```
+
+---
+
+#### `listMailingListMembers`
+
+**List Members**
+
+Lists members of a mailing list
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `listAddress` | `string` | Yes | Mailing list address |
+| `limit` | `number` | No | Maximum records to return |
+| `page` | `string` | No | Page token for pagination |
+| `subscribed` | `boolean` | No | Filter by subscription status |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listMailingListMembersAction",
+  "provider": "Mailgun",
+  "action": "listMailingListMembers",
+  "parameters": [
+    { "parameterName": "listAddress", "parameterValue": "'your-listAddress'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "page", "parameterValue": "'your-page'" },
+    { "parameterName": "subscribed", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "listMailingListMembersResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.listMailingListMembers({
+  listAddress: /* string */,
+  limit: /* number */,
+  page: /* string */,
+  subscribed: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.listMailingListMembers({
+  listAddress: /* string */,
+  limit: /* number */,
+  page: /* string */,
+  subscribed: /* boolean */,
+});
+```
+
+---
+
+#### `getMailingListMember`
+
+**Get Member**
+
+Gets a specific member from a mailing list
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `listAddress` | `string` | Yes | Mailing list address |
+| `memberAddress` | `string` | Yes | Member email address |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getMailingListMemberAction",
+  "provider": "Mailgun",
+  "action": "getMailingListMember",
+  "parameters": [
+    { "parameterName": "listAddress", "parameterValue": "'your-listAddress'" },
+    { "parameterName": "memberAddress", "parameterValue": "'your-memberAddress'" }
+  ],
+  "contextPropertyName": "getMailingListMemberResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.getMailingListMember({
+  listAddress: /* string */,
+  memberAddress: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.getMailingListMember({
+  listAddress: /* string */,
+  memberAddress: /* string */,
+});
+```
+
+---
+
+#### `createMailingListMember`
+
+**Add Member**
+
+Adds a member to a mailing list
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `listAddress` | `string` | Yes | Mailing list address |
+| `address` | `string` | Yes | Member email address |
+| `name` | `string` | No | Member name |
+| `vars` | `Object` | No | Custom variables for the member |
+| `subscribed` | `boolean` | No | Subscription status |
+| `upsert` | `boolean` | No | Update if exists |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createMailingListMemberAction",
+  "provider": "Mailgun",
+  "action": "createMailingListMember",
+  "parameters": [
+    { "parameterName": "listAddress", "parameterValue": "'your-listAddress'" },
+    { "parameterName": "address", "parameterValue": "'your-address'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "vars", "parameterValue": "{}" },
+    { "parameterName": "subscribed", "parameterValue": "true" },
+    { "parameterName": "upsert", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "createMailingListMemberResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.createMailingListMember({
+  listAddress: /* string */,
+  address: /* string */,
+  name: /* string */,
+  vars: /* Object */,
+  subscribed: /* boolean */,
+  upsert: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.createMailingListMember({
+  listAddress: /* string */,
+  address: /* string */,
+  name: /* string */,
+  vars: /* Object */,
+  subscribed: /* boolean */,
+  upsert: /* boolean */,
+});
+```
+
+---
+
+#### `createMailingListMembers`
+
+**Add Multiple Members**
+
+Adds multiple members to a mailing list
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `listAddress` | `string` | Yes | Mailing list address |
+| `members` | `Object[]` | Yes | Array of member objects with address, name, vars, subscribed |
+| `upsert` | `boolean` | No | Update existing members |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createMailingListMembersAction",
+  "provider": "Mailgun",
+  "action": "createMailingListMembers",
+  "parameters": [
+    { "parameterName": "listAddress", "parameterValue": "'your-listAddress'" },
+    { "parameterName": "members", "parameterValue": "'your-members'" },
+    { "parameterName": "upsert", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "createMailingListMembersResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.createMailingListMembers({
+  listAddress: /* string */,
+  members: /* Object[] */,
+  upsert: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.createMailingListMembers({
+  listAddress: /* string */,
+  members: /* Object[] */,
+  upsert: /* boolean */,
+});
+```
+
+---
+
+#### `updateMailingListMember`
+
+**Update Member**
+
+Updates a mailing list member
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `listAddress` | `string` | Yes | Mailing list address |
+| `memberAddress` | `string` | Yes | Current member email address |
+| `newAddress` | `string` | No | New email address |
+| `name` | `string` | No | New name |
+| `vars` | `Object` | No | New custom variables |
+| `subscribed` | `boolean` | No | New subscription status |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateMailingListMemberAction",
+  "provider": "Mailgun",
+  "action": "updateMailingListMember",
+  "parameters": [
+    { "parameterName": "listAddress", "parameterValue": "'your-listAddress'" },
+    { "parameterName": "memberAddress", "parameterValue": "'your-memberAddress'" },
+    { "parameterName": "newAddress", "parameterValue": "'your-newAddress'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "vars", "parameterValue": "{}" },
+    { "parameterName": "subscribed", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "updateMailingListMemberResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.updateMailingListMember({
+  listAddress: /* string */,
+  memberAddress: /* string */,
+  newAddress: /* string */,
+  name: /* string */,
+  vars: /* Object */,
+  subscribed: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.updateMailingListMember({
+  listAddress: /* string */,
+  memberAddress: /* string */,
+  newAddress: /* string */,
+  name: /* string */,
+  vars: /* Object */,
+  subscribed: /* boolean */,
+});
+```
+
+---
+
+#### `deleteMailingListMember`
+
+**Remove Member**
+
+Removes a member from a mailing list
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `listAddress` | `string` | Yes | Mailing list address |
+| `memberAddress` | `string` | Yes | Member email address to remove |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteMailingListMemberAction",
+  "provider": "Mailgun",
+  "action": "deleteMailingListMember",
+  "parameters": [
+    { "parameterName": "listAddress", "parameterValue": "'your-listAddress'" },
+    { "parameterName": "memberAddress", "parameterValue": "'your-memberAddress'" }
+  ],
+  "contextPropertyName": "deleteMailingListMemberResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.deleteMailingListMember({
+  listAddress: /* string */,
+  memberAddress: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.deleteMailingListMember({
+  listAddress: /* string */,
+  memberAddress: /* string */,
+});
+```
+
+---
+
+### Validation
+
+#### `validateEmail`
+
+**Validate Email**
+
+Validates a single email address
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `address` | `string` | Yes | Email address to validate |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "validateEmailAction",
+  "provider": "Mailgun",
+  "action": "validateEmail",
+  "parameters": [
+    { "parameterName": "address", "parameterValue": "'your-address'" }
+  ],
+  "contextPropertyName": "validateEmailResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.validateEmail({
+  address: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.validateEmail({
+  address: /* string */,
+});
+```
+
+---
+
+### Templates
+
+#### `listTemplates`
+
+**List Templates**
+
+Lists templates for a domain
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+| `limit` | `number` | No | Maximum records to return |
+| `page` | `string` | No | Page token for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listTemplatesAction",
+  "provider": "Mailgun",
+  "action": "listTemplates",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "page", "parameterValue": "'your-page'" }
+  ],
+  "contextPropertyName": "listTemplatesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.listTemplates({
+  domain: /* string */,
+  limit: /* number */,
+  page: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.listTemplates({
+  domain: /* string */,
+  limit: /* number */,
+  page: /* string */,
+});
+```
+
+---
+
+#### `getTemplate`
+
+**Get Template**
+
+Gets a specific template
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+| `name` | `string` | Yes | Template name |
+| `active` | `boolean` | No | Include active version content |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getTemplateAction",
+  "provider": "Mailgun",
+  "action": "getTemplate",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "active", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "getTemplateResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.getTemplate({
+  domain: /* string */,
+  name: /* string */,
+  active: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.getTemplate({
+  domain: /* string */,
+  name: /* string */,
+  active: /* boolean */,
+});
+```
+
+---
+
+#### `createTemplate`
+
+**Create Template**
+
+Creates a new template
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+| `name` | `string` | Yes | Template name |
+| `description` | `string` | No | Template description |
+| `template` | `string` | No | Template content (HTML) |
+| `tag` | `string` | No | Initial version tag |
+| `engine` | `string` | No | Template engine: 'handlebars' or 'go' |
+| `comment` | `string` | No | Version comment |
+| `headers` | `Object` | No | Headers object with From, Subject, Reply-To |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createTemplateAction",
+  "provider": "Mailgun",
+  "action": "createTemplate",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "template", "parameterValue": "'your-template'" },
+    { "parameterName": "tag", "parameterValue": "'your-tag'" },
+    { "parameterName": "engine", "parameterValue": "'your-engine'" },
+    { "parameterName": "comment", "parameterValue": "'your-comment'" },
+    { "parameterName": "headers", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "createTemplateResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.createTemplate({
+  domain: /* string */,
+  name: /* string */,
+  description: /* string */,
+  template: /* string */,
+  tag: /* string */,
+  engine: /* string */,
+  comment: /* string */,
+  headers: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.createTemplate({
+  domain: /* string */,
+  name: /* string */,
+  description: /* string */,
+  template: /* string */,
+  tag: /* string */,
+  engine: /* string */,
+  comment: /* string */,
+  headers: /* Object */,
+});
+```
+
+---
+
+#### `updateTemplate`
+
+**Update Template**
+
+Updates a template's description
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+| `name` | `string` | Yes | Template name |
+| `description` | `string` | Yes | New description |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateTemplateAction",
+  "provider": "Mailgun",
+  "action": "updateTemplate",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" }
+  ],
+  "contextPropertyName": "updateTemplateResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.updateTemplate({
+  domain: /* string */,
+  name: /* string */,
+  description: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.updateTemplate({
+  domain: /* string */,
+  name: /* string */,
+  description: /* string */,
+});
+```
+
+---
+
+#### `deleteTemplate`
+
+**Delete Template**
+
+Deletes a template and all its versions
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domain` | `string` | No | Domain name |
+| `name` | `string` | Yes | Template name to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteTemplateAction",
+  "provider": "Mailgun",
+  "action": "deleteTemplate",
+  "parameters": [
+    { "parameterName": "domain", "parameterValue": "'your-domain'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" }
+  ],
+  "contextPropertyName": "deleteTemplateResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.deleteTemplate({
+  domain: /* string */,
+  name: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.deleteTemplate({
+  domain: /* string */,
+  name: /* string */,
+});
+```
+
+---
+
+### Subaccounts
+
+#### `listSubaccounts`
+
+**List Subaccounts**
+
+Lists all subaccounts
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum records to return |
+| `skip` | `number` | No | Number of records to skip |
+| `sort` | `string` | No | Sort order: 'asc' or 'desc' |
+| `enabled` | `boolean` | No | Filter by enabled status |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listSubaccountsAction",
+  "provider": "Mailgun",
+  "action": "listSubaccounts",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "skip", "parameterValue": "0" },
+    { "parameterName": "sort", "parameterValue": "'your-sort'" },
+    { "parameterName": "enabled", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "listSubaccountsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.listSubaccounts({
+  limit: /* number */,
+  skip: /* number */,
+  sort: /* string */,
+  enabled: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.listSubaccounts({
+  limit: /* number */,
+  skip: /* number */,
+  sort: /* string */,
+  enabled: /* boolean */,
+});
+```
+
+---
+
+#### `getSubaccount`
+
+**Get Subaccount**
+
+Gets a specific subaccount
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Subaccount ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getSubaccountAction",
+  "provider": "Mailgun",
+  "action": "getSubaccount",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getSubaccountResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.getSubaccount({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.getSubaccount({
+  id: /* string */,
+});
+```
+
+---
+
+#### `createSubaccount`
+
+**Create Subaccount**
+
+Creates a new subaccount
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | Yes | Subaccount name |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createSubaccountAction",
+  "provider": "Mailgun",
+  "action": "createSubaccount",
+  "parameters": [
+    { "parameterName": "name", "parameterValue": "'your-name'" }
+  ],
+  "contextPropertyName": "createSubaccountResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.createSubaccount({
+  name: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.createSubaccount({
+  name: /* string */,
+});
+```
+
+---
+
+#### `enableSubaccount`
+
+**Enable Subaccount**
+
+Enables a subaccount
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Subaccount ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "enableSubaccountAction",
+  "provider": "Mailgun",
+  "action": "enableSubaccount",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "enableSubaccountResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.enableSubaccount({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.enableSubaccount({
+  id: /* string */,
+});
+```
+
+---
+
+#### `disableSubaccount`
+
+**Disable Subaccount**
+
+Disables a subaccount
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Subaccount ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "disableSubaccountAction",
+  "provider": "Mailgun",
+  "action": "disableSubaccount",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "disableSubaccountResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.disableSubaccount({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.disableSubaccount({
+  id: /* string */,
+});
+```
+
+---
+
+#### `deleteSubaccount`
+
+**Delete Subaccount**
+
+Deletes a subaccount
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Subaccount ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteSubaccountAction",
+  "provider": "Mailgun",
+  "action": "deleteSubaccount",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "deleteSubaccountResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.deleteSubaccount({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.deleteSubaccount({
+  id: /* string */,
+});
+```
+
+---
+
+### Metrics
+
+#### `getAccountMetrics`
+
+**Get Account Metrics**
+
+Gets account metrics with filtering
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `start` | `Date|string` | No | Start date (default: 7 days ago) |
+| `end` | `Date|string` | No | End date (default: now) |
+| `resolution` | `string` | No | Resolution: 'hour', 'day', or 'month' |
+| `metrics` | `string[]` | No | Metrics to retrieve (e.g., ['opened_count', 'delivered_count']) |
+| `dimensions` | `string[]` | No | Dimensions to group by |
+| `filter` | `Object` | No | Filter object with AND array |
+| `includeSubaccounts` | `boolean` | No | Include subaccount stats |
+| `includeAggregates` | `boolean` | No | Include aggregates |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getAccountMetricsAction",
+  "provider": "Mailgun",
+  "action": "getAccountMetrics",
+  "parameters": [
+    { "parameterName": "start", "parameterValue": "'your-start'" },
+    { "parameterName": "end", "parameterValue": "'your-end'" },
+    { "parameterName": "resolution", "parameterValue": "'your-resolution'" },
+    { "parameterName": "metrics", "parameterValue": "[]" },
+    { "parameterName": "dimensions", "parameterValue": "[]" },
+    { "parameterName": "filter", "parameterValue": "{}" },
+    { "parameterName": "includeSubaccounts", "parameterValue": "true" },
+    { "parameterName": "includeAggregates", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "getAccountMetricsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.getAccountMetrics({
+  start: /* Date|string */,
+  end: /* Date|string */,
+  resolution: /* string */,
+  metrics: /* string[] */,
+  dimensions: /* string[] */,
+  filter: /* Object */,
+  includeSubaccounts: /* boolean */,
+  includeAggregates: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.getAccountMetrics({
+  start: /* Date|string */,
+  end: /* Date|string */,
+  resolution: /* string */,
+  metrics: /* string[] */,
+  dimensions: /* string[] */,
+  filter: /* Object */,
+  includeSubaccounts: /* boolean */,
+  includeAggregates: /* boolean */,
+});
+```
+
+---
+
+#### `getAccountUsageMetrics`
+
+**Get Usage Metrics**
+
+Gets account usage metrics
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `start` | `Date|string` | No | Start date |
+| `end` | `Date|string` | No | End date |
+| `resolution` | `string` | No | Resolution: 'hour', 'day', or 'month' |
+| `metrics` | `string[]` | No | Metrics to retrieve |
+| `filter` | `Object` | No | Filter object |
+| `includeSubaccounts` | `boolean` | No | Include subaccount stats |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getAccountUsageMetricsAction",
+  "provider": "Mailgun",
+  "action": "getAccountUsageMetrics",
+  "parameters": [
+    { "parameterName": "start", "parameterValue": "'your-start'" },
+    { "parameterName": "end", "parameterValue": "'your-end'" },
+    { "parameterName": "resolution", "parameterValue": "'your-resolution'" },
+    { "parameterName": "metrics", "parameterValue": "[]" },
+    { "parameterName": "filter", "parameterValue": "{}" },
+    { "parameterName": "includeSubaccounts", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "getAccountUsageMetricsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.getAccountUsageMetrics({
+  start: /* Date|string */,
+  end: /* Date|string */,
+  resolution: /* string */,
+  metrics: /* string[] */,
+  filter: /* Object */,
+  includeSubaccounts: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.getAccountUsageMetrics({
+  start: /* Date|string */,
+  end: /* Date|string */,
+  resolution: /* string */,
+  metrics: /* string[] */,
+  filter: /* Object */,
+  includeSubaccounts: /* boolean */,
+});
+```
+
+---
+
+### Logs
+
+#### `getLogs`
+
+**Get Event Logs**
+
+Gets event logs for the account
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `start` | `Date|string` | Yes | Start date (required) |
+| `end` | `Date|string` | Yes | End date (required) |
+| `events` | `string[]` | No | Event types to filter by |
+| `includeTotals` | `boolean` | No | Include totals |
+| `includeSubaccounts` | `boolean` | No | Include subaccount logs |
+| `pagination` | `Object` | No | Pagination options |
+| `filter` | `Object` | No | Filter object |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getLogsAction",
+  "provider": "Mailgun",
+  "action": "getLogs",
+  "parameters": [
+    { "parameterName": "start", "parameterValue": "'your-start'" },
+    { "parameterName": "end", "parameterValue": "'your-end'" },
+    { "parameterName": "events", "parameterValue": "[]" },
+    { "parameterName": "includeTotals", "parameterValue": "true" },
+    { "parameterName": "includeSubaccounts", "parameterValue": "true" },
+    { "parameterName": "pagination", "parameterValue": "{}" },
+    { "parameterName": "filter", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "getLogsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Mailgun.getLogs({
+  start: /* Date|string */,
+  end: /* Date|string */,
+  events: /* string[] */,
+  includeTotals: /* boolean */,
+  includeSubaccounts: /* boolean */,
+  pagination: /* Object */,
+  filter: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Mailgun");
+const result = await client.getLogs({
+  start: /* Date|string */,
+  end: /* Date|string */,
+  events: /* string[] */,
+  includeTotals: /* boolean */,
+  includeSubaccounts: /* boolean */,
+  pagination: /* Object */,
+  filter: /* Object */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

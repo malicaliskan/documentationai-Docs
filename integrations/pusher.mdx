@@ -1,0 +1,889 @@
+---
+title: "Pusher Integration"
+description: >-
+  Pusher API Client for real-time messaging and channel management. Enables triggering events, managing channels, authenticating users, and handling presence channels via the Pusher Channels service.
+---
+
+## Pusher
+
+**Category:** Notifications  
+**Provider Key:** `Pusher`  
+**SDK Packages:** `pusher@^5.2.0`  
+
+Pusher API Client for real-time messaging and channel management. Enables triggering events, managing channels, authenticating users, and handling presence channels via the Pusher Channels service.
+
+---
+
+## Configuration
+
+To use Pusher in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `appId` | `string` | Yes | The Pusher application ID |
+| `key` | `string` | Yes | The Pusher application key |
+| `secret` | `string` | Yes | The Pusher application secret |
+| `cluster` | `string` | Yes | The Pusher cluster (e.g., 'us2', 'eu', 'ap1') |
+| `useTLS` | `boolean` | No | Whether to use TLS for connections |
+| `host` | `string` | No | Optional custom host (overrides cluster) |
+| `port` | `number` | No | Optional custom port |
+| `encryptionMasterKeyBase64` | `string` | No | Base64-encoded 32-byte key for end-to-end encryption |
+| `proxy` | `string` | No | Optional HTTP proxy URL |
+| `timeout` | `number` | No | Request timeout in milliseconds |
+| `keepAlive` | `boolean` | No | Whether to enable keep-alive connections |
+
+### Example Configuration
+
+```json
+{
+  "provider": "Pusher",
+  "configuration": [
+    { "name": "appId", "value": "your-appId" },
+    { "name": "key", "value": "your-key" },
+    { "name": "secret", "value": "your-secret" },
+    { "name": "cluster", "value": "your-cluster" },
+    { "name": "useTLS", "value": false },
+    { "name": "host", "value": "your-host" },
+    { "name": "port", "value": 0 },
+    { "name": "encryptionMasterKeyBase64", "value": "your-encryptionMasterKeyBase64" },
+    { "name": "proxy", "value": "your-proxy" },
+    { "name": "timeout", "value": 0 },
+    { "name": "keepAlive", "value": false }
+  ]
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Events**: `triggerEvent`, `triggerMultipleChannels`, `triggerBatch`, `sendToUser`
+- **Channels**: `listChannels`, `getChannel`, `getChannelUsers`
+- **Authentication**: `authenticateUser`, `authorizeChannel`
+- **Users**: `terminateUserConnections`
+- **Webhooks**: `validateWebhook`
+- **Utilities**: `createSignedQueryString`, `customGet`, `customPost`
+
+---
+
+### Events
+
+#### `triggerEvent`
+
+**Trigger Event**
+
+Triggers an event on a single channel. Sends real-time data to all subscribers of the specified channel.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channel` | `string` | Yes | The channel name (max 200 chars, alphanumeric, '_', '-') |
+| `event` | `string` | Yes | The event name (max 200 chars) |
+| `data` | `Object` | Yes | The event payload data |
+| `socketId` | `string` | No | Socket ID to exclude from receiving the event |
+| `info` | `string (`"subscription_count"`, `"user_count"`, `"subscription_count,user_count"`)` | No | Request subscription/user counts ('subscription_count', 'user_count') |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "triggerEventAction",
+  "provider": "Pusher",
+  "action": "triggerEvent",
+  "parameters": [
+    { "parameterName": "channel", "parameterValue": "'your-channel'" },
+    { "parameterName": "event", "parameterValue": "'your-event'" },
+    { "parameterName": "data", "parameterValue": "{}" },
+    { "parameterName": "socketId", "parameterValue": "'your-socketId'" },
+    { "parameterName": "info", "parameterValue": "'your-info'" }
+  ],
+  "contextPropertyName": "triggerEventResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Pusher.triggerEvent({
+  channel: /* string */,
+  event: /* string */,
+  data: /* Object */,
+  socketId: /* string */,
+  info: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Pusher");
+const result = await client.triggerEvent({
+  channel: /* string */,
+  event: /* string */,
+  data: /* Object */,
+  socketId: /* string */,
+  info: /* string */,
+});
+```
+
+---
+
+#### `triggerMultipleChannels`
+
+**Trigger Multi-Channel Event**
+
+Triggers an event on multiple channels simultaneously. Sends the same event to up to 100 channels in a single request.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channels` | `string[]` | Yes | Array of channel names (max 100) |
+| `event` | `string` | Yes | The event name |
+| `data` | `Object` | Yes | The event payload data |
+| `socketId` | `string` | No | Socket ID to exclude from receiving the event |
+| `info` | `string (`"subscription_count"`, `"user_count"`, `"subscription_count,user_count"`)` | No | Request subscription/user counts |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "triggerMultipleChannelsAction",
+  "provider": "Pusher",
+  "action": "triggerMultipleChannels",
+  "parameters": [
+    { "parameterName": "channels", "parameterValue": "[]" },
+    { "parameterName": "event", "parameterValue": "'your-event'" },
+    { "parameterName": "data", "parameterValue": "{}" },
+    { "parameterName": "socketId", "parameterValue": "'your-socketId'" },
+    { "parameterName": "info", "parameterValue": "'your-info'" }
+  ],
+  "contextPropertyName": "triggerMultipleChannelsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Pusher.triggerMultipleChannels({
+  channels: /* string[] */,
+  event: /* string */,
+  data: /* Object */,
+  socketId: /* string */,
+  info: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Pusher");
+const result = await client.triggerMultipleChannels({
+  channels: /* string[] */,
+  event: /* string */,
+  data: /* Object */,
+  socketId: /* string */,
+  info: /* string */,
+});
+```
+
+---
+
+#### `triggerBatch`
+
+**Trigger Batch Events**
+
+Triggers multiple events in a single batch request. Sends up to 10 different events in one HTTP request for efficiency.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `events` | `Object[]` | Yes | Array of event objects (max 10) |
+| `events` | `string` | Yes | Channel name for this event |
+| `events` | `string` | Yes | Event name |
+| `events` | `Object` | Yes | Event payload data |
+| `events` | `string` | No | Socket ID to exclude |
+| `events` | `string` | No | Request counts for this event |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "triggerBatchAction",
+  "provider": "Pusher",
+  "action": "triggerBatch",
+  "parameters": [
+    { "parameterName": "events", "parameterValue": "'your-events'" },
+    { "parameterName": "events", "parameterValue": "'your-events'" },
+    { "parameterName": "events", "parameterValue": "'your-events'" },
+    { "parameterName": "events", "parameterValue": "{}" },
+    { "parameterName": "events", "parameterValue": "'your-events'" },
+    { "parameterName": "events", "parameterValue": "'your-events'" }
+  ],
+  "contextPropertyName": "triggerBatchResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Pusher.triggerBatch({
+  events: /* Object[] */,
+  events: /* string */,
+  events: /* string */,
+  events: /* Object */,
+  events: /* string */,
+  events: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Pusher");
+const result = await client.triggerBatch({
+  events: /* Object[] */,
+  events: /* string */,
+  events: /* string */,
+  events: /* Object */,
+  events: /* string */,
+  events: /* string */,
+});
+```
+
+---
+
+#### `sendToUser`
+
+**Send to User**
+
+Sends an event to a specific authenticated user. Requires user authentication to be set up on the client side.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `userId` | `string` | Yes | The authenticated user's ID |
+| `event` | `string` | Yes | The event name |
+| `data` | `Object` | Yes | The event payload data |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "sendToUserAction",
+  "provider": "Pusher",
+  "action": "sendToUser",
+  "parameters": [
+    { "parameterName": "userId", "parameterValue": "'your-userId'" },
+    { "parameterName": "event", "parameterValue": "'your-event'" },
+    { "parameterName": "data", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "sendToUserResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Pusher.sendToUser({
+  userId: /* string */,
+  event: /* string */,
+  data: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Pusher");
+const result = await client.sendToUser({
+  userId: /* string */,
+  event: /* string */,
+  data: /* Object */,
+});
+```
+
+---
+
+### Channels
+
+#### `listChannels`
+
+**List Channels**
+
+Retrieves a list of all channels in the application. Returns channels with optional filtering and attribute requests.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `filterByPrefix` | `string` | No | Filter channels by name prefix |
+| `info` | `string` | No | Attributes to return (e.g., 'user_count' for presence channels) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listChannelsAction",
+  "provider": "Pusher",
+  "action": "listChannels",
+  "parameters": [
+    { "parameterName": "filterByPrefix", "parameterValue": "'your-filterByPrefix'" },
+    { "parameterName": "info", "parameterValue": "'your-info'" }
+  ],
+  "contextPropertyName": "listChannelsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Pusher.listChannels({
+  filterByPrefix: /* string */,
+  info: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Pusher");
+const result = await client.listChannels({
+  filterByPrefix: /* string */,
+  info: /* string */,
+});
+```
+
+---
+
+#### `getChannel`
+
+**Get Channel Info**
+
+Retrieves detailed information about a specific channel. Returns subscription count and user count for presence channels.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelName` | `string` | Yes | The name of the channel to query |
+| `info` | `string (`"subscription_count"`, `"user_count"`, `"subscription_count,user_count"`)` | No | Attributes to return ('subscription_count', 'user_count') |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getChannelAction",
+  "provider": "Pusher",
+  "action": "getChannel",
+  "parameters": [
+    { "parameterName": "channelName", "parameterValue": "'your-channelName'" },
+    { "parameterName": "info", "parameterValue": "'your-info'" }
+  ],
+  "contextPropertyName": "getChannelResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Pusher.getChannel({
+  channelName: /* string */,
+  info: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Pusher");
+const result = await client.getChannel({
+  channelName: /* string */,
+  info: /* string */,
+});
+```
+
+---
+
+#### `getChannelUsers`
+
+**Get Channel Users**
+
+Retrieves the list of users subscribed to a presence channel. Only works with presence channels (prefixed with 'presence-').
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelName` | `string` | Yes | The presence channel name (must start with 'presence-') |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getChannelUsersAction",
+  "provider": "Pusher",
+  "action": "getChannelUsers",
+  "parameters": [
+    { "parameterName": "channelName", "parameterValue": "'your-channelName'" }
+  ],
+  "contextPropertyName": "getChannelUsersResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Pusher.getChannelUsers({
+  channelName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Pusher");
+const result = await client.getChannelUsers({
+  channelName: /* string */,
+});
+```
+
+---
+
+### Authentication
+
+#### `authenticateUser`
+
+**Authenticate User**
+
+Authenticates a user for Pusher user authentication. Used in the server-side authentication endpoint for user signin.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `socketId` | `string` | Yes | The socket ID from the client connection |
+| `userData` | `Object` | Yes | User data object |
+| `userData` | `string` | Yes | Unique user identifier (required) |
+| `userData` | `string` | No | User display name |
+| `userData` | `string` | No | User email |
+| `userData` | `string` | No | User avatar URL |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "authenticateUserAction",
+  "provider": "Pusher",
+  "action": "authenticateUser",
+  "parameters": [
+    { "parameterName": "socketId", "parameterValue": "'your-socketId'" },
+    { "parameterName": "userData", "parameterValue": "{}" },
+    { "parameterName": "userData", "parameterValue": "'your-userData'" },
+    { "parameterName": "userData", "parameterValue": "'your-userData'" },
+    { "parameterName": "userData", "parameterValue": "'your-userData'" },
+    { "parameterName": "userData", "parameterValue": "'your-userData'" }
+  ],
+  "contextPropertyName": "authenticateUserResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Pusher.authenticateUser({
+  socketId: /* string */,
+  userData: /* Object */,
+  userData: /* string */,
+  userData: /* string */,
+  userData: /* string */,
+  userData: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Pusher");
+const result = await client.authenticateUser({
+  socketId: /* string */,
+  userData: /* Object */,
+  userData: /* string */,
+  userData: /* string */,
+  userData: /* string */,
+  userData: /* string */,
+});
+```
+
+---
+
+#### `authorizeChannel`
+
+**Authorize Channel**
+
+Authorizes a client to access a private or presence channel. Used in the server-side authorization endpoint.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `socketId` | `string` | Yes | The socket ID from the client connection |
+| `channel` | `string` | Yes | The channel name to authorize |
+| `channelData` | `Object` | No | Additional data for presence channels |
+| `channelData` | `string` | Yes | User ID for presence channel |
+| `channelData` | `Object` | No | Additional user info for presence channel |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "authorizeChannelAction",
+  "provider": "Pusher",
+  "action": "authorizeChannel",
+  "parameters": [
+    { "parameterName": "socketId", "parameterValue": "'your-socketId'" },
+    { "parameterName": "channel", "parameterValue": "'your-channel'" },
+    { "parameterName": "channelData", "parameterValue": "{}" },
+    { "parameterName": "channelData", "parameterValue": "'your-channelData'" },
+    { "parameterName": "channelData", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "authorizeChannelResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Pusher.authorizeChannel({
+  socketId: /* string */,
+  channel: /* string */,
+  channelData: /* Object */,
+  channelData: /* string */,
+  channelData: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Pusher");
+const result = await client.authorizeChannel({
+  socketId: /* string */,
+  channel: /* string */,
+  channelData: /* Object */,
+  channelData: /* string */,
+  channelData: /* Object */,
+});
+```
+
+---
+
+### Users
+
+#### `terminateUserConnections`
+
+**Terminate User Connections**
+
+Terminates all connections for a specific authenticated user. User will need to reconnect after this operation.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `userId` | `string` | Yes | The ID of the user whose connections to terminate |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "terminateUserConnectionsAction",
+  "provider": "Pusher",
+  "action": "terminateUserConnections",
+  "parameters": [
+    { "parameterName": "userId", "parameterValue": "'your-userId'" }
+  ],
+  "contextPropertyName": "terminateUserConnectionsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Pusher.terminateUserConnections({
+  userId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Pusher");
+const result = await client.terminateUserConnections({
+  userId: /* string */,
+});
+```
+
+---
+
+### Webhooks
+
+#### `validateWebhook`
+
+**Validate Webhook**
+
+Validates a webhook request from Pusher. Checks content type, body format, and signature authenticity.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `headers` | `Object` | Yes | Request headers (lowercase keys) |
+| `rawBody` | `string` | Yes | Raw request body string |
+| `additionalTokens` | `Object[]` | No | Additional app tokens to check |
+| `additionalTokens` | `string` | Yes | Additional app key |
+| `additionalTokens` | `string` | Yes | Additional app secret |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "validateWebhookAction",
+  "provider": "Pusher",
+  "action": "validateWebhook",
+  "parameters": [
+    { "parameterName": "headers", "parameterValue": "{}" },
+    { "parameterName": "rawBody", "parameterValue": "'your-rawBody'" },
+    { "parameterName": "additionalTokens", "parameterValue": "'your-additionalTokens'" },
+    { "parameterName": "additionalTokens", "parameterValue": "'your-additionalTokens'" },
+    { "parameterName": "additionalTokens", "parameterValue": "'your-additionalTokens'" }
+  ],
+  "contextPropertyName": "validateWebhookResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Pusher.validateWebhook({
+  headers: /* Object */,
+  rawBody: /* string */,
+  additionalTokens: /* Object[] */,
+  additionalTokens: /* string */,
+  additionalTokens: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Pusher");
+const result = await client.validateWebhook({
+  headers: /* Object */,
+  rawBody: /* string */,
+  additionalTokens: /* Object[] */,
+  additionalTokens: /* string */,
+  additionalTokens: /* string */,
+});
+```
+
+---
+
+### Utilities
+
+#### `createSignedQueryString`
+
+**Create Signed Query String**
+
+Creates a signed query string for manual REST API requests. Useful when using a custom HTTP client.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `method` | `string` | Yes | HTTP method (GET, POST, etc.) |
+| `path` | `string` | Yes | API path (e.g., '/apps/123/events') |
+| `body` | `string` | No | Request body for POST requests |
+| `params` | `Object` | No | Additional query parameters |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createSignedQueryStringAction",
+  "provider": "Pusher",
+  "action": "createSignedQueryString",
+  "parameters": [
+    { "parameterName": "method", "parameterValue": "'your-method'" },
+    { "parameterName": "path", "parameterValue": "'your-path'" },
+    { "parameterName": "body", "parameterValue": "'your-body'" },
+    { "parameterName": "params", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "createSignedQueryStringResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Pusher.createSignedQueryString({
+  method: /* string */,
+  path: /* string */,
+  body: /* string */,
+  params: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Pusher");
+const result = await client.createSignedQueryString({
+  method: /* string */,
+  path: /* string */,
+  body: /* string */,
+  params: /* Object */,
+});
+```
+
+---
+
+#### `customGet`
+
+**Custom GET Request**
+
+Makes a custom GET request to the Pusher API. For accessing endpoints not covered by specific methods.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `path` | `string` | Yes | API path (e.g., '/channels') |
+| `params` | `Object` | No | Query parameters |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "customGetAction",
+  "provider": "Pusher",
+  "action": "customGet",
+  "parameters": [
+    { "parameterName": "path", "parameterValue": "'your-path'" },
+    { "parameterName": "params", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "customGetResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Pusher.customGet({
+  path: /* string */,
+  params: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Pusher");
+const result = await client.customGet({
+  path: /* string */,
+  params: /* Object */,
+});
+```
+
+---
+
+#### `customPost`
+
+**Custom POST Request**
+
+Makes a custom POST request to the Pusher API. For accessing endpoints not covered by specific methods.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `path` | `string` | Yes | API path |
+| `params` | `Object` | No | Query parameters |
+| `body` | `Object` | No | Request body |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "customPostAction",
+  "provider": "Pusher",
+  "action": "customPost",
+  "parameters": [
+    { "parameterName": "path", "parameterValue": "'your-path'" },
+    { "parameterName": "params", "parameterValue": "{}" },
+    { "parameterName": "body", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "customPostResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Pusher.customPost({
+  path: /* string */,
+  params: /* Object */,
+  body: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Pusher");
+const result = await client.customPost({
+  path: /* string */,
+  params: /* Object */,
+  body: /* Object */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

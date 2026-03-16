@@ -1,0 +1,1193 @@
+---
+title: "Slack Integration"
+description: >-
+  Slack API Client for Node.js Provides comprehensive access to Slack's Web API with support for messages, channels, users, and more.
+---
+
+## Slack
+
+**Category:** Messaging  
+**Provider Key:** `Slack`  
+**SDK Packages:** `@slack/web-api@^7.13.0`, `@slack/bolt@^4.6.0`  
+
+Slack API Client for Node.js Provides comprehensive access to Slack's Web API with support for messages, channels, users, and more.
+
+---
+
+## Configuration
+
+To use Slack in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `token` | `string` | Yes | Slack bot token (xoxb-* or xoxp-*) |
+| `timeout` | `number` | No | Request timeout in milliseconds |
+| `logLevel` | `string` | No | Logging level (debug, info, warn, error) |
+
+### Example Configuration
+
+```json
+{
+  "provider": "Slack",
+  "configuration": [
+    { "name": "token", "value": "your-token" },
+    { "name": "timeout", "value": 0 },
+    { "name": "logLevel", "value": "your-logLevel" }
+  ]
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Conversations**: `listConversations`, `createConversation`, `getConversation`, `updateConversation`, `archiveConversation`, `inviteUsersToConversation`, `removeUserFromConversation`
+- **Messages**: `postMessage`, `updateMessage`, `deleteMessage`, `getConversationHistory`
+- **Users**: `listUsers`, `getUser`, `setUserStatus`
+- **Files**: `uploadFile`, `listFiles`, `deleteFile`
+- **Reactions**: `addReaction`, `removeReaction`
+- **DirectMessages**: `openDirectMessage`
+- **Search**: `searchMessages`
+
+---
+
+### Conversations
+
+#### `listConversations`
+
+**List Conversations**
+
+Lists all conversations (channels, direct messages, and group messages).
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `excludeArchived` | `string` | No | Exclude archived conversations (true/false) |
+| `limit` | `number` | No | Maximum number of conversations to return (default: 100) |
+| `cursor` | `string` | No | Pagination cursor |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listConversationsAction",
+  "provider": "Slack",
+  "action": "listConversations",
+  "parameters": [
+    { "parameterName": "excludeArchived", "parameterValue": "'your-excludeArchived'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "cursor", "parameterValue": "'your-cursor'" }
+  ],
+  "contextPropertyName": "listConversationsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.listConversations({
+  excludeArchived: /* string */,
+  limit: /* number */,
+  cursor: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.listConversations({
+  excludeArchived: /* string */,
+  limit: /* number */,
+  cursor: /* string */,
+});
+```
+
+---
+
+#### `createConversation`
+
+**Create Conversation**
+
+Creates a new conversation (channel).
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | Yes | Name of the new channel (required) |
+| `isPrivate` | `boolean` | No | Whether the channel should be private (default: false) |
+| `description` | `string` | No | Channel description/topic |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createConversationAction",
+  "provider": "Slack",
+  "action": "createConversation",
+  "parameters": [
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "isPrivate", "parameterValue": "true" },
+    { "parameterName": "description", "parameterValue": "'your-description'" }
+  ],
+  "contextPropertyName": "createConversationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.createConversation({
+  name: /* string */,
+  isPrivate: /* boolean */,
+  description: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.createConversation({
+  name: /* string */,
+  isPrivate: /* boolean */,
+  description: /* string */,
+});
+```
+
+---
+
+#### `getConversation`
+
+**Get Conversation**
+
+Gets information about a specific conversation.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | Channel ID (required) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getConversationAction",
+  "provider": "Slack",
+  "action": "getConversation",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" }
+  ],
+  "contextPropertyName": "getConversationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.getConversation({
+  channelId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.getConversation({
+  channelId: /* string */,
+});
+```
+
+---
+
+#### `updateConversation`
+
+**Update Conversation**
+
+Updates conversation topic and/or purpose.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | Channel ID (required) |
+| `topic` | `string` | No | Channel topic |
+| `purpose` | `string` | No | Channel purpose |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateConversationAction",
+  "provider": "Slack",
+  "action": "updateConversation",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "topic", "parameterValue": "'your-topic'" },
+    { "parameterName": "purpose", "parameterValue": "'your-purpose'" }
+  ],
+  "contextPropertyName": "updateConversationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.updateConversation({
+  channelId: /* string */,
+  topic: /* string */,
+  purpose: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.updateConversation({
+  channelId: /* string */,
+  topic: /* string */,
+  purpose: /* string */,
+});
+```
+
+---
+
+#### `archiveConversation`
+
+**Archive Conversation**
+
+Archives a conversation.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | Channel ID (required) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "archiveConversationAction",
+  "provider": "Slack",
+  "action": "archiveConversation",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" }
+  ],
+  "contextPropertyName": "archiveConversationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.archiveConversation({
+  channelId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.archiveConversation({
+  channelId: /* string */,
+});
+```
+
+---
+
+#### `inviteUsersToConversation`
+
+**Invite Users to Conversation**
+
+Invites users to a conversation.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | Channel ID (required) |
+| `userIds` | `Array<string>` | Yes | Array of user IDs to invite (required) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "inviteUsersToConversationAction",
+  "provider": "Slack",
+  "action": "inviteUsersToConversation",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "userIds", "parameterValue": "'your-userIds'" }
+  ],
+  "contextPropertyName": "inviteUsersToConversationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.inviteUsersToConversation({
+  channelId: /* string */,
+  userIds: /* Array<string> */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.inviteUsersToConversation({
+  channelId: /* string */,
+  userIds: /* Array<string> */,
+});
+```
+
+---
+
+#### `removeUserFromConversation`
+
+**Remove User from Conversation**
+
+Removes a user from a conversation.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | Channel ID (required) |
+| `userId` | `string` | Yes | User ID to remove (required) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "removeUserFromConversationAction",
+  "provider": "Slack",
+  "action": "removeUserFromConversation",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "userId", "parameterValue": "'your-userId'" }
+  ],
+  "contextPropertyName": "removeUserFromConversationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.removeUserFromConversation({
+  channelId: /* string */,
+  userId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.removeUserFromConversation({
+  channelId: /* string */,
+  userId: /* string */,
+});
+```
+
+---
+
+### Messages
+
+#### `postMessage`
+
+**Post Message**
+
+Posts a message to a conversation.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | Channel ID (required) |
+| `text` | `string` | Yes | Message text |
+| `blocks` | `Array` | No | Block Kit blocks for rich formatting |
+| `threadTimestamp` | `string` | No | Thread timestamp for threaded replies |
+| `replyBroadcast` | `boolean` | No | Broadcast threaded reply to channel |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "postMessageAction",
+  "provider": "Slack",
+  "action": "postMessage",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "text", "parameterValue": "'your-text'" },
+    { "parameterName": "blocks", "parameterValue": "[]" },
+    { "parameterName": "threadTimestamp", "parameterValue": "'your-threadTimestamp'" },
+    { "parameterName": "replyBroadcast", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "postMessageResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.postMessage({
+  channelId: /* string */,
+  text: /* string */,
+  blocks: /* Array */,
+  threadTimestamp: /* string */,
+  replyBroadcast: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.postMessage({
+  channelId: /* string */,
+  text: /* string */,
+  blocks: /* Array */,
+  threadTimestamp: /* string */,
+  replyBroadcast: /* boolean */,
+});
+```
+
+---
+
+#### `updateMessage`
+
+**Update Message**
+
+Updates an existing message.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | Channel ID (required) |
+| `timestamp` | `string` | Yes | Message timestamp (required) |
+| `text` | `string` | No | Updated message text |
+| `blocks` | `Array` | No | Updated Block Kit blocks |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateMessageAction",
+  "provider": "Slack",
+  "action": "updateMessage",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "timestamp", "parameterValue": "'your-timestamp'" },
+    { "parameterName": "text", "parameterValue": "'your-text'" },
+    { "parameterName": "blocks", "parameterValue": "[]" }
+  ],
+  "contextPropertyName": "updateMessageResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.updateMessage({
+  channelId: /* string */,
+  timestamp: /* string */,
+  text: /* string */,
+  blocks: /* Array */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.updateMessage({
+  channelId: /* string */,
+  timestamp: /* string */,
+  text: /* string */,
+  blocks: /* Array */,
+});
+```
+
+---
+
+#### `deleteMessage`
+
+**Delete Message**
+
+Deletes a message.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | Channel ID (required) |
+| `timestamp` | `string` | Yes | Message timestamp (required) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteMessageAction",
+  "provider": "Slack",
+  "action": "deleteMessage",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "timestamp", "parameterValue": "'your-timestamp'" }
+  ],
+  "contextPropertyName": "deleteMessageResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.deleteMessage({
+  channelId: /* string */,
+  timestamp: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.deleteMessage({
+  channelId: /* string */,
+  timestamp: /* string */,
+});
+```
+
+---
+
+#### `getConversationHistory`
+
+**Get Conversation History**
+
+Retrieves conversation history (messages).
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | Channel ID (required) |
+| `limit` | `number` | No | Maximum messages to return (default: 100) |
+| `cursor` | `string` | No | Pagination cursor |
+| `latestTimestamp` | `string` | No | Latest message timestamp (for pagination) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getConversationHistoryAction",
+  "provider": "Slack",
+  "action": "getConversationHistory",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "cursor", "parameterValue": "'your-cursor'" },
+    { "parameterName": "latestTimestamp", "parameterValue": "'your-latestTimestamp'" }
+  ],
+  "contextPropertyName": "getConversationHistoryResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.getConversationHistory({
+  channelId: /* string */,
+  limit: /* number */,
+  cursor: /* string */,
+  latestTimestamp: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.getConversationHistory({
+  channelId: /* string */,
+  limit: /* number */,
+  cursor: /* string */,
+  latestTimestamp: /* string */,
+});
+```
+
+---
+
+### Users
+
+#### `listUsers`
+
+**List Users**
+
+Lists all users in the workspace.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum users to return (default: 100) |
+| `cursor` | `string` | No | Pagination cursor |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listUsersAction",
+  "provider": "Slack",
+  "action": "listUsers",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "cursor", "parameterValue": "'your-cursor'" }
+  ],
+  "contextPropertyName": "listUsersResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.listUsers({
+  limit: /* number */,
+  cursor: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.listUsers({
+  limit: /* number */,
+  cursor: /* string */,
+});
+```
+
+---
+
+#### `getUser`
+
+**Get User**
+
+Gets information about a specific user.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `userId` | `string` | Yes | User ID (required) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getUserAction",
+  "provider": "Slack",
+  "action": "getUser",
+  "parameters": [
+    { "parameterName": "userId", "parameterValue": "'your-userId'" }
+  ],
+  "contextPropertyName": "getUserResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.getUser({
+  userId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.getUser({
+  userId: /* string */,
+});
+```
+
+---
+
+#### `setUserStatus`
+
+**Set User Status**
+
+Sets a user's status and status text.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `statusEmoji` | `string` | Yes | Status emoji (e.g., ':coffee:') |
+| `statusText` | `string` | Yes | Status text message |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "setUserStatusAction",
+  "provider": "Slack",
+  "action": "setUserStatus",
+  "parameters": [
+    { "parameterName": "statusEmoji", "parameterValue": "'your-statusEmoji'" },
+    { "parameterName": "statusText", "parameterValue": "'your-statusText'" }
+  ],
+  "contextPropertyName": "setUserStatusResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.setUserStatus({
+  statusEmoji: /* string */,
+  statusText: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.setUserStatus({
+  statusEmoji: /* string */,
+  statusText: /* string */,
+});
+```
+
+---
+
+### Files
+
+#### `uploadFile`
+
+**Upload File**
+
+Uploads a file to a conversation.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | Channel ID (required) |
+| `filename` | `string` | Yes | File name (required) |
+| `fileContent` | `Buffer|string` | Yes | File content as Buffer or base64 string (required) |
+| `title` | `string` | No | File title |
+| `mimeType` | `string` | No | MIME type of the file |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "uploadFileAction",
+  "provider": "Slack",
+  "action": "uploadFile",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "filename", "parameterValue": "'your-filename'" },
+    { "parameterName": "fileContent", "parameterValue": "'your-fileContent'" },
+    { "parameterName": "title", "parameterValue": "'your-title'" },
+    { "parameterName": "mimeType", "parameterValue": "'your-mimeType'" }
+  ],
+  "contextPropertyName": "uploadFileResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.uploadFile({
+  channelId: /* string */,
+  filename: /* string */,
+  fileContent: /* Buffer|string */,
+  title: /* string */,
+  mimeType: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.uploadFile({
+  channelId: /* string */,
+  filename: /* string */,
+  fileContent: /* Buffer|string */,
+  title: /* string */,
+  mimeType: /* string */,
+});
+```
+
+---
+
+#### `listFiles`
+
+**List Files**
+
+Lists files in the workspace or a specific channel.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | No | Filter by channel ID |
+| `limit` | `number` | No | Maximum files to return (default: 100) |
+| `cursor` | `string` | No | Pagination cursor |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listFilesAction",
+  "provider": "Slack",
+  "action": "listFiles",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "cursor", "parameterValue": "'your-cursor'" }
+  ],
+  "contextPropertyName": "listFilesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.listFiles({
+  channelId: /* string */,
+  limit: /* number */,
+  cursor: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.listFiles({
+  channelId: /* string */,
+  limit: /* number */,
+  cursor: /* string */,
+});
+```
+
+---
+
+#### `deleteFile`
+
+**Delete File**
+
+Deletes a file.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `fileId` | `string` | Yes | File ID (required) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteFileAction",
+  "provider": "Slack",
+  "action": "deleteFile",
+  "parameters": [
+    { "parameterName": "fileId", "parameterValue": "'your-fileId'" }
+  ],
+  "contextPropertyName": "deleteFileResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.deleteFile({
+  fileId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.deleteFile({
+  fileId: /* string */,
+});
+```
+
+---
+
+### Reactions
+
+#### `addReaction`
+
+**Add Reaction**
+
+Adds a reaction emoji to a message.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | Channel ID (required) |
+| `timestamp` | `string` | Yes | Message timestamp (required) |
+| `emoji` | `string` | Yes | Emoji name without colons (e.g., 'thumbsup') (required) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "addReactionAction",
+  "provider": "Slack",
+  "action": "addReaction",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "timestamp", "parameterValue": "'your-timestamp'" },
+    { "parameterName": "emoji", "parameterValue": "'your-emoji'" }
+  ],
+  "contextPropertyName": "addReactionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.addReaction({
+  channelId: /* string */,
+  timestamp: /* string */,
+  emoji: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.addReaction({
+  channelId: /* string */,
+  timestamp: /* string */,
+  emoji: /* string */,
+});
+```
+
+---
+
+#### `removeReaction`
+
+**Remove Reaction**
+
+Removes a reaction emoji from a message.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | Channel ID (required) |
+| `timestamp` | `string` | Yes | Message timestamp (required) |
+| `emoji` | `string` | Yes | Emoji name without colons (required) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "removeReactionAction",
+  "provider": "Slack",
+  "action": "removeReaction",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "timestamp", "parameterValue": "'your-timestamp'" },
+    { "parameterName": "emoji", "parameterValue": "'your-emoji'" }
+  ],
+  "contextPropertyName": "removeReactionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.removeReaction({
+  channelId: /* string */,
+  timestamp: /* string */,
+  emoji: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.removeReaction({
+  channelId: /* string */,
+  timestamp: /* string */,
+  emoji: /* string */,
+});
+```
+
+---
+
+### DirectMessages
+
+#### `openDirectMessage`
+
+**Open Direct Message**
+
+Opens a direct message with a user.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `userId` | `string` | Yes | User ID (required) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "openDirectMessageAction",
+  "provider": "Slack",
+  "action": "openDirectMessage",
+  "parameters": [
+    { "parameterName": "userId", "parameterValue": "'your-userId'" }
+  ],
+  "contextPropertyName": "openDirectMessageResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.openDirectMessage({
+  userId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.openDirectMessage({
+  userId: /* string */,
+});
+```
+
+---
+
+### Search
+
+#### `searchMessages`
+
+**Search Messages**
+
+Searches for messages in the workspace.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | `string` | Yes | Search query (required) |
+| `count` | `number` | No | Maximum results (default: 20) |
+| `sort` | `string` | No | Sort order ('score' or 'timestamp', default: 'score') |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "searchMessagesAction",
+  "provider": "Slack",
+  "action": "searchMessages",
+  "parameters": [
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "count", "parameterValue": "0" },
+    { "parameterName": "sort", "parameterValue": "'your-sort'" }
+  ],
+  "contextPropertyName": "searchMessagesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Slack.searchMessages({
+  query: /* string */,
+  count: /* number */,
+  sort: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Slack");
+const result = await client.searchMessages({
+  query: /* string */,
+  count: /* number */,
+  sort: /* string */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

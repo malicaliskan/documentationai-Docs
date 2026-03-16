@@ -120,20 +120,118 @@
                 "path": "using-integrations-in-mindbricks"
               },
               {
-                "title": "Google Gemini Integration",
-                "path": "google-gemini-integration"
+                "title": "Integration Catalog",
+                "path": "integration-catalog"
               },
               {
-                "title": "Telegram Integration",
-                "path": "telegram-integration"
+                "group": "Cloud Storage",
+                "pages": [
+                  {
+                    "title": "Amazon S3 Integration",
+                    "path": "integrations/amazon-s3"
+                  }
+                ]
               },
               {
-                "title": "Amazon S3 Integration",
-                "path": "amazon-s3-integration"
+                "group": "Payments",
+                "pages": [
+                  {
+                    "title": "Stripe Integration",
+                    "path": "integrations/stripe"
+                  }
+                ]
               },
               {
-                "title": "Google Maps Integration",
-                "path": "google-maps-integration"
+                "group": "AI & Machine Learning",
+                "pages": [
+                  {
+                    "title": "Google Gemini Integration",
+                    "path": "integrations/google-gemini"
+                  },
+                  {
+                    "title": "Hugging Face Integration",
+                    "path": "integrations/hugging-face"
+                  },
+                  {
+                    "title": "OpenAI Integration",
+                    "path": "integrations/open-ai"
+                  }
+                ]
+              },
+              {
+                "group": "Email",
+                "pages": [
+                  {
+                    "title": "Amazon SES Integration",
+                    "path": "integrations/amazon-ses"
+                  },
+                  {
+                    "title": "Mailgun Integration",
+                    "path": "integrations/mailgun"
+                  }
+                ]
+              },
+              {
+                "group": "Messaging",
+                "pages": [
+                  {
+                    "title": "Slack Integration",
+                    "path": "integrations/slack"
+                  },
+                  {
+                    "title": "Telegram Integration",
+                    "path": "integrations/telegram"
+                  }
+                ]
+              },
+              {
+                "group": "Analytics",
+                "pages": [
+                  {
+                    "title": "Google Analytics Integration",
+                    "path": "integrations/google-analytics"
+                  },
+                  {
+                    "title": "Amplitude Integration",
+                    "path": "integrations/amplitude"
+                  }
+                ]
+              },
+              {
+                "group": "Maps & Geolocation",
+                "pages": [
+                  {
+                    "title": "Google Maps Integration",
+                    "path": "integrations/google-maps"
+                  }
+                ]
+              },
+              {
+                "group": "Notifications",
+                "pages": [
+                  {
+                    "title": "Pusher Integration",
+                    "path": "integrations/pusher"
+                  }
+                ]
+              },
+              {
+                "group": "Customer Support",
+                "pages": [
+                  {
+                    "title": "Intercom Integration",
+                    "path": "integrations/intercom"
+                  }
+                ]
+              },
+              {
+                "group": "Project Management",
+                "pages": [
+                  {
+                    "title": "Jira Service Management Integration",
+                    "path": "integrations/jira-service-management"
+                  }
+                ]
               }
             ]
           },

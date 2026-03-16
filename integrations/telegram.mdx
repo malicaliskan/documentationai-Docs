@@ -1,0 +1,710 @@
+---
+title: "Telegram Bot Integration"
+description: >-
+  Telegram Bot API client for sending messages, managing chats, handling media, and bot interactions. Provides comprehensive access to Telegram's Bot API for automation and messaging.
+---
+
+## Telegram Bot
+
+**Category:** Messaging  
+**Provider Key:** `Telegram`  
+
+Telegram Bot API client for sending messages, managing chats, handling media, and bot interactions. Provides comprehensive access to Telegram's Bot API for automation and messaging.
+
+---
+
+## Configuration
+
+To use Telegram Bot in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `botToken` | `string` | Yes | Telegram Bot API token from @BotFather |
+| `baseUrl` | `string` | No | Base URL for API (default: https://api.telegram.org) |
+| `timeout` | `number` | No | Request timeout in milliseconds (default: 30000) |
+
+### Example Configuration
+
+```json
+{
+  "provider": "Telegram",
+  "configuration": [
+    { "name": "botToken", "value": "your-botToken" },
+    { "name": "baseUrl", "value": "your-baseUrl" },
+    { "name": "timeout", "value": 0 }
+  ]
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Messages**: `sendMessage`, `deleteMessage`, `editMessageText`, `forwardMessage`
+- **Media**: `sendPhoto`, `sendDocument`
+- **Updates**: `getUpdates`
+- **Chats**: `getChat`, `getChatAdministrators`
+- **Webhooks**: `setWebhook`, `deleteWebhook`, `getWebhookInfo`
+
+---
+
+### Messages
+
+#### `sendMessage`
+
+**Send Message**
+
+Send a text message to a chat
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `chatId` | `string|number` | Yes | Unique identifier for the target chat or username |
+| `text` | `string` | Yes | Text of the message to be sent |
+| `parseMode` | `string (`"Markdown"`, `"MarkdownV2"`, `"HTML"`)` | No | Parse mode for formatting (Markdown, MarkdownV2, HTML) |
+| `disableWebPagePreview` | `boolean` | No | Disables link previews |
+| `disableNotification` | `boolean` | No | Sends message silently |
+| `replyToMessageId` | `number` | No | If the message is a reply, ID of the original message |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "sendMessageAction",
+  "provider": "Telegram",
+  "action": "sendMessage",
+  "parameters": [
+    { "parameterName": "chatId", "parameterValue": "'your-chatId'" },
+    { "parameterName": "text", "parameterValue": "'your-text'" },
+    { "parameterName": "parseMode", "parameterValue": "'your-parseMode'" },
+    { "parameterName": "disableWebPagePreview", "parameterValue": "true" },
+    { "parameterName": "disableNotification", "parameterValue": "true" },
+    { "parameterName": "replyToMessageId", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "sendMessageResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Telegram.sendMessage({
+  chatId: /* string|number */,
+  text: /* string */,
+  parseMode: /* string */,
+  disableWebPagePreview: /* boolean */,
+  disableNotification: /* boolean */,
+  replyToMessageId: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Telegram");
+const result = await client.sendMessage({
+  chatId: /* string|number */,
+  text: /* string */,
+  parseMode: /* string */,
+  disableWebPagePreview: /* boolean */,
+  disableNotification: /* boolean */,
+  replyToMessageId: /* number */,
+});
+```
+
+---
+
+#### `deleteMessage`
+
+**Delete Message**
+
+Delete a message from a chat
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `chatId` | `string|number` | Yes | Unique identifier for the target chat |
+| `messageId` | `number` | Yes | Identifier of the message to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteMessageAction",
+  "provider": "Telegram",
+  "action": "deleteMessage",
+  "parameters": [
+    { "parameterName": "chatId", "parameterValue": "'your-chatId'" },
+    { "parameterName": "messageId", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "deleteMessageResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Telegram.deleteMessage({
+  chatId: /* string|number */,
+  messageId: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Telegram");
+const result = await client.deleteMessage({
+  chatId: /* string|number */,
+  messageId: /* number */,
+});
+```
+
+---
+
+#### `editMessageText`
+
+**Edit Message Text**
+
+Edit text of a message
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `chatId` | `string|number` | Yes | Unique identifier for the target chat |
+| `messageId` | `number` | Yes | Identifier of the message to edit |
+| `text` | `string` | Yes | New text of the message |
+| `parseMode` | `string (`"Markdown"`, `"MarkdownV2"`, `"HTML"`)` | No | Parse mode for formatting |
+| `disableWebPagePreview` | `boolean` | No | Disables link previews |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "editMessageTextAction",
+  "provider": "Telegram",
+  "action": "editMessageText",
+  "parameters": [
+    { "parameterName": "chatId", "parameterValue": "'your-chatId'" },
+    { "parameterName": "messageId", "parameterValue": "0" },
+    { "parameterName": "text", "parameterValue": "'your-text'" },
+    { "parameterName": "parseMode", "parameterValue": "'your-parseMode'" },
+    { "parameterName": "disableWebPagePreview", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "editMessageTextResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Telegram.editMessageText({
+  chatId: /* string|number */,
+  messageId: /* number */,
+  text: /* string */,
+  parseMode: /* string */,
+  disableWebPagePreview: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Telegram");
+const result = await client.editMessageText({
+  chatId: /* string|number */,
+  messageId: /* number */,
+  text: /* string */,
+  parseMode: /* string */,
+  disableWebPagePreview: /* boolean */,
+});
+```
+
+---
+
+#### `forwardMessage`
+
+**Forward Message**
+
+Forward a message from one chat to another
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `chatId` | `string|number` | Yes | Unique identifier for the target chat |
+| `fromChatId` | `string|number` | Yes | Unique identifier for the chat where the original message was sent |
+| `messageId` | `number` | Yes | Message identifier in the chat specified in fromChatId |
+| `disableNotification` | `boolean` | No | Sends message silently |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "forwardMessageAction",
+  "provider": "Telegram",
+  "action": "forwardMessage",
+  "parameters": [
+    { "parameterName": "chatId", "parameterValue": "'your-chatId'" },
+    { "parameterName": "fromChatId", "parameterValue": "'your-fromChatId'" },
+    { "parameterName": "messageId", "parameterValue": "0" },
+    { "parameterName": "disableNotification", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "forwardMessageResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Telegram.forwardMessage({
+  chatId: /* string|number */,
+  fromChatId: /* string|number */,
+  messageId: /* number */,
+  disableNotification: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Telegram");
+const result = await client.forwardMessage({
+  chatId: /* string|number */,
+  fromChatId: /* string|number */,
+  messageId: /* number */,
+  disableNotification: /* boolean */,
+});
+```
+
+---
+
+### Media
+
+#### `sendPhoto`
+
+**Send Photo**
+
+Send a photo to a chat
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `chatId` | `string|number` | Yes | Unique identifier for the target chat |
+| `photo` | `string` | Yes | Photo URL or file_id |
+| `caption` | `string` | No | Photo caption |
+| `parseMode` | `string (`"Markdown"`, `"MarkdownV2"`, `"HTML"`)` | No | Parse mode for caption formatting |
+| `disableNotification` | `boolean` | No | Sends message silently |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "sendPhotoAction",
+  "provider": "Telegram",
+  "action": "sendPhoto",
+  "parameters": [
+    { "parameterName": "chatId", "parameterValue": "'your-chatId'" },
+    { "parameterName": "photo", "parameterValue": "'your-photo'" },
+    { "parameterName": "caption", "parameterValue": "'your-caption'" },
+    { "parameterName": "parseMode", "parameterValue": "'your-parseMode'" },
+    { "parameterName": "disableNotification", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "sendPhotoResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Telegram.sendPhoto({
+  chatId: /* string|number */,
+  photo: /* string */,
+  caption: /* string */,
+  parseMode: /* string */,
+  disableNotification: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Telegram");
+const result = await client.sendPhoto({
+  chatId: /* string|number */,
+  photo: /* string */,
+  caption: /* string */,
+  parseMode: /* string */,
+  disableNotification: /* boolean */,
+});
+```
+
+---
+
+#### `sendDocument`
+
+**Send Document**
+
+Send a document to a chat
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `chatId` | `string|number` | Yes | Unique identifier for the target chat |
+| `document` | `string` | Yes | Document URL or file_id |
+| `caption` | `string` | No | Document caption |
+| `parseMode` | `string (`"Markdown"`, `"MarkdownV2"`, `"HTML"`)` | No | Parse mode for caption formatting |
+| `disableNotification` | `boolean` | No | Sends message silently |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "sendDocumentAction",
+  "provider": "Telegram",
+  "action": "sendDocument",
+  "parameters": [
+    { "parameterName": "chatId", "parameterValue": "'your-chatId'" },
+    { "parameterName": "document", "parameterValue": "'your-document'" },
+    { "parameterName": "caption", "parameterValue": "'your-caption'" },
+    { "parameterName": "parseMode", "parameterValue": "'your-parseMode'" },
+    { "parameterName": "disableNotification", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "sendDocumentResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Telegram.sendDocument({
+  chatId: /* string|number */,
+  document: /* string */,
+  caption: /* string */,
+  parseMode: /* string */,
+  disableNotification: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Telegram");
+const result = await client.sendDocument({
+  chatId: /* string|number */,
+  document: /* string */,
+  caption: /* string */,
+  parseMode: /* string */,
+  disableNotification: /* boolean */,
+});
+```
+
+---
+
+### Updates
+
+#### `getUpdates`
+
+**Get Updates**
+
+Get updates (messages, callbacks, etc.) from the bot
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `offset` | `number` | No | Identifier of the first update to be returned |
+| `limit` | `number` | No | Limits the number of updates to be retrieved (1-100) |
+| `timeout` | `number` | No | Timeout in seconds for long polling (0-50) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getUpdatesAction",
+  "provider": "Telegram",
+  "action": "getUpdates",
+  "parameters": [
+    { "parameterName": "offset", "parameterValue": "0" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "timeout", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getUpdatesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Telegram.getUpdates({
+  offset: /* number */,
+  limit: /* number */,
+  timeout: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Telegram");
+const result = await client.getUpdates({
+  offset: /* number */,
+  limit: /* number */,
+  timeout: /* number */,
+});
+```
+
+---
+
+### Chats
+
+#### `getChat`
+
+**Get Chat Info**
+
+Get information about a chat
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `chatId` | `string|number` | Yes | Unique identifier for the target chat |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getChatAction",
+  "provider": "Telegram",
+  "action": "getChat",
+  "parameters": [
+    { "parameterName": "chatId", "parameterValue": "'your-chatId'" }
+  ],
+  "contextPropertyName": "getChatResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Telegram.getChat({
+  chatId: /* string|number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Telegram");
+const result = await client.getChat({
+  chatId: /* string|number */,
+});
+```
+
+---
+
+#### `getChatAdministrators`
+
+**Get Chat Admins**
+
+Get a list of administrators in a chat
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `chatId` | `string|number` | Yes | Unique identifier for the target chat |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getChatAdministratorsAction",
+  "provider": "Telegram",
+  "action": "getChatAdministrators",
+  "parameters": [
+    { "parameterName": "chatId", "parameterValue": "'your-chatId'" }
+  ],
+  "contextPropertyName": "getChatAdministratorsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Telegram.getChatAdministrators({
+  chatId: /* string|number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Telegram");
+const result = await client.getChatAdministrators({
+  chatId: /* string|number */,
+});
+```
+
+---
+
+### Webhooks
+
+#### `setWebhook`
+
+**Set Webhook**
+
+Set a webhook URL for receiving updates
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `url` | `string` | Yes | HTTPS URL to send updates to |
+| `maxConnections` | `number` | No | Maximum allowed number of simultaneous connections (1-100) |
+| `allowedUpdates` | `Array<string>` | No | List of update types to receive |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "setWebhookAction",
+  "provider": "Telegram",
+  "action": "setWebhook",
+  "parameters": [
+    { "parameterName": "url", "parameterValue": "'your-url'" },
+    { "parameterName": "maxConnections", "parameterValue": "0" },
+    { "parameterName": "allowedUpdates", "parameterValue": "'your-allowedUpdates'" }
+  ],
+  "contextPropertyName": "setWebhookResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Telegram.setWebhook({
+  url: /* string */,
+  maxConnections: /* number */,
+  allowedUpdates: /* Array<string> */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Telegram");
+const result = await client.setWebhook({
+  url: /* string */,
+  maxConnections: /* number */,
+  allowedUpdates: /* Array<string> */,
+});
+```
+
+---
+
+#### `deleteWebhook`
+
+**Delete Webhook**
+
+Delete the webhook
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `dropPendingUpdates` | `boolean` | No | Pass True to drop all pending updates |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteWebhookAction",
+  "provider": "Telegram",
+  "action": "deleteWebhook",
+  "parameters": [
+    { "parameterName": "dropPendingUpdates", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "deleteWebhookResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Telegram.deleteWebhook({
+  dropPendingUpdates: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Telegram");
+const result = await client.deleteWebhook({
+  dropPendingUpdates: /* boolean */,
+});
+```
+
+---
+
+#### `getWebhookInfo`
+
+**Get Webhook Info**
+
+Get current webhook status
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _Telegram.getWebhookInfo()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Telegram");
+const result = await client.getWebhookInfo();
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

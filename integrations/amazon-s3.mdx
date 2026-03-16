@@ -1,0 +1,686 @@
+---
+title: "Amazon S3 Integration"
+description: >-
+  Amazon S3 client for object storage operations including bucket management, file upload/download, and access control. Provides comprehensive S3 functionality for storing and retrieving any amount of d
+---
+
+## Amazon S3
+
+**Category:** Cloud Storage  
+**Provider Key:** `amazonS3`  
+**SDK Packages:** `@aws-sdk/client-s3@^3.943.0`, `@aws-sdk/lib-storage@^3.943.0`, `@aws-sdk/s3-request-presigner@^3.943.0`  
+
+Amazon S3 client for object storage operations including bucket management, file upload/download, and access control. Provides comprehensive S3 functionality for storing and retrieving any amount of data from anywhere on the web.
+
+---
+
+## Configuration
+
+To use Amazon S3 in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `accessKeyId` | `string` | Yes | AWS Access Key ID |
+| `secretAccessKey` | `string` | Yes | AWS Secret Access Key |
+| `region` | `string` | Yes | AWS region (e.g., 'us-east-1') |
+| `endpoint` | `string` | No | Custom S3 endpoint URL (optional, for S3-compatible services) |
+| `forcePathStyle` | `boolean` | No | Force path-style URLs (optional, default: false) |
+
+### Example Configuration
+
+```json
+{
+  "provider": "amazonS3",
+  "configuration": [
+    { "name": "accessKeyId", "value": "your-accessKeyId" },
+    { "name": "secretAccessKey", "value": "your-secretAccessKey" },
+    { "name": "region", "value": "your-region" },
+    { "name": "endpoint", "value": "your-endpoint" },
+    { "name": "forcePathStyle", "value": false }
+  ]
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Buckets**: `listBuckets`, `createBucket`, `deleteBucket`, `bucketExists`
+- **Objects**: `listObjects`, `putObject`, `uploadLargeObject`, `getObject`, `getObjectMetadata`, `deleteObject`, `copyObject`, `generatePresignedUrl`
+
+---
+
+### Buckets
+
+#### `listBuckets`
+
+**List Buckets**
+
+Lists all S3 buckets in the account
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _amazonS3.listBuckets()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonS3");
+const result = await client.listBuckets();
+```
+
+---
+
+#### `createBucket`
+
+**Create Bucket**
+
+Creates a new S3 bucket
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `bucketName` | `string` | Yes | Name of the bucket to create |
+| `acl` | `string` | No | Access control list (private, public-read, etc.) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createBucketAction",
+  "provider": "amazonS3",
+  "action": "createBucket",
+  "parameters": [
+    { "parameterName": "bucketName", "parameterValue": "'your-bucketName'" },
+    { "parameterName": "acl", "parameterValue": "'your-acl'" }
+  ],
+  "contextPropertyName": "createBucketResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonS3.createBucket({
+  bucketName: /* string */,
+  acl: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonS3");
+const result = await client.createBucket({
+  bucketName: /* string */,
+  acl: /* string */,
+});
+```
+
+---
+
+#### `deleteBucket`
+
+**Delete Bucket**
+
+Deletes an S3 bucket
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `bucketName` | `string` | Yes | Name of the bucket to delete |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteBucketAction",
+  "provider": "amazonS3",
+  "action": "deleteBucket",
+  "parameters": [
+    { "parameterName": "bucketName", "parameterValue": "'your-bucketName'" }
+  ],
+  "contextPropertyName": "deleteBucketResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonS3.deleteBucket({
+  bucketName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonS3");
+const result = await client.deleteBucket({
+  bucketName: /* string */,
+});
+```
+
+---
+
+#### `bucketExists`
+
+**Check Bucket Exists**
+
+Checks if a bucket exists and is accessible
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `bucketName` | `string` | Yes | Name of the bucket to check |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "bucketExistsAction",
+  "provider": "amazonS3",
+  "action": "bucketExists",
+  "parameters": [
+    { "parameterName": "bucketName", "parameterValue": "'your-bucketName'" }
+  ],
+  "contextPropertyName": "bucketExistsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonS3.bucketExists({
+  bucketName: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonS3");
+const result = await client.bucketExists({
+  bucketName: /* string */,
+});
+```
+
+---
+
+### Objects
+
+#### `listObjects`
+
+**List Objects**
+
+Lists objects in a bucket
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `bucketName` | `string` | Yes | Name of the bucket |
+| `prefix` | `string` | No | Prefix to filter objects |
+| `maxKeys` | `number` | No | Maximum number of objects to return |
+| `continuationToken` | `string` | No | Token for pagination |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listObjectsAction",
+  "provider": "amazonS3",
+  "action": "listObjects",
+  "parameters": [
+    { "parameterName": "bucketName", "parameterValue": "'your-bucketName'" },
+    { "parameterName": "prefix", "parameterValue": "'your-prefix'" },
+    { "parameterName": "maxKeys", "parameterValue": "0" },
+    { "parameterName": "continuationToken", "parameterValue": "'your-continuationToken'" }
+  ],
+  "contextPropertyName": "listObjectsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonS3.listObjects({
+  bucketName: /* string */,
+  prefix: /* string */,
+  maxKeys: /* number */,
+  continuationToken: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonS3");
+const result = await client.listObjects({
+  bucketName: /* string */,
+  prefix: /* string */,
+  maxKeys: /* number */,
+  continuationToken: /* string */,
+});
+```
+
+---
+
+#### `putObject`
+
+**Upload Object**
+
+Uploads an object to S3
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `bucketName` | `string` | Yes | Name of the bucket |
+| `key` | `string` | Yes | Object key/path |
+| `body` | `Buffer|Stream|string` | Yes | Object content |
+| `contentType` | `string` | No | MIME type of the object |
+| `metadata` | `Object` | No | User-defined metadata |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "putObjectAction",
+  "provider": "amazonS3",
+  "action": "putObject",
+  "parameters": [
+    { "parameterName": "bucketName", "parameterValue": "'your-bucketName'" },
+    { "parameterName": "key", "parameterValue": "'your-key'" },
+    { "parameterName": "body", "parameterValue": "'your-body'" },
+    { "parameterName": "contentType", "parameterValue": "'your-contentType'" },
+    { "parameterName": "metadata", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "putObjectResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonS3.putObject({
+  bucketName: /* string */,
+  key: /* string */,
+  body: /* Buffer|Stream|string */,
+  contentType: /* string */,
+  metadata: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonS3");
+const result = await client.putObject({
+  bucketName: /* string */,
+  key: /* string */,
+  body: /* Buffer|Stream|string */,
+  contentType: /* string */,
+  metadata: /* Object */,
+});
+```
+
+---
+
+#### `uploadLargeObject`
+
+**Upload Large Object**
+
+Uploads large objects using multipart upload
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `bucketName` | `string` | Yes | Name of the bucket |
+| `key` | `string` | Yes | Object key/path |
+| `body` | `Stream` | Yes | Object content stream |
+| `contentType` | `string` | No | MIME type of the object |
+| `metadata` | `Object` | No | User-defined metadata |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "uploadLargeObjectAction",
+  "provider": "amazonS3",
+  "action": "uploadLargeObject",
+  "parameters": [
+    { "parameterName": "bucketName", "parameterValue": "'your-bucketName'" },
+    { "parameterName": "key", "parameterValue": "'your-key'" },
+    { "parameterName": "body", "parameterValue": "'your-body'" },
+    { "parameterName": "contentType", "parameterValue": "'your-contentType'" },
+    { "parameterName": "metadata", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "uploadLargeObjectResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonS3.uploadLargeObject({
+  bucketName: /* string */,
+  key: /* string */,
+  body: /* Stream */,
+  contentType: /* string */,
+  metadata: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonS3");
+const result = await client.uploadLargeObject({
+  bucketName: /* string */,
+  key: /* string */,
+  body: /* Stream */,
+  contentType: /* string */,
+  metadata: /* Object */,
+});
+```
+
+---
+
+#### `getObject`
+
+**Download Object**
+
+Downloads an object from S3
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `bucketName` | `string` | Yes | Name of the bucket |
+| `key` | `string` | Yes | Object key/path |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getObjectAction",
+  "provider": "amazonS3",
+  "action": "getObject",
+  "parameters": [
+    { "parameterName": "bucketName", "parameterValue": "'your-bucketName'" },
+    { "parameterName": "key", "parameterValue": "'your-key'" }
+  ],
+  "contextPropertyName": "getObjectResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonS3.getObject({
+  bucketName: /* string */,
+  key: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonS3");
+const result = await client.getObject({
+  bucketName: /* string */,
+  key: /* string */,
+});
+```
+
+---
+
+#### `getObjectMetadata`
+
+**Get Object Metadata**
+
+Gets object metadata without downloading the content
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `bucketName` | `string` | Yes | Name of the bucket |
+| `key` | `string` | Yes | Object key/path |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getObjectMetadataAction",
+  "provider": "amazonS3",
+  "action": "getObjectMetadata",
+  "parameters": [
+    { "parameterName": "bucketName", "parameterValue": "'your-bucketName'" },
+    { "parameterName": "key", "parameterValue": "'your-key'" }
+  ],
+  "contextPropertyName": "getObjectMetadataResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonS3.getObjectMetadata({
+  bucketName: /* string */,
+  key: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonS3");
+const result = await client.getObjectMetadata({
+  bucketName: /* string */,
+  key: /* string */,
+});
+```
+
+---
+
+#### `deleteObject`
+
+**Delete Object**
+
+Deletes an object from S3
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `bucketName` | `string` | Yes | Name of the bucket |
+| `key` | `string` | Yes | Object key/path |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteObjectAction",
+  "provider": "amazonS3",
+  "action": "deleteObject",
+  "parameters": [
+    { "parameterName": "bucketName", "parameterValue": "'your-bucketName'" },
+    { "parameterName": "key", "parameterValue": "'your-key'" }
+  ],
+  "contextPropertyName": "deleteObjectResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonS3.deleteObject({
+  bucketName: /* string */,
+  key: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonS3");
+const result = await client.deleteObject({
+  bucketName: /* string */,
+  key: /* string */,
+});
+```
+
+---
+
+#### `copyObject`
+
+**Copy Object**
+
+Copies an object within S3
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `sourceBucket` | `string` | Yes | Source bucket name |
+| `sourceKey` | `string` | Yes | Source object key |
+| `destinationBucket` | `string` | Yes | Destination bucket name |
+| `destinationKey` | `string` | Yes | Destination object key |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "copyObjectAction",
+  "provider": "amazonS3",
+  "action": "copyObject",
+  "parameters": [
+    { "parameterName": "sourceBucket", "parameterValue": "'your-sourceBucket'" },
+    { "parameterName": "sourceKey", "parameterValue": "'your-sourceKey'" },
+    { "parameterName": "destinationBucket", "parameterValue": "'your-destinationBucket'" },
+    { "parameterName": "destinationKey", "parameterValue": "'your-destinationKey'" }
+  ],
+  "contextPropertyName": "copyObjectResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonS3.copyObject({
+  sourceBucket: /* string */,
+  sourceKey: /* string */,
+  destinationBucket: /* string */,
+  destinationKey: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonS3");
+const result = await client.copyObject({
+  sourceBucket: /* string */,
+  sourceKey: /* string */,
+  destinationBucket: /* string */,
+  destinationKey: /* string */,
+});
+```
+
+---
+
+#### `generatePresignedUrl`
+
+**Generate Pre-signed URL**
+
+Generates a pre-signed URL for temporary object access
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `bucketName` | `string` | Yes | Name of the bucket |
+| `key` | `string` | Yes | Object key/path |
+| `expiresIn` | `number` | No | URL expiration time in seconds (default: 3600) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "generatePresignedUrlAction",
+  "provider": "amazonS3",
+  "action": "generatePresignedUrl",
+  "parameters": [
+    { "parameterName": "bucketName", "parameterValue": "'your-bucketName'" },
+    { "parameterName": "key", "parameterValue": "'your-key'" },
+    { "parameterName": "expiresIn", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "generatePresignedUrlResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _amazonS3.generatePresignedUrl({
+  bucketName: /* string */,
+  key: /* string */,
+  expiresIn: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("amazonS3");
+const result = await client.generatePresignedUrl({
+  bucketName: /* string */,
+  key: /* string */,
+  expiresIn: /* number */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

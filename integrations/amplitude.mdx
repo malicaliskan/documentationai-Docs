@@ -1,0 +1,1351 @@
+---
+title: "Amplitude Integration"
+description: >-
+  
+---
+
+## Amplitude
+
+**Category:** Analytics  
+**Provider Key:** `Amplitude`  
+
+
+
+---
+
+## Configuration
+
+To use Amplitude in your project, add it to your project integrations and provide the following configuration:
+
+This integration requires no configuration parameters.
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Events**: `trackEvent`, `trackEvents`, `getEventTypes`
+- **Users**: `identifyUser`, `setUserProperties`, `getUserActivity`, `searchUsers`, `deleteUserData`, `getDeletionStatus`, `getUserPropertiesSchema`, `aliasUser`
+- **Groups**: `setUserGroup`, `setGroupProperties`
+- **Revenue**: `trackRevenue`
+- **Analytics**: `getEventSegmentation`, `getFunnelAnalysis`, `getRetentionAnalysis`, `getActiveUsers`, `getDauMau`, `getArpu`
+- **Cohorts**: `listCohorts`, `getCohort`, `downloadCohortUsers`
+
+---
+
+### Events
+
+#### `trackEvent`
+
+**Track Event**
+
+Tracks a single event in Amplitude
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `eventType` | `string` | Yes | Name of the event to track |
+| `userId` | `string` | No | User ID (required if deviceId not provided) |
+| `deviceId` | `string` | No | Device ID (required if userId not provided) |
+| `eventProperties` | `Object` | No | Properties associated with the event |
+| `userProperties` | `Object` | No | User properties to set |
+| `time` | `number` | No | Timestamp in milliseconds (defaults to current time) |
+| `platform` | `string (`"Web"`, `"iOS"`, `"Android"`, `"React Native"`, `"Flutter"`, `"Unity"`, `"Other"`)` | No | Platform where event occurred |
+| `appVersion` | `string` | No | Version of the application |
+| `osName` | `string` | No | Operating system name |
+| `osVersion` | `string` | No | Operating system version |
+| `deviceBrand` | `string` | No | Device brand |
+| `deviceModel` | `string` | No | Device model |
+| `country` | `string` | No | Country code |
+| `city` | `string` | No | City name |
+| `language` | `string` | No | User language |
+| `insertId` | `string` | No | Unique ID for deduplication |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "trackEventAction",
+  "provider": "Amplitude",
+  "action": "trackEvent",
+  "parameters": [
+    { "parameterName": "eventType", "parameterValue": "'your-eventType'" },
+    { "parameterName": "userId", "parameterValue": "'your-userId'" },
+    { "parameterName": "deviceId", "parameterValue": "'your-deviceId'" },
+    { "parameterName": "eventProperties", "parameterValue": "{}" },
+    { "parameterName": "userProperties", "parameterValue": "{}" },
+    { "parameterName": "time", "parameterValue": "0" },
+    { "parameterName": "platform", "parameterValue": "'your-platform'" },
+    { "parameterName": "appVersion", "parameterValue": "'your-appVersion'" },
+    { "parameterName": "osName", "parameterValue": "'your-osName'" },
+    { "parameterName": "osVersion", "parameterValue": "'your-osVersion'" },
+    { "parameterName": "deviceBrand", "parameterValue": "'your-deviceBrand'" },
+    { "parameterName": "deviceModel", "parameterValue": "'your-deviceModel'" },
+    { "parameterName": "country", "parameterValue": "'your-country'" },
+    { "parameterName": "city", "parameterValue": "'your-city'" },
+    { "parameterName": "language", "parameterValue": "'your-language'" },
+    { "parameterName": "insertId", "parameterValue": "'your-insertId'" }
+  ],
+  "contextPropertyName": "trackEventResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.trackEvent({
+  eventType: /* string */,
+  userId: /* string */,
+  deviceId: /* string */,
+  eventProperties: /* Object */,
+  userProperties: /* Object */,
+  time: /* number */,
+  platform: /* string */,
+  appVersion: /* string */,
+  osName: /* string */,
+  osVersion: /* string */,
+  deviceBrand: /* string */,
+  deviceModel: /* string */,
+  country: /* string */,
+  city: /* string */,
+  language: /* string */,
+  insertId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.trackEvent({
+  eventType: /* string */,
+  userId: /* string */,
+  deviceId: /* string */,
+  eventProperties: /* Object */,
+  userProperties: /* Object */,
+  time: /* number */,
+  platform: /* string */,
+  appVersion: /* string */,
+  osName: /* string */,
+  osVersion: /* string */,
+  deviceBrand: /* string */,
+  deviceModel: /* string */,
+  country: /* string */,
+  city: /* string */,
+  language: /* string */,
+  insertId: /* string */,
+});
+```
+
+---
+
+#### `trackEvents`
+
+**Track Events Batch**
+
+Tracks multiple events in a single batch request
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `events` | `Array<Object>` | Yes | Array of event objects |
+| `events` | `string` | Yes | Name of the event |
+| `events` | `string` | No | User ID |
+| `events` | `string` | No | Device ID |
+| `events` | `Object` | No | Event properties |
+| `events` | `Object` | No | User properties |
+| `events` | `number` | No | Timestamp in milliseconds |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "trackEventsAction",
+  "provider": "Amplitude",
+  "action": "trackEvents",
+  "parameters": [
+    { "parameterName": "events", "parameterValue": "'your-events'" },
+    { "parameterName": "events", "parameterValue": "'your-events'" },
+    { "parameterName": "events", "parameterValue": "'your-events'" },
+    { "parameterName": "events", "parameterValue": "'your-events'" },
+    { "parameterName": "events", "parameterValue": "{}" },
+    { "parameterName": "events", "parameterValue": "{}" },
+    { "parameterName": "events", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "trackEventsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.trackEvents({
+  events: /* Array<Object> */,
+  events: /* string */,
+  events: /* string */,
+  events: /* string */,
+  events: /* Object */,
+  events: /* Object */,
+  events: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.trackEvents({
+  events: /* Array<Object> */,
+  events: /* string */,
+  events: /* string */,
+  events: /* string */,
+  events: /* Object */,
+  events: /* Object */,
+  events: /* number */,
+});
+```
+
+---
+
+#### `getEventTypes`
+
+**Get Event Types**
+
+Retrieves event types in the project
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _Amplitude.getEventTypes()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.getEventTypes();
+```
+
+---
+
+### Users
+
+#### `identifyUser`
+
+**Identify User**
+
+Identifies a user and sets user properties
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `userId` | `string` | No | User ID (required if deviceId not provided) |
+| `deviceId` | `string` | No | Device ID (required if userId not provided) |
+| `userProperties` | `Object` | Yes | User properties to set/update |
+| `userProperties` | `Object` | No | Properties to set |
+| `userProperties` | `Object` | No | Properties to set only if not already set |
+| `userProperties` | `Object` | No | Numeric properties to increment |
+| `userProperties` | `Object` | No | Values to append to array properties |
+| `userProperties` | `Object` | No | Values to prepend to array properties |
+| `userProperties` | `Array<string>` | No | Properties to unset |
+| `userProperties` | `boolean` | No | Clear all user properties |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "identifyUserAction",
+  "provider": "Amplitude",
+  "action": "identifyUser",
+  "parameters": [
+    { "parameterName": "userId", "parameterValue": "'your-userId'" },
+    { "parameterName": "deviceId", "parameterValue": "'your-deviceId'" },
+    { "parameterName": "userProperties", "parameterValue": "{}" },
+    { "parameterName": "userProperties", "parameterValue": "{}" },
+    { "parameterName": "userProperties", "parameterValue": "{}" },
+    { "parameterName": "userProperties", "parameterValue": "{}" },
+    { "parameterName": "userProperties", "parameterValue": "{}" },
+    { "parameterName": "userProperties", "parameterValue": "{}" },
+    { "parameterName": "userProperties", "parameterValue": "'your-userProperties'" },
+    { "parameterName": "userProperties", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "identifyUserResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.identifyUser({
+  userId: /* string */,
+  deviceId: /* string */,
+  userProperties: /* Object */,
+  userProperties: /* Object */,
+  userProperties: /* Object */,
+  userProperties: /* Object */,
+  userProperties: /* Object */,
+  userProperties: /* Object */,
+  userProperties: /* Array<string> */,
+  userProperties: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.identifyUser({
+  userId: /* string */,
+  deviceId: /* string */,
+  userProperties: /* Object */,
+  userProperties: /* Object */,
+  userProperties: /* Object */,
+  userProperties: /* Object */,
+  userProperties: /* Object */,
+  userProperties: /* Object */,
+  userProperties: /* Array<string> */,
+  userProperties: /* boolean */,
+});
+```
+
+---
+
+#### `setUserProperties`
+
+**Set User Properties**
+
+Sets user properties using specific operations
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `userId` | `string` | No | User ID (required if deviceId not provided) |
+| `deviceId` | `string` | No | Device ID (required if userId not provided) |
+| `properties` | `Object` | Yes | Properties to set |
+| `operation` | `string (`"$set"`, `"$setOnce"`, `"$add"`, `"$append"`, `"$prepend"`, `"$unset"`, `"$clearAll"`)` | No | Operation type |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "setUserPropertiesAction",
+  "provider": "Amplitude",
+  "action": "setUserProperties",
+  "parameters": [
+    { "parameterName": "userId", "parameterValue": "'your-userId'" },
+    { "parameterName": "deviceId", "parameterValue": "'your-deviceId'" },
+    { "parameterName": "properties", "parameterValue": "{}" },
+    { "parameterName": "operation", "parameterValue": "'your-operation'" }
+  ],
+  "contextPropertyName": "setUserPropertiesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.setUserProperties({
+  userId: /* string */,
+  deviceId: /* string */,
+  properties: /* Object */,
+  operation: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.setUserProperties({
+  userId: /* string */,
+  deviceId: /* string */,
+  properties: /* Object */,
+  operation: /* string */,
+});
+```
+
+---
+
+#### `getUserActivity`
+
+**Get User Activity**
+
+Retrieves user activity data
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `userId` | `string` | Yes | User ID to look up |
+| `offset` | `number` | No | Offset for pagination |
+| `limit` | `number` | No | Number of events to return |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getUserActivityAction",
+  "provider": "Amplitude",
+  "action": "getUserActivity",
+  "parameters": [
+    { "parameterName": "userId", "parameterValue": "'your-userId'" },
+    { "parameterName": "offset", "parameterValue": "0" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getUserActivityResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.getUserActivity({
+  userId: /* string */,
+  offset: /* number */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.getUserActivity({
+  userId: /* string */,
+  offset: /* number */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `searchUsers`
+
+**Search Users**
+
+Searches for users by user property
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `searchTerm` | `string` | Yes | Term to search for |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "searchUsersAction",
+  "provider": "Amplitude",
+  "action": "searchUsers",
+  "parameters": [
+    { "parameterName": "searchTerm", "parameterValue": "'your-searchTerm'" }
+  ],
+  "contextPropertyName": "searchUsersResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.searchUsers({
+  searchTerm: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.searchUsers({
+  searchTerm: /* string */,
+});
+```
+
+---
+
+#### `deleteUserData`
+
+**Delete User Data**
+
+Deletes user data for GDPR/privacy compliance
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `userIds` | `Array<string>` | Yes | Array of user IDs to delete |
+| `deleteFromOrg` | `boolean` | No | Delete from entire organization |
+| `ignoreInvalidIds` | `boolean` | No | Ignore invalid user IDs |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteUserDataAction",
+  "provider": "Amplitude",
+  "action": "deleteUserData",
+  "parameters": [
+    { "parameterName": "userIds", "parameterValue": "'your-userIds'" },
+    { "parameterName": "deleteFromOrg", "parameterValue": "true" },
+    { "parameterName": "ignoreInvalidIds", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "deleteUserDataResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.deleteUserData({
+  userIds: /* Array<string> */,
+  deleteFromOrg: /* boolean */,
+  ignoreInvalidIds: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.deleteUserData({
+  userIds: /* Array<string> */,
+  deleteFromOrg: /* boolean */,
+  ignoreInvalidIds: /* boolean */,
+});
+```
+
+---
+
+#### `getDeletionStatus`
+
+**Get Deletion Status**
+
+Gets the status of a deletion job
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `jobId` | `string` | Yes | ID of the deletion job |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getDeletionStatusAction",
+  "provider": "Amplitude",
+  "action": "getDeletionStatus",
+  "parameters": [
+    { "parameterName": "jobId", "parameterValue": "'your-jobId'" }
+  ],
+  "contextPropertyName": "getDeletionStatusResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.getDeletionStatus({
+  jobId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.getDeletionStatus({
+  jobId: /* string */,
+});
+```
+
+---
+
+#### `getUserPropertiesSchema`
+
+**Get User Properties Schema**
+
+Retrieves user properties schema
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _Amplitude.getUserPropertiesSchema()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.getUserPropertiesSchema();
+```
+
+---
+
+#### `aliasUser`
+
+**Alias User**
+
+Aliases a user ID to another user ID
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `userId` | `string` | Yes | Primary user ID |
+| `aliasUserId` | `string` | Yes | User ID to alias to the primary |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "aliasUserAction",
+  "provider": "Amplitude",
+  "action": "aliasUser",
+  "parameters": [
+    { "parameterName": "userId", "parameterValue": "'your-userId'" },
+    { "parameterName": "aliasUserId", "parameterValue": "'your-aliasUserId'" }
+  ],
+  "contextPropertyName": "aliasUserResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.aliasUser({
+  userId: /* string */,
+  aliasUserId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.aliasUser({
+  userId: /* string */,
+  aliasUserId: /* string */,
+});
+```
+
+---
+
+### Groups
+
+#### `setUserGroup`
+
+**Set User Group**
+
+Maps a user to a group
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `userId` | `string` | No | User ID (required if deviceId not provided) |
+| `deviceId` | `string` | No | Device ID (required if userId not provided) |
+| `groupType` | `string` | Yes | Type of group (e.g., 'company', 'team') |
+| `groupValue` | `string|Array<string>` | Yes | Group value(s) to assign |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "setUserGroupAction",
+  "provider": "Amplitude",
+  "action": "setUserGroup",
+  "parameters": [
+    { "parameterName": "userId", "parameterValue": "'your-userId'" },
+    { "parameterName": "deviceId", "parameterValue": "'your-deviceId'" },
+    { "parameterName": "groupType", "parameterValue": "'your-groupType'" },
+    { "parameterName": "groupValue", "parameterValue": "'your-groupValue'" }
+  ],
+  "contextPropertyName": "setUserGroupResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.setUserGroup({
+  userId: /* string */,
+  deviceId: /* string */,
+  groupType: /* string */,
+  groupValue: /* string|Array<string> */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.setUserGroup({
+  userId: /* string */,
+  deviceId: /* string */,
+  groupType: /* string */,
+  groupValue: /* string|Array<string> */,
+});
+```
+
+---
+
+#### `setGroupProperties`
+
+**Set Group Properties**
+
+Sets properties on a group
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `groupType` | `string` | Yes | Type of group |
+| `groupValue` | `string` | Yes | Group value |
+| `groupProperties` | `Object` | Yes | Properties to set on the group |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "setGroupPropertiesAction",
+  "provider": "Amplitude",
+  "action": "setGroupProperties",
+  "parameters": [
+    { "parameterName": "groupType", "parameterValue": "'your-groupType'" },
+    { "parameterName": "groupValue", "parameterValue": "'your-groupValue'" },
+    { "parameterName": "groupProperties", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "setGroupPropertiesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.setGroupProperties({
+  groupType: /* string */,
+  groupValue: /* string */,
+  groupProperties: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.setGroupProperties({
+  groupType: /* string */,
+  groupValue: /* string */,
+  groupProperties: /* Object */,
+});
+```
+
+---
+
+### Revenue
+
+#### `trackRevenue`
+
+**Track Revenue**
+
+Tracks a revenue event
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `userId` | `string` | No | User ID (required if deviceId not provided) |
+| `deviceId` | `string` | No | Device ID (required if userId not provided) |
+| `price` | `number` | Yes | Price of the item |
+| `quantity` | `number` | No | Quantity purchased |
+| `productId` | `string` | No | Product identifier |
+| `revenueType` | `string` | No | Type of revenue (e.g., 'purchase', 'subscription') |
+| `eventProperties` | `Object` | No | Additional event properties |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "trackRevenueAction",
+  "provider": "Amplitude",
+  "action": "trackRevenue",
+  "parameters": [
+    { "parameterName": "userId", "parameterValue": "'your-userId'" },
+    { "parameterName": "deviceId", "parameterValue": "'your-deviceId'" },
+    { "parameterName": "price", "parameterValue": "0" },
+    { "parameterName": "quantity", "parameterValue": "0" },
+    { "parameterName": "productId", "parameterValue": "'your-productId'" },
+    { "parameterName": "revenueType", "parameterValue": "'your-revenueType'" },
+    { "parameterName": "eventProperties", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "trackRevenueResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.trackRevenue({
+  userId: /* string */,
+  deviceId: /* string */,
+  price: /* number */,
+  quantity: /* number */,
+  productId: /* string */,
+  revenueType: /* string */,
+  eventProperties: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.trackRevenue({
+  userId: /* string */,
+  deviceId: /* string */,
+  price: /* number */,
+  quantity: /* number */,
+  productId: /* string */,
+  revenueType: /* string */,
+  eventProperties: /* Object */,
+});
+```
+
+---
+
+### Analytics
+
+#### `getEventSegmentation`
+
+**Get Event Segmentation**
+
+Retrieves event segmentation data
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `event` | `string` | Yes | Event name to analyze |
+| `start` | `string` | Yes | Start date (YYYYMMDD format) |
+| `end` | `string` | Yes | End date (YYYYMMDD format) |
+| `interval` | `string` | No | Time interval (1=daily, 7=weekly, 30=monthly) |
+| `groupBy` | `Array<Object>` | No | Group by properties |
+| `filters` | `Object` | No | Event filters |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getEventSegmentationAction",
+  "provider": "Amplitude",
+  "action": "getEventSegmentation",
+  "parameters": [
+    { "parameterName": "event", "parameterValue": "'your-event'" },
+    { "parameterName": "start", "parameterValue": "'your-start'" },
+    { "parameterName": "end", "parameterValue": "'your-end'" },
+    { "parameterName": "interval", "parameterValue": "'your-interval'" },
+    { "parameterName": "groupBy", "parameterValue": "'your-groupBy'" },
+    { "parameterName": "filters", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "getEventSegmentationResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.getEventSegmentation({
+  event: /* string */,
+  start: /* string */,
+  end: /* string */,
+  interval: /* string */,
+  groupBy: /* Array<Object> */,
+  filters: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.getEventSegmentation({
+  event: /* string */,
+  start: /* string */,
+  end: /* string */,
+  interval: /* string */,
+  groupBy: /* Array<Object> */,
+  filters: /* Object */,
+});
+```
+
+---
+
+#### `getFunnelAnalysis`
+
+**Get Funnel Analysis**
+
+Retrieves funnel analysis data
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `events` | `Array<Object>` | Yes | Array of event objects defining funnel steps |
+| `events` | `string` | Yes | Event type for the funnel step |
+| `start` | `string` | Yes | Start date (YYYYMMDD format) |
+| `end` | `string` | Yes | End date (YYYYMMDD format) |
+| `mode` | `string` | No | Funnel mode ('ordered', 'unordered') |
+| `conversionWindow` | `number` | No | Conversion window in milliseconds |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getFunnelAnalysisAction",
+  "provider": "Amplitude",
+  "action": "getFunnelAnalysis",
+  "parameters": [
+    { "parameterName": "events", "parameterValue": "'your-events'" },
+    { "parameterName": "events", "parameterValue": "'your-events'" },
+    { "parameterName": "start", "parameterValue": "'your-start'" },
+    { "parameterName": "end", "parameterValue": "'your-end'" },
+    { "parameterName": "mode", "parameterValue": "'your-mode'" },
+    { "parameterName": "conversionWindow", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getFunnelAnalysisResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.getFunnelAnalysis({
+  events: /* Array<Object> */,
+  events: /* string */,
+  start: /* string */,
+  end: /* string */,
+  mode: /* string */,
+  conversionWindow: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.getFunnelAnalysis({
+  events: /* Array<Object> */,
+  events: /* string */,
+  start: /* string */,
+  end: /* string */,
+  mode: /* string */,
+  conversionWindow: /* number */,
+});
+```
+
+---
+
+#### `getRetentionAnalysis`
+
+**Get Retention Analysis**
+
+Retrieves retention analysis data
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `startEvent` | `Object` | Yes | Starting event for retention |
+| `startEvent` | `string` | Yes | Event type name |
+| `returnEvent` | `Object` | Yes | Return event for retention |
+| `returnEvent` | `string` | Yes | Event type name |
+| `start` | `string` | Yes | Start date (YYYYMMDD format) |
+| `end` | `string` | Yes | End date (YYYYMMDD format) |
+| `retentionType` | `string` | No | Type of retention ('retention', 'unbounded') |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getRetentionAnalysisAction",
+  "provider": "Amplitude",
+  "action": "getRetentionAnalysis",
+  "parameters": [
+    { "parameterName": "startEvent", "parameterValue": "{}" },
+    { "parameterName": "startEvent", "parameterValue": "'your-startEvent'" },
+    { "parameterName": "returnEvent", "parameterValue": "{}" },
+    { "parameterName": "returnEvent", "parameterValue": "'your-returnEvent'" },
+    { "parameterName": "start", "parameterValue": "'your-start'" },
+    { "parameterName": "end", "parameterValue": "'your-end'" },
+    { "parameterName": "retentionType", "parameterValue": "'your-retentionType'" }
+  ],
+  "contextPropertyName": "getRetentionAnalysisResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.getRetentionAnalysis({
+  startEvent: /* Object */,
+  startEvent: /* string */,
+  returnEvent: /* Object */,
+  returnEvent: /* string */,
+  start: /* string */,
+  end: /* string */,
+  retentionType: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.getRetentionAnalysis({
+  startEvent: /* Object */,
+  startEvent: /* string */,
+  returnEvent: /* Object */,
+  returnEvent: /* string */,
+  start: /* string */,
+  end: /* string */,
+  retentionType: /* string */,
+});
+```
+
+---
+
+#### `getActiveUsers`
+
+**Get Active Users**
+
+Retrieves real-time active users count
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `interval` | `number` | No | Time interval in minutes (5 or 30) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getActiveUsersAction",
+  "provider": "Amplitude",
+  "action": "getActiveUsers",
+  "parameters": [
+    { "parameterName": "interval", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getActiveUsersResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.getActiveUsers({
+  interval: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.getActiveUsers({
+  interval: /* number */,
+});
+```
+
+---
+
+#### `getDauMau`
+
+**Get DAU/MAU**
+
+Retrieves daily/monthly active users (DAU/MAU)
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `start` | `string` | Yes | Start date (YYYYMMDD format) |
+| `end` | `string` | Yes | End date (YYYYMMDD format) |
+| `metric` | `string` | No | Metric type ('uniques', 'totals', 'new') |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getDauMauAction",
+  "provider": "Amplitude",
+  "action": "getDauMau",
+  "parameters": [
+    { "parameterName": "start", "parameterValue": "'your-start'" },
+    { "parameterName": "end", "parameterValue": "'your-end'" },
+    { "parameterName": "metric", "parameterValue": "'your-metric'" }
+  ],
+  "contextPropertyName": "getDauMauResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.getDauMau({
+  start: /* string */,
+  end: /* string */,
+  metric: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.getDauMau({
+  start: /* string */,
+  end: /* string */,
+  metric: /* string */,
+});
+```
+
+---
+
+#### `getArpu`
+
+**Get ARPU**
+
+Retrieves average revenue per user (ARPU)
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `start` | `string` | Yes | Start date (YYYYMMDD format) |
+| `end` | `string` | Yes | End date (YYYYMMDD format) |
+| `interval` | `string` | No | Time interval (1=daily, 7=weekly, 30=monthly) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getArpuAction",
+  "provider": "Amplitude",
+  "action": "getArpu",
+  "parameters": [
+    { "parameterName": "start", "parameterValue": "'your-start'" },
+    { "parameterName": "end", "parameterValue": "'your-end'" },
+    { "parameterName": "interval", "parameterValue": "'your-interval'" }
+  ],
+  "contextPropertyName": "getArpuResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.getArpu({
+  start: /* string */,
+  end: /* string */,
+  interval: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.getArpu({
+  start: /* string */,
+  end: /* string */,
+  interval: /* string */,
+});
+```
+
+---
+
+### Cohorts
+
+#### `listCohorts`
+
+**List Cohorts**
+
+Lists all cohorts in the project
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _Amplitude.listCohorts()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.listCohorts();
+```
+
+---
+
+#### `getCohort`
+
+**Get Cohort**
+
+Gets details for a specific cohort
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `cohortId` | `string` | Yes | ID of the cohort |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getCohortAction",
+  "provider": "Amplitude",
+  "action": "getCohort",
+  "parameters": [
+    { "parameterName": "cohortId", "parameterValue": "'your-cohortId'" }
+  ],
+  "contextPropertyName": "getCohortResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.getCohort({
+  cohortId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.getCohort({
+  cohortId: /* string */,
+});
+```
+
+---
+
+#### `downloadCohortUsers`
+
+**Download Cohort Users**
+
+Downloads users in a cohort
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `cohortId` | `string` | Yes | ID of the cohort |
+| `props` | `Array<string>` | No | User properties to include |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "downloadCohortUsersAction",
+  "provider": "Amplitude",
+  "action": "downloadCohortUsers",
+  "parameters": [
+    { "parameterName": "cohortId", "parameterValue": "'your-cohortId'" },
+    { "parameterName": "props", "parameterValue": "'your-props'" }
+  ],
+  "contextPropertyName": "downloadCohortUsersResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _Amplitude.downloadCohortUsers({
+  cohortId: /* string */,
+  props: /* Array<string> */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("Amplitude");
+const result = await client.downloadCohortUsers({
+  cohortId: /* string */,
+  props: /* Array<string> */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

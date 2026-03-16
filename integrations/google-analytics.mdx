@@ -1,0 +1,847 @@
+---
+title: "Google Analytics Integration"
+description: >-
+  Google Analytics Data API client for running reports, accessing realtime data, and retrieving metadata about properties and dimensions/metrics.
+---
+
+## Google Analytics
+
+**Category:** Analytics  
+**Provider Key:** `googleAnalytics`  
+**SDK Packages:** `@google-analytics/data@^5.2.1`  
+
+Google Analytics Data API client for running reports, accessing realtime data, and retrieving metadata about properties and dimensions/metrics.
+
+---
+
+## Configuration
+
+To use Google Analytics in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `propertyId` | `string` | Yes | The Google Analytics 4 property ID (e.g., '123456789') |
+| `credentials` | `string` | No | JSON string of service account credentials |
+| `keyFilename` | `string` | No | Path to service account JSON key file |
+| `projectId` | `string` | No | Google Cloud project ID (optional if in credentials) |
+
+### Example Configuration
+
+```json
+{
+  "provider": "googleAnalytics",
+  "configuration": [
+    { "name": "propertyId", "value": "your-propertyId" },
+    { "name": "credentials", "value": "your-credentials" },
+    { "name": "keyFilename", "value": "your-keyFilename" },
+    { "name": "projectId", "value": "your-projectId" }
+  ]
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Metadata**: `getMetadata`, `checkQuota`
+- **Reports**: `runReport`, `runRealtimeReport`, `batchRunReports`, `runPivotReport`
+- **Analytics**: `getActiveUsers`, `getTrafficSources`, `getTopPages`, `getGeographicData`, `getDeviceData`, `getEngagementMetrics`, `getConversions`, `getRevenueData`, `getUserAcquisition`
+
+---
+
+### Metadata
+
+#### `getMetadata`
+
+**Get Metadata**
+
+Retrieves metadata about available dimensions and metrics for a property
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _googleAnalytics.getMetadata()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleAnalytics");
+const result = await client.getMetadata();
+```
+
+---
+
+#### `checkQuota`
+
+**Check Quota**
+
+Checks property quota usage
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _googleAnalytics.checkQuota()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleAnalytics");
+const result = await client.checkQuota();
+```
+
+---
+
+### Reports
+
+#### `runReport`
+
+**Run Report**
+
+Runs a custom report with specified dimensions and metrics
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `dimensions` | `string[]` | Yes | Array of dimension names (e.g., ['country', 'city']) |
+| `metrics` | `string[]` | Yes | Array of metric names (e.g., ['activeUsers', 'sessions']) |
+| `startDate` | `string` | No | Start date (YYYY-MM-DD format or 'NdaysAgo', 'yesterday', 'today') |
+| `endDate` | `string` | No | End date (YYYY-MM-DD format or 'today', 'yesterday') |
+| `dateRangePreset` | `string` | No | Preset date range (today, yesterday, last7days, last28days, last30days, last90days, lastYear) |
+| `limit` | `number` | No | Maximum number of rows to return (default: 10000) |
+| `offset` | `number` | No | Offset for pagination (default: 0) |
+| `orderBys` | `Object[]` | No | Array of order by specifications |
+| `dimensionFilter` | `Object` | No | Filter expression for dimensions |
+| `metricFilter` | `Object` | No | Filter expression for metrics |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "runReportAction",
+  "provider": "googleAnalytics",
+  "action": "runReport",
+  "parameters": [
+    { "parameterName": "dimensions", "parameterValue": "[]" },
+    { "parameterName": "metrics", "parameterValue": "[]" },
+    { "parameterName": "startDate", "parameterValue": "'your-startDate'" },
+    { "parameterName": "endDate", "parameterValue": "'your-endDate'" },
+    { "parameterName": "dateRangePreset", "parameterValue": "'your-dateRangePreset'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "offset", "parameterValue": "0" },
+    { "parameterName": "orderBys", "parameterValue": "'your-orderBys'" },
+    { "parameterName": "dimensionFilter", "parameterValue": "{}" },
+    { "parameterName": "metricFilter", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "runReportResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleAnalytics.runReport({
+  dimensions: /* string[] */,
+  metrics: /* string[] */,
+  startDate: /* string */,
+  endDate: /* string */,
+  dateRangePreset: /* string */,
+  limit: /* number */,
+  offset: /* number */,
+  orderBys: /* Object[] */,
+  dimensionFilter: /* Object */,
+  metricFilter: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleAnalytics");
+const result = await client.runReport({
+  dimensions: /* string[] */,
+  metrics: /* string[] */,
+  startDate: /* string */,
+  endDate: /* string */,
+  dateRangePreset: /* string */,
+  limit: /* number */,
+  offset: /* number */,
+  orderBys: /* Object[] */,
+  dimensionFilter: /* Object */,
+  metricFilter: /* Object */,
+});
+```
+
+---
+
+#### `runRealtimeReport`
+
+**Run Realtime Report**
+
+Runs a realtime report for the current moment's data
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `dimensions` | `string[]` | Yes | Array of dimension names |
+| `metrics` | `string[]` | Yes | Array of metric names |
+| `limit` | `number` | No | Maximum number of rows to return (default: 10000) |
+| `orderBys` | `Object[]` | No | Array of order by specifications |
+| `dimensionFilter` | `Object` | No | Filter expression for dimensions |
+| `metricFilter` | `Object` | No | Filter expression for metrics |
+| `minuteRanges` | `number` | No | Number of minutes to include (up to 29) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "runRealtimeReportAction",
+  "provider": "googleAnalytics",
+  "action": "runRealtimeReport",
+  "parameters": [
+    { "parameterName": "dimensions", "parameterValue": "[]" },
+    { "parameterName": "metrics", "parameterValue": "[]" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "orderBys", "parameterValue": "'your-orderBys'" },
+    { "parameterName": "dimensionFilter", "parameterValue": "{}" },
+    { "parameterName": "metricFilter", "parameterValue": "{}" },
+    { "parameterName": "minuteRanges", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "runRealtimeReportResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleAnalytics.runRealtimeReport({
+  dimensions: /* string[] */,
+  metrics: /* string[] */,
+  limit: /* number */,
+  orderBys: /* Object[] */,
+  dimensionFilter: /* Object */,
+  metricFilter: /* Object */,
+  minuteRanges: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleAnalytics");
+const result = await client.runRealtimeReport({
+  dimensions: /* string[] */,
+  metrics: /* string[] */,
+  limit: /* number */,
+  orderBys: /* Object[] */,
+  dimensionFilter: /* Object */,
+  metricFilter: /* Object */,
+  minuteRanges: /* number */,
+});
+```
+
+---
+
+#### `batchRunReports`
+
+**Batch Run Reports**
+
+Runs multiple reports in a single batch request
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `requests` | `Object[]` | Yes | Array of report request objects (same format as runReport input) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "batchRunReportsAction",
+  "provider": "googleAnalytics",
+  "action": "batchRunReports",
+  "parameters": [
+    { "parameterName": "requests", "parameterValue": "'your-requests'" }
+  ],
+  "contextPropertyName": "batchRunReportsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleAnalytics.batchRunReports({
+  requests: /* Object[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleAnalytics");
+const result = await client.batchRunReports({
+  requests: /* Object[] */,
+});
+```
+
+---
+
+#### `runPivotReport`
+
+**Run Pivot Report**
+
+Runs a pivot report with pivot dimensions
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `dimensions` | `string[]` | Yes | Array of dimension names |
+| `metrics` | `string[]` | Yes | Array of metric names |
+| `pivots` | `Object[]` | Yes | Array of pivot configurations |
+| `startDate` | `string` | No | Start date |
+| `endDate` | `string` | No | End date |
+| `dateRangePreset` | `string` | No | Preset date range |
+| `dimensionFilter` | `Object` | No | Filter expression for dimensions |
+| `metricFilter` | `Object` | No | Filter expression for metrics |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "runPivotReportAction",
+  "provider": "googleAnalytics",
+  "action": "runPivotReport",
+  "parameters": [
+    { "parameterName": "dimensions", "parameterValue": "[]" },
+    { "parameterName": "metrics", "parameterValue": "[]" },
+    { "parameterName": "pivots", "parameterValue": "'your-pivots'" },
+    { "parameterName": "startDate", "parameterValue": "'your-startDate'" },
+    { "parameterName": "endDate", "parameterValue": "'your-endDate'" },
+    { "parameterName": "dateRangePreset", "parameterValue": "'your-dateRangePreset'" },
+    { "parameterName": "dimensionFilter", "parameterValue": "{}" },
+    { "parameterName": "metricFilter", "parameterValue": "{}" }
+  ],
+  "contextPropertyName": "runPivotReportResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleAnalytics.runPivotReport({
+  dimensions: /* string[] */,
+  metrics: /* string[] */,
+  pivots: /* Object[] */,
+  startDate: /* string */,
+  endDate: /* string */,
+  dateRangePreset: /* string */,
+  dimensionFilter: /* Object */,
+  metricFilter: /* Object */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleAnalytics");
+const result = await client.runPivotReport({
+  dimensions: /* string[] */,
+  metrics: /* string[] */,
+  pivots: /* Object[] */,
+  startDate: /* string */,
+  endDate: /* string */,
+  dateRangePreset: /* string */,
+  dimensionFilter: /* Object */,
+  metricFilter: /* Object */,
+});
+```
+
+---
+
+### Analytics
+
+#### `getActiveUsers`
+
+**Get Active Users**
+
+Gets active users count for the property
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `dateRangePreset` | `string` | No | Preset date range (default: last28days) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getActiveUsersAction",
+  "provider": "googleAnalytics",
+  "action": "getActiveUsers",
+  "parameters": [
+    { "parameterName": "dateRangePreset", "parameterValue": "'your-dateRangePreset'" }
+  ],
+  "contextPropertyName": "getActiveUsersResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleAnalytics.getActiveUsers({
+  dateRangePreset: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleAnalytics");
+const result = await client.getActiveUsers({
+  dateRangePreset: /* string */,
+});
+```
+
+---
+
+#### `getTrafficSources`
+
+**Get Traffic Sources**
+
+Gets traffic sources breakdown for the property
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `dateRangePreset` | `string` | No | Preset date range (default: last30days) |
+| `limit` | `number` | No | Maximum number of sources to return (default: 50) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getTrafficSourcesAction",
+  "provider": "googleAnalytics",
+  "action": "getTrafficSources",
+  "parameters": [
+    { "parameterName": "dateRangePreset", "parameterValue": "'your-dateRangePreset'" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getTrafficSourcesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleAnalytics.getTrafficSources({
+  dateRangePreset: /* string */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleAnalytics");
+const result = await client.getTrafficSources({
+  dateRangePreset: /* string */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `getTopPages`
+
+**Get Top Pages**
+
+Gets top pages by page views
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `dateRangePreset` | `string` | No | Preset date range (default: last30days) |
+| `limit` | `number` | No | Maximum number of pages to return (default: 50) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getTopPagesAction",
+  "provider": "googleAnalytics",
+  "action": "getTopPages",
+  "parameters": [
+    { "parameterName": "dateRangePreset", "parameterValue": "'your-dateRangePreset'" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getTopPagesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleAnalytics.getTopPages({
+  dateRangePreset: /* string */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleAnalytics");
+const result = await client.getTopPages({
+  dateRangePreset: /* string */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `getGeographicData`
+
+**Get Geographic Data**
+
+Gets geographic breakdown of users
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `dateRangePreset` | `string` | No | Preset date range (default: last30days) |
+| `includeCity` | `boolean` | No | Whether to include city-level data (default: false) |
+| `limit` | `number` | No | Maximum number of locations to return (default: 50) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getGeographicDataAction",
+  "provider": "googleAnalytics",
+  "action": "getGeographicData",
+  "parameters": [
+    { "parameterName": "dateRangePreset", "parameterValue": "'your-dateRangePreset'" },
+    { "parameterName": "includeCity", "parameterValue": "true" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getGeographicDataResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleAnalytics.getGeographicData({
+  dateRangePreset: /* string */,
+  includeCity: /* boolean */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleAnalytics");
+const result = await client.getGeographicData({
+  dateRangePreset: /* string */,
+  includeCity: /* boolean */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `getDeviceData`
+
+**Get Device Data**
+
+Gets device and browser breakdown
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `dateRangePreset` | `string` | No | Preset date range (default: last30days) |
+| `limit` | `number` | No | Maximum number of entries to return (default: 50) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getDeviceDataAction",
+  "provider": "googleAnalytics",
+  "action": "getDeviceData",
+  "parameters": [
+    { "parameterName": "dateRangePreset", "parameterValue": "'your-dateRangePreset'" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getDeviceDataResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleAnalytics.getDeviceData({
+  dateRangePreset: /* string */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleAnalytics");
+const result = await client.getDeviceData({
+  dateRangePreset: /* string */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `getEngagementMetrics`
+
+**Get Engagement Metrics**
+
+Gets engagement metrics (session duration, bounce rate, etc.)
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `dateRangePreset` | `string` | No | Preset date range (default: last30days) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getEngagementMetricsAction",
+  "provider": "googleAnalytics",
+  "action": "getEngagementMetrics",
+  "parameters": [
+    { "parameterName": "dateRangePreset", "parameterValue": "'your-dateRangePreset'" }
+  ],
+  "contextPropertyName": "getEngagementMetricsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleAnalytics.getEngagementMetrics({
+  dateRangePreset: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleAnalytics");
+const result = await client.getEngagementMetrics({
+  dateRangePreset: /* string */,
+});
+```
+
+---
+
+#### `getConversions`
+
+**Get Conversions**
+
+Gets conversion/event data
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `dateRangePreset` | `string` | No | Preset date range (default: last30days) |
+| `eventName` | `string` | No | Specific event name to filter by |
+| `limit` | `number` | No | Maximum number of events to return (default: 50) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getConversionsAction",
+  "provider": "googleAnalytics",
+  "action": "getConversions",
+  "parameters": [
+    { "parameterName": "dateRangePreset", "parameterValue": "'your-dateRangePreset'" },
+    { "parameterName": "eventName", "parameterValue": "'your-eventName'" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getConversionsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleAnalytics.getConversions({
+  dateRangePreset: /* string */,
+  eventName: /* string */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleAnalytics");
+const result = await client.getConversions({
+  dateRangePreset: /* string */,
+  eventName: /* string */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `getRevenueData`
+
+**Get Revenue Data**
+
+Gets revenue and e-commerce data
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `dateRangePreset` | `string` | No | Preset date range (default: last30days) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getRevenueDataAction",
+  "provider": "googleAnalytics",
+  "action": "getRevenueData",
+  "parameters": [
+    { "parameterName": "dateRangePreset", "parameterValue": "'your-dateRangePreset'" }
+  ],
+  "contextPropertyName": "getRevenueDataResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleAnalytics.getRevenueData({
+  dateRangePreset: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleAnalytics");
+const result = await client.getRevenueData({
+  dateRangePreset: /* string */,
+});
+```
+
+---
+
+#### `getUserAcquisition`
+
+**Get User Acquisition**
+
+Gets user acquisition data
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `dateRangePreset` | `string` | No | Preset date range (default: last30days) |
+| `limit` | `number` | No | Maximum number of sources to return (default: 50) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getUserAcquisitionAction",
+  "provider": "googleAnalytics",
+  "action": "getUserAcquisition",
+  "parameters": [
+    { "parameterName": "dateRangePreset", "parameterValue": "'your-dateRangePreset'" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getUserAcquisitionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleAnalytics.getUserAcquisition({
+  dateRangePreset: /* string */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleAnalytics");
+const result = await client.getUserAcquisition({
+  dateRangePreset: /* string */,
+  limit: /* number */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)
