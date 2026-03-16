@@ -1671,7 +1671,7 @@ Creates a new subscription
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `customerId` | `string` | Yes | ID of the customer |
-| `items` | `Array<Object>` | Yes | Array of subscription items |
+| `items` | `Array&lt;Object&gt;` | Yes | Array of subscription items |
 | `items` | `string` | Yes | Price ID for the item |
 | `items` | `number` | No | Quantity for the item |
 | `collectionMethod` | `string` | No | Collection method |
@@ -1797,7 +1797,7 @@ Updates a subscription
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `subscriptionId` | `string` | Yes | The ID of the subscription |
-| `items` | `Array<Object>` | No | Updated subscription items |
+| `items` | `Array&lt;Object&gt;` | No | Updated subscription items |
 | `metadata` | `Object` | No | Updated metadata |
 | `cancelAtPeriodEnd` | `boolean` | No | Cancel at period end |
 | `defaultPaymentMethod` | `string` | No | Default payment method ID |
@@ -3010,7 +3010,7 @@ Creates a checkout session
 | `successUrl` | `string` | Yes | URL to redirect on success |
 | `cancelUrl` | `string` | No | URL to redirect on cancel |
 | `mode` | `string` | No | Session mode (payment, setup, subscription) |
-| `lineItems` | `Array<Object>` | No | Line items for the session |
+| `lineItems` | `Array&lt;Object&gt;` | No | Line items for the session |
 | `lineItems` | `string` | Yes | Price ID |
 | `lineItems` | `number` | No | Quantity |
 | `customerId` | `string` | No | Customer ID |

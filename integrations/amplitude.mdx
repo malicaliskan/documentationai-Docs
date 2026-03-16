@@ -153,7 +153,7 @@ Tracks multiple events in a single batch request
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `events` | `Array<Object>` | Yes | Array of event objects |
+| `events` | `Array&lt;Object&gt;` | Yes | Array of event objects |
 | `events` | `string` | Yes | Name of the event |
 | `events` | `string` | No | User ID |
 | `events` | `string` | No | Device ID |
@@ -260,7 +260,7 @@ Identifies a user and sets user properties
 | `userProperties` | `Object` | No | Numeric properties to increment |
 | `userProperties` | `Object` | No | Values to append to array properties |
 | `userProperties` | `Object` | No | Values to prepend to array properties |
-| `userProperties` | `Array<string>` | No | Properties to unset |
+| `userProperties` | `Array&lt;string&gt;` | No | Properties to unset |
 | `userProperties` | `boolean` | No | Clear all user properties |
 
 **IntegrationAction example:**
@@ -496,7 +496,7 @@ Deletes user data for GDPR/privacy compliance
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `userIds` | `Array<string>` | Yes | Array of user IDs to delete |
+| `userIds` | `Array&lt;string&gt;` | Yes | Array of user IDs to delete |
 | `deleteFromOrg` | `boolean` | No | Delete from entire organization |
 | `ignoreInvalidIds` | `boolean` | No | Ignore invalid user IDs |
 
@@ -680,7 +680,7 @@ Maps a user to a group
 | `userId` | `string` | No | User ID (required if deviceId not provided) |
 | `deviceId` | `string` | No | Device ID (required if userId not provided) |
 | `groupType` | `string` | Yes | Type of group (e.g., 'company', 'team') |
-| `groupValue` | `string|Array<string>` | Yes | Group value(s) to assign |
+| `groupValue` | `string|Array&lt;string&gt;` | Yes | Group value(s) to assign |
 
 **IntegrationAction example:**
 
@@ -870,7 +870,7 @@ Retrieves event segmentation data
 | `start` | `string` | Yes | Start date (YYYYMMDD format) |
 | `end` | `string` | Yes | End date (YYYYMMDD format) |
 | `interval` | `string` | No | Time interval (1=daily, 7=weekly, 30=monthly) |
-| `groupBy` | `Array<Object>` | No | Group by properties |
+| `groupBy` | `Array&lt;Object&gt;` | No | Group by properties |
 | `filters` | `Object` | No | Event filters |
 
 **IntegrationAction example:**
@@ -933,7 +933,7 @@ Retrieves funnel analysis data
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `events` | `Array<Object>` | Yes | Array of event objects defining funnel steps |
+| `events` | `Array&lt;Object&gt;` | Yes | Array of event objects defining funnel steps |
 | `events` | `string` | Yes | Event type for the funnel step |
 | `start` | `string` | Yes | Start date (YYYYMMDD format) |
 | `end` | `string` | Yes | End date (YYYYMMDD format) |
@@ -1304,7 +1304,7 @@ Downloads users in a cohort
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `cohortId` | `string` | Yes | ID of the cohort |
-| `props` | `Array<string>` | No | User properties to include |
+| `props` | `Array&lt;string&gt;` | No | User properties to include |
 
 **IntegrationAction example:**
 

@@ -343,7 +343,7 @@ Create a new customer request (ticket)
 | `description` | `string` | No | Request description |
 | `serviceDeskId` | `string` | No | Service desk ID (uses default if not provided) |
 | `requestFieldValues` | `Object` | No | Additional field values |
-| `requestParticipants` | `Array<string>` | No | Account IDs of participants |
+| `requestParticipants` | `Array&lt;string&gt;` | No | Account IDs of participants |
 
 **IntegrationAction example:**
 
@@ -406,7 +406,7 @@ Get details of a specific request
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `issueIdOrKey` | `string` | Yes | Issue ID or key |
-| `expand` | `Array<string>` | No | Fields to expand in response |
+| `expand` | `Array&lt;string&gt;` | No | Fields to expand in response |
 
 **IntegrationAction example:**
 
@@ -457,7 +457,7 @@ List all customer requests
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `searchTerm` | `string` | No | Search term to filter requests |
-| `requestStatus` | `Array<string> (`"CLOSED"`, `"OPEN_AWAITING_CUSTOMER"`, `"OPEN_AWAITING_SUPPORT"`, `"RESOLVED"`, `"ALL_OPEN"`)` | No | Filter by status |
+| `requestStatus` | `Array&lt;string&gt; (`"CLOSED"`, `"OPEN_AWAITING_CUSTOMER"`, `"OPEN_AWAITING_SUPPORT"`, `"RESOLVED"`, `"ALL_OPEN"`)` | No | Filter by status |
 | `serviceDeskId` | `string` | No | Service desk ID (uses default if not provided) |
 | `start` | `number` | No | Starting index for pagination |
 | `limit` | `number` | No | Maximum results to return |
@@ -906,7 +906,7 @@ Add customer to service desk
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `accountIds` | `Array<string>` | Yes | Account IDs to add |
+| `accountIds` | `Array&lt;string&gt;` | Yes | Account IDs to add |
 | `serviceDeskId` | `string` | No | Service desk ID (uses default if not provided) |
 
 **IntegrationAction example:**
@@ -957,7 +957,7 @@ Remove customer from service desk
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `accountIds` | `Array<string>` | Yes | Account IDs to remove |
+| `accountIds` | `Array&lt;string&gt;` | Yes | Account IDs to remove |
 | `serviceDeskId` | `string` | No | Service desk ID (uses default if not provided) |
 
 **IntegrationAction example:**
@@ -1207,7 +1207,7 @@ Add users to organization
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `organizationId` | `string` | Yes | Organization ID |
-| `accountIds` | `Array<string>` | Yes | Account IDs to add |
+| `accountIds` | `Array&lt;string&gt;` | Yes | Account IDs to add |
 
 **IntegrationAction example:**
 
@@ -1258,7 +1258,7 @@ Remove users from organization
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `organizationId` | `string` | Yes | Organization ID |
-| `accountIds` | `Array<string>` | Yes | Account IDs to remove |
+| `accountIds` | `Array&lt;string&gt;` | Yes | Account IDs to remove |
 
 **IntegrationAction example:**
 

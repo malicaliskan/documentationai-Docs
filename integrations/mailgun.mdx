@@ -73,15 +73,15 @@ Sends an email message through Mailgun
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `domain` | `string` | No | Domain to send from (uses default if not specified) |
-| `from` | `string` | Yes | Sender email address (e.g., "Name <email@domain.com>") |
+| `from` | `string` | Yes | Sender email address (e.g., "Name &lt;email@domain.com&gt;") |
 | `to` | `string|string[]` | Yes | Recipient email address(es) |
 | `cc` | `string` | No | CC recipients |
 | `bcc` | `string` | No | BCC recipients |
 | `subject` | `string` | Yes | Email subject |
 | `text` | `string` | No | Plain text body |
 | `html` | `string` | No | HTML body |
-| `attachment` | `Object[]` | No | Array of attachments with {data, filename} |
-| `inline` | `Object[]` | No | Array of inline images with {data, filename} |
+| `attachment` | `Object[]` | No | Array of attachments with \{data, filename\} |
+| `inline` | `Object[]` | No | Array of inline images with \{data, filename\} |
 | `template` | `string` | No | Template name to use |
 | `variables` | `Object` | No | Template variables (h:X-Mailgun-Variables) |
 | `tags` | `string[]` | No | Tags for the message (o:tag) |
