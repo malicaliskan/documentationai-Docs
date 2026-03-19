@@ -124,6 +124,45 @@
                 "path": "integration-catalog"
               },
               {
+                "group": "AI & Machine Learning",
+                "pages": [
+                  {
+                    "title": "Google Gemini Integration",
+                    "path": "integrations/google-gemini"
+                  },
+                  {
+                    "title": "huggingFace Integration",
+                    "path": "integrations/hugging-face"
+                  },
+                  {
+                    "title": "OpenAI Integration",
+                    "path": "integrations/open-ai"
+                  }
+                ]
+              },
+              {
+                "group": "Analytics",
+                "pages": [
+                  {
+                    "title": "Amplitude Integration",
+                    "path": "integrations/amplitude"
+                  },
+                  {
+                    "title": "Google Analytics Integration",
+                    "path": "integrations/google-analytics"
+                  }
+                ]
+              },
+              {
+                "group": "Blockchain & Web3",
+                "pages": [
+                  {
+                    "title": "BtcTurk Integration",
+                    "path": "integrations/btc-turk"
+                  }
+                ]
+              },
+              {
                 "group": "Cloud Storage",
                 "pages": [
                   {
@@ -133,28 +172,11 @@
                 ]
               },
               {
-                "group": "Payments",
+                "group": "Customer Support",
                 "pages": [
                   {
-                    "title": "Stripe Integration",
-                    "path": "integrations/stripe"
-                  }
-                ]
-              },
-              {
-                "group": "AI & Machine Learning",
-                "pages": [
-                  {
-                    "title": "Google Gemini Integration",
-                    "path": "integrations/google-gemini"
-                  },
-                  {
-                    "title": "Hugging Face Integration",
-                    "path": "integrations/hugging-face"
-                  },
-                  {
-                    "title": "OpenAI Integration",
-                    "path": "integrations/open-ai"
+                    "title": "intercom Integration",
+                    "path": "integrations/intercom"
                   }
                 ]
               },
@@ -172,28 +194,11 @@
                 ]
               },
               {
-                "group": "Messaging",
+                "group": "Finance & Banking",
                 "pages": [
                   {
-                    "title": "Slack Integration",
-                    "path": "integrations/slack"
-                  },
-                  {
-                    "title": "Telegram Integration",
-                    "path": "integrations/telegram"
-                  }
-                ]
-              },
-              {
-                "group": "Analytics",
-                "pages": [
-                  {
-                    "title": "Google Analytics Integration",
-                    "path": "integrations/google-analytics"
-                  },
-                  {
-                    "title": "Amplitude Integration",
-                    "path": "integrations/amplitude"
+                    "title": "Yahoo Finance Integration",
+                    "path": "integrations/yahoo-finance"
                   }
                 ]
               },
@@ -207,6 +212,19 @@
                 ]
               },
               {
+                "group": "Messaging",
+                "pages": [
+                  {
+                    "title": "Slack Integration",
+                    "path": "integrations/slack"
+                  },
+                  {
+                    "title": "Telegram Bot Integration",
+                    "path": "integrations/telegram"
+                  }
+                ]
+              },
+              {
                 "group": "Notifications",
                 "pages": [
                   {
@@ -216,11 +234,20 @@
                 ]
               },
               {
-                "group": "Customer Support",
+                "group": "Other",
                 "pages": [
                   {
-                    "title": "Intercom Integration",
-                    "path": "integrations/intercom"
+                    "title": "Google Weather Integration",
+                    "path": "integrations/google-weather"
+                  }
+                ]
+              },
+              {
+                "group": "Payments",
+                "pages": [
+                  {
+                    "title": "Stripe Integration",
+                    "path": "integrations/stripe"
                   }
                 ]
               },

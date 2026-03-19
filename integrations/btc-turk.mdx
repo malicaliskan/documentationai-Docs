@@ -1,0 +1,940 @@
+---
+title: "BtcTurk Integration"
+description: >-
+  BtcTurk API client for cryptocurrency trading operations. Enables market data retrieval, order management, account info, and trade execution. Supports both public (unauthenticated) and private (authen
+providerKey: BtcTurk
+docVersion: 4
+---
+
+## BtcTurk
+
+**Category:** Blockchain & Web3  
+**Provider Key:** `BtcTurk`  
+
+BtcTurk API client for cryptocurrency trading operations. Enables market data retrieval, order management, account info, and trade execution. Supports both public (unauthenticated) and private (authenticated) endpoints.
+
+---
+
+## Configuration
+
+To use BtcTurk in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `string` | No | BtcTurk API public key (required for private endpoints) |
+| `apiSecret` | `string` | No | BtcTurk API secret key (required for private endpoints) |
+| `baseUrl` | `string` | No | Base URL for REST API |
+| `timeout` | `number` | No | Request timeout in milliseconds |
+
+### Example Configuration
+
+```json
+{
+  "provider": "BtcTurk",
+  "configuration": [
+    { "name": "apiKey", "value": "your-apiKey" },
+    { "name": "apiSecret", "value": "your-apiSecret" },
+    { "name": "baseUrl", "value": "your-baseUrl" },
+    { "name": "timeout", "value": 0 }
+  ]
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Market**: `getExchangeInfo`, `getTicker`, `getOrderBook`, `getTrades`, `getKlines`
+- **Account**: `getAccountBalance`, `getTransactions`, `getFiatTransactions`
+- **Orders**: `submitOrder`, `cancelOrder`, `getOpenOrders`, `getOrderHistory`, `getOrderById`
+- **Trades**: `getTradeHistory`
+- **Deposits**: `getCryptoDepositAddresses`, `withdrawCrypto`, `getWithdrawalHistory`
+
+---
+
+### Market
+
+#### `getExchangeInfo`
+
+**Get Exchange Info**
+
+Returns the exchange info including all trading pairs, currencies, and server time. Useful for discovering supported symbols and their trading rules.
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.getExchangeInfo()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.getExchangeInfo();
+```
+
+---
+
+#### `getTicker`
+
+**Get Ticker**
+
+Returns the current ticker information for all or a specific trading pair. Includes last price, volume, bid/ask, and 24h high/low.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `pairSymbol` | `string` | No | Trading pair symbol e.g. "BTCUSDT" (omit for all pairs) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getTickerAction",
+  "provider": "BtcTurk",
+  "action": "getTicker",
+  "parameters": [
+    { "parameterName": "pairSymbol", "parameterValue": "'your-pairSymbol'" }
+  ],
+  "contextPropertyName": "getTickerResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.getTicker({
+  pairSymbol: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.getTicker({
+  pairSymbol: /* string */,
+});
+```
+
+---
+
+#### `getOrderBook`
+
+**Get Order Book**
+
+Returns the current order book (bids and asks) for a given trading pair.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `pairSymbol` | `string` | Yes | Trading pair symbol e.g. "BTCUSDT" |
+| `limit` | `number` | No | Number of bid/ask levels to return (max 1000) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getOrderBookAction",
+  "provider": "BtcTurk",
+  "action": "getOrderBook",
+  "parameters": [
+    { "parameterName": "pairSymbol", "parameterValue": "'your-pairSymbol'" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getOrderBookResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.getOrderBook({
+  pairSymbol: /* string */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.getOrderBook({
+  pairSymbol: /* string */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `getTrades`
+
+**Get Recent Trades**
+
+Returns the latest trades executed on the exchange for a given trading pair.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `pairSymbol` | `string` | Yes | Trading pair symbol e.g. "BTCUSDT" |
+| `last` | `number` | No | Number of recent trades to return (max 50) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getTradesAction",
+  "provider": "BtcTurk",
+  "action": "getTrades",
+  "parameters": [
+    { "parameterName": "pairSymbol", "parameterValue": "'your-pairSymbol'" },
+    { "parameterName": "last", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getTradesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.getTrades({
+  pairSymbol: /* string */,
+  last: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.getTrades({
+  pairSymbol: /* string */,
+  last: /* number */,
+});
+```
+
+---
+
+#### `getKlines`
+
+**Get Candlestick Data**
+
+Returns OHLCV (candlestick) data for a trading pair and resolution.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbol` | `string` | Yes | Trading pair symbol e.g. "BTCUSDT" |
+| `resolution` | `string` | Yes | Candle resolution |
+| `from` | `number` | No | Unix timestamp (seconds) for start of range |
+| `to` | `number` | No | Unix timestamp (seconds) for end of range |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getKlinesAction",
+  "provider": "BtcTurk",
+  "action": "getKlines",
+  "parameters": [
+    { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
+    { "parameterName": "resolution", "parameterValue": "'your-resolution'" },
+    { "parameterName": "from", "parameterValue": "0" },
+    { "parameterName": "to", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getKlinesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.getKlines({
+  symbol: /* string */,
+  resolution: /* string */,
+  from: /* number */,
+  to: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.getKlines({
+  symbol: /* string */,
+  resolution: /* string */,
+  from: /* number */,
+  to: /* number */,
+});
+```
+
+---
+
+### Account
+
+#### `getAccountBalance`
+
+**Get Account Balance**
+
+Returns the current balances for all assets held in the authenticated account. Includes available, total, and locked amounts per currency.
+
+**Parameters:**
+
+This method takes no parameters.
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.getAccountBalance()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.getAccountBalance();
+```
+
+---
+
+#### `getTransactions`
+
+**Get Transactions**
+
+Returns the full transaction/fiat transaction history of the authenticated account.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `type` | `string` | No | Transaction type filter |
+| `startTime` | `number` | No | Start Unix timestamp in ms |
+| `endTime` | `number` | No | End Unix timestamp in ms |
+| `symbol` | `string` | No | Currency symbol filter e.g. "BTC" |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getTransactionsAction",
+  "provider": "BtcTurk",
+  "action": "getTransactions",
+  "parameters": [
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "startTime", "parameterValue": "0" },
+    { "parameterName": "endTime", "parameterValue": "0" },
+    { "parameterName": "symbol", "parameterValue": "'your-symbol'" }
+  ],
+  "contextPropertyName": "getTransactionsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.getTransactions({
+  type: /* string */,
+  startTime: /* number */,
+  endTime: /* number */,
+  symbol: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.getTransactions({
+  type: /* string */,
+  startTime: /* number */,
+  endTime: /* number */,
+  symbol: /* string */,
+});
+```
+
+---
+
+#### `getFiatTransactions`
+
+**Get Fiat Transactions**
+
+Returns the fiat (TRY) transaction history of the authenticated account.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `startTime` | `number` | No | Start Unix timestamp in ms |
+| `endTime` | `number` | No | End Unix timestamp in ms |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getFiatTransactionsAction",
+  "provider": "BtcTurk",
+  "action": "getFiatTransactions",
+  "parameters": [
+    { "parameterName": "startTime", "parameterValue": "0" },
+    { "parameterName": "endTime", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getFiatTransactionsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.getFiatTransactions({
+  startTime: /* number */,
+  endTime: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.getFiatTransactions({
+  startTime: /* number */,
+  endTime: /* number */,
+});
+```
+
+---
+
+### Orders
+
+#### `submitOrder`
+
+**Submit Order**
+
+Places a new buy or sell order on the specified trading pair. Supports market, limit, stopMarket, and stopLimit order types.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `pairSymbol` | `string` | Yes | Trading pair e.g. "BTCUSDT" |
+| `orderType` | `string` | Yes | Type of order |
+| `orderMethod` | `string` | Yes | Buy or sell |
+| `quantity` | `number` | No | Amount of the base asset to trade (required for limit/stop orders) |
+| `price` | `number` | No | Limit price (required for limit and stopLimit orders) |
+| `stopPrice` | `number` | No | Stop trigger price (required for stop orders) |
+| `newClientOrderId` | `string` | No | Custom client-assigned order ID |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "submitOrderAction",
+  "provider": "BtcTurk",
+  "action": "submitOrder",
+  "parameters": [
+    { "parameterName": "pairSymbol", "parameterValue": "'your-pairSymbol'" },
+    { "parameterName": "orderType", "parameterValue": "'your-orderType'" },
+    { "parameterName": "orderMethod", "parameterValue": "'your-orderMethod'" },
+    { "parameterName": "quantity", "parameterValue": "0" },
+    { "parameterName": "price", "parameterValue": "0" },
+    { "parameterName": "stopPrice", "parameterValue": "0" },
+    { "parameterName": "newClientOrderId", "parameterValue": "'your-newClientOrderId'" }
+  ],
+  "contextPropertyName": "submitOrderResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.submitOrder({
+  pairSymbol: /* string */,
+  orderType: /* string */,
+  orderMethod: /* string */,
+  quantity: /* number */,
+  price: /* number */,
+  stopPrice: /* number */,
+  newClientOrderId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.submitOrder({
+  pairSymbol: /* string */,
+  orderType: /* string */,
+  orderMethod: /* string */,
+  quantity: /* number */,
+  price: /* number */,
+  stopPrice: /* number */,
+  newClientOrderId: /* string */,
+});
+```
+
+---
+
+#### `cancelOrder`
+
+**Cancel Order**
+
+Cancels an existing open order by its order ID.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | The order ID to cancel |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "cancelOrderAction",
+  "provider": "BtcTurk",
+  "action": "cancelOrder",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "cancelOrderResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.cancelOrder({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.cancelOrder({
+  id: /* string */,
+});
+```
+
+---
+
+#### `getOpenOrders`
+
+**Get Open Orders**
+
+Retrieves all open orders for a trading pair or all pairs on the account.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `pairSymbol` | `string` | No | Trading pair symbol to filter by e.g. "BTCUSDT" |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getOpenOrdersAction",
+  "provider": "BtcTurk",
+  "action": "getOpenOrders",
+  "parameters": [
+    { "parameterName": "pairSymbol", "parameterValue": "'your-pairSymbol'" }
+  ],
+  "contextPropertyName": "getOpenOrdersResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.getOpenOrders({
+  pairSymbol: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.getOpenOrders({
+  pairSymbol: /* string */,
+});
+```
+
+---
+
+#### `getOrderHistory`
+
+**Get Order History**
+
+Retrieves the order history for the authenticated account with optional filters.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `pairSymbol` | `string` | No | Trading pair symbol e.g. "BTCUSDT" |
+| `startTime` | `number` | No | Start Unix timestamp in ms |
+| `endTime` | `number` | No | End Unix timestamp in ms |
+| `page` | `number` | No | Page number for pagination |
+| `limit` | `number` | No | Number of records per page (max 100) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getOrderHistoryAction",
+  "provider": "BtcTurk",
+  "action": "getOrderHistory",
+  "parameters": [
+    { "parameterName": "pairSymbol", "parameterValue": "'your-pairSymbol'" },
+    { "parameterName": "startTime", "parameterValue": "0" },
+    { "parameterName": "endTime", "parameterValue": "0" },
+    { "parameterName": "page", "parameterValue": "0" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getOrderHistoryResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.getOrderHistory({
+  pairSymbol: /* string */,
+  startTime: /* number */,
+  endTime: /* number */,
+  page: /* number */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.getOrderHistory({
+  pairSymbol: /* string */,
+  startTime: /* number */,
+  endTime: /* number */,
+  page: /* number */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `getOrderById`
+
+**Get Order By ID**
+
+Retrieves details for a specific order by its order ID.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | The order ID to look up |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getOrderByIdAction",
+  "provider": "BtcTurk",
+  "action": "getOrderById",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "getOrderByIdResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.getOrderById({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.getOrderById({
+  id: /* string */,
+});
+```
+
+---
+
+### Trades
+
+#### `getTradeHistory`
+
+**Get Trade History**
+
+Returns the trade (fill) history for the authenticated account. Each record represents an executed trade matched from an order.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `pairSymbol` | `string` | No | Trading pair symbol e.g. "BTCUSDT" |
+| `startTime` | `number` | No | Start Unix timestamp in ms |
+| `endTime` | `number` | No | End Unix timestamp in ms |
+| `page` | `number` | No | Page number for pagination |
+| `limit` | `number` | No | Number of records per page |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getTradeHistoryAction",
+  "provider": "BtcTurk",
+  "action": "getTradeHistory",
+  "parameters": [
+    { "parameterName": "pairSymbol", "parameterValue": "'your-pairSymbol'" },
+    { "parameterName": "startTime", "parameterValue": "0" },
+    { "parameterName": "endTime", "parameterValue": "0" },
+    { "parameterName": "page", "parameterValue": "0" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getTradeHistoryResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.getTradeHistory({
+  pairSymbol: /* string */,
+  startTime: /* number */,
+  endTime: /* number */,
+  page: /* number */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.getTradeHistory({
+  pairSymbol: /* string */,
+  startTime: /* number */,
+  endTime: /* number */,
+  page: /* number */,
+  limit: /* number */,
+});
+```
+
+---
+
+### Deposits
+
+#### `getCryptoDepositAddresses`
+
+**Get Crypto Deposit Addresses**
+
+Returns the list of crypto deposit addresses for the authenticated account.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `currency` | `string` | No | Currency symbol to filter e.g. "BTC" |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getCryptoDepositAddressesAction",
+  "provider": "BtcTurk",
+  "action": "getCryptoDepositAddresses",
+  "parameters": [
+    { "parameterName": "currency", "parameterValue": "'your-currency'" }
+  ],
+  "contextPropertyName": "getCryptoDepositAddressesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.getCryptoDepositAddresses({
+  currency: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.getCryptoDepositAddresses({
+  currency: /* string */,
+});
+```
+
+---
+
+#### `withdrawCrypto`
+
+**Withdraw Crypto**
+
+Submits a cryptocurrency withdrawal request from the authenticated account.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `currency` | `string` | Yes | Currency symbol e.g. "BTC" |
+| `address` | `string` | Yes | Destination wallet address |
+| `amount` | `number` | Yes | Amount to withdraw |
+| `tag` | `string` | No | Optional destination tag or memo (e.g. for XRP, XLM) |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "withdrawCryptoAction",
+  "provider": "BtcTurk",
+  "action": "withdrawCrypto",
+  "parameters": [
+    { "parameterName": "currency", "parameterValue": "'your-currency'" },
+    { "parameterName": "address", "parameterValue": "'your-address'" },
+    { "parameterName": "amount", "parameterValue": "0" },
+    { "parameterName": "tag", "parameterValue": "'your-tag'" }
+  ],
+  "contextPropertyName": "withdrawCryptoResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.withdrawCrypto({
+  currency: /* string */,
+  address: /* string */,
+  amount: /* number */,
+  tag: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.withdrawCrypto({
+  currency: /* string */,
+  address: /* string */,
+  amount: /* number */,
+  tag: /* string */,
+});
+```
+
+---
+
+#### `getWithdrawalHistory`
+
+**Get Withdrawal History**
+
+Returns crypto and fiat withdrawal history for the authenticated account.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `currency` | `string` | No | Currency symbol filter |
+| `startTime` | `number` | No | Start Unix timestamp in ms |
+| `endTime` | `number` | No | End Unix timestamp in ms |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getWithdrawalHistoryAction",
+  "provider": "BtcTurk",
+  "action": "getWithdrawalHistory",
+  "parameters": [
+    { "parameterName": "currency", "parameterValue": "'your-currency'" },
+    { "parameterName": "startTime", "parameterValue": "0" },
+    { "parameterName": "endTime", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getWithdrawalHistoryResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _BtcTurk.getWithdrawalHistory({
+  currency: /* string */,
+  startTime: /* number */,
+  endTime: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("BtcTurk");
+const result = await client.getWithdrawalHistory({
+  currency: /* string */,
+  startTime: /* number */,
+  endTime: /* number */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

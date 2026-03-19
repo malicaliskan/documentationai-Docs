@@ -1,0 +1,893 @@
+---
+title: "Google Weather Integration"
+description: >-
+  Google Weather API client for retrieving current conditions, forecasts, air quality, pollen data, and sun/moon information for any location. Supports both coordinate-based and place-based lookups.
+providerKey: googleWeather
+docVersion: 3
+---
+
+## Google Weather
+
+**Category:** Other  
+**Provider Key:** `googleWeather`  
+
+Google Weather API client for retrieving current conditions, forecasts, air quality, pollen data, and sun/moon information for any location. Supports both coordinate-based and place-based lookups.
+
+---
+
+## Configuration
+
+To use Google Weather in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `string` | Yes | Google Cloud API key with Weather API enabled |
+| `baseUrl` | `string` | No | Base URL override |
+| `timeout` | `number` | No | Request timeout in milliseconds |
+| `languageCode` | `string` | No | Default BCP-47 language code for responses |
+| `unitsSystem` | `string` | No | Default unit system |
+
+### Example Configuration
+
+```json
+{
+  "provider": "googleWeather",
+  "configuration": [
+    { "name": "apiKey", "value": "your-apiKey" },
+    { "name": "baseUrl", "value": "your-baseUrl" },
+    { "name": "timeout", "value": 0 },
+    { "name": "languageCode", "value": "your-languageCode" },
+    { "name": "unitsSystem", "value": "your-unitsSystem" }
+  ]
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **CurrentConditions**: `getCurrentConditions`
+- **Forecast**: `getHourlyForecast`, `getDailyForecast`
+- **AirQuality**: `getCurrentAirQuality`, `getHourlyAirQuality`, `getAirQualityHistory`
+- **Pollen**: `getPollenForecast`
+- **Astronomy**: `getSunEvents`
+- **Alerts**: `getSevereWeatherAlerts`
+- **Maps**: `getWeatherMapTileUrl`
+- **Reports**: `getFullWeatherReport`, `getWeatherByAddress`, `getEnvironmentalReport`
+
+---
+
+### CurrentConditions
+
+#### `getCurrentConditions`
+
+**Get Current Conditions**
+
+Retrieves the current weather conditions for a given geographic location. Returns temperature, humidity, wind speed, UV index, visibility, and more.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `latitude` | `number` | Yes | Latitude of the location (-90 to 90) |
+| `longitude` | `number` | Yes | Longitude of the location (-180 to 180) |
+| `languageCode` | `string` | No | BCP-47 language code override |
+| `unitsSystem` | `string` | No | Unit system override |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getCurrentConditionsAction",
+  "provider": "googleWeather",
+  "action": "getCurrentConditions",
+  "parameters": [
+    { "parameterName": "latitude", "parameterValue": "0" },
+    { "parameterName": "longitude", "parameterValue": "0" },
+    { "parameterName": "languageCode", "parameterValue": "'your-languageCode'" },
+    { "parameterName": "unitsSystem", "parameterValue": "'your-unitsSystem'" }
+  ],
+  "contextPropertyName": "getCurrentConditionsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleWeather.getCurrentConditions({
+  latitude: /* number */,
+  longitude: /* number */,
+  languageCode: /* string */,
+  unitsSystem: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleWeather");
+const result = await client.getCurrentConditions({
+  latitude: /* number */,
+  longitude: /* number */,
+  languageCode: /* string */,
+  unitsSystem: /* string */,
+});
+```
+
+---
+
+### Forecast
+
+#### `getHourlyForecast`
+
+**Get Hourly Forecast**
+
+Retrieves an hourly weather forecast for up to 240 hours (10 days) ahead. Returns temperature, precipitation probability, wind, and sky conditions per hour.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `latitude` | `number` | Yes | Latitude of the location |
+| `longitude` | `number` | Yes | Longitude of the location |
+| `hours` | `number` | No | Number of hours to forecast (1–240) |
+| `languageCode` | `string` | No | BCP-47 language code override |
+| `unitsSystem` | `string` | No | Unit system override |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getHourlyForecastAction",
+  "provider": "googleWeather",
+  "action": "getHourlyForecast",
+  "parameters": [
+    { "parameterName": "latitude", "parameterValue": "0" },
+    { "parameterName": "longitude", "parameterValue": "0" },
+    { "parameterName": "hours", "parameterValue": "0" },
+    { "parameterName": "languageCode", "parameterValue": "'your-languageCode'" },
+    { "parameterName": "unitsSystem", "parameterValue": "'your-unitsSystem'" }
+  ],
+  "contextPropertyName": "getHourlyForecastResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleWeather.getHourlyForecast({
+  latitude: /* number */,
+  longitude: /* number */,
+  hours: /* number */,
+  languageCode: /* string */,
+  unitsSystem: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleWeather");
+const result = await client.getHourlyForecast({
+  latitude: /* number */,
+  longitude: /* number */,
+  hours: /* number */,
+  languageCode: /* string */,
+  unitsSystem: /* string */,
+});
+```
+
+---
+
+#### `getDailyForecast`
+
+**Get Daily Forecast**
+
+Retrieves a daily weather forecast for up to 10 days. Returns high/low temperatures, precipitation totals, and a daily summary.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `latitude` | `number` | Yes | Latitude of the location |
+| `longitude` | `number` | Yes | Longitude of the location |
+| `days` | `number` | No | Number of days to forecast (1–10) |
+| `languageCode` | `string` | No | BCP-47 language code override |
+| `unitsSystem` | `string` | No | Unit system override |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getDailyForecastAction",
+  "provider": "googleWeather",
+  "action": "getDailyForecast",
+  "parameters": [
+    { "parameterName": "latitude", "parameterValue": "0" },
+    { "parameterName": "longitude", "parameterValue": "0" },
+    { "parameterName": "days", "parameterValue": "0" },
+    { "parameterName": "languageCode", "parameterValue": "'your-languageCode'" },
+    { "parameterName": "unitsSystem", "parameterValue": "'your-unitsSystem'" }
+  ],
+  "contextPropertyName": "getDailyForecastResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleWeather.getDailyForecast({
+  latitude: /* number */,
+  longitude: /* number */,
+  days: /* number */,
+  languageCode: /* string */,
+  unitsSystem: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleWeather");
+const result = await client.getDailyForecast({
+  latitude: /* number */,
+  longitude: /* number */,
+  days: /* number */,
+  languageCode: /* string */,
+  unitsSystem: /* string */,
+});
+```
+
+---
+
+### AirQuality
+
+#### `getCurrentAirQuality`
+
+**Get Current Air Quality**
+
+Retrieves current air quality index (AQI) and pollutant details for a location. Supports multiple index standards (US EPA, EAQI, CAQI, UBA, etc.).
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `latitude` | `number` | Yes | Latitude of the location |
+| `longitude` | `number` | Yes | Longitude of the location |
+| `includePollutants` | `boolean` | No | Include individual pollutant concentrations |
+| `includeHealthRecommendations` | `boolean` | No | Include health recommendations |
+| `extraComputations` | `string[]` | No | Additional computed fields to include |
+| `languageCode` | `string` | No | BCP-47 language code override |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getCurrentAirQualityAction",
+  "provider": "googleWeather",
+  "action": "getCurrentAirQuality",
+  "parameters": [
+    { "parameterName": "latitude", "parameterValue": "0" },
+    { "parameterName": "longitude", "parameterValue": "0" },
+    { "parameterName": "includePollutants", "parameterValue": "true" },
+    { "parameterName": "includeHealthRecommendations", "parameterValue": "true" },
+    { "parameterName": "extraComputations", "parameterValue": "[]" },
+    { "parameterName": "languageCode", "parameterValue": "'your-languageCode'" }
+  ],
+  "contextPropertyName": "getCurrentAirQualityResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleWeather.getCurrentAirQuality({
+  latitude: /* number */,
+  longitude: /* number */,
+  includePollutants: /* boolean */,
+  includeHealthRecommendations: /* boolean */,
+  extraComputations: /* string[] */,
+  languageCode: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleWeather");
+const result = await client.getCurrentAirQuality({
+  latitude: /* number */,
+  longitude: /* number */,
+  includePollutants: /* boolean */,
+  includeHealthRecommendations: /* boolean */,
+  extraComputations: /* string[] */,
+  languageCode: /* string */,
+});
+```
+
+---
+
+#### `getHourlyAirQuality`
+
+**Get Hourly Air Quality Forecast**
+
+Retrieves hourly air quality history or forecast data for a location. Returns AQI values and pollutant breakdown per hour.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `latitude` | `number` | Yes | Latitude of the location |
+| `longitude` | `number` | Yes | Longitude of the location |
+| `hours` | `number` | No | Number of forecast hours (1–96) |
+| `includePollutants` | `boolean` | No | Include pollutant concentrations |
+| `languageCode` | `string` | No | BCP-47 language code override |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getHourlyAirQualityAction",
+  "provider": "googleWeather",
+  "action": "getHourlyAirQuality",
+  "parameters": [
+    { "parameterName": "latitude", "parameterValue": "0" },
+    { "parameterName": "longitude", "parameterValue": "0" },
+    { "parameterName": "hours", "parameterValue": "0" },
+    { "parameterName": "includePollutants", "parameterValue": "true" },
+    { "parameterName": "languageCode", "parameterValue": "'your-languageCode'" }
+  ],
+  "contextPropertyName": "getHourlyAirQualityResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleWeather.getHourlyAirQuality({
+  latitude: /* number */,
+  longitude: /* number */,
+  hours: /* number */,
+  includePollutants: /* boolean */,
+  languageCode: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleWeather");
+const result = await client.getHourlyAirQuality({
+  latitude: /* number */,
+  longitude: /* number */,
+  hours: /* number */,
+  includePollutants: /* boolean */,
+  languageCode: /* string */,
+});
+```
+
+---
+
+#### `getAirQualityHistory`
+
+**Get Air Quality History**
+
+Retrieves historical air quality data for the past 30 days for a location. Useful for trend analysis and health impact assessments.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `latitude` | `number` | Yes | Latitude of the location |
+| `longitude` | `number` | Yes | Longitude of the location |
+| `startTime` | `string` | Yes | ISO 8601 start datetime (e.g., "2024-01-01T00:00:00Z") |
+| `endTime` | `string` | Yes | ISO 8601 end datetime |
+| `includePollutants` | `boolean` | No | Include pollutant concentrations |
+| `languageCode` | `string` | No | BCP-47 language code override |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getAirQualityHistoryAction",
+  "provider": "googleWeather",
+  "action": "getAirQualityHistory",
+  "parameters": [
+    { "parameterName": "latitude", "parameterValue": "0" },
+    { "parameterName": "longitude", "parameterValue": "0" },
+    { "parameterName": "startTime", "parameterValue": "'your-startTime'" },
+    { "parameterName": "endTime", "parameterValue": "'your-endTime'" },
+    { "parameterName": "includePollutants", "parameterValue": "true" },
+    { "parameterName": "languageCode", "parameterValue": "'your-languageCode'" }
+  ],
+  "contextPropertyName": "getAirQualityHistoryResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleWeather.getAirQualityHistory({
+  latitude: /* number */,
+  longitude: /* number */,
+  startTime: /* string */,
+  endTime: /* string */,
+  includePollutants: /* boolean */,
+  languageCode: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleWeather");
+const result = await client.getAirQualityHistory({
+  latitude: /* number */,
+  longitude: /* number */,
+  startTime: /* string */,
+  endTime: /* string */,
+  includePollutants: /* boolean */,
+  languageCode: /* string */,
+});
+```
+
+---
+
+### Pollen
+
+#### `getPollenForecast`
+
+**Get Pollen Forecast**
+
+Retrieves daily pollen forecast data for a location including grass, tree, and weed levels. Returns index values, risk categories, and plant-level breakdown.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `latitude` | `number` | Yes | Latitude of the location |
+| `longitude` | `number` | Yes | Longitude of the location |
+| `days` | `number` | No | Number of forecast days (1–5) |
+| `includePlantInfo` | `boolean` | No | Include per-plant pollen details |
+| `languageCode` | `string` | No | BCP-47 language code override |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getPollenForecastAction",
+  "provider": "googleWeather",
+  "action": "getPollenForecast",
+  "parameters": [
+    { "parameterName": "latitude", "parameterValue": "0" },
+    { "parameterName": "longitude", "parameterValue": "0" },
+    { "parameterName": "days", "parameterValue": "0" },
+    { "parameterName": "includePlantInfo", "parameterValue": "true" },
+    { "parameterName": "languageCode", "parameterValue": "'your-languageCode'" }
+  ],
+  "contextPropertyName": "getPollenForecastResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleWeather.getPollenForecast({
+  latitude: /* number */,
+  longitude: /* number */,
+  days: /* number */,
+  includePlantInfo: /* boolean */,
+  languageCode: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleWeather");
+const result = await client.getPollenForecast({
+  latitude: /* number */,
+  longitude: /* number */,
+  days: /* number */,
+  includePlantInfo: /* boolean */,
+  languageCode: /* string */,
+});
+```
+
+---
+
+### Astronomy
+
+#### `getSunEvents`
+
+**Get Sun Events**
+
+Retrieves sunrise, sunset, solar noon, and daylight duration for a location and date. Also includes twilight times (civil, nautical, astronomical).
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `latitude` | `number` | Yes | Latitude of the location |
+| `longitude` | `number` | Yes | Longitude of the location |
+| `date` | `string` | No | ISO date string (YYYY-MM-DD); defaults to today |
+| `languageCode` | `string` | No | BCP-47 language code override |
+| `unitsSystem` | `string` | No | Unit system override |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getSunEventsAction",
+  "provider": "googleWeather",
+  "action": "getSunEvents",
+  "parameters": [
+    { "parameterName": "latitude", "parameterValue": "0" },
+    { "parameterName": "longitude", "parameterValue": "0" },
+    { "parameterName": "date", "parameterValue": "'your-date'" },
+    { "parameterName": "languageCode", "parameterValue": "'your-languageCode'" },
+    { "parameterName": "unitsSystem", "parameterValue": "'your-unitsSystem'" }
+  ],
+  "contextPropertyName": "getSunEventsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleWeather.getSunEvents({
+  latitude: /* number */,
+  longitude: /* number */,
+  date: /* string */,
+  languageCode: /* string */,
+  unitsSystem: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleWeather");
+const result = await client.getSunEvents({
+  latitude: /* number */,
+  longitude: /* number */,
+  date: /* string */,
+  languageCode: /* string */,
+  unitsSystem: /* string */,
+});
+```
+
+---
+
+### Alerts
+
+#### `getSevereWeatherAlerts`
+
+**Get Severe Weather Alerts**
+
+Retrieves any active severe weather alerts for a given location. Returns alert type, severity, urgency, headline, and affected area description.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `latitude` | `number` | Yes | Latitude of the location |
+| `longitude` | `number` | Yes | Longitude of the location |
+| `languageCode` | `string` | No | BCP-47 language code override |
+| `unitsSystem` | `string` | No | Unit system override |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getSevereWeatherAlertsAction",
+  "provider": "googleWeather",
+  "action": "getSevereWeatherAlerts",
+  "parameters": [
+    { "parameterName": "latitude", "parameterValue": "0" },
+    { "parameterName": "longitude", "parameterValue": "0" },
+    { "parameterName": "languageCode", "parameterValue": "'your-languageCode'" },
+    { "parameterName": "unitsSystem", "parameterValue": "'your-unitsSystem'" }
+  ],
+  "contextPropertyName": "getSevereWeatherAlertsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleWeather.getSevereWeatherAlerts({
+  latitude: /* number */,
+  longitude: /* number */,
+  languageCode: /* string */,
+  unitsSystem: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleWeather");
+const result = await client.getSevereWeatherAlerts({
+  latitude: /* number */,
+  longitude: /* number */,
+  languageCode: /* string */,
+  unitsSystem: /* string */,
+});
+```
+
+---
+
+### Maps
+
+#### `getWeatherMapTileUrl`
+
+**Get Weather Map Tile URL**
+
+Generates a weather map tile URL for visualization overlays (e.g., radar, temperature). Returns a tile URL that can be embedded into mapping applications.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `mapType` | `string` | Yes | Type of weather map layer (e.g., "RADAR", "TEMPERATURE", "WIND_SPEED") |
+| `zoom` | `number` | Yes | Map zoom level (0–22) |
+| `x` | `number` | Yes | Tile X coordinate |
+| `y` | `number` | Yes | Tile Y coordinate |
+| `sessionToken` | `string` | No | Optionally pass a pre-existing session token |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getWeatherMapTileUrlAction",
+  "provider": "googleWeather",
+  "action": "getWeatherMapTileUrl",
+  "parameters": [
+    { "parameterName": "mapType", "parameterValue": "'your-mapType'" },
+    { "parameterName": "zoom", "parameterValue": "0" },
+    { "parameterName": "x", "parameterValue": "0" },
+    { "parameterName": "y", "parameterValue": "0" },
+    { "parameterName": "sessionToken", "parameterValue": "'your-sessionToken'" }
+  ],
+  "contextPropertyName": "getWeatherMapTileUrlResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleWeather.getWeatherMapTileUrl({
+  mapType: /* string */,
+  zoom: /* number */,
+  x: /* number */,
+  y: /* number */,
+  sessionToken: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleWeather");
+const result = await client.getWeatherMapTileUrl({
+  mapType: /* string */,
+  zoom: /* number */,
+  x: /* number */,
+  y: /* number */,
+  sessionToken: /* string */,
+});
+```
+
+---
+
+### Reports
+
+#### `getFullWeatherReport`
+
+**Get Full Weather Report**
+
+Retrieves a comprehensive weather report combining current conditions and a 5-day daily forecast for a single location in one call.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `latitude` | `number` | Yes | Latitude of the location |
+| `longitude` | `number` | Yes | Longitude of the location |
+| `forecastDays` | `number` | No | Number of forecast days (1–10) |
+| `forecastHours` | `number` | No | Number of forecast hours (1–240) |
+| `languageCode` | `string` | No | BCP-47 language code override |
+| `unitsSystem` | `string` | No | Unit system override |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getFullWeatherReportAction",
+  "provider": "googleWeather",
+  "action": "getFullWeatherReport",
+  "parameters": [
+    { "parameterName": "latitude", "parameterValue": "0" },
+    { "parameterName": "longitude", "parameterValue": "0" },
+    { "parameterName": "forecastDays", "parameterValue": "0" },
+    { "parameterName": "forecastHours", "parameterValue": "0" },
+    { "parameterName": "languageCode", "parameterValue": "'your-languageCode'" },
+    { "parameterName": "unitsSystem", "parameterValue": "'your-unitsSystem'" }
+  ],
+  "contextPropertyName": "getFullWeatherReportResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleWeather.getFullWeatherReport({
+  latitude: /* number */,
+  longitude: /* number */,
+  forecastDays: /* number */,
+  forecastHours: /* number */,
+  languageCode: /* string */,
+  unitsSystem: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleWeather");
+const result = await client.getFullWeatherReport({
+  latitude: /* number */,
+  longitude: /* number */,
+  forecastDays: /* number */,
+  forecastHours: /* number */,
+  languageCode: /* string */,
+  unitsSystem: /* string */,
+});
+```
+
+---
+
+#### `getWeatherByAddress`
+
+**Get Weather by Address**
+
+Looks up weather data for a named place or address using the Geocoding API, then retrieves current conditions for the resolved coordinates.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `address` | `string` | Yes | Free-form address or place name (e.g., "Tokyo, Japan") |
+| `languageCode` | `string` | No | BCP-47 language code override |
+| `unitsSystem` | `string` | No | Unit system override |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getWeatherByAddressAction",
+  "provider": "googleWeather",
+  "action": "getWeatherByAddress",
+  "parameters": [
+    { "parameterName": "address", "parameterValue": "'your-address'" },
+    { "parameterName": "languageCode", "parameterValue": "'your-languageCode'" },
+    { "parameterName": "unitsSystem", "parameterValue": "'your-unitsSystem'" }
+  ],
+  "contextPropertyName": "getWeatherByAddressResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleWeather.getWeatherByAddress({
+  address: /* string */,
+  languageCode: /* string */,
+  unitsSystem: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleWeather");
+const result = await client.getWeatherByAddress({
+  address: /* string */,
+  languageCode: /* string */,
+  unitsSystem: /* string */,
+});
+```
+
+---
+
+#### `getEnvironmentalReport`
+
+**Get Environmental Report**
+
+Retrieves a combined environmental quality snapshot including air quality and pollen forecast for a location. Useful for health-sensitive applications.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `latitude` | `number` | Yes | Latitude of the location |
+| `longitude` | `number` | Yes | Longitude of the location |
+| `pollenDays` | `number` | No | Number of days for pollen forecast |
+| `languageCode` | `string` | No | BCP-47 language code override |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getEnvironmentalReportAction",
+  "provider": "googleWeather",
+  "action": "getEnvironmentalReport",
+  "parameters": [
+    { "parameterName": "latitude", "parameterValue": "0" },
+    { "parameterName": "longitude", "parameterValue": "0" },
+    { "parameterName": "pollenDays", "parameterValue": "0" },
+    { "parameterName": "languageCode", "parameterValue": "'your-languageCode'" }
+  ],
+  "contextPropertyName": "getEnvironmentalReportResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _googleWeather.getEnvironmentalReport({
+  latitude: /* number */,
+  longitude: /* number */,
+  pollenDays: /* number */,
+  languageCode: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("googleWeather");
+const result = await client.getEnvironmentalReport({
+  latitude: /* number */,
+  longitude: /* number */,
+  pollenDays: /* number */,
+  languageCode: /* string */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)
