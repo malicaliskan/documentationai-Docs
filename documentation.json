@@ -181,6 +181,15 @@
                 ]
               },
               {
+                "group": "data-feed",
+                "pages": [
+                  {
+                    "title": "Open Library Integration",
+                    "path": "integrations/open-library"
+                  }
+                ]
+              },
+              {
                 "group": "Email",
                 "pages": [
                   {
@@ -257,6 +266,15 @@
                   {
                     "title": "Jira Service Management Integration",
                     "path": "integrations/jira-service-management"
+                  }
+                ]
+              },
+              {
+                "group": "SMS",
+                "pages": [
+                  {
+                    "title": "GsmNet Integration",
+                    "path": "integrations/gsm-net"
                   }
                 ]
               }

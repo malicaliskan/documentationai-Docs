@@ -1,0 +1,1492 @@
+---
+title: "GsmNet Integration"
+description: >-
+  GsmNet API client that enables sending SMS messages, managing contacts, querying delivery reports, and monitoring account credit balance via the GsmNet SMS gateway REST API.
+providerKey: GsmNet
+docVersion: 3
+---
+
+## GsmNet
+
+**Category:** SMS  
+**Provider Key:** `GsmNet`  
+
+GsmNet API client that enables sending SMS messages, managing contacts, querying delivery reports, and monitoring account credit balance via the GsmNet SMS gateway REST API.
+
+---
+
+## Configuration
+
+To use GsmNet in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `username` | `string` | Yes | Your GsmNet account username (login email or username) |
+| `password` | `string` | Yes | Your GsmNet account password |
+| `baseUrl` | `string` | No | API base URL override |
+| `timeout` | `number` | No | HTTP request timeout in milliseconds |
+
+### Example Configuration
+
+```json
+{
+  "provider": "GsmNet",
+  "configuration": [
+    { "name": "username", "value": "your-username" },
+    { "name": "password", "value": "your-password" },
+    { "name": "baseUrl", "value": "your-baseUrl" },
+    { "name": "timeout", "value": 0 }
+  ]
+}
+```
+
+---
+
+## Setup Guide
+
+#### How to Get API Keys
+
+**Difficulty**: Easy — registration is straightforward and credentials are available immediately after account activation.
+**Developer Portal**: https://www.gsmnet.ro/api/
+
+**Steps:**
+
+1. Visit https://www.gsmnet.ro and click "Înregistrare" (Register) to create an account.
+2. Complete the registration form with your company details and submit.
+3. After your account is activated, log in at https://www.gsmnet.ro/login.
+4. Your API credentials are your account **username** (login email/username) and **password** used at login.
+5. Optionally, whitelist your server IP in the customer panel under "Setări API" for added security.
+6. Review the API documentation at https://www.gsmnet.ro/api/ for endpoint details and usage limits.
+
+#### Configuration
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| username | string | Yes | Your GsmNet account username (login email or username) |
+| password | string | Yes | Your GsmNet account password |
+| baseUrl | string | No | Override the default API base URL (default: https://www.gsmnet.ro/api) |
+| timeout | number | No | HTTP request timeout in milliseconds (default: 30000) |
+
+##### Config Template
+
+```json
+{
+  "username": "YOUR_GSMNET_USERNAME",
+  "password": "YOUR_GSMNET_PASSWORD",
+  "baseUrl": "https://www.gsmnet.ro/api",
+  "timeout": 30000
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Account**: `getBalance`, `getAccountInfo`
+- **SMS**: `sendSms`, `sendBulkSms`, `scheduleSms`, `sendSmsToGroup`, `listSentMessages`
+- **Reports**: `getDeliveryReport`, `listDeliveryReports`
+- **Contacts**: `listContacts`, `createContact`, `updateContact`, `deleteContact`
+- **Groups**: `listGroups`, `createGroup`, `deleteGroup`
+- **Templates**: `listTemplates`, `createTemplate`, `deleteTemplate`
+- **Inbox**: `listInbox`
+- **Network**: `getNetworkInfo`
+
+---
+
+### Account
+
+#### `getBalance`
+
+**Get Account Balance**
+
+Retrieves the current SMS credit balance for the authenticated account. Useful for monitoring remaining credits before sending bulk messages.
+
+**Parameters:**
+
+This method takes no parameters.
+
+**Returns:** `Promise<{balance: number, currency: string, raw: string}>`
+
+| Field | Type |
+|---|---|
+| `balance` | `number` |
+| `currency` | `string` |
+| `raw` | `string` |
+
+**MScript example:**
+
+```javascript
+await _GsmNet.getBalance()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.getBalance();
+```
+
+---
+
+#### `getAccountInfo`
+
+**Get Account Info**
+
+Returns account information including username, registered phone, and API access details.
+
+**Parameters:**
+
+This method takes no parameters.
+
+**Returns:** `Promise<{username: string, email: string, phone: string, status: string, raw: Object}>`
+
+| Field | Type |
+|---|---|
+| `username` | `string` |
+| `email` | `string` |
+| `phone` | `string` |
+| `status` | `string` |
+| `raw` | `Object` |
+
+**MScript example:**
+
+```javascript
+await _GsmNet.getAccountInfo()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.getAccountInfo();
+```
+
+---
+
+### SMS
+
+#### `sendSms`
+
+**Send SMS**
+
+Sends a single SMS message to one or more recipients. The `to` field accepts a single number or a comma-separated list.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `to` | `string` | Yes | Recipient phone number(s) in international format (e.g. +40721000000), comma-separated for multiple |
+| `message` | `string` | Yes | Text content of the SMS (max 160 chars for single, up to 918 for multipart) |
+| `from` | `string` | No | Sender ID or phone number (alphanumeric, max 11 chars, or numeric up to 15 digits) |
+| `type` | `string` | No | Message type |
+| `encoding` | `string` | No | Character encoding |
+| `scheduledAt` | `string` | No | ISO 8601 datetime to schedule delivery (e.g. "2025-06-01T10:00:00") |
+
+**Returns:** `Promise<{messageId: string, to: string, status: string, parts: number, cost: number, raw: Object}>`
+
+| Field | Type |
+|---|---|
+| `messageId` | `string` |
+| `to` | `string` |
+| `status` | `string` |
+| `parts` | `number` |
+| `cost` | `number` |
+| `raw` | `Object` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "sendSmsAction",
+  "provider": "GsmNet",
+  "action": "sendSms",
+  "parameters": [
+    { "parameterName": "to", "parameterValue": "'your-to'" },
+    { "parameterName": "message", "parameterValue": "'your-message'" },
+    { "parameterName": "from", "parameterValue": "'your-from'" },
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "encoding", "parameterValue": "'your-encoding'" },
+    { "parameterName": "scheduledAt", "parameterValue": "'your-scheduledAt'" }
+  ],
+  "contextPropertyName": "sendSmsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.sendSms({
+  to: /* string */,
+  message: /* string */,
+  from: /* string */,
+  type: /* string */,
+  encoding: /* string */,
+  scheduledAt: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.sendSms({
+  to: /* string */,
+  message: /* string */,
+  from: /* string */,
+  type: /* string */,
+  encoding: /* string */,
+  scheduledAt: /* string */,
+});
+```
+
+---
+
+#### `sendBulkSms`
+
+**Send Bulk SMS**
+
+Sends the same SMS message to a list of recipients in a single API call. Ideal for bulk campaigns; recipients are provided as an array.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `recipients` | `Array&lt;string&gt;` | Yes | Array of phone numbers in international format |
+| `message` | `string` | Yes | Text content of the SMS |
+| `from` | `string` | No | Sender ID or phone number |
+| `type` | `string` | No | Message type |
+| `encoding` | `string` | No | Character encoding |
+| `scheduledAt` | `string` | No | ISO 8601 datetime to schedule delivery |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  batchId: string,
+  totalRecipients: number,
+  status: string,
+  cost: number,
+  results: Array<{
+    to: string,
+    messageId: string,
+    status: string
+  }>,
+  raw: Object
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "sendBulkSmsAction",
+  "provider": "GsmNet",
+  "action": "sendBulkSms",
+  "parameters": [
+    { "parameterName": "recipients", "parameterValue": "'your-recipients'" },
+    { "parameterName": "message", "parameterValue": "'your-message'" },
+    { "parameterName": "from", "parameterValue": "'your-from'" },
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "encoding", "parameterValue": "'your-encoding'" },
+    { "parameterName": "scheduledAt", "parameterValue": "'your-scheduledAt'" }
+  ],
+  "contextPropertyName": "sendBulkSmsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.sendBulkSms({
+  recipients: /* Array<string> */,
+  message: /* string */,
+  from: /* string */,
+  type: /* string */,
+  encoding: /* string */,
+  scheduledAt: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.sendBulkSms({
+  recipients: /* Array<string> */,
+  message: /* string */,
+  from: /* string */,
+  type: /* string */,
+  encoding: /* string */,
+  scheduledAt: /* string */,
+});
+```
+
+---
+
+#### `scheduleSms`
+
+**Schedule SMS**
+
+Schedules an SMS to be delivered at a future date and time. The message is queued and dispatched automatically by GsmNet at the given time.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `to` | `string` | Yes | Recipient phone number(s), comma-separated for multiple |
+| `message` | `string` | Yes | Text content of the SMS |
+| `scheduledAt` | `string` | Yes | ISO 8601 datetime for delivery (e.g. "2025-12-01T09:00:00") |
+| `from` | `string` | No | Sender ID or phone number |
+| `encoding` | `string` | No | Character encoding |
+
+**Returns:** `Promise<{messageId: string, to: string, scheduledAt: string, status: string, raw: Object}>`
+
+| Field | Type |
+|---|---|
+| `messageId` | `string` |
+| `to` | `string` |
+| `scheduledAt` | `string` |
+| `status` | `string` |
+| `raw` | `Object` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "scheduleSmsAction",
+  "provider": "GsmNet",
+  "action": "scheduleSms",
+  "parameters": [
+    { "parameterName": "to", "parameterValue": "'your-to'" },
+    { "parameterName": "message", "parameterValue": "'your-message'" },
+    { "parameterName": "scheduledAt", "parameterValue": "'your-scheduledAt'" },
+    { "parameterName": "from", "parameterValue": "'your-from'" },
+    { "parameterName": "encoding", "parameterValue": "'your-encoding'" }
+  ],
+  "contextPropertyName": "scheduleSmsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.scheduleSms({
+  to: /* string */,
+  message: /* string */,
+  scheduledAt: /* string */,
+  from: /* string */,
+  encoding: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.scheduleSms({
+  to: /* string */,
+  message: /* string */,
+  scheduledAt: /* string */,
+  from: /* string */,
+  encoding: /* string */,
+});
+```
+
+---
+
+#### `sendSmsToGroup`
+
+**Send SMS to Group**
+
+Sends an SMS to all contacts belonging to a specific group.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `groupId` | `string` | Yes | ID of the target contact group |
+| `message` | `string` | Yes | Text content of the SMS |
+| `from` | `string` | No | Sender ID or phone number |
+| `type` | `string` | No | Message type |
+| `scheduledAt` | `string` | No | ISO 8601 datetime to schedule delivery |
+
+**Returns:** `Promise<{batchId: string, groupId: string, status: string, totalSent: number, cost: number, raw: Object}>`
+
+| Field | Type |
+|---|---|
+| `batchId` | `string` |
+| `groupId` | `string` |
+| `status` | `string` |
+| `totalSent` | `number` |
+| `cost` | `number` |
+| `raw` | `Object` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "sendSmsToGroupAction",
+  "provider": "GsmNet",
+  "action": "sendSmsToGroup",
+  "parameters": [
+    { "parameterName": "groupId", "parameterValue": "'your-groupId'" },
+    { "parameterName": "message", "parameterValue": "'your-message'" },
+    { "parameterName": "from", "parameterValue": "'your-from'" },
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "scheduledAt", "parameterValue": "'your-scheduledAt'" }
+  ],
+  "contextPropertyName": "sendSmsToGroupResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.sendSmsToGroup({
+  groupId: /* string */,
+  message: /* string */,
+  from: /* string */,
+  type: /* string */,
+  scheduledAt: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.sendSmsToGroup({
+  groupId: /* string */,
+  message: /* string */,
+  from: /* string */,
+  type: /* string */,
+  scheduledAt: /* string */,
+});
+```
+
+---
+
+#### `listSentMessages`
+
+**List Sent Messages**
+
+Lists previously sent SMS messages with optional date and status filters. Results are paginated; use the page parameter to iterate through history.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `from` | `string` | No | Start date filter in YYYY-MM-DD format |
+| `to` | `string` | No | End date filter in YYYY-MM-DD format |
+| `status` | `string` | No | Filter by delivery status |
+| `limit` | `number` | No | Maximum number of records to return |
+| `page` | `number` | No | Page number for pagination |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  items: Array<{
+    messageId: string,
+    to: string,
+    from: string,
+    message: string,
+    status: string,
+    sentAt: string,
+    parts: number,
+    cost: number
+  }>,
+  total: number,
+  page: number,
+  hasMore: boolean,
+  raw: Object
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listSentMessagesAction",
+  "provider": "GsmNet",
+  "action": "listSentMessages",
+  "parameters": [
+    { "parameterName": "from", "parameterValue": "'your-from'" },
+    { "parameterName": "to", "parameterValue": "'your-to'" },
+    { "parameterName": "status", "parameterValue": "'your-status'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "page", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listSentMessagesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.listSentMessages({
+  from: /* string */,
+  to: /* string */,
+  status: /* string */,
+  limit: /* number */,
+  page: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.listSentMessages({
+  from: /* string */,
+  to: /* string */,
+  status: /* string */,
+  limit: /* number */,
+  page: /* number */,
+});
+```
+
+---
+
+### Reports
+
+#### `getDeliveryReport`
+
+**Get Delivery Report**
+
+Retrieves the delivery report for a specific sent message by its ID. Returns current delivery status and timestamps.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `messageId` | `string` | Yes | The message ID returned when the SMS was sent |
+
+**Returns:** `Promise<{messageId: string, to: string, status: string, sentAt: string, deliveredAt: string, errorCode: string, raw: Object}>`
+
+| Field | Type |
+|---|---|
+| `messageId` | `string` |
+| `to` | `string` |
+| `status` | `string` |
+| `sentAt` | `string` |
+| `deliveredAt` | `string` |
+| `errorCode` | `string` |
+| `raw` | `Object` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getDeliveryReportAction",
+  "provider": "GsmNet",
+  "action": "getDeliveryReport",
+  "parameters": [
+    { "parameterName": "messageId", "parameterValue": "'your-messageId'" }
+  ],
+  "contextPropertyName": "getDeliveryReportResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.getDeliveryReport({
+  messageId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.getDeliveryReport({
+  messageId: /* string */,
+});
+```
+
+---
+
+#### `listDeliveryReports`
+
+**List Delivery Reports**
+
+Lists delivery reports for messages sent within an optional date range. Supports pagination via limit and page parameters.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `from` | `string` | No | Start date filter in YYYY-MM-DD format |
+| `to` | `string` | No | End date filter in YYYY-MM-DD format |
+| `status` | `string` | No | Filter by delivery status |
+| `limit` | `number` | No | Maximum number of records to return |
+| `page` | `number` | No | Page number for pagination |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  items: Array<{
+    messageId: string,
+    to: string,
+    status: string,
+    sentAt: string,
+    deliveredAt: string,
+    cost: number
+  }>,
+  total: number,
+  page: number,
+  hasMore: boolean,
+  raw: Object
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listDeliveryReportsAction",
+  "provider": "GsmNet",
+  "action": "listDeliveryReports",
+  "parameters": [
+    { "parameterName": "from", "parameterValue": "'your-from'" },
+    { "parameterName": "to", "parameterValue": "'your-to'" },
+    { "parameterName": "status", "parameterValue": "'your-status'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "page", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listDeliveryReportsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.listDeliveryReports({
+  from: /* string */,
+  to: /* string */,
+  status: /* string */,
+  limit: /* number */,
+  page: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.listDeliveryReports({
+  from: /* string */,
+  to: /* string */,
+  status: /* string */,
+  limit: /* number */,
+  page: /* number */,
+});
+```
+
+---
+
+### Contacts
+
+#### `listContacts`
+
+**List Contacts**
+
+Lists all contacts stored in the GsmNet address book with optional pagination.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum number of contacts to return |
+| `page` | `number` | No | Page number for pagination |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  items: Array<{
+    id: string,
+    name: string,
+    phone: string,
+    group: string,
+    createdAt: string
+  }>,
+  total: number,
+  page: number,
+  hasMore: boolean,
+  raw: Object
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listContactsAction",
+  "provider": "GsmNet",
+  "action": "listContacts",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "page", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listContactsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.listContacts({
+  limit: /* number */,
+  page: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.listContacts({
+  limit: /* number */,
+  page: /* number */,
+});
+```
+
+---
+
+#### `createContact`
+
+**Create Contact**
+
+Adds a new contact to the GsmNet address book.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | Yes | Full name of the contact |
+| `phone` | `string` | Yes | Phone number in international format |
+| `group` | `string` | No | Group or list name to add the contact to |
+| `email` | `string` | No | Email address of the contact |
+
+**Returns:** `Promise<{id: string, name: string, phone: string, group: string, raw: Object}>`
+
+| Field | Type |
+|---|---|
+| `id` | `string` |
+| `name` | `string` |
+| `phone` | `string` |
+| `group` | `string` |
+| `raw` | `Object` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createContactAction",
+  "provider": "GsmNet",
+  "action": "createContact",
+  "parameters": [
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "phone", "parameterValue": "'your-phone'" },
+    { "parameterName": "group", "parameterValue": "'your-group'" },
+    { "parameterName": "email", "parameterValue": "'your-email'" }
+  ],
+  "contextPropertyName": "createContactResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.createContact({
+  name: /* string */,
+  phone: /* string */,
+  group: /* string */,
+  email: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.createContact({
+  name: /* string */,
+  phone: /* string */,
+  group: /* string */,
+  email: /* string */,
+});
+```
+
+---
+
+#### `updateContact`
+
+**Update Contact**
+
+Updates an existing contact's details in the address book.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | Contact ID to update |
+| `name` | `string` | No | New full name |
+| `phone` | `string` | No | New phone number in international format |
+| `group` | `string` | No | New group name |
+| `email` | `string` | No | New email address |
+
+**Returns:** `Promise<{id: string, name: string, phone: string, group: string, updated: boolean, raw: Object}>`
+
+| Field | Type |
+|---|---|
+| `id` | `string` |
+| `name` | `string` |
+| `phone` | `string` |
+| `group` | `string` |
+| `updated` | `boolean` |
+| `raw` | `Object` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateContactAction",
+  "provider": "GsmNet",
+  "action": "updateContact",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" },
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "phone", "parameterValue": "'your-phone'" },
+    { "parameterName": "group", "parameterValue": "'your-group'" },
+    { "parameterName": "email", "parameterValue": "'your-email'" }
+  ],
+  "contextPropertyName": "updateContactResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.updateContact({
+  id: /* string */,
+  name: /* string */,
+  phone: /* string */,
+  group: /* string */,
+  email: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.updateContact({
+  id: /* string */,
+  name: /* string */,
+  phone: /* string */,
+  group: /* string */,
+  email: /* string */,
+});
+```
+
+---
+
+#### `deleteContact`
+
+**Delete Contact**
+
+Deletes a contact from the GsmNet address book by its ID.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | ID of the contact to delete |
+
+**Returns:** `Promise<{id: string, deleted: boolean, raw: Object}>`
+
+| Field | Type |
+|---|---|
+| `id` | `string` |
+| `deleted` | `boolean` |
+| `raw` | `Object` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteContactAction",
+  "provider": "GsmNet",
+  "action": "deleteContact",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "deleteContactResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.deleteContact({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.deleteContact({
+  id: /* string */,
+});
+```
+
+---
+
+### Groups
+
+#### `listGroups`
+
+**List Contact Groups**
+
+Lists all contact groups (distribution lists) in the account.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum number of groups to return |
+| `page` | `number` | No | Page number |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  items: Array<{
+    id: string,
+    name: string,
+    contactCount: number,
+    createdAt: string
+  }>,
+  total: number,
+  page: number,
+  hasMore: boolean,
+  raw: Object
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listGroupsAction",
+  "provider": "GsmNet",
+  "action": "listGroups",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "page", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listGroupsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.listGroups({
+  limit: /* number */,
+  page: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.listGroups({
+  limit: /* number */,
+  page: /* number */,
+});
+```
+
+---
+
+#### `createGroup`
+
+**Create Contact Group**
+
+Creates a new contact group (distribution list) in the account.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | Yes | Name of the new group |
+| `description` | `string` | No | Optional description of the group |
+
+**Returns:** `Promise<{id: string, name: string, description: string, raw: Object}>`
+
+| Field | Type |
+|---|---|
+| `id` | `string` |
+| `name` | `string` |
+| `description` | `string` |
+| `raw` | `Object` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createGroupAction",
+  "provider": "GsmNet",
+  "action": "createGroup",
+  "parameters": [
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" }
+  ],
+  "contextPropertyName": "createGroupResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.createGroup({
+  name: /* string */,
+  description: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.createGroup({
+  name: /* string */,
+  description: /* string */,
+});
+```
+
+---
+
+#### `deleteGroup`
+
+**Delete Contact Group**
+
+Deletes a contact group by its ID. Contacts within the group are not deleted.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | ID of the group to delete |
+
+**Returns:** `Promise<{id: string, deleted: boolean, raw: Object}>`
+
+| Field | Type |
+|---|---|
+| `id` | `string` |
+| `deleted` | `boolean` |
+| `raw` | `Object` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteGroupAction",
+  "provider": "GsmNet",
+  "action": "deleteGroup",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "deleteGroupResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.deleteGroup({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.deleteGroup({
+  id: /* string */,
+});
+```
+
+---
+
+### Templates
+
+#### `listTemplates`
+
+**List SMS Templates**
+
+Lists saved SMS templates for reuse in campaigns.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Maximum number of templates to return |
+| `page` | `number` | No | Page number |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  items: Array<{
+    id: string,
+    name: string,
+    message: string,
+    createdAt: string
+  }>,
+  total: number,
+  page: number,
+  hasMore: boolean,
+  raw: Object
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listTemplatesAction",
+  "provider": "GsmNet",
+  "action": "listTemplates",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "page", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listTemplatesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.listTemplates({
+  limit: /* number */,
+  page: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.listTemplates({
+  limit: /* number */,
+  page: /* number */,
+});
+```
+
+---
+
+#### `createTemplate`
+
+**Create SMS Template**
+
+Creates a new SMS template for later use in campaigns.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | Yes | Descriptive name for the template |
+| `message` | `string` | Yes | Template text content (supports variable placeholders like \{name\}) |
+
+**Returns:** `Promise<{id: string, name: string, message: string, raw: Object}>`
+
+| Field | Type |
+|---|---|
+| `id` | `string` |
+| `name` | `string` |
+| `message` | `string` |
+| `raw` | `Object` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createTemplateAction",
+  "provider": "GsmNet",
+  "action": "createTemplate",
+  "parameters": [
+    { "parameterName": "name", "parameterValue": "'your-name'" },
+    { "parameterName": "message", "parameterValue": "'your-message'" }
+  ],
+  "contextPropertyName": "createTemplateResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.createTemplate({
+  name: /* string */,
+  message: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.createTemplate({
+  name: /* string */,
+  message: /* string */,
+});
+```
+
+---
+
+#### `deleteTemplate`
+
+**Delete SMS Template**
+
+Deletes a saved SMS template by its ID.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | `string` | Yes | ID of the template to delete |
+
+**Returns:** `Promise<{id: string, deleted: boolean, raw: Object}>`
+
+| Field | Type |
+|---|---|
+| `id` | `string` |
+| `deleted` | `boolean` |
+| `raw` | `Object` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteTemplateAction",
+  "provider": "GsmNet",
+  "action": "deleteTemplate",
+  "parameters": [
+    { "parameterName": "id", "parameterValue": "'your-id'" }
+  ],
+  "contextPropertyName": "deleteTemplateResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.deleteTemplate({
+  id: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.deleteTemplate({
+  id: /* string */,
+});
+```
+
+---
+
+### Inbox
+
+#### `listInbox`
+
+**List Inbox Messages**
+
+Lists incoming SMS messages received on virtual numbers assigned to the account. Supports optional date filtering and pagination.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `from` | `string` | No | Filter messages received from this date (YYYY-MM-DD) |
+| `to` | `string` | No | Filter messages received until this date (YYYY-MM-DD) |
+| `limit` | `number` | No | Maximum number of messages to return |
+| `page` | `number` | No | Page number for pagination |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  items: Array<{
+    id: string,
+    from: string,
+    to: string,
+    message: string,
+    receivedAt: string
+  }>,
+  total: number,
+  page: number,
+  hasMore: boolean,
+  raw: Object
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listInboxAction",
+  "provider": "GsmNet",
+  "action": "listInbox",
+  "parameters": [
+    { "parameterName": "from", "parameterValue": "'your-from'" },
+    { "parameterName": "to", "parameterValue": "'your-to'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "page", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "listInboxResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.listInbox({
+  from: /* string */,
+  to: /* string */,
+  limit: /* number */,
+  page: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.listInbox({
+  from: /* string */,
+  to: /* string */,
+  limit: /* number */,
+  page: /* number */,
+});
+```
+
+---
+
+### Network
+
+#### `getNetworkInfo`
+
+**Get Network Info**
+
+Queries available networks and coverage information for a given country or phone number prefix. Useful for verifying reachability before sending.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `phone` | `string` | Yes | Phone number or prefix to look up (e.g. +40721...) |
+
+**Returns:** `Promise<{phone: string, countryCode: string, networkName: string, networkType: string, mcc: string, mnc: string, roaming: boolean, raw: Object}>`
+
+| Field | Type |
+|---|---|
+| `phone` | `string` |
+| `countryCode` | `string` |
+| `networkName` | `string` |
+| `networkType` | `string` |
+| `mcc` | `string` |
+| `mnc` | `string` |
+| `roaming` | `boolean` |
+| `raw` | `Object` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getNetworkInfoAction",
+  "provider": "GsmNet",
+  "action": "getNetworkInfo",
+  "parameters": [
+    { "parameterName": "phone", "parameterValue": "'your-phone'" }
+  ],
+  "contextPropertyName": "getNetworkInfoResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _GsmNet.getNetworkInfo({
+  phone: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("GsmNet");
+const result = await client.getNetworkInfo({
+  phone: /* string */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

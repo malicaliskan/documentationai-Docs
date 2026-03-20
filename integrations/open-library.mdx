@@ -1,0 +1,1565 @@
+---
+title: "Open Library Integration"
+description: >-
+  Open Library API client for searching books, authors, works, editions, and subjects. Provides access to the Internet Archive's Open Library catalog of millions of books. No API key required — the Open
+providerKey: openLibrary
+docVersion: 5
+---
+
+## Open Library
+
+**Category:** data-feed  
+**Provider Key:** `openLibrary`  
+
+Open Library API client for searching books, authors, works, editions, and subjects. Provides access to the Internet Archive's Open Library catalog of millions of books. No API key required — the Open Library REST API is publicly accessible.
+
+---
+
+## Configuration
+
+To use Open Library in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `baseUrl` | `string` | No | Base URL for the Open Library API |
+| `timeout` | `number` | No | HTTP request timeout in milliseconds |
+| `maxRetries` | `number` | No | Number of times to retry on transient failures |
+
+### Example Configuration
+
+```json
+{
+  "provider": "openLibrary",
+  "configuration": [
+    { "name": "baseUrl", "value": "your-baseUrl" },
+    { "name": "timeout", "value": 0 },
+    { "name": "maxRetries", "value": 0 }
+  ]
+}
+```
+
+---
+
+## Setup Guide
+
+#### How to Get API Keys
+
+**Difficulty**: Easy — No sign-up or API key required to get started
+**Developer Portal**: https://openlibrary.org/developers/api
+
+**Steps:**
+
+1. No API key is required. Simply use the base URL `https://openlibrary.org`.
+2. Review the API documentation at https://openlibrary.org/developers/api for available endpoints.
+3. Optionally, create an Open Library account at https://openlibrary.org/account/create if you
+   need to write/edit book data (not covered by this client's read-only scope).
+4. Optionally configure a custom `baseUrl` if you are running a local mirror of Open Library.
+
+#### Configuration
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| baseUrl | string | No | Override the Open Library base URL (default: https://openlibrary.org) |
+| timeout | number | No | HTTP request timeout in milliseconds (default: 15000) |
+| maxRetries | number | No | Number of times to retry failed requests (default: 2) |
+
+##### Config Template
+
+```json
+{
+  "baseUrl": "https://openlibrary.org",
+  "timeout": 15000,
+  "maxRetries": 2
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Books**: `searchBooks`, `getWork`, `getWorkEditions`, `getEdition`, `getBookByISBN`, `getBooksByIdentifiers`, `advancedSearch`, `searchAllBooks`
+- **Authors**: `searchAuthors`, `getAuthor`, `getAuthorWorks`
+- **Subjects**: `getSubject`, `searchSubjects`
+- **Discovery**: `getTrendingBooks`, `getFeaturedBooks`, `getRecentChanges`
+- **Covers**: `getCoverUrl`, `downloadCover`
+- **Lists**: `getUserLists`, `getListEntries`
+
+---
+
+### Books
+
+#### `searchBooks`
+
+**Search Books**
+
+Search across all books in Open Library using a full-text query. Supports filtering by author, title, subject, language, and more. Returns paginated results with rich metadata.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | `string` | Yes | Full-text search query (required) |
+| `author` | `string` | No | Filter results by author name |
+| `title` | `string` | No | Filter results by book title |
+| `subject` | `string` | No | Filter results by subject/genre |
+| `language` | `string` | No | Filter by language code (e.g., "eng") |
+| `sort` | `string` | No | Sort order for results |
+| `limit` | `number` | No | Number of results to return (max 100) |
+| `page` | `number` | No | Page number for pagination |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  numFound: number,
+  start: number,
+  items: Array<{
+    key: string,
+    title: string,
+    author_name: Array<string>,
+    first_publish_year: number,
+    isbn: Array<string>,
+    subject: Array<string>,
+    cover_i: number,
+    edition_count: number,
+    language: Array<string>
+  }>,
+  hasMore: boolean
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "searchBooksAction",
+  "provider": "openLibrary",
+  "action": "searchBooks",
+  "parameters": [
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "author", "parameterValue": "'your-author'" },
+    { "parameterName": "title", "parameterValue": "'your-title'" },
+    { "parameterName": "subject", "parameterValue": "'your-subject'" },
+    { "parameterName": "language", "parameterValue": "'your-language'" },
+    { "parameterName": "sort", "parameterValue": "'your-sort'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "page", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "searchBooksResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.searchBooks({
+  query: /* string */,
+  author: /* string */,
+  title: /* string */,
+  subject: /* string */,
+  language: /* string */,
+  sort: /* string */,
+  limit: /* number */,
+  page: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.searchBooks({
+  query: /* string */,
+  author: /* string */,
+  title: /* string */,
+  subject: /* string */,
+  language: /* string */,
+  sort: /* string */,
+  limit: /* number */,
+  page: /* number */,
+});
+```
+
+---
+
+#### `getWork`
+
+**Get Work**
+
+Retrieve full metadata for a specific book work by its Open Library Work ID. A "work" is the abstract concept of a book, independent of edition.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `workId` | `string` | Yes | Open Library Work ID (e.g., "OL45804W") |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  key: string,
+  title: string,
+  description: string,
+  subjects: Array<string>,
+  authors: Array<{
+    author: {
+      key: string
+    }
+  }>,
+  covers: Array<number>,
+  first_publish_date: string,
+  subject_places: Array<string>,
+  subject_times: Array<string>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getWorkAction",
+  "provider": "openLibrary",
+  "action": "getWork",
+  "parameters": [
+    { "parameterName": "workId", "parameterValue": "'your-workId'" }
+  ],
+  "contextPropertyName": "getWorkResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.getWork({
+  workId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.getWork({
+  workId: /* string */,
+});
+```
+
+---
+
+#### `getWorkEditions`
+
+**Get Work Editions**
+
+List all editions associated with a given Open Library Work ID. Returns paginated edition records.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `workId` | `string` | Yes | Open Library Work ID (e.g., "OL45804W") |
+| `limit` | `number` | No | Number of editions to return |
+| `offset` | `number` | No | Offset for pagination |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  size: number,
+  items: Array<{
+    key: string,
+    title: string,
+    publishers: Array<string>,
+    publish_date: string,
+    isbn_13: Array<string>,
+    isbn_10: Array<string>,
+    number_of_pages: number,
+    covers: Array<number>,
+    languages: Array<{
+      key: string
+    }>
+  }>,
+  hasMore: boolean
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getWorkEditionsAction",
+  "provider": "openLibrary",
+  "action": "getWorkEditions",
+  "parameters": [
+    { "parameterName": "workId", "parameterValue": "'your-workId'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "offset", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getWorkEditionsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.getWorkEditions({
+  workId: /* string */,
+  limit: /* number */,
+  offset: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.getWorkEditions({
+  workId: /* string */,
+  limit: /* number */,
+  offset: /* number */,
+});
+```
+
+---
+
+#### `getEdition`
+
+**Get Edition**
+
+Retrieve detailed metadata for a specific edition by its Open Library Edition ID. Includes publisher, ISBN, cover, language, and physical description.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `editionId` | `string` | Yes | Open Library Edition ID (e.g., "OL7353617M") |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  key: string,
+  title: string,
+  publishers: Array<string>,
+  publish_date: string,
+  isbn_13: Array<string>,
+  isbn_10: Array<string>,
+  number_of_pages: number,
+  covers: Array<number>,
+  languages: Array<{
+    key: string
+  }>,
+  works: Array<{
+    key: string
+  }>,
+  subjects: Array<string>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getEditionAction",
+  "provider": "openLibrary",
+  "action": "getEdition",
+  "parameters": [
+    { "parameterName": "editionId", "parameterValue": "'your-editionId'" }
+  ],
+  "contextPropertyName": "getEditionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.getEdition({
+  editionId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.getEdition({
+  editionId: /* string */,
+});
+```
+
+---
+
+#### `getBookByISBN`
+
+**Get Book by ISBN**
+
+Look up a book by its ISBN-10 or ISBN-13 number. Returns the edition record associated with the given ISBN.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `isbn` | `string` | Yes | ISBN-10 or ISBN-13 string (digits only or with hyphens) |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  key: string,
+  title: string,
+  publishers: Array<string>,
+  publish_date: string,
+  isbn_13: Array<string>,
+  isbn_10: Array<string>,
+  number_of_pages: number,
+  covers: Array<number>,
+  works: Array<{
+    key: string
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getBookByISBNAction",
+  "provider": "openLibrary",
+  "action": "getBookByISBN",
+  "parameters": [
+    { "parameterName": "isbn", "parameterValue": "'your-isbn'" }
+  ],
+  "contextPropertyName": "getBookByISBNResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.getBookByISBN({
+  isbn: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.getBookByISBN({
+  isbn: /* string */,
+});
+```
+
+---
+
+#### `getBooksByIdentifiers`
+
+**Get Books by Identifiers**
+
+Retrieve book data using the Books API with multiple identifier types. Supports ISBN, LCCN, OCLC, OLID, and Goodreads IDs. Returns a map of results.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `bibkeys` | `string[]` | Yes | Array of identifier strings (e.g., ["ISBN:9780451526342", "OLID:OL7353617M"]) |
+| `includeDetails` | `boolean` | No | If true, returns full details instead of overview |
+
+**Returns:** `Promise<{results: Object}>`
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getBooksByIdentifiersAction",
+  "provider": "openLibrary",
+  "action": "getBooksByIdentifiers",
+  "parameters": [
+    { "parameterName": "bibkeys", "parameterValue": "[]" },
+    { "parameterName": "includeDetails", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "getBooksByIdentifiersResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.getBooksByIdentifiers({
+  bibkeys: /* string[] */,
+  includeDetails: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.getBooksByIdentifiers({
+  bibkeys: /* string[] */,
+  includeDetails: /* boolean */,
+});
+```
+
+---
+
+#### `advancedSearch`
+
+**Advanced Search**
+
+Search the Open Library full-text search endpoint with advanced field filters. Supports searching across title, author, publisher, subject, place, person, and language.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `title` | `string` | No | Search within titles |
+| `author` | `string` | No | Search within author names |
+| `publisher` | `string` | No | Search within publisher names |
+| `subject` | `string` | No | Search within subjects |
+| `place` | `string` | No | Search within place tags |
+| `person` | `string` | No | Search within person tags |
+| `language` | `string` | No | Filter by language code |
+| `firstPublishYear` | `number` | No | Filter by first publication year |
+| `sort` | `string` | No | Sort order for results |
+| `limit` | `number` | No | Number of results to return |
+| `page` | `number` | No | Page number for pagination |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  numFound: number,
+  start: number,
+  items: Array<{
+    key: string,
+    title: string,
+    author_name: Array<string>,
+    first_publish_year: number,
+    isbn: Array<string>,
+    subject: Array<string>,
+    publisher: Array<string>,
+    cover_i: number,
+    edition_count: number,
+    language: Array<string>
+  }>,
+  hasMore: boolean
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "advancedSearchAction",
+  "provider": "openLibrary",
+  "action": "advancedSearch",
+  "parameters": [
+    { "parameterName": "title", "parameterValue": "'your-title'" },
+    { "parameterName": "author", "parameterValue": "'your-author'" },
+    { "parameterName": "publisher", "parameterValue": "'your-publisher'" },
+    { "parameterName": "subject", "parameterValue": "'your-subject'" },
+    { "parameterName": "place", "parameterValue": "'your-place'" },
+    { "parameterName": "person", "parameterValue": "'your-person'" },
+    { "parameterName": "language", "parameterValue": "'your-language'" },
+    { "parameterName": "firstPublishYear", "parameterValue": "0" },
+    { "parameterName": "sort", "parameterValue": "'your-sort'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "page", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "advancedSearchResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.advancedSearch({
+  title: /* string */,
+  author: /* string */,
+  publisher: /* string */,
+  subject: /* string */,
+  place: /* string */,
+  person: /* string */,
+  language: /* string */,
+  firstPublishYear: /* number */,
+  sort: /* string */,
+  limit: /* number */,
+  page: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.advancedSearch({
+  title: /* string */,
+  author: /* string */,
+  publisher: /* string */,
+  subject: /* string */,
+  place: /* string */,
+  person: /* string */,
+  language: /* string */,
+  firstPublishYear: /* number */,
+  sort: /* string */,
+  limit: /* number */,
+  page: /* number */,
+});
+```
+
+---
+
+#### `searchAllBooks`
+
+**Search All Books (Auto-paginate)**
+
+Auto-paginate through all pages of a book search and return every result. Use with caution for very broad queries — may produce thousands of results.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | `string` | Yes | Full-text search query (required) |
+| `author` | `string` | No | Filter by author name |
+| `title` | `string` | No | Filter by book title |
+| `subject` | `string` | No | Filter by subject |
+| `language` | `string` | No | Filter by language code |
+| `sort` | `string` | No | Sort order for results |
+| `maxResults` | `number` | No | Hard cap on total results fetched |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  numFound: number,
+  items: Array<{
+    key: string,
+    title: string,
+    author_name: Array<string>,
+    first_publish_year: number,
+    isbn: Array<string>,
+    cover_i: number,
+    edition_count: number
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "searchAllBooksAction",
+  "provider": "openLibrary",
+  "action": "searchAllBooks",
+  "parameters": [
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "author", "parameterValue": "'your-author'" },
+    { "parameterName": "title", "parameterValue": "'your-title'" },
+    { "parameterName": "subject", "parameterValue": "'your-subject'" },
+    { "parameterName": "language", "parameterValue": "'your-language'" },
+    { "parameterName": "sort", "parameterValue": "'your-sort'" },
+    { "parameterName": "maxResults", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "searchAllBooksResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.searchAllBooks({
+  query: /* string */,
+  author: /* string */,
+  title: /* string */,
+  subject: /* string */,
+  language: /* string */,
+  sort: /* string */,
+  maxResults: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.searchAllBooks({
+  query: /* string */,
+  author: /* string */,
+  title: /* string */,
+  subject: /* string */,
+  language: /* string */,
+  sort: /* string */,
+  maxResults: /* number */,
+});
+```
+
+---
+
+### Authors
+
+#### `searchAuthors`
+
+**Search Authors**
+
+Search for authors by name across the Open Library catalog. Returns paginated author records with biographical metadata.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | `string` | Yes | Author name or keyword to search for (required) |
+| `limit` | `number` | No | Number of results to return |
+| `offset` | `number` | No | Offset for pagination |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  numFound: number,
+  items: Array<{
+    key: string,
+    name: string,
+    birth_date: string,
+    death_date: string,
+    top_work: string,
+    work_count: number,
+    top_subjects: Array<string>
+  }>,
+  hasMore: boolean
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "searchAuthorsAction",
+  "provider": "openLibrary",
+  "action": "searchAuthors",
+  "parameters": [
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "offset", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "searchAuthorsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.searchAuthors({
+  query: /* string */,
+  limit: /* number */,
+  offset: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.searchAuthors({
+  query: /* string */,
+  limit: /* number */,
+  offset: /* number */,
+});
+```
+
+---
+
+#### `getAuthor`
+
+**Get Author**
+
+Retrieve full profile information for an author by their Open Library Author ID. Includes bio, birth/death dates, photos, and links.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `authorId` | `string` | Yes | Open Library Author ID (e.g., "OL23919A") |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  key: string,
+  name: string,
+  personal_name: string,
+  bio: string,
+  birth_date: string,
+  death_date: string,
+  photos: Array<number>,
+  links: Array<{
+    url: string,
+    title: string
+  }>,
+  alternate_names: Array<string>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getAuthorAction",
+  "provider": "openLibrary",
+  "action": "getAuthor",
+  "parameters": [
+    { "parameterName": "authorId", "parameterValue": "'your-authorId'" }
+  ],
+  "contextPropertyName": "getAuthorResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.getAuthor({
+  authorId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.getAuthor({
+  authorId: /* string */,
+});
+```
+
+---
+
+#### `getAuthorWorks`
+
+**Get Author Works**
+
+List all works by a given author, paginated. Returns summaries of the author's books with cover and edition data.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `authorId` | `string` | Yes | Open Library Author ID (e.g., "OL23919A") |
+| `limit` | `number` | No | Number of works to return |
+| `offset` | `number` | No | Offset for pagination |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  size: number,
+  items: Array<{
+    key: string,
+    title: string,
+    covers: Array<number>,
+    subject: Array<string>,
+    first_publish_date: string,
+    edition_count: number
+  }>,
+  hasMore: boolean
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getAuthorWorksAction",
+  "provider": "openLibrary",
+  "action": "getAuthorWorks",
+  "parameters": [
+    { "parameterName": "authorId", "parameterValue": "'your-authorId'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "offset", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getAuthorWorksResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.getAuthorWorks({
+  authorId: /* string */,
+  limit: /* number */,
+  offset: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.getAuthorWorks({
+  authorId: /* string */,
+  limit: /* number */,
+  offset: /* number */,
+});
+```
+
+---
+
+### Subjects
+
+#### `getSubject`
+
+**Get Subject**
+
+Retrieve books and metadata for a given subject/genre tag. Returns works, authors, and publishing stats for the subject.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `subject` | `string` | Yes | Subject/genre name (e.g., "science_fiction", "love") |
+| `limit` | `number` | No | Number of works to return |
+| `offset` | `number` | No | Offset for pagination |
+| `sort` | `string` | No | Sort order for results |
+| `ebooks` | `boolean` | No | Only return works with available ebooks |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  name: string,
+  subject_type: string,
+  work_count: number,
+  items: Array<{
+    key: string,
+    title: string,
+    authors: Array<{
+      key: string,
+      name: string
+    }>,
+    cover_id: number,
+    edition_count: number,
+    first_publish_year: number
+  }>,
+  hasMore: boolean
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getSubjectAction",
+  "provider": "openLibrary",
+  "action": "getSubject",
+  "parameters": [
+    { "parameterName": "subject", "parameterValue": "'your-subject'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "offset", "parameterValue": "0" },
+    { "parameterName": "sort", "parameterValue": "'your-sort'" },
+    { "parameterName": "ebooks", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "getSubjectResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.getSubject({
+  subject: /* string */,
+  limit: /* number */,
+  offset: /* number */,
+  sort: /* string */,
+  ebooks: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.getSubject({
+  subject: /* string */,
+  limit: /* number */,
+  offset: /* number */,
+  sort: /* string */,
+  ebooks: /* boolean */,
+});
+```
+
+---
+
+#### `searchSubjects`
+
+**Search Subjects**
+
+Search subjects/genres available in Open Library by keyword. Useful for discovering canonical subject keys to use with getSubject.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | `string` | Yes | Subject keyword to search for (required) |
+| `limit` | `number` | No | Number of results to return |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  items: Array<{
+    name: string,
+    count: number,
+    url: string
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "searchSubjectsAction",
+  "provider": "openLibrary",
+  "action": "searchSubjects",
+  "parameters": [
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "searchSubjectsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.searchSubjects({
+  query: /* string */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.searchSubjects({
+  query: /* string */,
+  limit: /* number */,
+});
+```
+
+---
+
+### Discovery
+
+#### `getTrendingBooks`
+
+**Get Trending Books**
+
+Retrieve trending books from Open Library over a specified time period. Useful for discovering currently popular titles across the catalog.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `period` | `string` | No | Time period for trending calculation |
+| `limit` | `number` | No | Number of trending books to return |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  period: string,
+  items: Array<{
+    key: string,
+    title: string,
+    author_name: Array<string>,
+    cover_id: number,
+    edition_count: number,
+    first_publish_year: number
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getTrendingBooksAction",
+  "provider": "openLibrary",
+  "action": "getTrendingBooks",
+  "parameters": [
+    { "parameterName": "period", "parameterValue": "'your-period'" },
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getTrendingBooksResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.getTrendingBooks({
+  period: /* string */,
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.getTrendingBooks({
+  period: /* string */,
+  limit: /* number */,
+});
+```
+
+---
+
+#### `getFeaturedBooks`
+
+**Get Featured Books**
+
+Retrieve books currently on the Open Library featured reading lists. Returns books selected by Open Library editors for promotion.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Number of featured books to return |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  items: Array<{
+    key: string,
+    title: string,
+    author_name: Array<string>,
+    cover_id: number,
+    edition_count: number,
+    first_publish_year: number
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getFeaturedBooksAction",
+  "provider": "openLibrary",
+  "action": "getFeaturedBooks",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getFeaturedBooksResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.getFeaturedBooks({
+  limit: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.getFeaturedBooks({
+  limit: /* number */,
+});
+```
+
+---
+
+#### `getRecentChanges`
+
+**Get Recent Changes**
+
+Retrieve the most recently changed records across Open Library. Useful for tracking edits, additions, and updates to the catalog.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `limit` | `number` | No | Number of recent changes to return |
+| `offset` | `number` | No | Offset for pagination |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  items: Array<{
+    id: string,
+    kind: string,
+    timestamp: string,
+    comment: string,
+    changes: Array<{
+      key: string,
+      revision: number
+    }>,
+    author: {
+      key: string,
+      displayname: string
+    }
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getRecentChangesAction",
+  "provider": "openLibrary",
+  "action": "getRecentChanges",
+  "parameters": [
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "offset", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getRecentChangesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.getRecentChanges({
+  limit: /* number */,
+  offset: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.getRecentChanges({
+  limit: /* number */,
+  offset: /* number */,
+});
+```
+
+---
+
+### Covers
+
+#### `getCoverUrl`
+
+**Get Cover URL**
+
+Generate a cover image URL for a book using Open Library's Covers API. Returns the URL string — the image itself can be fetched directly.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `idType` | `string` | Yes | Identifier type: "isbn", "olid", "oclc", "lccn", or "id" |
+| `idValue` | `string` | Yes | The identifier value (e.g., an ISBN or cover ID) |
+| `size` | `string` | No | Cover size: "S" (small), "M" (medium), or "L" (large) |
+
+**Returns:** `Promise<{url: string, idType: string, idValue: string, size: string}>`
+
+| Field | Type |
+|---|---|
+| `url` | `string` |
+| `idType` | `string` |
+| `idValue` | `string` |
+| `size` | `string` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getCoverUrlAction",
+  "provider": "openLibrary",
+  "action": "getCoverUrl",
+  "parameters": [
+    { "parameterName": "idType", "parameterValue": "'your-idType'" },
+    { "parameterName": "idValue", "parameterValue": "'your-idValue'" },
+    { "parameterName": "size", "parameterValue": "'your-size'" }
+  ],
+  "contextPropertyName": "getCoverUrlResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.getCoverUrl({
+  idType: /* string */,
+  idValue: /* string */,
+  size: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.getCoverUrl({
+  idType: /* string */,
+  idValue: /* string */,
+  size: /* string */,
+});
+```
+
+---
+
+#### `downloadCover`
+
+**Download Cover Image**
+
+Download the cover image for a book as a Buffer. Fetches the actual binary image data from Open Library's Covers CDN.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `idType` | `string` | Yes | Identifier type: "isbn", "olid", "oclc", "lccn", or "id" |
+| `idValue` | `string` | Yes | The identifier value |
+| `size` | `string` | No | Cover size: "S", "M", or "L" |
+
+**Returns:** `Promise<{buffer: Buffer, contentType: string, url: string}>`
+
+| Field | Type |
+|---|---|
+| `buffer` | `Buffer` |
+| `contentType` | `string` |
+| `url` | `string` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "downloadCoverAction",
+  "provider": "openLibrary",
+  "action": "downloadCover",
+  "parameters": [
+    { "parameterName": "idType", "parameterValue": "'your-idType'" },
+    { "parameterName": "idValue", "parameterValue": "'your-idValue'" },
+    { "parameterName": "size", "parameterValue": "'your-size'" }
+  ],
+  "contextPropertyName": "downloadCoverResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.downloadCover({
+  idType: /* string */,
+  idValue: /* string */,
+  size: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.downloadCover({
+  idType: /* string */,
+  idValue: /* string */,
+  size: /* string */,
+});
+```
+
+---
+
+### Lists
+
+#### `getUserLists`
+
+**Get User Lists**
+
+Retrieve the Open Library reading lists for a specific user account. Returns all public reading lists created by that user.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `username` | `string` | Yes | Open Library username |
+| `limit` | `number` | No | Number of lists to return |
+| `offset` | `number` | No | Offset for pagination |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  size: number,
+  items: Array<{
+    key: string,
+    name: string,
+    description: string,
+    seed_count: number,
+    last_modified: string,
+    url: string
+  }>,
+  hasMore: boolean
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getUserListsAction",
+  "provider": "openLibrary",
+  "action": "getUserLists",
+  "parameters": [
+    { "parameterName": "username", "parameterValue": "'your-username'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "offset", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getUserListsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.getUserLists({
+  username: /* string */,
+  limit: /* number */,
+  offset: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.getUserLists({
+  username: /* string */,
+  limit: /* number */,
+  offset: /* number */,
+});
+```
+
+---
+
+#### `getListEntries`
+
+**Get List Entries**
+
+Retrieve the entries (books/works) in a specific Open Library reading list. Returns seeds (items) with type and key details.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `username` | `string` | Yes | Open Library username who owns the list |
+| `listId` | `string` | Yes | Open Library list ID (e.g., "OL103111L") |
+| `limit` | `number` | No | Number of entries to return |
+| `offset` | `number` | No | Offset for pagination |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  size: number,
+  items: Array<{
+    url: string,
+    type: {
+      key: string
+    },
+    title: string
+  }>,
+  hasMore: boolean
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getListEntriesAction",
+  "provider": "openLibrary",
+  "action": "getListEntries",
+  "parameters": [
+    { "parameterName": "username", "parameterValue": "'your-username'" },
+    { "parameterName": "listId", "parameterValue": "'your-listId'" },
+    { "parameterName": "limit", "parameterValue": "0" },
+    { "parameterName": "offset", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getListEntriesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _openLibrary.getListEntries({
+  username: /* string */,
+  listId: /* string */,
+  limit: /* number */,
+  offset: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("openLibrary");
+const result = await client.getListEntries({
+  username: /* string */,
+  listId: /* string */,
+  limit: /* number */,
+  offset: /* number */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

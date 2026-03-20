@@ -1,9 +1,9 @@
 ---
 title: "Yahoo Finance Integration"
 description: >-
-  Yahoo Finance API client for retrieving real-time and historical financial market data, stock quotes, company fundamentals, options chains, and market news. Supports equities, ETFs, mutual funds, curr
+  Yahoo Finance API client — provides real-time quotes, historical OHLCV data, company fundamentals, analyst recommendations, market news, options chains, and symbol search via the unofficial Yahoo Fina
 providerKey: yahooFinance
-docVersion: 3
+docVersion: 5
 ---
 
 ## Yahoo Finance
@@ -11,7 +11,7 @@ docVersion: 3
 **Category:** Finance & Banking  
 **Provider Key:** `yahooFinance`  
 
-Yahoo Finance API client for retrieving real-time and historical financial market data, stock quotes, company fundamentals, options chains, and market news. Supports equities, ETFs, mutual funds, currencies, and cryptocurrencies.
+Yahoo Finance API client — provides real-time quotes, historical OHLCV data, company fundamentals, analyst recommendations, market news, options chains, and symbol search via the unofficial Yahoo Finance v8/v10/v11 REST APIs. No API key is required for basic access; a RapidAPI key unlocks higher limits.
 
 ---
 
@@ -21,9 +21,10 @@ To use Yahoo Finance in your project, add it to your project integrations and pr
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `rapidApiKey` | `string` | Yes | Your RapidAPI key for Yahoo Finance |
-| `rapidApiHost` | `string` | No | RapidAPI host |
-| `timeout` | `number` | No | Request timeout in milliseconds |
+| `rapidApiKey` | `string` | No | RapidAPI key for Yahoo Finance (needed only when useRapidApi is true) |
+| `useRapidApi` | `boolean` | No | Route requests through RapidAPI for higher rate limits |
+| `timeout` | `number` | No | HTTP request timeout in milliseconds |
+| `userAgent` | `string` | No | Custom User-Agent header |
 
 ### Example Configuration
 
@@ -32,8 +33,9 @@ To use Yahoo Finance in your project, add it to your project integrations and pr
   "provider": "yahooFinance",
   "configuration": [
     { "name": "rapidApiKey", "value": "your-rapidApiKey" },
-    { "name": "rapidApiHost", "value": "your-rapidApiHost" },
-    { "name": "timeout", "value": 0 }
+    { "name": "useRapidApi", "value": false },
+    { "name": "timeout", "value": 0 },
+    { "name": "userAgent", "value": "your-userAgent" }
   ]
 }
 ```
@@ -42,43 +44,36 @@ To use Yahoo Finance in your project, add it to your project integrations and pr
 
 ## Setup Guide
 
-# Yahoo Finance Integration
+#### How to Get API Keys
 
-> Retrieve real-time quotes, historical prices, company fundamentals, options, and financial news via Yahoo Finance.
-
-- **Category**: finance
-
-## How to Get API Keys
-
-**Difficulty**: Easy
-> Yahoo Finance data can be accessed via RapidAPI with a free tier available immediately after sign-up.
-
+**Difficulty**: Easy — no sign-up is required for basic quota; optional RapidAPI key for higher rate limits
 **Developer Portal**: https://rapidapi.com/apidojo/api/yahoo-finance1
 
 **Steps:**
 
-1. Go to https://rapidapi.com/signup and create a free RapidAPI account.
-2. Navigate to https://rapidapi.com/apidojo/api/yahoo-finance1 and click "Subscribe to Test".
-3. Choose the free "Basic" plan (500 requests/month) or a paid plan for higher limits.
-4. Once subscribed, copy your `X-RapidAPI-Key` from the "Header Parameters" section on the API page.
-5. Note the host value: `yahoo-finance1.p.rapidapi.com`.
+1. For basic/unauthenticated access set `useRapidApi` to `false` — no credentials needed.
+2. For higher rate limits, visit https://rapidapi.com and create a free account.
+3. Subscribe to the "Yahoo Finance" API by apidojo at https://rapidapi.com/apidojo/api/yahoo-finance1.
+4. Copy your **X-RapidAPI-Key** from the RapidAPI dashboard (My Apps → Security).
+5. Pass the key as `rapidApiKey` and set `useRapidApi: true` in the config.
 
-## Configuration
+#### Configuration
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| rapidApiKey | string | Yes | Your RapidAPI key for authenticating requests to Yahoo Finance |
-| rapidApiHost | string | No | RapidAPI host (defaults to yahoo-finance1.p.rapidapi.com) |
-| timeout | number | No | Request timeout in milliseconds (default: 10000) |
+| rapidApiKey | string | No | RapidAPI key for Yahoo Finance (required only when useRapidApi is true) |
+| useRapidApi | boolean | No | When true, routes all requests through RapidAPI host (default: false) |
+| timeout | number | No | Request timeout in milliseconds (default: 15000) |
+| userAgent | string | No | Custom User-Agent header string |
 
-### Config Template
-
+##### Config Template
 
 ```json
 {
-  "rapidApiKey": "<YOUR_RAPIDAPI_KEY>",
-  "rapidApiHost": "yahoo-finance1.p.rapidapi.com",
-  "timeout": 10000
+  "rapidApiKey": "YOUR_RAPIDAPI_KEY",
+  "useRapidApi": false,
+  "timeout": 15000,
+  "userAgent": "Mozilla/5.0 (compatible; YahooFinanceApiClient/1.0)"
 }
 ```
 
@@ -88,14 +83,22 @@ To use Yahoo Finance in your project, add it to your project integrations and pr
 
 **Quick reference:**
 
-- **Quotes**: `getQuotes`, `searchSymbols`
-- **Historical**: `getHistoricalData`
-- **Fundamentals**: `getCompanySummary`, `getFinancials`, `getAnalystRecommendations`, `getHolders`, `getInsiderTransactions`, `getEarnings`, `getEarningsCalendar`, `getDividendHistory`
+- **Quotes**: `getQuotes`, `getQuote`
+- **Chart**: `getChartData`, `getChartDataByDate`
+- **Fundamentals**: `getFundamentals`, `getIncomeStatement`, `getBalanceSheet`, `getCashFlow`, `getKeyStatistics`
+- **Company**: `getCompanyProfile`
+- **Analysts**: `getAnalystData`
 - **Options**: `getOptionsChain`
-- **Market**: `getMarketSummary`, `getMarketMovers`, `getTrendingTickers`
-- **News**: `getNewsForSymbol`, `getNewsArticle`
-- **Recommendations**: `getSimilarStocks`, `screenStocks`
-- **Funds**: `getFundProfile`
+- **Market**: `getMarketSummary`, `getTrendingTickers`, `getMovers`
+- **News**: `getSymbolNews`
+- **Search**: `search`
+- **Dividends**: `getDividendsAndSplits`
+- **Earnings**: `getEarningsCalendar`
+- **Ownership**: `getHolders`
+- **ESG**: `getESGScores`
+- **Recommendations**: `getRecommendedSymbols`
+- **Forex**: `getExchangeRate`, `getExchangeRateHistory`
+- **Crypto**: `getCryptoQuote`
 
 ---
 
@@ -103,17 +106,44 @@ To use Yahoo Finance in your project, add it to your project integrations and pr
 
 #### `getQuotes`
 
-**Get Quotes**
+**Get Real-Time Quotes**
 
-Fetches real-time quote data for one or more ticker symbols. Returns price, volume, market cap, and trading statistics.
+Fetches real-time quote data for one or more ticker symbols. Returns price, volume, market cap, PE ratio, and dozens of other fields. Supports equities, ETFs, mutual funds, crypto, indices, and futures.
 
 **Parameters:**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `symbols` | `string` | Yes | Comma-separated list of ticker symbols (e.g., "AAPL,MSFT,GOOGL") |
+| `symbols` | `string` | Yes | Comma-separated ticker symbols (e.g., "AAPL,MSFT,TSLA") |
 | `region` | `string` | No | Market region |
-| `lang` | `string` | No | Response language |
+| `lang` | `string` | No | Response language/locale |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  quotes: Array<{
+    symbol: string,
+    shortName: string,
+    longName: string,
+    regularMarketPrice: number,
+    regularMarketChange: number,
+    regularMarketChangePercent: number,
+    regularMarketVolume: number,
+    regularMarketDayHigh: number,
+    regularMarketDayLow: number,
+    regularMarketOpen: number,
+    previousClose: number,
+    fiftyTwoWeekHigh: number,
+    fiftyTwoWeekLow: number,
+    marketCap: number,
+    trailingPE: number,
+    currency: string,
+    quoteType: string,
+    exchange: string
+  }>
+}
+```
 
 **IntegrationAction example:**
 
@@ -156,112 +186,68 @@ const result = await client.getQuotes({
 
 ---
 
-#### `searchSymbols`
+#### `getQuote`
 
-**Search Symbols**
+**Get Single Quote**
 
-Returns auto-complete search suggestions for a given query string. Useful for building symbol search boxes in UIs.
-
-**Parameters:**
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `query` | `string` | Yes | Search query (company name, ticker, or keyword) |
-| `region` | `string` | No | Market region for results |
-| `lang` | `string` | No | Language for results |
-
-**Returns:** `Promise<{ResultSet: {Query: string, Result: Array<{symbol: string, name: string, exch: string, type: string, exchDisp: string, typeDisp: string}>}}>`
-
-**IntegrationAction example:**
-
-```json
-{
-  "extendClassName": "IntegrationAction",
-  "name": "searchSymbolsAction",
-  "provider": "yahooFinance",
-  "action": "searchSymbols",
-  "parameters": [
-    { "parameterName": "query", "parameterValue": "'your-query'" },
-    { "parameterName": "region", "parameterValue": "'your-region'" },
-    { "parameterName": "lang", "parameterValue": "'your-lang'" }
-  ],
-  "contextPropertyName": "searchSymbolsResult"
-}
-```
-
-**MScript example:**
-
-```javascript
-await _yahooFinance.searchSymbols({
-  query: /* string */,
-  region: /* string */,
-  lang: /* string */,
-})
-```
-
-**Service library example:**
-
-```javascript
-const { getIntegrationClient } = require("integrations");
-const client = await getIntegrationClient("yahooFinance");
-const result = await client.searchSymbols({
-  query: /* string */,
-  region: /* string */,
-  lang: /* string */,
-});
-```
-
----
-
-### Historical
-
-#### `getHistoricalData`
-
-**Get Historical Prices**
-
-Retrieves historical OHLCV (open/high/low/close/volume) price data for a symbol. Supports multiple intervals and date ranges.
+Returns a single consolidated quote for the given ticker symbol. Convenience wrapper around getQuotes for a single symbol.
 
 **Parameters:**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
-| `interval` | `string` | No | Data interval |
-| `range` | `string` | No | Date range |
 | `region` | `string` | No | Market region |
-| `includePrePost` | `boolean` | No | Include pre/post market data |
-| `useYfid` | `boolean` | No | Use Yahoo Finance ID |
+
+**Returns:** `Promise<{symbol: string, shortName: string, longName: string, regularMarketPrice: number, regularMarketChange: number, regularMarketChangePercent: number, regularMarketVolume: number, regularMarketDayHigh: number, regularMarketDayLow: number, regularMarketOpen: number, previousClose: number, fiftyTwoWeekHigh: number, fiftyTwoWeekLow: number, marketCap: number, trailingPE: number, forwardPE: number, dividendYield: number, eps: number, currency: string, quoteType: string, exchange: string, marketState: string}>`
+
+| Field | Type |
+|---|---|
+| `symbol` | `string` |
+| `shortName` | `string` |
+| `longName` | `string` |
+| `regularMarketPrice` | `number` |
+| `regularMarketChange` | `number` |
+| `regularMarketChangePercent` | `number` |
+| `regularMarketVolume` | `number` |
+| `regularMarketDayHigh` | `number` |
+| `regularMarketDayLow` | `number` |
+| `regularMarketOpen` | `number` |
+| `previousClose` | `number` |
+| `fiftyTwoWeekHigh` | `number` |
+| `fiftyTwoWeekLow` | `number` |
+| `marketCap` | `number` |
+| `trailingPE` | `number` |
+| `forwardPE` | `number` |
+| `dividendYield` | `number` |
+| `eps` | `number` |
+| `currency` | `string` |
+| `quoteType` | `string` |
+| `exchange` | `string` |
+| `marketState` | `string` |
 
 **IntegrationAction example:**
 
 ```json
 {
   "extendClassName": "IntegrationAction",
-  "name": "getHistoricalDataAction",
+  "name": "getQuoteAction",
   "provider": "yahooFinance",
-  "action": "getHistoricalData",
+  "action": "getQuote",
   "parameters": [
     { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
-    { "parameterName": "interval", "parameterValue": "'your-interval'" },
-    { "parameterName": "range", "parameterValue": "'your-range'" },
-    { "parameterName": "region", "parameterValue": "'your-region'" },
-    { "parameterName": "includePrePost", "parameterValue": "true" },
-    { "parameterName": "useYfid", "parameterValue": "true" }
+    { "parameterName": "region", "parameterValue": "'your-region'" }
   ],
-  "contextPropertyName": "getHistoricalDataResult"
+  "contextPropertyName": "getQuoteResult"
 }
 ```
 
 **MScript example:**
 
 ```javascript
-await _yahooFinance.getHistoricalData({
+await _yahooFinance.getQuote({
   symbol: /* string */,
-  interval: /* string */,
-  range: /* string */,
   region: /* string */,
-  includePrePost: /* boolean */,
-  useYfid: /* boolean */,
 })
 ```
 
@@ -270,13 +256,171 @@ await _yahooFinance.getHistoricalData({
 ```javascript
 const { getIntegrationClient } = require("integrations");
 const client = await getIntegrationClient("yahooFinance");
-const result = await client.getHistoricalData({
+const result = await client.getQuote({
+  symbol: /* string */,
+  region: /* string */,
+});
+```
+
+---
+
+### Chart
+
+#### `getChartData`
+
+**Get Historical Price Data**
+
+Returns OHLCV (open, high, low, close, volume) historical price data for a symbol. Supports intraday intervals down to 1 minute and ranges up to max (full history). Timestamps are returned as Unix epoch seconds.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
+| `interval` | `string` | No | Data granularity |
+| `range` | `string` | No | Look-back range |
+| `region` | `string` | No | Market region |
+| `includePrePost` | `boolean` | No | Include pre/post market data |
+
+**Returns:** `Promise<{symbol: string, currency: string, exchangeName: string, instrumentType: string, timestamps: Array<number>, opens: Array<number>, highs: Array<number>, lows: Array<number>, closes: Array<number>, volumes: Array<number>, adjCloses: Array<number>, meta: Object}>`
+
+| Field | Type |
+|---|---|
+| `symbol` | `string` |
+| `currency` | `string` |
+| `exchangeName` | `string` |
+| `instrumentType` | `string` |
+| `timestamps` | `Array<number>` |
+| `opens` | `Array<number>` |
+| `highs` | `Array<number>` |
+| `lows` | `Array<number>` |
+| `closes` | `Array<number>` |
+| `volumes` | `Array<number>` |
+| `adjCloses` | `Array<number>` |
+| `meta` | `Object` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getChartDataAction",
+  "provider": "yahooFinance",
+  "action": "getChartData",
+  "parameters": [
+    { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
+    { "parameterName": "interval", "parameterValue": "'your-interval'" },
+    { "parameterName": "range", "parameterValue": "'your-range'" },
+    { "parameterName": "region", "parameterValue": "'your-region'" },
+    { "parameterName": "includePrePost", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "getChartDataResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _yahooFinance.getChartData({
   symbol: /* string */,
   interval: /* string */,
   range: /* string */,
   region: /* string */,
   includePrePost: /* boolean */,
-  useYfid: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("yahooFinance");
+const result = await client.getChartData({
+  symbol: /* string */,
+  interval: /* string */,
+  range: /* string */,
+  region: /* string */,
+  includePrePost: /* boolean */,
+});
+```
+
+---
+
+#### `getChartDataByDate`
+
+**Get Historical Data by Date Range**
+
+Returns OHLCV data between explicit start and end dates (Unix epoch seconds). Useful when you need a precise date window rather than a rolling range.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
+| `period1` | `number` | Yes | Start date as Unix timestamp (seconds) |
+| `period2` | `number` | Yes | End date as Unix timestamp (seconds) |
+| `interval` | `string` | No | Data granularity |
+| `region` | `string` | No | Market region |
+
+**Returns:** `Promise<{symbol: string, currency: string, exchangeName: string, instrumentType: string, timestamps: Array<number>, opens: Array<number>, highs: Array<number>, lows: Array<number>, closes: Array<number>, volumes: Array<number>, adjCloses: Array<number>, meta: Object}>`
+
+| Field | Type |
+|---|---|
+| `symbol` | `string` |
+| `currency` | `string` |
+| `exchangeName` | `string` |
+| `instrumentType` | `string` |
+| `timestamps` | `Array<number>` |
+| `opens` | `Array<number>` |
+| `highs` | `Array<number>` |
+| `lows` | `Array<number>` |
+| `closes` | `Array<number>` |
+| `volumes` | `Array<number>` |
+| `adjCloses` | `Array<number>` |
+| `meta` | `Object` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getChartDataByDateAction",
+  "provider": "yahooFinance",
+  "action": "getChartDataByDate",
+  "parameters": [
+    { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
+    { "parameterName": "period1", "parameterValue": "0" },
+    { "parameterName": "period2", "parameterValue": "0" },
+    { "parameterName": "interval", "parameterValue": "'your-interval'" },
+    { "parameterName": "region", "parameterValue": "'your-region'" }
+  ],
+  "contextPropertyName": "getChartDataByDateResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _yahooFinance.getChartDataByDate({
+  symbol: /* string */,
+  period1: /* number */,
+  period2: /* number */,
+  interval: /* string */,
+  region: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("yahooFinance");
+const result = await client.getChartDataByDate({
+  symbol: /* string */,
+  period1: /* number */,
+  period2: /* number */,
+  interval: /* string */,
+  region: /* string */,
 });
 ```
 
@@ -284,44 +428,58 @@ const result = await client.getHistoricalData({
 
 ### Fundamentals
 
-#### `getCompanySummary`
+#### `getFundamentals`
 
-**Get Company Summary**
+**Get Company Fundamentals**
 
-Fetches detailed company summary including business description, sector, industry, employee count, and key financial ratios.
+Returns comprehensive fundamental data for a company including financial statements, valuation metrics, earnings estimates, cash flow, balance sheet, and income statement. Combines multiple Yahoo Finance modules into a single call.
 
 **Parameters:**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
+| `modules` | `string` | No | Comma-separated module names |
 | `region` | `string` | No | Market region |
-| `lang` | `string` | No | Language for results |
+
+**Returns:** `Promise<{symbol: string, assetProfile: Object, summaryDetail: Object, financialData: Object, defaultKeyStatistics: Object, incomeStatementHistory: Object, balanceSheetHistory: Object, cashflowStatementHistory: Object, earningsTrend: Object}>`
+
+| Field | Type |
+|---|---|
+| `symbol` | `string` |
+| `assetProfile` | `Object` |
+| `summaryDetail` | `Object` |
+| `financialData` | `Object` |
+| `defaultKeyStatistics` | `Object` |
+| `incomeStatementHistory` | `Object` |
+| `balanceSheetHistory` | `Object` |
+| `cashflowStatementHistory` | `Object` |
+| `earningsTrend` | `Object` |
 
 **IntegrationAction example:**
 
 ```json
 {
   "extendClassName": "IntegrationAction",
-  "name": "getCompanySummaryAction",
+  "name": "getFundamentalsAction",
   "provider": "yahooFinance",
-  "action": "getCompanySummary",
+  "action": "getFundamentals",
   "parameters": [
     { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
-    { "parameterName": "region", "parameterValue": "'your-region'" },
-    { "parameterName": "lang", "parameterValue": "'your-lang'" }
+    { "parameterName": "modules", "parameterValue": "'your-modules'" },
+    { "parameterName": "region", "parameterValue": "'your-region'" }
   ],
-  "contextPropertyName": "getCompanySummaryResult"
+  "contextPropertyName": "getFundamentalsResult"
 }
 ```
 
 **MScript example:**
 
 ```javascript
-await _yahooFinance.getCompanySummary({
+await _yahooFinance.getFundamentals({
   symbol: /* string */,
+  modules: /* string */,
   region: /* string */,
-  lang: /* string */,
 })
 ```
 
@@ -330,48 +488,73 @@ await _yahooFinance.getCompanySummary({
 ```javascript
 const { getIntegrationClient } = require("integrations");
 const client = await getIntegrationClient("yahooFinance");
-const result = await client.getCompanySummary({
+const result = await client.getFundamentals({
   symbol: /* string */,
+  modules: /* string */,
   region: /* string */,
-  lang: /* string */,
 });
 ```
 
 ---
 
-#### `getFinancials`
+#### `getIncomeStatement`
 
-**Get Financials**
+**Get Income Statement**
 
-Retrieves income statement, balance sheet, and cash flow data for a company. Available for both annual and quarterly reporting periods.
+Returns income statement data (annual and quarterly) for a company. Includes revenue, gross profit, operating income, net income, EBITDA, and EPS.
 
 **Parameters:**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
+| `symbol` | `string` | Yes | Ticker symbol (e.g., "MSFT") |
 | `region` | `string` | No | Market region |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  symbol: string,
+  annualStatements: Array<{
+    endDate: string,
+    totalRevenue: number,
+    grossProfit: number,
+    operatingIncome: number,
+    netIncome: number,
+    ebitda: number,
+    eps: number
+  }>,
+  quarterlyStatements: Array<{
+    endDate: string,
+    totalRevenue: number,
+    grossProfit: number,
+    operatingIncome: number,
+    netIncome: number,
+    eps: number
+  }>
+}
+```
 
 **IntegrationAction example:**
 
 ```json
 {
   "extendClassName": "IntegrationAction",
-  "name": "getFinancialsAction",
+  "name": "getIncomeStatementAction",
   "provider": "yahooFinance",
-  "action": "getFinancials",
+  "action": "getIncomeStatement",
   "parameters": [
     { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
     { "parameterName": "region", "parameterValue": "'your-region'" }
   ],
-  "contextPropertyName": "getFinancialsResult"
+  "contextPropertyName": "getIncomeStatementResult"
 }
 ```
 
 **MScript example:**
 
 ```javascript
-await _yahooFinance.getFinancials({
+await _yahooFinance.getIncomeStatement({
   symbol: /* string */,
   region: /* string */,
 })
@@ -382,7 +565,7 @@ await _yahooFinance.getFinancials({
 ```javascript
 const { getIntegrationClient } = require("integrations");
 const client = await getIntegrationClient("yahooFinance");
-const result = await client.getFinancials({
+const result = await client.getIncomeStatement({
   symbol: /* string */,
   region: /* string */,
 });
@@ -390,11 +573,163 @@ const result = await client.getFinancials({
 
 ---
 
-#### `getAnalystRecommendations`
+#### `getBalanceSheet`
 
-**Get Analyst Recommendations**
+**Get Balance Sheet**
 
-Retrieves analyst recommendations, earnings estimates, and revenue forecasts. Includes buy/sell/hold ratings and EPS consensus.
+Returns balance sheet data (annual and quarterly) for a company. Includes total assets, liabilities, stockholders equity, cash, and debt figures.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbol` | `string` | Yes | Ticker symbol (e.g., "MSFT") |
+| `region` | `string` | No | Market region |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  symbol: string,
+  annualStatements: Array<{
+    endDate: string,
+    totalAssets: number,
+    totalLiab: number,
+    totalStockholderEquity: number,
+    cash: number,
+    shortTermInvestments: number,
+    longTermDebt: number,
+    totalCurrentAssets: number,
+    totalCurrentLiabilities: number
+  }>,
+  quarterlyStatements: Array<{
+    endDate: string,
+    totalAssets: number,
+    totalLiab: number,
+    totalStockholderEquity: number,
+    cash: number,
+    longTermDebt: number
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getBalanceSheetAction",
+  "provider": "yahooFinance",
+  "action": "getBalanceSheet",
+  "parameters": [
+    { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
+    { "parameterName": "region", "parameterValue": "'your-region'" }
+  ],
+  "contextPropertyName": "getBalanceSheetResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _yahooFinance.getBalanceSheet({
+  symbol: /* string */,
+  region: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("yahooFinance");
+const result = await client.getBalanceSheet({
+  symbol: /* string */,
+  region: /* string */,
+});
+```
+
+---
+
+#### `getCashFlow`
+
+**Get Cash Flow Statement**
+
+Returns cash flow statement data (annual and quarterly) for a company. Includes operating, investing, and financing cash flows, plus free cash flow.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbol` | `string` | Yes | Ticker symbol (e.g., "MSFT") |
+| `region` | `string` | No | Market region |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  symbol: string,
+  annualStatements: Array<{
+    endDate: string,
+    totalCashFromOperatingActivities: number,
+    totalCashFromInvestingActivities: number,
+    totalCashFromFinancingActivities: number,
+    capitalExpenditures: number,
+    freeCashFlow: number,
+    netIncome: number
+  }>,
+  quarterlyStatements: Array<{
+    endDate: string,
+    totalCashFromOperatingActivities: number,
+    capitalExpenditures: number,
+    freeCashFlow: number
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getCashFlowAction",
+  "provider": "yahooFinance",
+  "action": "getCashFlow",
+  "parameters": [
+    { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
+    { "parameterName": "region", "parameterValue": "'your-region'" }
+  ],
+  "contextPropertyName": "getCashFlowResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _yahooFinance.getCashFlow({
+  symbol: /* string */,
+  region: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("yahooFinance");
+const result = await client.getCashFlow({
+  symbol: /* string */,
+  region: /* string */,
+});
+```
+
+---
+
+#### `getKeyStatistics`
+
+**Get Key Statistics**
+
+Returns key financial and valuation metrics for a company including P/E, EV/EBITDA, debt ratios, profit margins, return metrics, and growth rates.
 
 **Parameters:**
 
@@ -403,26 +738,46 @@ Retrieves analyst recommendations, earnings estimates, and revenue forecasts. In
 | `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
 | `region` | `string` | No | Market region |
 
+**Returns:** `Promise<{symbol: string, enterpriseValue: number, forwardPE: number, priceToBook: number, debtToEquity: number, returnOnEquity: number, returnOnAssets: number, profitMargins: number, operatingMargins: number, revenueGrowth: number, earningsGrowth: number, sharesOutstanding: number, floatShares: number, shortRatio: number, beta: number}>`
+
+| Field | Type |
+|---|---|
+| `symbol` | `string` |
+| `enterpriseValue` | `number` |
+| `forwardPE` | `number` |
+| `priceToBook` | `number` |
+| `debtToEquity` | `number` |
+| `returnOnEquity` | `number` |
+| `returnOnAssets` | `number` |
+| `profitMargins` | `number` |
+| `operatingMargins` | `number` |
+| `revenueGrowth` | `number` |
+| `earningsGrowth` | `number` |
+| `sharesOutstanding` | `number` |
+| `floatShares` | `number` |
+| `shortRatio` | `number` |
+| `beta` | `number` |
+
 **IntegrationAction example:**
 
 ```json
 {
   "extendClassName": "IntegrationAction",
-  "name": "getAnalystRecommendationsAction",
+  "name": "getKeyStatisticsAction",
   "provider": "yahooFinance",
-  "action": "getAnalystRecommendations",
+  "action": "getKeyStatistics",
   "parameters": [
     { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
     { "parameterName": "region", "parameterValue": "'your-region'" }
   ],
-  "contextPropertyName": "getAnalystRecommendationsResult"
+  "contextPropertyName": "getKeyStatisticsResult"
 }
 ```
 
 **MScript example:**
 
 ```javascript
-await _yahooFinance.getAnalystRecommendations({
+await _yahooFinance.getKeyStatistics({
   symbol: /* string */,
   region: /* string */,
 })
@@ -433,7 +788,7 @@ await _yahooFinance.getAnalystRecommendations({
 ```javascript
 const { getIntegrationClient } = require("integrations");
 const client = await getIntegrationClient("yahooFinance");
-const result = await client.getAnalystRecommendations({
+const result = await client.getKeyStatistics({
   symbol: /* string */,
   region: /* string */,
 });
@@ -441,11 +796,13 @@ const result = await client.getAnalystRecommendations({
 
 ---
 
-#### `getHolders`
+### Company
 
-**Get Holders**
+#### `getCompanyProfile`
 
-Returns a list of institutional and mutual fund holders for a given stock. Includes percentage ownership and share counts.
+**Get Company Profile**
+
+Returns detailed company profile including business description, sector, industry, employee count, website, address, and key officer information.
 
 **Parameters:**
 
@@ -454,26 +811,54 @@ Returns a list of institutional and mutual fund holders for a given stock. Inclu
 | `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
 | `region` | `string` | No | Market region |
 
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  symbol: string,
+  longName: string,
+  shortName: string,
+  sector: string,
+  industry: string,
+  fullTimeEmployees: number,
+  longBusinessSummary: string,
+  website: string,
+  phone: string,
+  address1: string,
+  city: string,
+  state: string,
+  country: string,
+  zip: string,
+  companyOfficers: Array<{
+    name: string,
+    title: string,
+    totalPay: number,
+    yearBorn: number,
+    age: number
+  }>
+}
+```
+
 **IntegrationAction example:**
 
 ```json
 {
   "extendClassName": "IntegrationAction",
-  "name": "getHoldersAction",
+  "name": "getCompanyProfileAction",
   "provider": "yahooFinance",
-  "action": "getHolders",
+  "action": "getCompanyProfile",
   "parameters": [
     { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
     { "parameterName": "region", "parameterValue": "'your-region'" }
   ],
-  "contextPropertyName": "getHoldersResult"
+  "contextPropertyName": "getCompanyProfileResult"
 }
 ```
 
 **MScript example:**
 
 ```javascript
-await _yahooFinance.getHolders({
+await _yahooFinance.getCompanyProfile({
   symbol: /* string */,
   region: /* string */,
 })
@@ -484,7 +869,7 @@ await _yahooFinance.getHolders({
 ```javascript
 const { getIntegrationClient } = require("integrations");
 const client = await getIntegrationClient("yahooFinance");
-const result = await client.getHolders({
+const result = await client.getCompanyProfile({
   symbol: /* string */,
   region: /* string */,
 });
@@ -492,11 +877,13 @@ const result = await client.getHolders({
 
 ---
 
-#### `getInsiderTransactions`
+### Analysts
 
-**Get Insider Transactions**
+#### `getAnalystData`
 
-Fetches insider trading activity for a stock including buys, sells, and beneficial ownership filings.
+**Get Analyst Recommendations & Estimates**
+
+Returns analyst recommendations, price targets, EPS estimates, and earnings history. Useful for building sentiment dashboards or screening tools.
 
 **Parameters:**
 
@@ -505,26 +892,59 @@ Fetches insider trading activity for a stock including buys, sells, and benefici
 | `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
 | `region` | `string` | No | Market region |
 
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  symbol: string,
+  recommendationMean: number,
+  recommendationKey: string,
+  numberOfAnalystOpinions: number,
+  targetHighPrice: number,
+  targetLowPrice: number,
+  targetMeanPrice: number,
+  targetMedianPrice: number,
+  earningsEstimate: Object,
+  revenueEstimate: Object,
+  epsTrend: Object,
+  earningsHistory: Array<{
+    epsActual: number,
+    epsEstimate: number,
+    epsDifference: number,
+    surprisePercent: number,
+    quarter: string,
+    period: string
+  }>,
+  upgradeDowngradeHistory: Array<{
+    firm: string,
+    toGrade: string,
+    fromGrade: string,
+    action: string,
+    epochGradeDate: number
+  }>
+}
+```
+
 **IntegrationAction example:**
 
 ```json
 {
   "extendClassName": "IntegrationAction",
-  "name": "getInsiderTransactionsAction",
+  "name": "getAnalystDataAction",
   "provider": "yahooFinance",
-  "action": "getInsiderTransactions",
+  "action": "getAnalystData",
   "parameters": [
     { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
     { "parameterName": "region", "parameterValue": "'your-region'" }
   ],
-  "contextPropertyName": "getInsiderTransactionsResult"
+  "contextPropertyName": "getAnalystDataResult"
 }
 ```
 
 **MScript example:**
 
 ```javascript
-await _yahooFinance.getInsiderTransactions({
+await _yahooFinance.getAnalystData({
   symbol: /* string */,
   region: /* string */,
 })
@@ -535,179 +955,8 @@ await _yahooFinance.getInsiderTransactions({
 ```javascript
 const { getIntegrationClient } = require("integrations");
 const client = await getIntegrationClient("yahooFinance");
-const result = await client.getInsiderTransactions({
+const result = await client.getAnalystData({
   symbol: /* string */,
-  region: /* string */,
-});
-```
-
----
-
-#### `getEarnings`
-
-**Get Earnings**
-
-Retrieves the earnings history and upcoming earnings calendar for a symbol. Includes EPS actuals vs estimates and surprise percentages.
-
-**Parameters:**
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
-| `region` | `string` | No | Market region |
-
-**IntegrationAction example:**
-
-```json
-{
-  "extendClassName": "IntegrationAction",
-  "name": "getEarningsAction",
-  "provider": "yahooFinance",
-  "action": "getEarnings",
-  "parameters": [
-    { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
-    { "parameterName": "region", "parameterValue": "'your-region'" }
-  ],
-  "contextPropertyName": "getEarningsResult"
-}
-```
-
-**MScript example:**
-
-```javascript
-await _yahooFinance.getEarnings({
-  symbol: /* string */,
-  region: /* string */,
-})
-```
-
-**Service library example:**
-
-```javascript
-const { getIntegrationClient } = require("integrations");
-const client = await getIntegrationClient("yahooFinance");
-const result = await client.getEarnings({
-  symbol: /* string */,
-  region: /* string */,
-});
-```
-
----
-
-#### `getEarningsCalendar`
-
-**Get Earnings Calendar**
-
-Returns the earnings calendar showing upcoming earnings announcements for a list of symbols within a date window.
-
-**Parameters:**
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `startDate` | `string` | No | ISO date string start of range (e.g., "2024-01-01"); defaults to today |
-| `endDate` | `string` | No | ISO date string end of range (e.g., "2024-01-31"); defaults to 7 days ahead |
-| `region` | `string` | No | Market region |
-| `size` | `number` | No | Number of results to return |
-| `offset` | `number` | No | Pagination offset |
-
-**Returns:** `Promise<{finance: {result: {earnings: {rows: Array<{ticker: string, companyshortname: string, startdatetime: string, enddatetime: string, startdatetimetype: string, epsestimate: number, epsactual: number, epssurprisepct: number, timeZoneShortName: string, gmtOffsetMilliSeconds: number}>, count: number}}>}}>`
-
-**IntegrationAction example:**
-
-```json
-{
-  "extendClassName": "IntegrationAction",
-  "name": "getEarningsCalendarAction",
-  "provider": "yahooFinance",
-  "action": "getEarningsCalendar",
-  "parameters": [
-    { "parameterName": "startDate", "parameterValue": "'your-startDate'" },
-    { "parameterName": "endDate", "parameterValue": "'your-endDate'" },
-    { "parameterName": "region", "parameterValue": "'your-region'" },
-    { "parameterName": "size", "parameterValue": "0" },
-    { "parameterName": "offset", "parameterValue": "0" }
-  ],
-  "contextPropertyName": "getEarningsCalendarResult"
-}
-```
-
-**MScript example:**
-
-```javascript
-await _yahooFinance.getEarningsCalendar({
-  startDate: /* string */,
-  endDate: /* string */,
-  region: /* string */,
-  size: /* number */,
-  offset: /* number */,
-})
-```
-
-**Service library example:**
-
-```javascript
-const { getIntegrationClient } = require("integrations");
-const client = await getIntegrationClient("yahooFinance");
-const result = await client.getEarningsCalendar({
-  startDate: /* string */,
-  endDate: /* string */,
-  region: /* string */,
-  size: /* number */,
-  offset: /* number */,
-});
-```
-
----
-
-#### `getDividendHistory`
-
-**Get Dividend History**
-
-Retrieves dividend history for a symbol using the historical data endpoint. Returns date, dividend amount, and split events.
-
-**Parameters:**
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
-| `range` | `string` | No | Historical range |
-| `region` | `string` | No | Market region |
-
-**IntegrationAction example:**
-
-```json
-{
-  "extendClassName": "IntegrationAction",
-  "name": "getDividendHistoryAction",
-  "provider": "yahooFinance",
-  "action": "getDividendHistory",
-  "parameters": [
-    { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
-    { "parameterName": "range", "parameterValue": "'your-range'" },
-    { "parameterName": "region", "parameterValue": "'your-region'" }
-  ],
-  "contextPropertyName": "getDividendHistoryResult"
-}
-```
-
-**MScript example:**
-
-```javascript
-await _yahooFinance.getDividendHistory({
-  symbol: /* string */,
-  range: /* string */,
-  region: /* string */,
-})
-```
-
-**Service library example:**
-
-```javascript
-const { getIntegrationClient } = require("integrations");
-const client = await getIntegrationClient("yahooFinance");
-const result = await client.getDividendHistory({
-  symbol: /* string */,
-  range: /* string */,
   region: /* string */,
 });
 ```
@@ -720,15 +969,58 @@ const result = await client.getDividendHistory({
 
 **Get Options Chain**
 
-Fetches the options chain (calls and puts) for a given symbol and expiration date. Returns strike prices, premiums, open interest, and Greeks.
+Returns the options chain (calls and puts) for a symbol at a given expiration date. If no expiration is provided, returns the nearest available expiry plus a list of all available expiration dates.
 
 **Parameters:**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
-| `date` | `number` | No | Unix timestamp for expiration date; omit for nearest expiry |
+| `date` | `number` | No | Expiration date as Unix timestamp (seconds). Defaults to nearest expiry. |
 | `region` | `string` | No | Market region |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  symbol: string,
+  expirationDate: number,
+  expirationDates: Array<number>,
+  strikes: Array<number>,
+  hasMiniOptions: boolean,
+  underlyingPrice: number,
+  calls: Array<{
+    contractSymbol: string,
+    strike: number,
+    currency: string,
+    lastPrice: number,
+    change: number,
+    percentChange: number,
+    volume: number,
+    openInterest: number,
+    bid: number,
+    ask: number,
+    impliedVolatility: number,
+    inTheMoney: boolean,
+    expiration: number
+  }>,
+  puts: Array<{
+    contractSymbol: string,
+    strike: number,
+    currency: string,
+    lastPrice: number,
+    change: number,
+    percentChange: number,
+    volume: number,
+    openInterest: number,
+    bid: number,
+    ask: number,
+    impliedVolatility: number,
+    inTheMoney: boolean,
+    expiration: number
+  }>
+}
+```
 
 **IntegrationAction example:**
 
@@ -777,14 +1069,32 @@ const result = await client.getOptionsChain({
 
 **Get Market Summary**
 
-Returns a market summary with major indices (S&P 500, Nasdaq, Dow Jones, etc.) and their current values, changes, and sparklines.
+Returns the current market summary including major indices performance (S&P 500, Dow Jones, Nasdaq, etc.) and their current values and daily changes.
 
 **Parameters:**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `region` | `string` | No | Market region to summarize |
-| `lang` | `string` | No | Language for results |
+| `region` | `string` | No | Market region |
+| `lang` | `string` | No | Response language |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  marketState: string,
+  indices: Array<{
+    symbol: string,
+    shortName: string,
+    regularMarketPrice: number,
+    regularMarketChange: number,
+    regularMarketChangePercent: number,
+    regularMarketPreviousClose: number,
+    quoteType: string,
+    exchangeName: string
+  }>
+}
+```
 
 **IntegrationAction example:**
 
@@ -824,81 +1134,35 @@ const result = await client.getMarketSummary({
 
 ---
 
-#### `getMarketMovers`
-
-**Get Market Movers**
-
-Retrieves top market movers including gainers, losers, and most active stocks for a given market region.
-
-**Parameters:**
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `region` | `string` | No | Market region |
-| `lang` | `string` | No | Language for results |
-| `count` | `number` | No | Number of results per category (max 25) |
-| `start` | `number` | No | Offset for pagination |
-
-**Returns:** `Promise<{finance: {result: Array<{id: string, title: string, description: string, canonicalName: string, criteriaMeta: Object, rawCriteria: string, start: number, count: number, total: number, quotes: Array<{symbol: string, regularMarketPrice: number, regularMarketChange: number, regularMarketChangePercent: number, regularMarketVolume: number, shortName: string}>}>}}>`
-
-**IntegrationAction example:**
-
-```json
-{
-  "extendClassName": "IntegrationAction",
-  "name": "getMarketMoversAction",
-  "provider": "yahooFinance",
-  "action": "getMarketMovers",
-  "parameters": [
-    { "parameterName": "region", "parameterValue": "'your-region'" },
-    { "parameterName": "lang", "parameterValue": "'your-lang'" },
-    { "parameterName": "count", "parameterValue": "0" },
-    { "parameterName": "start", "parameterValue": "0" }
-  ],
-  "contextPropertyName": "getMarketMoversResult"
-}
-```
-
-**MScript example:**
-
-```javascript
-await _yahooFinance.getMarketMovers({
-  region: /* string */,
-  lang: /* string */,
-  count: /* number */,
-  start: /* number */,
-})
-```
-
-**Service library example:**
-
-```javascript
-const { getIntegrationClient } = require("integrations");
-const client = await getIntegrationClient("yahooFinance");
-const result = await client.getMarketMovers({
-  region: /* string */,
-  lang: /* string */,
-  count: /* number */,
-  start: /* number */,
-});
-```
-
----
-
 #### `getTrendingTickers`
 
 **Get Trending Tickers**
 
-Fetches trending tickers and stocks based on recent search and trading activity.
+Returns the top trending tickers on Yahoo Finance for a given region. Trending is determined by search and view activity on finance.yahoo.com.
 
 **Parameters:**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `region` | `string` | No | Market region |
-| `count` | `number` | No | Number of trending tickers to return |
+| `region` | `string` | No | Market region to get trending tickers for |
+| `count` | `number` | No | Number of trending tickers to return (max 40) |
 
-**Returns:** `Promise<{finance: {result: Array<{count: number, quotes: Array<{symbol: string, shortName: string, regularMarketPrice: number, regularMarketChange: number, regularMarketChangePercent: number}>, jobTimestamp: number, startInterval: number}>}}>`
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  region: string,
+  tickers: Array<{
+    symbol: string,
+    shortName: string,
+    regularMarketPrice: number,
+    regularMarketChange: number,
+    regularMarketChangePercent: number,
+    quoteType: string,
+    exchange: string
+  }>
+}
+```
 
 **IntegrationAction example:**
 
@@ -938,46 +1202,230 @@ const result = await client.getTrendingTickers({
 
 ---
 
-### News
+#### `getMovers`
 
-#### `getNewsForSymbol`
+**Get Market Movers**
 
-**Get News for Symbol**
-
-Retrieves the latest financial news headlines for a specific ticker symbol. Includes title, publisher, publish time, and article links.
+Returns the most active, biggest gainers, or biggest losers on the US market. Results are sourced from Yahoo Finance's screener pre-sets.
 
 **Parameters:**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
 | `region` | `string` | No | Market region |
-| `lang` | `string` | No | Language for news articles |
+| `start` | `number` | No | Offset for pagination |
+| `count` | `number` | No | Number of results (max 100) |
 
-**Returns:** `Promise<{items: {title: string, description: string, count: number, stream: Array<{id: string, contentType: string, content: {id: string, contentType: string, title: string, pubDate: string, thumbnail: {resolutions: Array<{url: string, width: number, height: number, tag: string}>}, provider: {displayName: string, url: string}, finance: {stockTickers: Array<{symbol: string}>}, clickThroughUrl: {url: string}}}>}}>`
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  mostActive: Array<{
+    symbol: string,
+    shortName: string,
+    regularMarketPrice: number,
+    regularMarketChangePercent: number,
+    regularMarketVolume: number
+  }>,
+  gainers: Array<{
+    symbol: string,
+    shortName: string,
+    regularMarketPrice: number,
+    regularMarketChangePercent: number
+  }>,
+  losers: Array<{
+    symbol: string,
+    shortName: string,
+    regularMarketPrice: number,
+    regularMarketChangePercent: number
+  }>
+}
+```
 
 **IntegrationAction example:**
 
 ```json
 {
   "extendClassName": "IntegrationAction",
-  "name": "getNewsForSymbolAction",
+  "name": "getMoversAction",
   "provider": "yahooFinance",
-  "action": "getNewsForSymbol",
+  "action": "getMovers",
   "parameters": [
-    { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
     { "parameterName": "region", "parameterValue": "'your-region'" },
-    { "parameterName": "lang", "parameterValue": "'your-lang'" }
+    { "parameterName": "start", "parameterValue": "0" },
+    { "parameterName": "count", "parameterValue": "0" }
   ],
-  "contextPropertyName": "getNewsForSymbolResult"
+  "contextPropertyName": "getMoversResult"
 }
 ```
 
 **MScript example:**
 
 ```javascript
-await _yahooFinance.getNewsForSymbol({
+await _yahooFinance.getMovers({
+  region: /* string */,
+  start: /* number */,
+  count: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("yahooFinance");
+const result = await client.getMovers({
+  region: /* string */,
+  start: /* number */,
+  count: /* number */,
+});
+```
+
+---
+
+### News
+
+#### `getSymbolNews`
+
+**Get Symbol News**
+
+Returns the latest news articles related to a specific ticker symbol. Each article includes a headline, source, publish time, URL, and thumbnail.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
+| `count` | `number` | No | Number of news articles to return (max 40) |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  symbol: string,
+  articles: Array<{
+    uuid: string,
+    title: string,
+    publisher: string,
+    link: string,
+    providerPublishTime: number,
+    type: string,
+    thumbnail: string,
+    relatedTickers: Array<string>
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getSymbolNewsAction",
+  "provider": "yahooFinance",
+  "action": "getSymbolNews",
+  "parameters": [
+    { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
+    { "parameterName": "count", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "getSymbolNewsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _yahooFinance.getSymbolNews({
   symbol: /* string */,
+  count: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("yahooFinance");
+const result = await client.getSymbolNews({
+  symbol: /* string */,
+  count: /* number */,
+});
+```
+
+---
+
+### Search
+
+#### `search`
+
+**Search Symbols & Companies**
+
+Searches Yahoo Finance for tickers, companies, ETFs, and other instruments. Returns matched quotes, news articles, and navigation suggestions.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | `string` | Yes | Search query (e.g., "Apple", "AAPL", "S&P 500") |
+| `quotesCount` | `number` | No | Number of quote results (max 20) |
+| `newsCount` | `number` | No | Number of news results (max 10) |
+| `region` | `string` | No | Market region |
+| `lang` | `string` | No | Response language |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  query: string,
+  quotes: Array<{
+    symbol: string,
+    shortname: string,
+    longname: string,
+    exchange: string,
+    exchDisp: string,
+    quoteType: string,
+    sector: string,
+    industry: string,
+    isYahooFinance: boolean
+  }>,
+  news: Array<{
+    uuid: string,
+    title: string,
+    publisher: string,
+    link: string,
+    providerPublishTime: number,
+    type: string
+  }>,
+  count: number
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "searchAction",
+  "provider": "yahooFinance",
+  "action": "search",
+  "parameters": [
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "quotesCount", "parameterValue": "0" },
+    { "parameterName": "newsCount", "parameterValue": "0" },
+    { "parameterName": "region", "parameterValue": "'your-region'" },
+    { "parameterName": "lang", "parameterValue": "'your-lang'" }
+  ],
+  "contextPropertyName": "searchResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _yahooFinance.search({
+  query: /* string */,
+  quotesCount: /* number */,
+  newsCount: /* number */,
   region: /* string */,
   lang: /* string */,
 })
@@ -988,8 +1436,10 @@ await _yahooFinance.getNewsForSymbol({
 ```javascript
 const { getIntegrationClient } = require("integrations");
 const client = await getIntegrationClient("yahooFinance");
-const result = await client.getNewsForSymbol({
-  symbol: /* string */,
+const result = await client.search({
+  query: /* string */,
+  quotesCount: /* number */,
+  newsCount: /* number */,
   region: /* string */,
   lang: /* string */,
 });
@@ -997,42 +1447,66 @@ const result = await client.getNewsForSymbol({
 
 ---
 
-#### `getNewsArticle`
+### Dividends
 
-**Get News Article**
+#### `getDividendsAndSplits`
 
-Retrieves the full detail of a specific news article by its UUID.
+**Get Dividends & Splits History**
+
+Returns historical dividend payment data for a symbol including ex-dividend dates and amounts. Also includes historical stock split events.
 
 **Parameters:**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `uuid` | `string` | Yes | News article UUID obtained from getNewsForSymbol |
+| `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
+| `period1` | `number` | No | Start date as Unix timestamp (seconds). Defaults to 10 years ago. |
+| `period2` | `number` | No | End date as Unix timestamp (seconds). Defaults to now. |
 | `region` | `string` | No | Market region |
 
-**Returns:** `Promise<{content: {id: string, contentType: string, title: string, pubDate: string, summary: string, author: {name: string}, provider: {displayName: string, url: string}, thumbnail: {resolutions: Array<{url: string, width: number, height: number}>}, finance: {stockTickers: Array<{symbol: string}>}, clickThroughUrl: {url: string}>}}>`
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  symbol: string,
+  dividends: Array<{
+    date: number,
+    amount: number
+  }>,
+  splits: Array<{
+    date: number,
+    numerator: number,
+    denominator: number,
+    splitRatio: string
+  }>
+}
+```
 
 **IntegrationAction example:**
 
 ```json
 {
   "extendClassName": "IntegrationAction",
-  "name": "getNewsArticleAction",
+  "name": "getDividendsAndSplitsAction",
   "provider": "yahooFinance",
-  "action": "getNewsArticle",
+  "action": "getDividendsAndSplits",
   "parameters": [
-    { "parameterName": "uuid", "parameterValue": "'your-uuid'" },
+    { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
+    { "parameterName": "period1", "parameterValue": "0" },
+    { "parameterName": "period2", "parameterValue": "0" },
     { "parameterName": "region", "parameterValue": "'your-region'" }
   ],
-  "contextPropertyName": "getNewsArticleResult"
+  "contextPropertyName": "getDividendsAndSplitsResult"
 }
 ```
 
 **MScript example:**
 
 ```javascript
-await _yahooFinance.getNewsArticle({
-  uuid: /* string */,
+await _yahooFinance.getDividendsAndSplits({
+  symbol: /* string */,
+  period1: /* number */,
+  period2: /* number */,
   region: /* string */,
 })
 ```
@@ -1042,8 +1516,252 @@ await _yahooFinance.getNewsArticle({
 ```javascript
 const { getIntegrationClient } = require("integrations");
 const client = await getIntegrationClient("yahooFinance");
-const result = await client.getNewsArticle({
-  uuid: /* string */,
+const result = await client.getDividendsAndSplits({
+  symbol: /* string */,
+  period1: /* number */,
+  period2: /* number */,
+  region: /* string */,
+});
+```
+
+---
+
+### Earnings
+
+#### `getEarningsCalendar`
+
+**Get Earnings Calendar**
+
+Returns the upcoming and historical earnings calendar for a symbol including EPS estimates vs actuals, earnings dates, and surprise percentages.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
+| `region` | `string` | No | Market region |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  symbol: string,
+  earningsDate: Array<number>,
+  earningsCallTime: string,
+  earningsTimestamp: number,
+  earningsTimestampStart: number,
+  earningsTimestampEnd: number,
+  epsTrailingTwelveMonths: number,
+  epsForward: number,
+  epsCurrentYear: number,
+  priceEpsCurrentYear: number,
+  earningsHistory: Array<{
+    epsActual: number,
+    epsEstimate: number,
+    epsDifference: number,
+    surprisePercent: number,
+    quarter: string
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getEarningsCalendarAction",
+  "provider": "yahooFinance",
+  "action": "getEarningsCalendar",
+  "parameters": [
+    { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
+    { "parameterName": "region", "parameterValue": "'your-region'" }
+  ],
+  "contextPropertyName": "getEarningsCalendarResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _yahooFinance.getEarningsCalendar({
+  symbol: /* string */,
+  region: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("yahooFinance");
+const result = await client.getEarningsCalendar({
+  symbol: /* string */,
+  region: /* string */,
+});
+```
+
+---
+
+### Ownership
+
+#### `getHolders`
+
+**Get Holders & Ownership**
+
+Returns institutional and mutual fund holder data plus insider transaction history. Useful for understanding ownership concentration and insider sentiment.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
+| `region` | `string` | No | Market region |
+
+**Returns:** `Promise\<Object\>`
+
+```
+{
+  symbol: string,
+  institutionalHolders: Array<{
+    organization: string,
+    pctHeld: number,
+    position: number,
+    value: number,
+    reportDate: string
+  }>,
+  mutualFundHolders: Array<{
+    organization: string,
+    pctHeld: number,
+    position: number,
+    value: number,
+    reportDate: string
+  }>,
+  insiderHolders: Array<{
+    name: string,
+    relation: string,
+    description: string,
+    latestTransDate: string,
+    positionDirect: number,
+    positionDirectDate: string
+  }>,
+  insiderTransactions: Array<{
+    filerName: string,
+    transactionText: string,
+    relation: string,
+    moneyText: string,
+    ownership: string,
+    startDate: string,
+    value: number,
+    shares: number
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getHoldersAction",
+  "provider": "yahooFinance",
+  "action": "getHolders",
+  "parameters": [
+    { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
+    { "parameterName": "region", "parameterValue": "'your-region'" }
+  ],
+  "contextPropertyName": "getHoldersResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _yahooFinance.getHolders({
+  symbol: /* string */,
+  region: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("yahooFinance");
+const result = await client.getHolders({
+  symbol: /* string */,
+  region: /* string */,
+});
+```
+
+---
+
+### ESG
+
+#### `getESGScores`
+
+**Get ESG Sustainability Scores**
+
+Returns ESG (Environmental, Social, Governance) sustainability scores for a company. Includes peer comparison scores, controversy level, and involvement flags.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbol` | `string` | Yes | Ticker symbol (e.g., "MSFT") |
+| `region` | `string` | No | Market region |
+
+**Returns:** `Promise<{symbol: string, totalEsg: number, environmentScore: number, socialScore: number, governanceScore: number, esgPerformance: string, peerCount: number, percentile: number, peerEnvironmentPerformance: Object, peerSocialPerformance: Object, peerGovernancePerformance: Object, controversyLevel: number, highestControversy: number, relatedControversy: Array<string>}>`
+
+| Field | Type |
+|---|---|
+| `symbol` | `string` |
+| `totalEsg` | `number` |
+| `environmentScore` | `number` |
+| `socialScore` | `number` |
+| `governanceScore` | `number` |
+| `esgPerformance` | `string` |
+| `peerCount` | `number` |
+| `percentile` | `number` |
+| `peerEnvironmentPerformance` | `Object` |
+| `peerSocialPerformance` | `Object` |
+| `peerGovernancePerformance` | `Object` |
+| `controversyLevel` | `number` |
+| `highestControversy` | `number` |
+| `relatedControversy` | `Array<string>` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getESGScoresAction",
+  "provider": "yahooFinance",
+  "action": "getESGScores",
+  "parameters": [
+    { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
+    { "parameterName": "region", "parameterValue": "'your-region'" }
+  ],
+  "contextPropertyName": "getESGScoresResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _yahooFinance.getESGScores({
+  symbol: /* string */,
+  region: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("yahooFinance");
+const result = await client.getESGScores({
+  symbol: /* string */,
   region: /* string */,
 });
 ```
@@ -1052,151 +1770,51 @@ const result = await client.getNewsArticle({
 
 ### Recommendations
 
-#### `getSimilarStocks`
+#### `getRecommendedSymbols`
 
-**Get Similar Stocks**
+**Get Recommended Similar Stocks**
 
-Returns stocks similar to or related to the queried symbol, based on Yahoo Finance's recommendation engine.
+Returns stocks that Yahoo Finance recommends as similar to the given symbol. Based on Yahoo Finance's "People also watch" and recommendation engine.
 
 **Parameters:**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `symbol` | `string` | Yes | Ticker symbol (e.g., "AAPL") |
+| `region` | `string` | No | Market region |
 
-**IntegrationAction example:**
+**Returns:** `Promise\<Object\>`
 
-```json
+```
 {
-  "extendClassName": "IntegrationAction",
-  "name": "getSimilarStocksAction",
-  "provider": "yahooFinance",
-  "action": "getSimilarStocks",
-  "parameters": [
-    { "parameterName": "symbol", "parameterValue": "'your-symbol'" }
-  ],
-  "contextPropertyName": "getSimilarStocksResult"
+  symbol: string,
+  recommendedSymbols: Array<{
+    symbol: string,
+    score: number
+  }>
 }
 ```
 
-**MScript example:**
-
-```javascript
-await _yahooFinance.getSimilarStocks({
-  symbol: /* string */,
-})
-```
-
-**Service library example:**
-
-```javascript
-const { getIntegrationClient } = require("integrations");
-const client = await getIntegrationClient("yahooFinance");
-const result = await client.getSimilarStocks({
-  symbol: /* string */,
-});
-```
-
----
-
-#### `screenStocks`
-
-**Screen Stocks**
-
-Runs a stock screener query to filter equities based on financial criteria. Supports built-in screener IDs like most_actives, day_gainers, day_losers.
-
-**Parameters:**
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `screenerType` | `string` | No | Predefined screener type ID |
-| `region` | `string` | No | Market region |
-| `lang` | `string` | No | Language for results |
-| `count` | `number` | No | Number of results to return (max 250) |
-| `offset` | `number` | No | Pagination offset |
-
 **IntegrationAction example:**
 
 ```json
 {
   "extendClassName": "IntegrationAction",
-  "name": "screenStocksAction",
+  "name": "getRecommendedSymbolsAction",
   "provider": "yahooFinance",
-  "action": "screenStocks",
-  "parameters": [
-    { "parameterName": "screenerType", "parameterValue": "'your-screenerType'" },
-    { "parameterName": "region", "parameterValue": "'your-region'" },
-    { "parameterName": "lang", "parameterValue": "'your-lang'" },
-    { "parameterName": "count", "parameterValue": "0" },
-    { "parameterName": "offset", "parameterValue": "0" }
-  ],
-  "contextPropertyName": "screenStocksResult"
-}
-```
-
-**MScript example:**
-
-```javascript
-await _yahooFinance.screenStocks({
-  screenerType: /* string */,
-  region: /* string */,
-  lang: /* string */,
-  count: /* number */,
-  offset: /* number */,
-})
-```
-
-**Service library example:**
-
-```javascript
-const { getIntegrationClient } = require("integrations");
-const client = await getIntegrationClient("yahooFinance");
-const result = await client.screenStocks({
-  screenerType: /* string */,
-  region: /* string */,
-  lang: /* string */,
-  count: /* number */,
-  offset: /* number */,
-});
-```
-
----
-
-### Funds
-
-#### `getFundProfile`
-
-**Get Fund Profile**
-
-Retrieves top holdings, sector weights, and asset allocation for an ETF or mutual fund.
-
-**Parameters:**
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `symbol` | `string` | Yes | ETF or fund ticker symbol (e.g., "SPY", "QQQ") |
-| `region` | `string` | No | Market region |
-
-**IntegrationAction example:**
-
-```json
-{
-  "extendClassName": "IntegrationAction",
-  "name": "getFundProfileAction",
-  "provider": "yahooFinance",
-  "action": "getFundProfile",
+  "action": "getRecommendedSymbols",
   "parameters": [
     { "parameterName": "symbol", "parameterValue": "'your-symbol'" },
     { "parameterName": "region", "parameterValue": "'your-region'" }
   ],
-  "contextPropertyName": "getFundProfileResult"
+  "contextPropertyName": "getRecommendedSymbolsResult"
 }
 ```
 
 **MScript example:**
 
 ```javascript
-await _yahooFinance.getFundProfile({
+await _yahooFinance.getRecommendedSymbols({
   symbol: /* string */,
   region: /* string */,
 })
@@ -1207,9 +1825,215 @@ await _yahooFinance.getFundProfile({
 ```javascript
 const { getIntegrationClient } = require("integrations");
 const client = await getIntegrationClient("yahooFinance");
-const result = await client.getFundProfile({
+const result = await client.getRecommendedSymbols({
   symbol: /* string */,
   region: /* string */,
+});
+```
+
+---
+
+### Forex
+
+#### `getExchangeRate`
+
+**Get Currency Exchange Rate**
+
+Returns the current exchange rate between two currencies using Yahoo Finance's forex quote feed. Pair format follows Yahoo convention: "EURUSD=X".
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `fromCurrency` | `string` | Yes | Source currency ISO code (e.g., "EUR") |
+| `toCurrency` | `string` | Yes | Target currency ISO code (e.g., "USD") |
+
+**Returns:** `Promise<{pair: string, fromCurrency: string, toCurrency: string, rate: number, bid: number, ask: number, regularMarketChange: number, regularMarketChangePercent: number, timestamp: number}>`
+
+| Field | Type |
+|---|---|
+| `pair` | `string` |
+| `fromCurrency` | `string` |
+| `toCurrency` | `string` |
+| `rate` | `number` |
+| `bid` | `number` |
+| `ask` | `number` |
+| `regularMarketChange` | `number` |
+| `regularMarketChangePercent` | `number` |
+| `timestamp` | `number` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getExchangeRateAction",
+  "provider": "yahooFinance",
+  "action": "getExchangeRate",
+  "parameters": [
+    { "parameterName": "fromCurrency", "parameterValue": "'your-fromCurrency'" },
+    { "parameterName": "toCurrency", "parameterValue": "'your-toCurrency'" }
+  ],
+  "contextPropertyName": "getExchangeRateResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _yahooFinance.getExchangeRate({
+  fromCurrency: /* string */,
+  toCurrency: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("yahooFinance");
+const result = await client.getExchangeRate({
+  fromCurrency: /* string */,
+  toCurrency: /* string */,
+});
+```
+
+---
+
+#### `getExchangeRateHistory`
+
+**Get Currency Exchange Rate History**
+
+Returns historical exchange rate data between two currencies over a specified range. Useful for building currency performance charts or backtesting models.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `fromCurrency` | `string` | Yes | Source currency ISO code (e.g., "EUR") |
+| `toCurrency` | `string` | Yes | Target currency ISO code (e.g., "USD") |
+| `interval` | `string` | No | Data granularity |
+| `range` | `string` | No | Look-back range |
+
+**Returns:** `Promise<{pair: string, fromCurrency: string, toCurrency: string, timestamps: Array<number>, opens: Array<number>, highs: Array<number>, lows: Array<number>, closes: Array<number>}>`
+
+| Field | Type |
+|---|---|
+| `pair` | `string` |
+| `fromCurrency` | `string` |
+| `toCurrency` | `string` |
+| `timestamps` | `Array<number>` |
+| `opens` | `Array<number>` |
+| `highs` | `Array<number>` |
+| `lows` | `Array<number>` |
+| `closes` | `Array<number>` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getExchangeRateHistoryAction",
+  "provider": "yahooFinance",
+  "action": "getExchangeRateHistory",
+  "parameters": [
+    { "parameterName": "fromCurrency", "parameterValue": "'your-fromCurrency'" },
+    { "parameterName": "toCurrency", "parameterValue": "'your-toCurrency'" },
+    { "parameterName": "interval", "parameterValue": "'your-interval'" },
+    { "parameterName": "range", "parameterValue": "'your-range'" }
+  ],
+  "contextPropertyName": "getExchangeRateHistoryResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _yahooFinance.getExchangeRateHistory({
+  fromCurrency: /* string */,
+  toCurrency: /* string */,
+  interval: /* string */,
+  range: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("yahooFinance");
+const result = await client.getExchangeRateHistory({
+  fromCurrency: /* string */,
+  toCurrency: /* string */,
+  interval: /* string */,
+  range: /* string */,
+});
+```
+
+---
+
+### Crypto
+
+#### `getCryptoQuote`
+
+**Get Cryptocurrency Quote**
+
+Returns the current quote for a cryptocurrency pair using Yahoo Finance's crypto feed. Symbol format follows Yahoo convention: "BTC-USD".
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbol` | `string` | Yes | Crypto pair symbol (e.g., "BTC-USD", "ETH-USD") |
+
+**Returns:** `Promise<{symbol: string, shortName: string, regularMarketPrice: number, regularMarketChange: number, regularMarketChangePercent: number, regularMarketVolume: number, marketCap: number, circulatingSupply: number, volume24Hr: number, volumeAllCurrencies: number, fromCurrency: string, toCurrency: string, lastMarket: string}>`
+
+| Field | Type |
+|---|---|
+| `symbol` | `string` |
+| `shortName` | `string` |
+| `regularMarketPrice` | `number` |
+| `regularMarketChange` | `number` |
+| `regularMarketChangePercent` | `number` |
+| `regularMarketVolume` | `number` |
+| `marketCap` | `number` |
+| `circulatingSupply` | `number` |
+| `volume24Hr` | `number` |
+| `volumeAllCurrencies` | `number` |
+| `fromCurrency` | `string` |
+| `toCurrency` | `string` |
+| `lastMarket` | `string` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getCryptoQuoteAction",
+  "provider": "yahooFinance",
+  "action": "getCryptoQuote",
+  "parameters": [
+    { "parameterName": "symbol", "parameterValue": "'your-symbol'" }
+  ],
+  "contextPropertyName": "getCryptoQuoteResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _yahooFinance.getCryptoQuote({
+  symbol: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("yahooFinance");
+const result = await client.getCryptoQuote({
+  symbol: /* string */,
 });
 ```
 
