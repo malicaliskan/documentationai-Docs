@@ -1,0 +1,3023 @@
+---
+title: "YouTube Data API Integration"
+description: >-
+  A comprehensive Node.js client for the YouTube Data API v3. Enables searching videos, managing playlists, channels, subscriptions, comments, captions, and live broadcast resources on YouTube.
+providerKey: youTubeData
+docVersion: 4
+---
+
+## YouTube Data API
+
+**Category:** Video & Audio  
+**Provider Key:** `youTubeData`  
+
+A comprehensive Node.js client for the YouTube Data API v3. Enables searching videos, managing playlists, channels, subscriptions, comments, captions, and live broadcast resources on YouTube.
+
+---
+
+## Configuration
+
+To use YouTube Data API in your project, add it to your project integrations and provide the following configuration:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `string` | Yes | YouTube Data API v3 key from Google Cloud Console |
+| `accessToken` | `string` | No | OAuth 2.0 Bearer token for write/authenticated operations |
+| `timeout` | `number` | No | HTTP request timeout in milliseconds |
+| `baseUrl` | `string` | No | API base URL override |
+
+### Example Configuration
+
+```json
+{
+  "provider": "youTubeData",
+  "configuration": [
+    { "name": "apiKey", "value": "your-apiKey" },
+    { "name": "accessToken", "value": "your-accessToken" },
+    { "name": "timeout", "value": 0 },
+    { "name": "baseUrl", "value": "your-baseUrl" }
+  ]
+}
+```
+
+---
+
+## Setup Guide
+
+#### How to Get API Keys
+
+**Difficulty**: Moderate — Requires a Google Cloud project and enabling the YouTube Data API
+**Developer Portal**: https://console.cloud.google.com/apis/credentials
+
+**Steps:**
+
+1. Go to https://console.cloud.google.com/ and sign in with your Google account.
+2. Create a new project (or select an existing one) from the top navigation dropdown.
+3. Navigate to **APIs & Services → Library** and search for "YouTube Data API v3".
+4. Click **Enable** to activate the YouTube Data API v3 for your project.
+5. Go to **APIs & Services → Credentials** and click **Create Credentials → API key**.
+6. Copy the generated API key. Optionally restrict it to the YouTube Data API v3 for security.
+7. If you need write access (uploading, managing videos/playlists), you must also create an OAuth 2.0 Client ID and obtain an OAuth access token (or use a service account with domain-wide delegation). For read-only operations the API key alone is sufficient.
+8. Paste your API key into the configuration as `apiKey`.
+9. For write operations, supply an `accessToken` obtained via the OAuth 2.0 flow.
+
+#### Configuration
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| apiKey | string | Yes | Your YouTube Data API v3 key from Google Cloud Console |
+| accessToken | string | No | OAuth 2.0 Bearer token required for write/authenticated operations |
+| timeout | number | No | HTTP request timeout in milliseconds (default: 15000) |
+| baseUrl | string | No | Override the API base URL (default: https://www.googleapis.com/youtube/v3) |
+
+##### Config Template
+
+```json
+{
+  "apiKey": "YOUR_YOUTUBE_API_KEY",
+  "accessToken": "YOUR_OAUTH2_ACCESS_TOKEN",
+  "timeout": 15000,
+  "baseUrl": "https://www.googleapis.com/youtube/v3"
+}
+```
+
+---
+
+## Available Methods
+
+**Quick reference:**
+
+- **Search**: `searchVideos`
+- **Videos**: `getVideos`, `listPopularVideos`, `listLikedVideos`, `rateVideo`, `updateVideo`, `deleteVideo`, `listVideoAbuseReportReasons`, `listVideoCategories`
+- **Channels**: `getChannels`, `updateChannel`, `listChannelSections`, `unsetWatermark`
+- **Playlists**: `listPlaylists`, `createPlaylist`, `updatePlaylist`, `deletePlaylist`, `listPlaylistItems`, `listAllPlaylistItems`, `addPlaylistItem`, `removePlaylistItem`
+- **Comments**: `listCommentThreads`, `insertComment`, `listCommentReplies`, `deleteComment`, `markCommentAsSpam`
+- **Subscriptions**: `listSubscriptions`, `createSubscription`, `deleteSubscription`
+- **Captions**: `listCaptions`, `downloadCaption`, `deleteCaption`
+- **LiveBroadcasts**: `listLiveBroadcasts`, `createLiveBroadcast`, `deleteLiveBroadcast`
+- **Localization**: `listI18nRegions`, `listI18nLanguages`
+- **Members**: `listMembers`, `listMembershipsLevels`
+- **Activities**: `listActivities`
+
+---
+
+### Search
+
+#### `searchVideos`
+
+**Search YouTube**
+
+Searches YouTube for videos, channels, or playlists matching a query string. Supports filtering by type, duration, definition, published date, and ordering. Returns up to `maxResults` items with pagination support via `pageToken`.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `query` | `string` | Yes | Search query string |
+| `type` | `string` | No | Resource type to search for |
+| `order` | `string` | No | Result ordering |
+| `maxResults` | `number` | No | Maximum results to return (1–50) |
+| `pageToken` | `string` | No | Token for the next page of results |
+| `publishedAfter` | `string` | No | ISO 8601 date; filter results published after this date |
+| `publishedBefore` | `string` | No | ISO 8601 date; filter results published before this date |
+| `videoDuration` | `string` | No | Filter by video duration |
+| `videoDefinition` | `string` | No | Filter by video definition quality |
+| `regionCode` | `string` | No | ISO 3166-1 alpha-2 region code (e.g., 'US') |
+| `relevanceLanguage` | `string` | No | ISO 639-1 language code for results |
+| `channelId` | `string` | No | Restrict results to a specific channel |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: {
+      kind: string,
+      videoId: string,
+      channelId: string,
+      playlistId: string
+    },
+    snippet: {
+      publishedAt: string,
+      channelId: string,
+      title: string,
+      description: string,
+      thumbnails: Object,
+      channelTitle: string
+    }
+  }>,
+  nextPageToken: string,
+  prevPageToken: string,
+  totalResults: number,
+  resultsPerPage: number
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "searchVideosAction",
+  "provider": "youTubeData",
+  "action": "searchVideos",
+  "parameters": [
+    { "parameterName": "query", "parameterValue": "'your-query'" },
+    { "parameterName": "type", "parameterValue": "'your-type'" },
+    { "parameterName": "order", "parameterValue": "'your-order'" },
+    { "parameterName": "maxResults", "parameterValue": "0" },
+    { "parameterName": "pageToken", "parameterValue": "'your-pageToken'" },
+    { "parameterName": "publishedAfter", "parameterValue": "'your-publishedAfter'" },
+    { "parameterName": "publishedBefore", "parameterValue": "'your-publishedBefore'" },
+    { "parameterName": "videoDuration", "parameterValue": "'your-videoDuration'" },
+    { "parameterName": "videoDefinition", "parameterValue": "'your-videoDefinition'" },
+    { "parameterName": "regionCode", "parameterValue": "'your-regionCode'" },
+    { "parameterName": "relevanceLanguage", "parameterValue": "'your-relevanceLanguage'" },
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" }
+  ],
+  "contextPropertyName": "searchVideosResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.searchVideos({
+  query: /* string */,
+  type: /* string */,
+  order: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+  publishedAfter: /* string */,
+  publishedBefore: /* string */,
+  videoDuration: /* string */,
+  videoDefinition: /* string */,
+  regionCode: /* string */,
+  relevanceLanguage: /* string */,
+  channelId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.searchVideos({
+  query: /* string */,
+  type: /* string */,
+  order: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+  publishedAfter: /* string */,
+  publishedBefore: /* string */,
+  videoDuration: /* string */,
+  videoDefinition: /* string */,
+  regionCode: /* string */,
+  relevanceLanguage: /* string */,
+  channelId: /* string */,
+});
+```
+
+---
+
+### Videos
+
+#### `getVideos`
+
+**Get Video Details**
+
+Retrieves detailed metadata for one or more videos by their IDs. Returns full snippet, statistics, content details, and status for each video.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `videoIds` | `string|string[]` | Yes | One or more video IDs (up to 50) |
+| `parts` | `string` | No | Comma-separated resource parts to include |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      title: string,
+      description: string,
+      publishedAt: string,
+      channelId: string,
+      channelTitle: string,
+      tags: Array<string>,
+      categoryId: string,
+      thumbnails: Object
+    },
+    statistics: {
+      viewCount: string,
+      likeCount: string,
+      commentCount: string
+    },
+    contentDetails: {
+      duration: string,
+      definition: string,
+      caption: string
+    },
+    status: {
+      privacyStatus: string,
+      uploadStatus: string
+    }
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getVideosAction",
+  "provider": "youTubeData",
+  "action": "getVideos",
+  "parameters": [
+    { "parameterName": "videoIds", "parameterValue": "'your-videoIds'" },
+    { "parameterName": "parts", "parameterValue": "'your-parts'" }
+  ],
+  "contextPropertyName": "getVideosResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.getVideos({
+  videoIds: /* string|string[] */,
+  parts: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.getVideos({
+  videoIds: /* string|string[] */,
+  parts: /* string */,
+});
+```
+
+---
+
+#### `listPopularVideos`
+
+**List Popular Videos**
+
+Lists the most popular videos on YouTube for a given region and/or category. Useful for discovering trending content without a search query.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `regionCode` | `string` | No | ISO 3166-1 alpha-2 region code |
+| `videoCategoryId` | `string` | No | Filter by video category ID |
+| `maxResults` | `number` | No | Maximum results to return (1–50) |
+| `pageToken` | `string` | No | Token for the next page of results |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      title: string,
+      channelId: string,
+      channelTitle: string,
+      publishedAt: string,
+      description: string,
+      thumbnails: Object
+    },
+    statistics: {
+      viewCount: string,
+      likeCount: string,
+      commentCount: string
+    },
+    contentDetails: {
+      duration: string
+    }
+  }>,
+  nextPageToken: string,
+  totalResults: number
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listPopularVideosAction",
+  "provider": "youTubeData",
+  "action": "listPopularVideos",
+  "parameters": [
+    { "parameterName": "regionCode", "parameterValue": "'your-regionCode'" },
+    { "parameterName": "videoCategoryId", "parameterValue": "'your-videoCategoryId'" },
+    { "parameterName": "maxResults", "parameterValue": "0" },
+    { "parameterName": "pageToken", "parameterValue": "'your-pageToken'" }
+  ],
+  "contextPropertyName": "listPopularVideosResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listPopularVideos({
+  regionCode: /* string */,
+  videoCategoryId: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listPopularVideos({
+  regionCode: /* string */,
+  videoCategoryId: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+});
+```
+
+---
+
+#### `listLikedVideos`
+
+**List Liked Videos**
+
+Retrieves the authenticated user's liked videos from their YouTube library. Requires a valid OAuth 2.0 access token with youtube.readonly scope.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `maxResults` | `number` | No | Maximum results to return (1–50) |
+| `pageToken` | `string` | No | Token for the next page of results |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      title: string,
+      channelTitle: string,
+      publishedAt: string,
+      description: string,
+      thumbnails: Object
+    },
+    contentDetails: {
+      duration: string
+    },
+    statistics: {
+      viewCount: string,
+      likeCount: string
+    }
+  }>,
+  nextPageToken: string,
+  totalResults: number
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listLikedVideosAction",
+  "provider": "youTubeData",
+  "action": "listLikedVideos",
+  "parameters": [
+    { "parameterName": "maxResults", "parameterValue": "0" },
+    { "parameterName": "pageToken", "parameterValue": "'your-pageToken'" }
+  ],
+  "contextPropertyName": "listLikedVideosResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listLikedVideos({
+  maxResults: /* number */,
+  pageToken: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listLikedVideos({
+  maxResults: /* number */,
+  pageToken: /* string */,
+});
+```
+
+---
+
+#### `rateVideo`
+
+**Rate Video**
+
+Rates a video as 'like', 'dislike', or removes any existing rating ('none'). Requires OAuth 2.0 access token with youtube scope.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `videoId` | `string` | Yes | ID of the video to rate |
+| `rating` | `string` | Yes | Rating to apply: 'like', 'dislike', or 'none' |
+
+**Returns:** `Promise<{success: boolean, videoId: string, rating: string}>`
+
+| Field | Type |
+|---|---|
+| `success` | `boolean` |
+| `videoId` | `string` |
+| `rating` | `string` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "rateVideoAction",
+  "provider": "youTubeData",
+  "action": "rateVideo",
+  "parameters": [
+    { "parameterName": "videoId", "parameterValue": "'your-videoId'" },
+    { "parameterName": "rating", "parameterValue": "'your-rating'" }
+  ],
+  "contextPropertyName": "rateVideoResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.rateVideo({
+  videoId: /* string */,
+  rating: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.rateVideo({
+  videoId: /* string */,
+  rating: /* string */,
+});
+```
+
+---
+
+#### `updateVideo`
+
+**Update Video Metadata**
+
+Updates the metadata (title, description, tags, category, privacy) of an existing video. Requires OAuth 2.0 access token with youtube scope and ownership of the video.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `videoId` | `string` | Yes | ID of the video to update |
+| `title` | `string` | No | New video title (max 100 characters) |
+| `description` | `string` | No | New video description (max 5000 characters) |
+| `tags` | `string[]` | No | Array of keyword tags |
+| `categoryId` | `string` | No | Video category ID |
+| `privacyStatus` | `string` | No | Video privacy setting |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  id: string,
+  snippet: {
+    title: string,
+    description: string,
+    tags: Array<string>,
+    categoryId: string
+  },
+  status: {
+    privacyStatus: string
+  }
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateVideoAction",
+  "provider": "youTubeData",
+  "action": "updateVideo",
+  "parameters": [
+    { "parameterName": "videoId", "parameterValue": "'your-videoId'" },
+    { "parameterName": "title", "parameterValue": "'your-title'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "tags", "parameterValue": "[]" },
+    { "parameterName": "categoryId", "parameterValue": "'your-categoryId'" },
+    { "parameterName": "privacyStatus", "parameterValue": "'your-privacyStatus'" }
+  ],
+  "contextPropertyName": "updateVideoResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.updateVideo({
+  videoId: /* string */,
+  title: /* string */,
+  description: /* string */,
+  tags: /* string[] */,
+  categoryId: /* string */,
+  privacyStatus: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.updateVideo({
+  videoId: /* string */,
+  title: /* string */,
+  description: /* string */,
+  tags: /* string[] */,
+  categoryId: /* string */,
+  privacyStatus: /* string */,
+});
+```
+
+---
+
+#### `deleteVideo`
+
+**Delete Video**
+
+Deletes a video owned by the authenticated user from YouTube. Requires OAuth 2.0 access token with youtube scope and ownership of the video.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `videoId` | `string` | Yes | ID of the video to delete |
+
+**Returns:** `Promise<{success: boolean, videoId: string}>`
+
+| Field | Type |
+|---|---|
+| `success` | `boolean` |
+| `videoId` | `string` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteVideoAction",
+  "provider": "youTubeData",
+  "action": "deleteVideo",
+  "parameters": [
+    { "parameterName": "videoId", "parameterValue": "'your-videoId'" }
+  ],
+  "contextPropertyName": "deleteVideoResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.deleteVideo({
+  videoId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.deleteVideo({
+  videoId: /* string */,
+});
+```
+
+---
+
+#### `listVideoAbuseReportReasons`
+
+**List Abuse Report Reasons**
+
+Returns the video abuse report reasons available on YouTube. These can be used when submitting a video abuse report.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `hl` | `string` | No | Language for localized reason labels (e.g. 'en', 'fr') |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      label: string,
+      secondaryReasons: Array<{
+        id: string,
+        label: string
+      }>
+    }
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listVideoAbuseReportReasonsAction",
+  "provider": "youTubeData",
+  "action": "listVideoAbuseReportReasons",
+  "parameters": [
+    { "parameterName": "hl", "parameterValue": "'your-hl'" }
+  ],
+  "contextPropertyName": "listVideoAbuseReportReasonsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listVideoAbuseReportReasons({
+  hl: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listVideoAbuseReportReasons({
+  hl: /* string */,
+});
+```
+
+---
+
+#### `listVideoCategories`
+
+**List Video Categories**
+
+Retrieves the list of video categories available in a given region. Useful for populating category dropdowns when updating or uploading videos.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `regionCode` | `string` | No | ISO 3166-1 alpha-2 region code |
+| `hl` | `string` | No | Language for localized category names |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      channelId: string,
+      title: string,
+      assignable: boolean
+    }
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listVideoCategoriesAction",
+  "provider": "youTubeData",
+  "action": "listVideoCategories",
+  "parameters": [
+    { "parameterName": "regionCode", "parameterValue": "'your-regionCode'" },
+    { "parameterName": "hl", "parameterValue": "'your-hl'" }
+  ],
+  "contextPropertyName": "listVideoCategoriesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listVideoCategories({
+  regionCode: /* string */,
+  hl: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listVideoCategories({
+  regionCode: /* string */,
+  hl: /* string */,
+});
+```
+
+---
+
+### Channels
+
+#### `getChannels`
+
+**Get Channel Details**
+
+Retrieves detailed information about one or more YouTube channels by ID, username, or handle. Returns snippet, statistics, contentDetails (uploads playlist), and branding settings.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelIds` | `string|string[]` | No | One or more channel IDs |
+| `username` | `string` | No | Legacy YouTube username |
+| `mine` | `boolean` | No | If true, returns the authenticated user's channel (requires accessToken) |
+| `parts` | `string` | No | Comma-separated resource parts |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      title: string,
+      description: string,
+      customUrl: string,
+      publishedAt: string,
+      country: string,
+      thumbnails: Object
+    },
+    statistics: {
+      viewCount: string,
+      subscriberCount: string,
+      videoCount: string
+    },
+    contentDetails: {
+      relatedPlaylists: {
+        uploads: string,
+        likes: string
+      }
+    },
+    brandingSettings: {
+      channel: {
+        title: string,
+        description: string,
+        keywords: string
+      }
+    }
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "getChannelsAction",
+  "provider": "youTubeData",
+  "action": "getChannels",
+  "parameters": [
+    { "parameterName": "channelIds", "parameterValue": "'your-channelIds'" },
+    { "parameterName": "username", "parameterValue": "'your-username'" },
+    { "parameterName": "mine", "parameterValue": "true" },
+    { "parameterName": "parts", "parameterValue": "'your-parts'" }
+  ],
+  "contextPropertyName": "getChannelsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.getChannels({
+  channelIds: /* string|string[] */,
+  username: /* string */,
+  mine: /* boolean */,
+  parts: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.getChannels({
+  channelIds: /* string|string[] */,
+  username: /* string */,
+  mine: /* boolean */,
+  parts: /* string */,
+});
+```
+
+---
+
+#### `updateChannel`
+
+**Update Channel**
+
+Updates the metadata (title, description, keywords, country) of the authenticated user's channel. Requires OAuth 2.0 access token with youtube scope.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | ID of the channel to update |
+| `title` | `string` | No | New channel title |
+| `description` | `string` | No | New channel description |
+| `keywords` | `string` | No | Space-separated keywords for the channel |
+| `country` | `string` | No | ISO 3166-1 alpha-2 country code |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  id: string,
+  brandingSettings: {
+    channel: {
+      title: string,
+      description: string,
+      keywords: string,
+      country: string
+    }
+  }
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updateChannelAction",
+  "provider": "youTubeData",
+  "action": "updateChannel",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "title", "parameterValue": "'your-title'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "keywords", "parameterValue": "'your-keywords'" },
+    { "parameterName": "country", "parameterValue": "'your-country'" }
+  ],
+  "contextPropertyName": "updateChannelResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.updateChannel({
+  channelId: /* string */,
+  title: /* string */,
+  description: /* string */,
+  keywords: /* string */,
+  country: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.updateChannel({
+  channelId: /* string */,
+  title: /* string */,
+  description: /* string */,
+  keywords: /* string */,
+  country: /* string */,
+});
+```
+
+---
+
+#### `listChannelSections`
+
+**List Channel Sections**
+
+Lists all sections (featured content rows) configured for a given channel. Sections define what appears on the channel's home page layout.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | Channel ID whose sections to list |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      type: string,
+      channelId: string,
+      title: string,
+      position: number
+    },
+    contentDetails: {
+      playlists: Array<string>,
+      channels: Array<string>
+    }
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listChannelSectionsAction",
+  "provider": "youTubeData",
+  "action": "listChannelSections",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" }
+  ],
+  "contextPropertyName": "listChannelSectionsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listChannelSections({
+  channelId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listChannelSections({
+  channelId: /* string */,
+});
+```
+
+---
+
+#### `unsetWatermark`
+
+**Unset Channel Watermark**
+
+Unsets the watermark image for a channel. Requires OAuth 2.0 access token with youtube scope and channel ownership.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | ID of the channel to remove the watermark from |
+
+**Returns:** `Promise<{success: boolean, channelId: string}>`
+
+| Field | Type |
+|---|---|
+| `success` | `boolean` |
+| `channelId` | `string` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "unsetWatermarkAction",
+  "provider": "youTubeData",
+  "action": "unsetWatermark",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" }
+  ],
+  "contextPropertyName": "unsetWatermarkResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.unsetWatermark({
+  channelId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.unsetWatermark({
+  channelId: /* string */,
+});
+```
+
+---
+
+### Playlists
+
+#### `listPlaylists`
+
+**List Playlists**
+
+Lists playlists for a channel or for the authenticated user. Returns snippet and status for each playlist with pagination support.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | No | Channel ID whose playlists to list |
+| `mine` | `boolean` | No | If true, returns authenticated user's playlists (requires accessToken) |
+| `maxResults` | `number` | No | Maximum results to return (1–50) |
+| `pageToken` | `string` | No | Token for the next page of results |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      title: string,
+      description: string,
+      publishedAt: string,
+      channelId: string,
+      channelTitle: string,
+      thumbnails: Object,
+      localized: {
+        title: string,
+        description: string
+      }
+    },
+    status: {
+      privacyStatus: string
+    },
+    contentDetails: {
+      itemCount: number
+    }
+  }>,
+  nextPageToken: string,
+  totalResults: number
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listPlaylistsAction",
+  "provider": "youTubeData",
+  "action": "listPlaylists",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "mine", "parameterValue": "true" },
+    { "parameterName": "maxResults", "parameterValue": "0" },
+    { "parameterName": "pageToken", "parameterValue": "'your-pageToken'" }
+  ],
+  "contextPropertyName": "listPlaylistsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listPlaylists({
+  channelId: /* string */,
+  mine: /* boolean */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listPlaylists({
+  channelId: /* string */,
+  mine: /* boolean */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+});
+```
+
+---
+
+#### `createPlaylist`
+
+**Create Playlist**
+
+Creates a new playlist on the authenticated user's YouTube channel. Requires OAuth 2.0 access token with youtube scope.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `title` | `string` | Yes | Playlist title (max 150 characters) |
+| `description` | `string` | No | Playlist description (max 5000 characters) |
+| `privacyStatus` | `string` | No | Privacy setting for the playlist |
+| `tags` | `string[]` | No | Array of keyword tags |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  id: string,
+  snippet: {
+    title: string,
+    description: string,
+    publishedAt: string,
+    channelId: string
+  },
+  status: {
+    privacyStatus: string
+  }
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createPlaylistAction",
+  "provider": "youTubeData",
+  "action": "createPlaylist",
+  "parameters": [
+    { "parameterName": "title", "parameterValue": "'your-title'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "privacyStatus", "parameterValue": "'your-privacyStatus'" },
+    { "parameterName": "tags", "parameterValue": "[]" }
+  ],
+  "contextPropertyName": "createPlaylistResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.createPlaylist({
+  title: /* string */,
+  description: /* string */,
+  privacyStatus: /* string */,
+  tags: /* string[] */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.createPlaylist({
+  title: /* string */,
+  description: /* string */,
+  privacyStatus: /* string */,
+  tags: /* string[] */,
+});
+```
+
+---
+
+#### `updatePlaylist`
+
+**Update Playlist**
+
+Updates a playlist's title, description, privacy status, or tags. Requires OAuth 2.0 access token with youtube scope and ownership of the playlist.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `playlistId` | `string` | Yes | ID of the playlist to update |
+| `title` | `string` | No | New playlist title |
+| `description` | `string` | No | New playlist description |
+| `privacyStatus` | `string` | No | New privacy setting |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  id: string,
+  snippet: {
+    title: string,
+    description: string
+  },
+  status: {
+    privacyStatus: string
+  }
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "updatePlaylistAction",
+  "provider": "youTubeData",
+  "action": "updatePlaylist",
+  "parameters": [
+    { "parameterName": "playlistId", "parameterValue": "'your-playlistId'" },
+    { "parameterName": "title", "parameterValue": "'your-title'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "privacyStatus", "parameterValue": "'your-privacyStatus'" }
+  ],
+  "contextPropertyName": "updatePlaylistResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.updatePlaylist({
+  playlistId: /* string */,
+  title: /* string */,
+  description: /* string */,
+  privacyStatus: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.updatePlaylist({
+  playlistId: /* string */,
+  title: /* string */,
+  description: /* string */,
+  privacyStatus: /* string */,
+});
+```
+
+---
+
+#### `deletePlaylist`
+
+**Delete Playlist**
+
+Deletes a playlist owned by the authenticated user. Requires OAuth 2.0 access token with youtube scope and ownership of the playlist.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `playlistId` | `string` | Yes | ID of the playlist to delete |
+
+**Returns:** `Promise<{success: boolean, playlistId: string}>`
+
+| Field | Type |
+|---|---|
+| `success` | `boolean` |
+| `playlistId` | `string` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deletePlaylistAction",
+  "provider": "youTubeData",
+  "action": "deletePlaylist",
+  "parameters": [
+    { "parameterName": "playlistId", "parameterValue": "'your-playlistId'" }
+  ],
+  "contextPropertyName": "deletePlaylistResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.deletePlaylist({
+  playlistId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.deletePlaylist({
+  playlistId: /* string */,
+});
+```
+
+---
+
+#### `listPlaylistItems`
+
+**List Playlist Items**
+
+Lists all items (videos) in a specific YouTube playlist with pagination support. Returns snippet and contentDetails (videoId, videoPublishedAt) for each item.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `playlistId` | `string` | Yes | ID of the playlist to list items from |
+| `maxResults` | `number` | No | Maximum results to return (1–50) |
+| `pageToken` | `string` | No | Token for the next page of results |
+| `videoId` | `string` | No | Filter for a specific video within the playlist |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      publishedAt: string,
+      channelId: string,
+      title: string,
+      description: string,
+      thumbnails: Object,
+      channelTitle: string,
+      playlistId: string,
+      position: number,
+      resourceId: {
+        kind: string,
+        videoId: string
+      }
+    },
+    contentDetails: {
+      videoId: string,
+      videoPublishedAt: string
+    }
+  }>,
+  nextPageToken: string,
+  totalResults: number
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listPlaylistItemsAction",
+  "provider": "youTubeData",
+  "action": "listPlaylistItems",
+  "parameters": [
+    { "parameterName": "playlistId", "parameterValue": "'your-playlistId'" },
+    { "parameterName": "maxResults", "parameterValue": "0" },
+    { "parameterName": "pageToken", "parameterValue": "'your-pageToken'" },
+    { "parameterName": "videoId", "parameterValue": "'your-videoId'" }
+  ],
+  "contextPropertyName": "listPlaylistItemsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listPlaylistItems({
+  playlistId: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+  videoId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listPlaylistItems({
+  playlistId: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+  videoId: /* string */,
+});
+```
+
+---
+
+#### `listAllPlaylistItems`
+
+**List All Playlist Items (Auto-Paginate)**
+
+Fetches all items in a playlist by automatically paginating through all pages. Useful when you need the complete playlist contents regardless of size.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `playlistId` | `string` | Yes | ID of the playlist to fully retrieve |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      title: string,
+      position: number,
+      resourceId: {
+        kind: string,
+        videoId: string
+      }
+    },
+    contentDetails: {
+      videoId: string,
+      videoPublishedAt: string
+    }
+  }>,
+  totalItems: number
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listAllPlaylistItemsAction",
+  "provider": "youTubeData",
+  "action": "listAllPlaylistItems",
+  "parameters": [
+    { "parameterName": "playlistId", "parameterValue": "'your-playlistId'" }
+  ],
+  "contextPropertyName": "listAllPlaylistItemsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listAllPlaylistItems({
+  playlistId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listAllPlaylistItems({
+  playlistId: /* string */,
+});
+```
+
+---
+
+#### `addPlaylistItem`
+
+**Add Item to Playlist**
+
+Adds a video to a specified playlist at an optional position. Requires OAuth 2.0 access token with youtube scope and ownership or edit rights.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `playlistId` | `string` | Yes | ID of the playlist to add to |
+| `videoId` | `string` | Yes | ID of the video to add |
+| `position` | `number` | No | Zero-based position to insert the video at |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  id: string,
+  snippet: {
+    playlistId: string,
+    title: string,
+    position: number,
+    resourceId: {
+      kind: string,
+      videoId: string
+    }
+  }
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "addPlaylistItemAction",
+  "provider": "youTubeData",
+  "action": "addPlaylistItem",
+  "parameters": [
+    { "parameterName": "playlistId", "parameterValue": "'your-playlistId'" },
+    { "parameterName": "videoId", "parameterValue": "'your-videoId'" },
+    { "parameterName": "position", "parameterValue": "0" }
+  ],
+  "contextPropertyName": "addPlaylistItemResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.addPlaylistItem({
+  playlistId: /* string */,
+  videoId: /* string */,
+  position: /* number */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.addPlaylistItem({
+  playlistId: /* string */,
+  videoId: /* string */,
+  position: /* number */,
+});
+```
+
+---
+
+#### `removePlaylistItem`
+
+**Remove Item from Playlist**
+
+Removes an item from a playlist by its playlist item ID (not the video ID). Requires OAuth 2.0 access token with youtube scope.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `playlistItemId` | `string` | Yes | ID of the playlist item to remove (from listPlaylistItems) |
+
+**Returns:** `Promise<{success: boolean, playlistItemId: string}>`
+
+| Field | Type |
+|---|---|
+| `success` | `boolean` |
+| `playlistItemId` | `string` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "removePlaylistItemAction",
+  "provider": "youTubeData",
+  "action": "removePlaylistItem",
+  "parameters": [
+    { "parameterName": "playlistItemId", "parameterValue": "'your-playlistItemId'" }
+  ],
+  "contextPropertyName": "removePlaylistItemResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.removePlaylistItem({
+  playlistItemId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.removePlaylistItem({
+  playlistItemId: /* string */,
+});
+```
+
+---
+
+### Comments
+
+#### `listCommentThreads`
+
+**List Comment Threads**
+
+Lists top-level comment threads for a video, channel, or across all of a channel's videos. Returns snippet with author info, text, like count, and reply count.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `videoId` | `string` | No | Video ID to retrieve comments for |
+| `channelId` | `string` | No | Channel ID to retrieve comments for |
+| `allThreadsRelatedToChannelId` | `string` | No | Channel ID; returns all threads for any video in the channel |
+| `order` | `string` | No | Ordering of results |
+| `maxResults` | `number` | No | Maximum results to return (1–100) |
+| `pageToken` | `string` | No | Token for the next page of results |
+| `searchTerms` | `string` | No | Filter results to threads matching these terms |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      videoId: string,
+      totalReplyCount: number,
+      isPublic: boolean,
+      topLevelComment: {
+        id: string,
+        snippet: {
+          videoId: string,
+          textDisplay: string,
+          authorDisplayName: string,
+          authorProfileImageUrl: string,
+          likeCount: number,
+          publishedAt: string,
+          updatedAt: string
+        }
+      }
+    }
+  }>,
+  nextPageToken: string,
+  totalResults: number
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listCommentThreadsAction",
+  "provider": "youTubeData",
+  "action": "listCommentThreads",
+  "parameters": [
+    { "parameterName": "videoId", "parameterValue": "'your-videoId'" },
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "allThreadsRelatedToChannelId", "parameterValue": "'your-allThreadsRelatedToChannelId'" },
+    { "parameterName": "order", "parameterValue": "'your-order'" },
+    { "parameterName": "maxResults", "parameterValue": "0" },
+    { "parameterName": "pageToken", "parameterValue": "'your-pageToken'" },
+    { "parameterName": "searchTerms", "parameterValue": "'your-searchTerms'" }
+  ],
+  "contextPropertyName": "listCommentThreadsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listCommentThreads({
+  videoId: /* string */,
+  channelId: /* string */,
+  allThreadsRelatedToChannelId: /* string */,
+  order: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+  searchTerms: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listCommentThreads({
+  videoId: /* string */,
+  channelId: /* string */,
+  allThreadsRelatedToChannelId: /* string */,
+  order: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+  searchTerms: /* string */,
+});
+```
+
+---
+
+#### `insertComment`
+
+**Post Comment**
+
+Inserts a top-level comment on a video on behalf of the authenticated user. Requires OAuth 2.0 access token with youtube.force-ssl scope.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `videoId` | `string` | Yes | ID of the video to comment on |
+| `text` | `string` | Yes | Plain text content of the comment (max 10000 characters) |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  id: string,
+  snippet: {
+    videoId: string,
+    topLevelComment: {
+      id: string,
+      snippet: {
+        textDisplay: string,
+        authorDisplayName: string,
+        likeCount: number,
+        publishedAt: string
+      }
+    },
+    totalReplyCount: number,
+    isPublic: boolean
+  }
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "insertCommentAction",
+  "provider": "youTubeData",
+  "action": "insertComment",
+  "parameters": [
+    { "parameterName": "videoId", "parameterValue": "'your-videoId'" },
+    { "parameterName": "text", "parameterValue": "'your-text'" }
+  ],
+  "contextPropertyName": "insertCommentResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.insertComment({
+  videoId: /* string */,
+  text: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.insertComment({
+  videoId: /* string */,
+  text: /* string */,
+});
+```
+
+---
+
+#### `listCommentReplies`
+
+**List Comment Replies**
+
+Lists the replies to a specific top-level comment thread. Returns author info, text, like count, and timestamps for each reply.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `parentId` | `string` | Yes | ID of the top-level comment thread to retrieve replies for |
+| `maxResults` | `number` | No | Maximum results to return (1–100) |
+| `pageToken` | `string` | No | Token for the next page of results |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      parentId: string,
+      textDisplay: string,
+      authorDisplayName: string,
+      authorProfileImageUrl: string,
+      likeCount: number,
+      publishedAt: string,
+      updatedAt: string
+    }
+  }>,
+  nextPageToken: string
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listCommentRepliesAction",
+  "provider": "youTubeData",
+  "action": "listCommentReplies",
+  "parameters": [
+    { "parameterName": "parentId", "parameterValue": "'your-parentId'" },
+    { "parameterName": "maxResults", "parameterValue": "0" },
+    { "parameterName": "pageToken", "parameterValue": "'your-pageToken'" }
+  ],
+  "contextPropertyName": "listCommentRepliesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listCommentReplies({
+  parentId: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listCommentReplies({
+  parentId: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+});
+```
+
+---
+
+#### `deleteComment`
+
+**Delete Comment**
+
+Deletes a comment or comment reply by its ID. Requires OAuth 2.0 access token with youtube.force-ssl scope and ownership of the comment.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `commentId` | `string` | Yes | ID of the comment to delete |
+
+**Returns:** `Promise<{success: boolean, commentId: string}>`
+
+| Field | Type |
+|---|---|
+| `success` | `boolean` |
+| `commentId` | `string` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteCommentAction",
+  "provider": "youTubeData",
+  "action": "deleteComment",
+  "parameters": [
+    { "parameterName": "commentId", "parameterValue": "'your-commentId'" }
+  ],
+  "contextPropertyName": "deleteCommentResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.deleteComment({
+  commentId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.deleteComment({
+  commentId: /* string */,
+});
+```
+
+---
+
+#### `markCommentAsSpam`
+
+**Mark Comment as Spam**
+
+Marks a comment as spam using the moderation action endpoint. Requires OAuth 2.0 access token with youtube.force-ssl scope.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `commentId` | `string` | Yes | ID of the comment to mark as spam |
+
+**Returns:** `Promise<{success: boolean, commentId: string}>`
+
+| Field | Type |
+|---|---|
+| `success` | `boolean` |
+| `commentId` | `string` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "markCommentAsSpamAction",
+  "provider": "youTubeData",
+  "action": "markCommentAsSpam",
+  "parameters": [
+    { "parameterName": "commentId", "parameterValue": "'your-commentId'" }
+  ],
+  "contextPropertyName": "markCommentAsSpamResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.markCommentAsSpam({
+  commentId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.markCommentAsSpam({
+  commentId: /* string */,
+});
+```
+
+---
+
+### Subscriptions
+
+#### `listSubscriptions`
+
+**List Subscriptions**
+
+Lists subscriptions for the authenticated user or for a specific channel. Returns snippet with subscriber/subscribee channel info, description, and thumbnails.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `mine` | `boolean` | No | If true, lists authenticated user's subscriptions (requires accessToken) |
+| `channelId` | `string` | No | List subscriptions for a specific channel |
+| `order` | `string` | No | Ordering of results |
+| `maxResults` | `number` | No | Maximum results (1–50) |
+| `pageToken` | `string` | No | Token for the next page of results |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      publishedAt: string,
+      title: string,
+      description: string,
+      resourceId: {
+        kind: string,
+        channelId: string
+      },
+      channelId: string,
+      thumbnails: Object
+    }
+  }>,
+  nextPageToken: string,
+  totalResults: number
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listSubscriptionsAction",
+  "provider": "youTubeData",
+  "action": "listSubscriptions",
+  "parameters": [
+    { "parameterName": "mine", "parameterValue": "true" },
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "order", "parameterValue": "'your-order'" },
+    { "parameterName": "maxResults", "parameterValue": "0" },
+    { "parameterName": "pageToken", "parameterValue": "'your-pageToken'" }
+  ],
+  "contextPropertyName": "listSubscriptionsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listSubscriptions({
+  mine: /* boolean */,
+  channelId: /* string */,
+  order: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listSubscriptions({
+  mine: /* boolean */,
+  channelId: /* string */,
+  order: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+});
+```
+
+---
+
+#### `createSubscription`
+
+**Subscribe to Channel**
+
+Subscribes the authenticated user to a YouTube channel. Requires OAuth 2.0 access token with youtube scope.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | Yes | ID of the channel to subscribe to |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  id: string,
+  snippet: {
+    publishedAt: string,
+    title: string,
+    description: string,
+    resourceId: {
+      kind: string,
+      channelId: string
+    },
+    channelId: string
+  }
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createSubscriptionAction",
+  "provider": "youTubeData",
+  "action": "createSubscription",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" }
+  ],
+  "contextPropertyName": "createSubscriptionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.createSubscription({
+  channelId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.createSubscription({
+  channelId: /* string */,
+});
+```
+
+---
+
+#### `deleteSubscription`
+
+**Unsubscribe from Channel**
+
+Unsubscribes the authenticated user from a YouTube channel using a subscription ID. The subscription ID is obtained from the listSubscriptions response.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `subscriptionId` | `string` | Yes | ID of the subscription resource to delete |
+
+**Returns:** `Promise<{success: boolean, subscriptionId: string}>`
+
+| Field | Type |
+|---|---|
+| `success` | `boolean` |
+| `subscriptionId` | `string` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteSubscriptionAction",
+  "provider": "youTubeData",
+  "action": "deleteSubscription",
+  "parameters": [
+    { "parameterName": "subscriptionId", "parameterValue": "'your-subscriptionId'" }
+  ],
+  "contextPropertyName": "deleteSubscriptionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.deleteSubscription({
+  subscriptionId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.deleteSubscription({
+  subscriptionId: /* string */,
+});
+```
+
+---
+
+### Captions
+
+#### `listCaptions`
+
+**List Captions**
+
+Lists all caption tracks available for a specific video. Returns name, language, track kind, and whether the track is draft/closed.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `videoId` | `string` | Yes | ID of the video to list captions for |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      videoId: string,
+      lastUpdated: string,
+      trackKind: string,
+      language: string,
+      name: string,
+      audioTrackType: string,
+      isCC: boolean,
+      isLarge: boolean,
+      isEasyReader: boolean,
+      isDraft: boolean,
+      isAutoSynced: boolean,
+      status: string
+    }
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listCaptionsAction",
+  "provider": "youTubeData",
+  "action": "listCaptions",
+  "parameters": [
+    { "parameterName": "videoId", "parameterValue": "'your-videoId'" }
+  ],
+  "contextPropertyName": "listCaptionsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listCaptions({
+  videoId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listCaptions({
+  videoId: /* string */,
+});
+```
+
+---
+
+#### `downloadCaption`
+
+**Download Caption Track**
+
+Downloads the caption track file for a specific caption ID as a Buffer. Supports SRT, VTT, and TTML formats via the `tfmt` parameter. Requires OAuth 2.0 access token with youtube.force-ssl scope.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `captionId` | `string` | Yes | ID of the caption track to download |
+| `tfmt` | `string` | No | Output format: 'srt', 'vtt', 'ttml', 'sbv' |
+| `tlang` | `string` | No | ISO 639-1 language code to translate the track to |
+
+**Returns:** `Promise<{buffer: Buffer, captionId: string, format: string}>`
+
+| Field | Type |
+|---|---|
+| `buffer` | `Buffer` |
+| `captionId` | `string` |
+| `format` | `string` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "downloadCaptionAction",
+  "provider": "youTubeData",
+  "action": "downloadCaption",
+  "parameters": [
+    { "parameterName": "captionId", "parameterValue": "'your-captionId'" },
+    { "parameterName": "tfmt", "parameterValue": "'your-tfmt'" },
+    { "parameterName": "tlang", "parameterValue": "'your-tlang'" }
+  ],
+  "contextPropertyName": "downloadCaptionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.downloadCaption({
+  captionId: /* string */,
+  tfmt: /* string */,
+  tlang: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.downloadCaption({
+  captionId: /* string */,
+  tfmt: /* string */,
+  tlang: /* string */,
+});
+```
+
+---
+
+#### `deleteCaption`
+
+**Delete Caption Track**
+
+Deletes a caption track from a video. Requires OAuth 2.0 access token with youtube.force-ssl scope and ownership of the video.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `captionId` | `string` | Yes | ID of the caption track to delete |
+
+**Returns:** `Promise<{success: boolean, captionId: string}>`
+
+| Field | Type |
+|---|---|
+| `success` | `boolean` |
+| `captionId` | `string` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteCaptionAction",
+  "provider": "youTubeData",
+  "action": "deleteCaption",
+  "parameters": [
+    { "parameterName": "captionId", "parameterValue": "'your-captionId'" }
+  ],
+  "contextPropertyName": "deleteCaptionResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.deleteCaption({
+  captionId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.deleteCaption({
+  captionId: /* string */,
+});
+```
+
+---
+
+### LiveBroadcasts
+
+#### `listLiveBroadcasts`
+
+**List Live Broadcasts**
+
+Lists live broadcasts for the authenticated user filtered by status. Returns snippet, status, and contentDetails including bound stream ID.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `broadcastStatus` | `string` | No | Filter by broadcast status |
+| `maxResults` | `number` | No | Maximum results to return (1–50) |
+| `pageToken` | `string` | No | Token for the next page of results |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      publishedAt: string,
+      channelId: string,
+      title: string,
+      description: string,
+      scheduledStartTime: string,
+      scheduledEndTime: string,
+      actualStartTime: string,
+      actualEndTime: string,
+      isDefaultBroadcast: boolean,
+      liveChatId: string
+    },
+    status: {
+      lifeCycleStatus: string,
+      privacyStatus: string,
+      recordingStatus: string
+    },
+    contentDetails: {
+      boundStreamId: string,
+      enableAutoStart: boolean,
+      enableAutoStop: boolean,
+      enableClosedCaptions: boolean,
+      enableDvr: boolean,
+      enableEmbed: boolean,
+      recordFromStart: boolean
+    }
+  }>,
+  nextPageToken: string,
+  totalResults: number
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listLiveBroadcastsAction",
+  "provider": "youTubeData",
+  "action": "listLiveBroadcasts",
+  "parameters": [
+    { "parameterName": "broadcastStatus", "parameterValue": "'your-broadcastStatus'" },
+    { "parameterName": "maxResults", "parameterValue": "0" },
+    { "parameterName": "pageToken", "parameterValue": "'your-pageToken'" }
+  ],
+  "contextPropertyName": "listLiveBroadcastsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listLiveBroadcasts({
+  broadcastStatus: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listLiveBroadcasts({
+  broadcastStatus: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+});
+```
+
+---
+
+#### `createLiveBroadcast`
+
+**Create Live Broadcast**
+
+Creates a new live broadcast event on the authenticated user's YouTube channel. Requires OAuth 2.0 access token with youtube scope.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `title` | `string` | Yes | Broadcast title (max 100 characters) |
+| `scheduledStartTime` | `string` | Yes | ISO 8601 datetime string for when the broadcast starts |
+| `description` | `string` | No | Broadcast description |
+| `privacyStatus` | `string` | No | Broadcast privacy setting |
+| `scheduledEndTime` | `string` | No | ISO 8601 datetime string for scheduled end |
+| `enableDvr` | `boolean` | No | Whether DVR is enabled for the broadcast |
+| `recordFromStart` | `boolean` | No | Whether to automatically record from start |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  id: string,
+  snippet: {
+    title: string,
+    channelId: string,
+    scheduledStartTime: string,
+    liveChatId: string
+  },
+  status: {
+    lifeCycleStatus: string,
+    privacyStatus: string
+  },
+  contentDetails: {
+    boundStreamId: string,
+    enableDvr: boolean,
+    recordFromStart: boolean
+  }
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "createLiveBroadcastAction",
+  "provider": "youTubeData",
+  "action": "createLiveBroadcast",
+  "parameters": [
+    { "parameterName": "title", "parameterValue": "'your-title'" },
+    { "parameterName": "scheduledStartTime", "parameterValue": "'your-scheduledStartTime'" },
+    { "parameterName": "description", "parameterValue": "'your-description'" },
+    { "parameterName": "privacyStatus", "parameterValue": "'your-privacyStatus'" },
+    { "parameterName": "scheduledEndTime", "parameterValue": "'your-scheduledEndTime'" },
+    { "parameterName": "enableDvr", "parameterValue": "true" },
+    { "parameterName": "recordFromStart", "parameterValue": "true" }
+  ],
+  "contextPropertyName": "createLiveBroadcastResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.createLiveBroadcast({
+  title: /* string */,
+  scheduledStartTime: /* string */,
+  description: /* string */,
+  privacyStatus: /* string */,
+  scheduledEndTime: /* string */,
+  enableDvr: /* boolean */,
+  recordFromStart: /* boolean */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.createLiveBroadcast({
+  title: /* string */,
+  scheduledStartTime: /* string */,
+  description: /* string */,
+  privacyStatus: /* string */,
+  scheduledEndTime: /* string */,
+  enableDvr: /* boolean */,
+  recordFromStart: /* boolean */,
+});
+```
+
+---
+
+#### `deleteLiveBroadcast`
+
+**Delete Live Broadcast**
+
+Deletes a live broadcast by its ID. Requires OAuth 2.0 access token with youtube scope and ownership of the broadcast.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `broadcastId` | `string` | Yes | ID of the live broadcast to delete |
+
+**Returns:** `Promise<{success: boolean, broadcastId: string}>`
+
+| Field | Type |
+|---|---|
+| `success` | `boolean` |
+| `broadcastId` | `string` |
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "deleteLiveBroadcastAction",
+  "provider": "youTubeData",
+  "action": "deleteLiveBroadcast",
+  "parameters": [
+    { "parameterName": "broadcastId", "parameterValue": "'your-broadcastId'" }
+  ],
+  "contextPropertyName": "deleteLiveBroadcastResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.deleteLiveBroadcast({
+  broadcastId: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.deleteLiveBroadcast({
+  broadcastId: /* string */,
+});
+```
+
+---
+
+### Localization
+
+#### `listI18nRegions`
+
+**List Supported Regions**
+
+Retrieves the list of regions supported by the YouTube website. Each item contains the region code (e.g., 'US') and its localized name.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `hl` | `string` | No | Language for localized region names |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      gl: string,
+      name: string
+    }
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listI18nRegionsAction",
+  "provider": "youTubeData",
+  "action": "listI18nRegions",
+  "parameters": [
+    { "parameterName": "hl", "parameterValue": "'your-hl'" }
+  ],
+  "contextPropertyName": "listI18nRegionsResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listI18nRegions({
+  hl: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listI18nRegions({
+  hl: /* string */,
+});
+```
+
+---
+
+#### `listI18nLanguages`
+
+**List Supported Languages**
+
+Retrieves the list of content languages supported by the YouTube website. Each item contains the language code (e.g., 'en') and its localized name.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `hl` | `string` | No | Language for localized language names |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      hl: string,
+      name: string
+    }
+  }>
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listI18nLanguagesAction",
+  "provider": "youTubeData",
+  "action": "listI18nLanguages",
+  "parameters": [
+    { "parameterName": "hl", "parameterValue": "'your-hl'" }
+  ],
+  "contextPropertyName": "listI18nLanguagesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listI18nLanguages({
+  hl: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listI18nLanguages({
+  hl: /* string */,
+});
+```
+
+---
+
+### Members
+
+#### `listMembers`
+
+**List Channel Members**
+
+Lists members of the authenticated user's channel (YouTube channel memberships). Requires OAuth 2.0 access token with youtube.channel-memberships.creator scope.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `mode` | `string` | No | Filter mode: 'listMembers' or 'includeUnknownTiers' |
+| `maxResults` | `number` | No | Maximum results to return (1–1000) |
+| `pageToken` | `string` | No | Token for the next page of results |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    kind: string,
+    etag: string,
+    snippet: {
+      creatorChannelId: string,
+      memberDetails: {
+        channelId: string,
+        channelUrl: string,
+        displayName: string,
+        profileImageUrl: string
+      },
+      membershipsDetails: {
+        highestAccessibleLevel: string,
+        highestAccessibleLevelDisplayName: string,
+        membershipsDuration: {
+          memberTotalDurationMonths: number,
+          memberSince: string
+        }
+      }
+    }
+  }>,
+  nextPageToken: string
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listMembersAction",
+  "provider": "youTubeData",
+  "action": "listMembers",
+  "parameters": [
+    { "parameterName": "mode", "parameterValue": "'your-mode'" },
+    { "parameterName": "maxResults", "parameterValue": "0" },
+    { "parameterName": "pageToken", "parameterValue": "'your-pageToken'" }
+  ],
+  "contextPropertyName": "listMembersResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listMembers({
+  mode: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listMembers({
+  mode: /* string */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+});
+```
+
+---
+
+#### `listMembershipsLevels`
+
+**List Membership Levels**
+
+Lists membership levels configured for the authenticated user's channel. Returns the display name, pricing, and level details for each tier.
+
+**Parameters:**
+
+This method takes no parameters.
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      creatorChannelId: string,
+      levelDetails: {
+        displayName: string
+      }
+    }
+  }>
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listMembershipsLevels()
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listMembershipsLevels();
+```
+
+---
+
+### Activities
+
+#### `listActivities`
+
+**List Channel Activities**
+
+Lists activity events (uploads, comments, likes, subscriptions, etc.) for a channel or authenticated user. Returns contentDetails describing what happened in each activity event.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `channelId` | `string` | No | Channel ID whose activity feed to retrieve |
+| `mine` | `boolean` | No | If true, returns authenticated user's activity (requires accessToken) |
+| `maxResults` | `number` | No | Maximum results (1–50) |
+| `pageToken` | `string` | No | Token for the next page of results |
+| `publishedAfter` | `string` | No | ISO 8601 date; only return activities after this date |
+| `publishedBefore` | `string` | No | ISO 8601 date; only return activities before this date |
+
+**Returns:** `Promise\<Object\>`
+
+```typescript
+{
+  items: Array<{
+    id: string,
+    snippet: {
+      publishedAt: string,
+      channelId: string,
+      title: string,
+      description: string,
+      type: string,
+      groupId: string
+    },
+    contentDetails: Object
+  }>,
+  nextPageToken: string,
+  totalResults: number
+}
+```
+
+**IntegrationAction example:**
+
+```json
+{
+  "extendClassName": "IntegrationAction",
+  "name": "listActivitiesAction",
+  "provider": "youTubeData",
+  "action": "listActivities",
+  "parameters": [
+    { "parameterName": "channelId", "parameterValue": "'your-channelId'" },
+    { "parameterName": "mine", "parameterValue": "true" },
+    { "parameterName": "maxResults", "parameterValue": "0" },
+    { "parameterName": "pageToken", "parameterValue": "'your-pageToken'" },
+    { "parameterName": "publishedAfter", "parameterValue": "'your-publishedAfter'" },
+    { "parameterName": "publishedBefore", "parameterValue": "'your-publishedBefore'" }
+  ],
+  "contextPropertyName": "listActivitiesResult"
+}
+```
+
+**MScript example:**
+
+```javascript
+await _youTubeData.listActivities({
+  channelId: /* string */,
+  mine: /* boolean */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+  publishedAfter: /* string */,
+  publishedBefore: /* string */,
+})
+```
+
+**Service library example:**
+
+```javascript
+const { getIntegrationClient } = require("integrations");
+const client = await getIntegrationClient("youTubeData");
+const result = await client.listActivities({
+  channelId: /* string */,
+  mine: /* boolean */,
+  maxResults: /* number */,
+  pageToken: /* string */,
+  publishedAfter: /* string */,
+  publishedBefore: /* string */,
+});
+```
+
+---
+
+## Related
+
+- [Using Integrations in Mindbricks](/using-integrations-in-mindbricks)
+- [IntegrationAction Reference](/references/actions/integrationaction)
+- [Integration Catalog](/integration-catalog)

@@ -181,11 +181,15 @@
                 ]
               },
               {
-                "group": "data-feed",
+                "group": "Data Feed",
                 "pages": [
                   {
                     "title": "Open Library Integration",
                     "path": "integrations/open-library"
+                  },
+                  {
+                    "title": "Yahoo Finance Integration",
+                    "path": "integrations/yahoo-finance"
                   }
                 ]
               },
@@ -199,15 +203,6 @@
                   {
                     "title": "Mailgun Integration",
                     "path": "integrations/mailgun"
-                  }
-                ]
-              },
-              {
-                "group": "Finance & Banking",
-                "pages": [
-                  {
-                    "title": "Yahoo Finance Integration",
-                    "path": "integrations/yahoo-finance"
                   }
                 ]
               },
@@ -275,6 +270,15 @@
                   {
                     "title": "GsmNet Integration",
                     "path": "integrations/gsm-net"
+                  }
+                ]
+              },
+              {
+                "group": "Video & Audio",
+                "pages": [
+                  {
+                    "title": "YouTube Data API Integration",
+                    "path": "integrations/you-tube-data"
                   }
                 ]
               }
