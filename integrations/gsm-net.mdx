@@ -266,7 +266,7 @@ Sends the same SMS message to a list of recipients in a single API call. Ideal f
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   batchId: string,
   totalRecipients: number,
@@ -496,7 +496,7 @@ Lists previously sent SMS messages with optional date and status filters. Result
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   items: Array<{
     messageId: string,
@@ -641,7 +641,7 @@ Lists delivery reports for messages sent within an optional date range. Supports
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   items: Array<{
     messageId: string,
@@ -722,7 +722,7 @@ Lists all contacts stored in the GsmNet address book with optional pagination.
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   items: Array<{
     id: string,
@@ -991,7 +991,7 @@ Lists all contact groups (distribution lists) in the account.
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   items: Array<{
     id: string,
@@ -1176,7 +1176,7 @@ Lists saved SMS templates for reuse in campaigns.
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   items: Array<{
     id: string,
@@ -1363,7 +1363,7 @@ Lists incoming SMS messages received on virtual numbers assigned to the account.
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   items: Array<{
     id: string,

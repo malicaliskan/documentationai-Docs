@@ -120,7 +120,7 @@ Fetches real-time quote data for one or more ticker symbols. Returns price, volu
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   quotes: Array<{
     symbol: string,
@@ -512,7 +512,7 @@ Returns income statement data (annual and quarterly) for a company. Includes rev
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   symbol: string,
   annualStatements: Array<{
@@ -588,7 +588,7 @@ Returns balance sheet data (annual and quarterly) for a company. Includes total 
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   symbol: string,
   annualStatements: Array<{
@@ -666,7 +666,7 @@ Returns cash flow statement data (annual and quarterly) for a company. Includes 
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   symbol: string,
   annualStatements: Array<{
@@ -813,7 +813,7 @@ Returns detailed company profile including business description, sector, industr
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   symbol: string,
   longName: string,
@@ -894,7 +894,7 @@ Returns analyst recommendations, price targets, EPS estimates, and earnings hist
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   symbol: string,
   recommendationMean: number,
@@ -981,7 +981,7 @@ Returns the options chain (calls and puts) for a symbol at a given expiration da
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   symbol: string,
   expirationDate: number,
@@ -1080,7 +1080,7 @@ Returns the current market summary including major indices performance (S&P 500,
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   marketState: string,
   indices: Array<{
@@ -1149,7 +1149,7 @@ Returns the top trending tickers on Yahoo Finance for a given region. Trending i
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   region: string,
   tickers: Array<{
@@ -1218,7 +1218,7 @@ Returns the most active, biggest gainers, or biggest losers on the US market. Re
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   mostActive: Array<{
     symbol: string,
@@ -1300,7 +1300,7 @@ Returns the latest news articles related to a specific ticker symbol. Each artic
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   symbol: string,
   articles: Array<{
@@ -1374,7 +1374,7 @@ Searches Yahoo Finance for tickers, companies, ETFs, and other instruments. Retu
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   query: string,
   quotes: Array<{
@@ -1466,7 +1466,7 @@ Returns historical dividend payment data for a symbol including ex-dividend date
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   symbol: string,
   dividends: Array<{
@@ -1543,7 +1543,7 @@ Returns the upcoming and historical earnings calendar for a symbol including EPS
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   symbol: string,
   earningsDate: Array<number>,
@@ -1620,7 +1620,7 @@ Returns institutional and mutual fund holder data plus insider transaction histo
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   symbol: string,
   institutionalHolders: Array<{
@@ -1785,7 +1785,7 @@ Returns stocks that Yahoo Finance recommends as similar to the given symbol. Bas
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   symbol: string,
   recommendedSymbols: Array<{

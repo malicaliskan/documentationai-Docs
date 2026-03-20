@@ -111,7 +111,7 @@ Search across all books in Open Library using a full-text query. Supports filter
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   numFound: number,
   start: number,
@@ -200,7 +200,7 @@ Retrieve full metadata for a specific book work by its Open Library Work ID. A "
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   key: string,
   title: string,
@@ -269,7 +269,7 @@ List all editions associated with a given Open Library Work ID. Returns paginate
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   size: number,
   items: Array<{
@@ -344,7 +344,7 @@ Retrieve detailed metadata for a specific edition by its Open Library Edition ID
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   key: string,
   title: string,
@@ -413,7 +413,7 @@ Look up a book by its ISBN-10 or ISBN-13 number. Returns the edition record asso
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   key: string,
   title: string,
@@ -541,7 +541,7 @@ Search the Open Library full-text search endpoint with advanced field filters. S
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   numFound: number,
   start: number,
@@ -646,7 +646,7 @@ Auto-paginate through all pages of a book search and return every result. Use wi
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   numFound: number,
   items: Array<{
@@ -732,7 +732,7 @@ Search for authors by name across the Open Library catalog. Returns paginated au
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   numFound: number,
   items: Array<{
@@ -803,7 +803,7 @@ Retrieve full profile information for an author by their Open Library Author ID.
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   key: string,
   name: string,
@@ -871,7 +871,7 @@ List all works by a given author, paginated. Returns summaries of the author's b
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   size: number,
   items: Array<{
@@ -947,7 +947,7 @@ Retrieve books and metadata for a given subject/genre tag. Returns works, author
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   name: string,
   subject_type: string,
@@ -1029,7 +1029,7 @@ Search subjects/genres available in Open Library by keyword. Useful for discover
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   items: Array<{
     name: string,
@@ -1094,7 +1094,7 @@ Retrieve trending books from Open Library over a specified time period. Useful f
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   period: string,
   items: Array<{
@@ -1160,7 +1160,7 @@ Retrieve books currently on the Open Library featured reading lists. Returns boo
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   items: Array<{
     key: string,
@@ -1223,7 +1223,7 @@ Retrieve the most recently changed records across Open Library. Useful for track
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   items: Array<{
     id: string,
@@ -1427,7 +1427,7 @@ Retrieve the Open Library reading lists for a specific user account. Returns all
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   size: number,
   items: Array<{
@@ -1500,7 +1500,7 @@ Retrieve the entries (books/works) in a specific Open Library reading list. Retu
 
 **Returns:** `Promise\<Object\>`
 
-```
+```typescript
 {
   size: number,
   items: Array<{
