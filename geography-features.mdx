@@ -795,22 +795,24 @@ AI agents can create, update, and query geographic data through MCP tools using 
 
 ---
 
-## Frontend Map Support
+## Frontgate Map Support
 
-When any data object in your project has a GeoPoint property, Mindbricks automatically:
+Mindbricks' built-in admin frontend, **Frontgate**, includes automatic map support for GeoPoint properties. This is specific to the Frontgate application — if you are building your own frontend using frontend prompts or a custom implementation, you can consume the geo APIs and build your own map experience in any way you choose.
 
-1. **Adds map dependencies** — `leaflet` and `react-leaflet` packages are included in the frontend build
+When any data object in your project has a GeoPoint property, Frontgate automatically:
+
+1. **Adds map dependencies** — `leaflet` and `react-leaflet` packages are included in the Frontgate build
 2. **Generates map components** — A `GeoMapPanel` component is created for rendering points on an interactive map
 3. **Enables map view in list pages** — The service page includes a map/list toggle for data objects with GeoPoint properties
 4. **Supports map viewport filtering** — When the map view is active, panning or zooming automatically applies a `$bbox` filter to fetch only records visible in the current viewport
-5. **HTML viewer map rendering** — AI agent responses containing GeoPoint data can be rendered as interactive maps in the chat UI
+5. **HTML viewer map rendering** — AI agent responses containing GeoPoint data can be rendered as interactive maps in the Frontgate chat UI
 
 ### Map Viewport Filtering
 
-When users switch to the map view, the frontend automatically sends bounding box filters based on the visible map area:
+When users switch to the map view in Frontgate, the application automatically sends bounding box filters based on the visible map area:
 
 ```
-?location=$bbox-<minLat>,<minLon>,<maxLat>,<maxLon>
+?<geoFilterName>=$bbox-<minLat>,<minLon>,<maxLat>,<maxLon>
 ```
 
 As the user pans or zooms, the filter is updated and a new list request is sent, keeping the displayed markers in sync with the visible map area.
