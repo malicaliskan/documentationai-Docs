@@ -194,17 +194,19 @@ A GeoArea represents a geographic region as a closed polygon. It is stored as a 
 
 GeoPoint properties that are configured as filter parameters on list-type Business APIs support three spatial filter operators. These operators are passed as query string values with special prefixes.
 
+The **filter parameter name** is derived from the **property name** of the data object by default. For example, if your data object has a GeoPoint property named `coordinates`, the filter parameter will also be named `coordinates`. This default name can be overridden in the filter settings of the property configuration.
+
 ### Bounding Box Filter (`$bbox`)
 
 Finds records within a rectangular geographic area.
 
 ```
-?location=$bbox-<minLat>,<minLon>,<maxLat>,<maxLon>
+?<filterName>=$bbox-<minLat>,<minLon>,<maxLat>,<maxLon>
 ```
 
-**Example:** Find locations within lower Manhattan:
+**Example:** Find restaurants within lower Manhattan (filter on a `coordinates` property):
 ```
-GET /api/stores/list?location=$bbox-40.70,-74.02,40.72,-73.97
+GET /api/restaurants/list?coordinates=$bbox-40.70,-74.02,40.72,-73.97
 ```
 
 **How it works:**
@@ -217,12 +219,12 @@ GET /api/stores/list?location=$bbox-40.70,-74.02,40.72,-73.97
 Finds records within a specified radius from a center point.
 
 ```
-?location=$circle-<lat>,<lon>,<radiusMeters>
+?<filterName>=$circle-<lat>,<lon>,<radiusMeters>
 ```
 
-**Example:** Find locations within 2km of Times Square:
+**Example:** Find warehouses within 5km of a distribution center (filter on a `position` property):
 ```
-GET /api/stores/list?location=$circle-40.7580,-73.9855,2000
+GET /api/warehouses/list?position=$circle-40.7580,-73.9855,5000
 ```
 
 **How it works:**
@@ -235,12 +237,12 @@ GET /api/stores/list?location=$circle-40.7580,-73.9855,2000
 Finds records within an arbitrary polygon area.
 
 ```
-?location=$polygon-<lat1>,<lon1>,<lat2>,<lon2>,<lat3>,<lon3>,...
+?<filterName>=$polygon-<lat1>,<lon1>,<lat2>,<lon2>,<lat3>,<lon3>,...
 ```
 
-**Example:** Find locations within a triangular area:
+**Example:** Find delivery addresses within a service zone (filter on an `address` property):
 ```
-GET /api/stores/list?location=$polygon-40.70,-74.00,40.80,-74.00,40.75,-73.95
+GET /api/deliveries/list?address=$polygon-40.70,-74.00,40.80,-74.00,40.75,-73.95
 ```
 
 **How it works:**
@@ -253,10 +255,10 @@ GET /api/stores/list?location=$polygon-40.70,-74.00,40.80,-74.00,40.75,-73.95
 ### Null Check
 
 ```
-?location=null
+?<filterName>=null
 ```
 
-Returns records where the geographic field is `null`.
+Returns records where the geographic field is `null`. For example: `?coordinates=null`
 
 ### Coordinate Order in Filters
 
@@ -267,6 +269,31 @@ Returns records where the geographic field is `null`.
 | GeoJSON (storage/response) | `[longitude, latitude]` | `[28.97, 41.00]` |
 | Filter query strings | `latitude,longitude` | `$circle-41.00,28.97,1000` |
 | REST geo routes (body) | `lon`, `lat` as separate fields | `{ "lon": 28.97, "lat": 41.00 }` |
+
+### Custom Geo Filtering with Custom Parameters
+
+The built-in `$bbox`, `$circle`, and `$polygon` operators cover the most common spatial filtering use cases. However, it is always possible to implement **custom geo filtering** using any custom parameters with any format you choose, and then cast them into a spatial query in the Business API where clause.
+
+For example, suppose you want a list API with two separate parameters `lonCenter` and `latCenter` (instead of the combined filter string), and you want to find all records within 1 km of that center point. You can:
+
+1. Add two custom parameters `lonCenter` (type: Double) and `latCenter` (type: Double) to the Business API
+2. Use an **additional clause** in the where clause configuration with an MScript geo expression:
+
+```js
+// Additional Clause: "Find within 1km of center"
+// doWhen: this.lonCenter != null && this.latCenter != null
+
+{
+  coordinates: {
+    $geoNear: {
+      point: { type: "Point", coordinates: [this.lonCenter, this.latCenter] },
+      maxDistance: 1000
+    }
+  }
+}
+```
+
+This approach gives you full control over the parameter structure and query logic. You can combine multiple custom parameters, use dynamic radius values, chain multiple geo conditions, or mix geo queries with regular filters — all within the standard Business API where clause system.
 
 ---
 
