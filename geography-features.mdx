@@ -1,4 +1,835 @@
 ---
 title: Geography Features
-description: Comming soon..
+description: >-
+  Complete guide to geographic data types, spatial queries, automatic geo
+  routes, and map-based UI features in Mindbricks. Learn how to use GeoPoint,
+  GeoRoute, and GeoArea types to build location-aware applications with
+  PostGIS, MongoDB, and Elasticsearch spatial capabilities.
 ---
+
+Mindbricks provides first-class support for geographic data through three spatial types: **GeoPoint**, **GeoRoute**, and **GeoArea**. These types follow the [GeoJSON specification (RFC 7946)](https://datatracker.ietf.org/doc/html/rfc7946) and are fully integrated across the entire stack — from database storage and indexing to API validation, filtering, automatic REST routes, MScript query operators, and frontend map views.
+
+When you add a geographic property to a data object, Mindbricks automatically:
+
+- Creates the correct database column with spatial indexing (PostGIS GiST or MongoDB 2dsphere)
+- Validates incoming data in the API layer and normalizes it to GeoJSON format
+- Enables spatial filter operators on list APIs
+- Generates dedicated geo utility functions in the database layer
+- Generates dedicated REST routes for spatial queries (GeoPoint only)
+- Registers Elasticsearch mappings for geo-distance queries and sorting
+- Adds map-based UI components in the frontend (GeoPoint only)
+- Sets up the PostGIS extension automatically for PostgreSQL databases
+
+---
+
+## Geographic Types Overview
+
+Mindbricks supports three geographic types, all based on the GeoJSON standard:
+
+| Type | GeoJSON Geometry | Description | Use Cases |
+|------|------------------|-------------|-----------|
+| **GeoPoint** | `Point` | A single point on Earth (longitude, latitude) | Store locations, addresses, user positions, POIs |
+| **GeoRoute** | `LineString` | An ordered sequence of points forming a path | Delivery routes, hiking trails, road segments |
+| **GeoArea** | `Polygon` | A closed shape defining a geographic region | Service zones, geofences, city boundaries |
+
+All three types use the **WGS 84** coordinate reference system (SRID 4326) — the same system used by GPS and most mapping services.
+
+**Coordinate Order:** GeoJSON uses `[longitude, latitude]` order (not latitude, longitude). Longitude ranges from -180 to 180, and latitude ranges from -90 to 90.
+
+---
+
+## GeoPoint
+
+A GeoPoint represents a single geographic point on Earth. It is the most feature-rich geographic type in Mindbricks, with full support for spatial filtering, automatic REST routes, nearest-neighbor queries, and frontend map views.
+
+### GeoJSON Format
+
+```json
+{
+  "type": "Point",
+  "coordinates": [28.9784, 41.0082]
+}
+```
+
+- `coordinates[0]` = **longitude** (-180 to 180)
+- `coordinates[1]` = **latitude** (-90 to 90)
+
+### Input Formats (Auto-Coercion)
+
+When creating or updating a record with a GeoPoint property, the API layer accepts multiple input formats and automatically normalizes them to GeoJSON Point:
+
+| Input Format | Example | Description |
+|-------------|---------|-------------|
+| Full GeoJSON | `{ "type": "Point", "coordinates": [28.97, 41.00] }` | Standard GeoJSON Point |
+| Coordinates only | `{ "coordinates": [28.97, 41.00] }` | Object with coordinates array |
+| Simple array | `[28.97, 41.00]` | Shorthand `[lon, lat]` array |
+| Lon/Lat object | `{ "lon": 28.97, "lat": 41.00 }` | Object with named fields |
+
+All formats are validated for coordinate ranges and normalized to the full GeoJSON Point format before storage.
+
+### Storage
+
+| Database | Column Type | Index Type |
+|----------|------------|------------|
+| **PostgreSQL** | `GEOGRAPHY('POINT', 4326)` | GiST spatial index |
+| **MongoDB** | GeoJSON Point schema | `2dsphere` index |
+| **Elasticsearch** | `geo_point` | Built-in geo queries |
+
+### Default Value
+
+If no value is provided during creation and a default is configured:
+
+```json
+{ "type": "Point", "coordinates": [0, 0] }
+```
+
+---
+
+## GeoRoute
+
+A GeoRoute represents a geographic path or route as a sequence of connected points. It is stored as a GeoJSON LineString.
+
+### GeoJSON Format
+
+```json
+{
+  "type": "LineString",
+  "coordinates": [
+    [28.9784, 41.0082],
+    [29.0100, 41.0150],
+    [29.0500, 41.0300]
+  ]
+}
+```
+
+- Each coordinate pair is `[longitude, latitude]`
+- At least **2 coordinate pairs** are required
+- Each coordinate is validated for valid longitude (-180 to 180) and latitude (-90 to 90) ranges
+
+### Storage
+
+| Database | Column Type | Index Type |
+|----------|------------|------------|
+| **PostgreSQL** | `GEOGRAPHY('LINESTRING', 4326)` | GiST spatial index |
+| **MongoDB** | GeoJSON LineString schema | `2dsphere` index |
+| **Elasticsearch** | `geo_shape` | Spatial shape queries |
+
+### Default Value
+
+```json
+{
+  "type": "LineString",
+  "coordinates": [[0, 0], [1, 1]]
+}
+```
+
+---
+
+## GeoArea
+
+A GeoArea represents a geographic region as a closed polygon. It is stored as a GeoJSON Polygon.
+
+### GeoJSON Format
+
+```json
+{
+  "type": "Polygon",
+  "coordinates": [
+    [
+      [28.90, 41.00],
+      [29.10, 41.00],
+      [29.10, 41.10],
+      [28.90, 41.10],
+      [28.90, 41.00]
+    ]
+  ]
+}
+```
+
+- The outer array wraps one or more linear rings
+- Each ring is an array of `[longitude, latitude]` coordinate pairs
+- Each ring must have **at least 4 coordinate pairs** (3 vertices + closing point)
+- The **first and last coordinate must be identical** to close the ring (Mindbricks auto-closes if omitted)
+- The first ring is the outer boundary; subsequent rings are holes
+
+### Storage
+
+| Database | Column Type | Index Type |
+|----------|------------|------------|
+| **PostgreSQL** | `GEOGRAPHY('POLYGON', 4326)` | GiST spatial index |
+| **MongoDB** | GeoJSON Polygon schema | `2dsphere` index |
+| **Elasticsearch** | `geo_shape` | Spatial shape queries |
+
+### Default Value
+
+```json
+{
+  "type": "Polygon",
+  "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]
+}
+```
+
+---
+
+## Feature Comparison
+
+| Feature | GeoPoint | GeoRoute | GeoArea |
+|---------|----------|----------|---------|
+| Input auto-coercion (array, lon/lat object) | Yes | No | No |
+| Filter operators (`$bbox`, `$circle`, `$polygon`) | Yes | No | No |
+| Automatic geo REST routes | Yes | No | No |
+| DB utility functions (circle, nearest, bbox) | Yes | No | No |
+| Frontend map UI (Leaflet) | Yes | No | No |
+| Geo demo page | Yes | No | No |
+| MScript geo query operators | Yes | Yes | Yes |
+| Elasticsearch spatial indexing | `geo_point` | `geo_shape` | `geo_shape` |
+| API validation and normalization | Yes | Yes | Yes |
+| Array properties supported | No | No | No |
+
+> **Note:** Geographic types do not support array properties. Each geographic property stores a single geometry value.
+
+---
+
+## Spatial Filtering in List APIs
+
+GeoPoint properties that are configured as filter parameters on list-type Business APIs support three spatial filter operators. These operators are passed as query string values with special prefixes.
+
+### Bounding Box Filter (`$bbox`)
+
+Finds records within a rectangular geographic area.
+
+```
+?location=$bbox-<minLat>,<minLon>,<maxLat>,<maxLon>
+```
+
+**Example:** Find locations within lower Manhattan:
+```
+GET /api/stores/list?location=$bbox-40.70,-74.02,40.72,-73.97
+```
+
+**How it works:**
+- PostgreSQL: `ST_Intersects` with `ST_MakeEnvelope`
+- MongoDB: `$geoWithin` with `$box`
+- The four coordinates define the southwest and northeast corners of the rectangle
+
+### Circle Filter (`$circle`)
+
+Finds records within a specified radius from a center point.
+
+```
+?location=$circle-<lat>,<lon>,<radiusMeters>
+```
+
+**Example:** Find locations within 2km of Times Square:
+```
+GET /api/stores/list?location=$circle-40.7580,-73.9855,2000
+```
+
+**How it works:**
+- PostgreSQL: `ST_DWithin` with radius in meters
+- MongoDB: `$nearSphere` with `$maxDistance`
+- The radius is specified in **meters**
+
+### Polygon Filter (`$polygon`)
+
+Finds records within an arbitrary polygon area.
+
+```
+?location=$polygon-<lat1>,<lon1>,<lat2>,<lon2>,<lat3>,<lon3>,...
+```
+
+**Example:** Find locations within a triangular area:
+```
+GET /api/stores/list?location=$polygon-40.70,-74.00,40.80,-74.00,40.75,-73.95
+```
+
+**How it works:**
+- Requires at least 6 values (3 coordinate pairs forming a triangle)
+- Must have an even number of values (lat/lon pairs)
+- The polygon is automatically closed if the first and last points differ
+- PostgreSQL: `ST_Covers` with `ST_GeomFromGeoJSON`
+- MongoDB: `$geoWithin` with GeoJSON Polygon
+
+### Null Check
+
+```
+?location=null
+```
+
+Returns records where the geographic field is `null`.
+
+### Coordinate Order in Filters
+
+**Important:** Filter query string parameters use `lat,lon` order (not `lon,lat`). This differs from the GeoJSON storage format which uses `[lon, lat]`. The parsing layer handles the conversion automatically.
+
+| Context | Order | Example |
+|---------|-------|---------|
+| GeoJSON (storage/response) | `[longitude, latitude]` | `[28.97, 41.00]` |
+| Filter query strings | `latitude,longitude` | `$circle-41.00,28.97,1000` |
+| REST geo routes (body) | `lon`, `lat` as separate fields | `{ "lon": 28.97, "lat": 41.00 }` |
+
+---
+
+## Automatic Geo REST Routes
+
+For every GeoPoint property on every data object, Mindbricks automatically generates a set of dedicated REST routes under the `/geo` prefix. These routes provide direct spatial query capabilities independent of your Business APIs.
+
+### Route Pattern
+
+All geo routes are mounted at:
+```
+/geo/<objectName>/<geoFieldName>/<operation>
+```
+
+For example, if you have a `Store` data object with a `location` GeoPoint property, Mindbricks generates:
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/geo/store/location/circle` | POST | Find stores within a circle |
+| `/geo/store/location/nearest` | POST | Find nearest stores to a point |
+| `/geo/store/location/bbox` | POST | Find stores within a bounding box |
+| `/geo/store/location/demo` | GET | Interactive map demo page |
+
+Additionally, a geo home page is generated at `/geo` listing all available geo endpoints.
+
+### Circle Route
+
+Find records within a given radius from a center point.
+
+```
+POST /geo/<objectName>/<geoField>/circle
+```
+
+**Request Body:**
+
+```json
+{
+  "lon": 28.9784,
+  "lat": 41.0082,
+  "radiusM": 5000,
+  "query": {},
+  "limit": 50,
+  "offset": 0,
+  "orderByDistance": true
+}
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `lon` | Number | Yes | Longitude of center point (-180 to 180) |
+| `lat` | Number | Yes | Latitude of center point (-90 to 90) |
+| `radiusM` | Number | Yes | Radius in meters |
+| `query` | Object | No | Additional filter criteria |
+| `limit` | Number | No | Max records to return |
+| `offset` | Number | No | Records to skip (pagination) |
+| `orderByDistance` | Boolean | No | Order results by distance ascending (default: true) |
+
+**Response:**
+```json
+{
+  "items": [
+    {
+      "id": "...",
+      "location": { "type": "Point", "coordinates": [28.98, 41.01] },
+      "distance_m": 245.7
+    }
+  ]
+}
+```
+
+Results include a computed `distance_m` field showing the distance in meters from the center point (PostgreSQL only).
+
+### Nearest Route
+
+Find the N closest records to a given point, optionally bounded by a maximum radius.
+
+```
+POST /geo/<objectName>/<geoField>/nearest
+```
+
+**Request Body:**
+
+```json
+{
+  "lon": 28.9784,
+  "lat": 41.0082,
+  "limit": 10,
+  "radiusM": 10000,
+  "query": {},
+  "offset": 0
+}
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `lon` | Number | Yes | Longitude of reference point |
+| `lat` | Number | Yes | Latitude of reference point |
+| `limit` | Number | No | Number of nearest records (default: 10) |
+| `radiusM` | Number | No | Maximum search radius in meters |
+| `query` | Object | No | Additional filter criteria |
+| `offset` | Number | No | Records to skip |
+
+Results are always ordered by distance ascending (closest first) and include a `distance_m` field.
+
+### Bounding Box Route
+
+Find records within a rectangular geographic area.
+
+```
+POST /geo/<objectName>/<geoField>/bbox
+```
+
+**Request Body:**
+
+```json
+{
+  "minLon": 28.90,
+  "minLat": 41.00,
+  "maxLon": 29.10,
+  "maxLat": 41.20,
+  "query": {},
+  "limit": 100,
+  "offset": 0
+}
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `minLon` | Number | Yes | Minimum longitude (western edge) |
+| `minLat` | Number | Yes | Minimum latitude (southern edge) |
+| `maxLon` | Number | Yes | Maximum longitude (eastern edge) |
+| `maxLat` | Number | Yes | Maximum latitude (northern edge) |
+| `query` | Object | No | Additional filter criteria |
+| `limit` | Number | No | Max records to return |
+| `offset` | Number | No | Records to skip |
+
+### Demo Page
+
+Each GeoPoint property gets an interactive map demo page:
+
+```
+GET /geo/<objectName>/<geoField>/demo
+```
+
+This page renders a full-screen map with all geo records plotted as markers. If a `GOOGLE_MAPS_BROWSER_KEY` environment variable is set, it uses Google Maps; otherwise, it falls back to OpenStreetMap tiles.
+
+---
+
+## Database Utility Functions
+
+For each GeoPoint property, Mindbricks generates three database utility functions in the `dbLayer` module. These functions handle all the spatial query logic for both PostgreSQL (PostGIS) and MongoDB.
+
+### Importing Geo Utilities
+
+```js
+const {
+  getStoreListInCircle_location,
+  getStoreListMostClose_location,
+  getStoreListInBBox_location
+} = require("dbLayer");
+```
+
+The naming pattern is `<operation>${ModelName}<suffix>_${geoFieldName}`.
+
+### `get${ModelName}ListInCircle_${field}(lon, lat, radiusM, query, options)`
+
+Find records within a circular area.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `lon` | Number | Center longitude |
+| `lat` | Number | Center latitude |
+| `radiusM` | Number | Radius in meters |
+| `query` | Object | Additional where conditions (optional) |
+| `options.limit` | Number | Max results |
+| `options.offset` | Number | Skip results |
+| `options.orderByDistance` | Boolean | Sort by distance (default: true) |
+
+**PostgreSQL implementation:** Uses `ST_DWithin` for the radius check and `ST_Distance` to compute and sort by distance.
+
+**MongoDB implementation:** Uses `$nearSphere` with `$maxDistance`.
+
+### `get${ModelName}ListMostClose_${field}(lon, lat, limit, query, options)`
+
+Find the nearest N records to a point.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `lon` | Number | Reference point longitude |
+| `lat` | Number | Reference point latitude |
+| `limit` | Number | Number of nearest records (default: 10) |
+| `query` | Object | Additional where conditions (optional) |
+| `options.radiusM` | Number | Optional maximum radius in meters |
+| `options.offset` | Number | Skip results |
+
+Results are always ordered by distance (closest first).
+
+### `get${ModelName}ListInBBox_${field}(minLon, minLat, maxLon, maxLat, query, options)`
+
+Find records within a bounding box.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `minLon` | Number | Minimum longitude |
+| `minLat` | Number | Minimum latitude |
+| `maxLon` | Number | Maximum longitude |
+| `maxLat` | Number | Maximum latitude |
+| `query` | Object | Additional where conditions (optional) |
+| `options.limit` | Number | Max results |
+| `options.offset` | Number | Skip results |
+
+**PostgreSQL implementation:** Uses `ST_Intersects` with `ST_MakeEnvelope`.
+
+**MongoDB implementation:** Uses `$geoWithin` with `$box`.
+
+### Soft Delete Handling
+
+All geo utility functions automatically respect the data object's soft delete setting. If soft delete is enabled, an `isActive: true` condition is added to all queries.
+
+---
+
+## MScript Geographic Operators
+
+In MScript (Mindbricks' query expression language), you can use geographic operators for advanced spatial queries in Business API where clauses, additional clauses, and action conditions.
+
+### Available Operators
+
+| Operator | Description | Applicable Types |
+|----------|-------------|-----------------|
+| `$geoNear` | Find records near a point within a distance | GeoPoint |
+| `$geoWithin` | Find records within a shape (bbox or polygon) | GeoPoint, GeoRoute, GeoArea |
+| `$geoContains` | Find records whose geometry contains a shape | GeoRoute, GeoArea |
+| `$geoIntersects` | Find records whose geometry intersects a shape | GeoPoint, GeoRoute, GeoArea |
+
+### `$geoNear` — Proximity Search
+
+```js
+{
+  location: {
+    $geoNear: {
+      point: { type: "Point", coordinates: [28.97, 41.00] },
+      maxDistance: 5000,    // meters
+      minDistance: 100      // meters (optional)
+    }
+  }
+}
+```
+
+**Implementation:**
+- PostgreSQL: `ST_DWithin` + optional `ST_Distance >= minDistance`
+- MongoDB: `$nearSphere` with `$maxDistance` / `$minDistance`
+- Elasticsearch: `geo_distance` query
+
+### `$geoWithin` — Containment Search
+
+**Bounding Box:**
+```js
+{
+  location: {
+    $geoWithin: {
+      bbox: [-74.0, 40.7, -73.9, 40.8]  // [minLon, minLat, maxLon, maxLat]
+    }
+  }
+}
+```
+
+**Polygon:**
+```js
+{
+  location: {
+    $geoWithin: {
+      shape: {
+        type: "Polygon",
+        coordinates: [[[28.9, 41.0], [29.1, 41.0], [29.1, 41.1], [28.9, 41.1], [28.9, 41.0]]]
+      }
+    }
+  }
+}
+```
+
+**Implementation:**
+- PostgreSQL (bbox): `ST_Intersects` with `ST_MakeEnvelope`
+- PostgreSQL (polygon): `ST_Covers` with `ST_GeomFromGeoJSON`
+- MongoDB: `$geoWithin` with `$box` or GeoJSON polygon
+- Elasticsearch: `geo_bounding_box` or `geo_shape` query
+
+### `$geoContains` — Geometry Contains Shape
+
+Check if a stored geometry contains a given shape (useful for GeoArea properties):
+
+```js
+{
+  serviceZone: {
+    $geoContains: {
+      shape: { type: "Point", coordinates: [28.97, 41.00] }
+    }
+  }
+}
+```
+
+**Implementation:**
+- PostgreSQL: `ST_Contains`
+- MongoDB: Native `$geoWithin` (inverted)
+- Elasticsearch: `geo_shape` contains query
+
+### `$geoIntersects` — Geometry Intersection
+
+Check if two geometries intersect:
+
+```js
+{
+  deliveryArea: {
+    $geoIntersects: {
+      shape: {
+        type: "Polygon",
+        coordinates: [[[28.9, 41.0], [29.1, 41.0], [29.0, 41.1], [28.9, 41.0]]]
+      }
+    }
+  }
+}
+```
+
+**Implementation:**
+- PostgreSQL: `ST_Intersects`
+- MongoDB: `$geoIntersects`
+- Elasticsearch: `geo_shape` intersects query
+
+### `geoDistance` Function
+
+Available in MScript for sorting and computed fields:
+
+```js
+// Sort by distance from a point
+{ $sort: { _geoDistance: { field: "location", point: [28.97, 41.00] } } }
+```
+
+- PostgreSQL: `ST_Distance` (returns meters)
+- Elasticsearch: `_geo_distance` sort
+
+---
+
+## PostGIS Setup
+
+For PostgreSQL databases, Mindbricks automatically creates the PostGIS extension when the service starts:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS postgis;
+```
+
+This happens during the database initialization phase, before any tables are created. PostGIS is required for all geographic column types (`GEOGRAPHY`) and spatial functions (`ST_DWithin`, `ST_Distance`, `ST_Intersects`, etc.).
+
+No manual setup is required — Mindbricks handles the PostGIS extension creation automatically.
+
+---
+
+## Database Schema Details
+
+### PostgreSQL (Sequelize)
+
+Geographic columns are created with the `GEOGRAPHY` type and appropriate geometry subtype:
+
+```sql
+-- GeoPoint column
+"location" GEOGRAPHY(POINT, 4326)
+
+-- GeoRoute column
+"deliveryRoute" GEOGRAPHY(LINESTRING, 4326)
+
+-- GeoArea column
+"serviceZone" GEOGRAPHY(POLYGON, 4326)
+```
+
+**GiST Indexes:** Mindbricks automatically creates GiST (Generalized Search Tree) spatial indexes on all geographic columns for efficient spatial queries.
+
+**Data normalization:** When reading GeoPoint data from PostgreSQL, the model's `getData()` method normalizes the value to `{ type, coordinates }` to ensure consistent GeoJSON output.
+
+### MongoDB (Mongoose)
+
+Geographic fields use GeoJSON schemas with `2dsphere` indexes:
+
+```js
+// GeoPoint
+{
+  type: { type: String, enum: ["Point"], default: "Point" },
+  coordinates: { type: [Number], required: true }
+}
+
+// GeoRoute
+{
+  type: { type: String, enum: ["LineString"], default: "LineString" },
+  coordinates: { type: [[Number]], required: true }
+}
+
+// GeoArea
+{
+  type: { type: String, enum: ["Polygon"], default: "Polygon" },
+  coordinates: { type: [[[Number]]], required: true }
+}
+```
+
+**2dsphere Indexes:** Mindbricks creates `2dsphere` indexes on all geographic fields for efficient geospatial queries.
+
+### Elasticsearch
+
+| Mindbricks Type | Elasticsearch Mapping | Query Capabilities |
+|-----------------|----------------------|-------------------|
+| GeoPoint | `geo_point` | `geo_distance`, `geo_bounding_box`, `geo_polygon`, distance sorting |
+| GeoRoute | `geo_shape` | `geo_shape` (contains, intersects, within) |
+| GeoArea | `geo_shape` | `geo_shape` (contains, intersects, within) |
+
+The `geo_point` type is preferred for GeoPoint because it enables efficient `geo_distance` queries and distance-based sorting, which `geo_shape` does not support.
+
+---
+
+## Schema Migration
+
+When adding or modifying geographic columns, Mindbricks handles schema migration automatically:
+
+| Operation | PostgreSQL | Elasticsearch |
+|-----------|-----------|---------------|
+| Add GeoPoint | `ALTER TABLE ADD COLUMN ... GEOGRAPHY(POINT, 4326)` | Mapping: `geo_point` |
+| Add GeoRoute | `ALTER TABLE ADD COLUMN ... GEOGRAPHY(LINESTRING, 4326)` | Mapping: `geo_shape` |
+| Add GeoArea | `ALTER TABLE ADD COLUMN ... GEOGRAPHY(POLYGON, 4326)` | Mapping: `geo_shape` |
+
+The schema differ recognizes `GEOMETRY` and `GEOGRAPHY` types as compatible during migration comparisons, preventing unnecessary column recreation.
+
+---
+
+## OpenAPI / Swagger
+
+Geographic types are represented in the generated OpenAPI specification:
+
+**GeoPoint:**
+```yaml
+type: object
+description: Geographic point (GeoJSON Point)
+properties:
+  lon:
+    type: number
+    description: Longitude (-180 to 180)
+  lat:
+    type: number
+    description: Latitude (-90 to 90)
+```
+
+**GeoRoute:**
+```yaml
+type: object
+description: Geographic route (GeoJSON LineString)
+properties:
+  type:
+    type: string
+    enum: [LineString]
+  coordinates:
+    type: array
+    description: Array of [longitude, latitude] pairs
+    items:
+      type: array
+      items:
+        type: number
+      minItems: 2
+      maxItems: 2
+```
+
+**GeoArea:**
+```yaml
+type: object
+description: Geographic area (GeoJSON Polygon)
+properties:
+  type:
+    type: string
+    enum: [Polygon]
+  coordinates:
+    type: array
+    description: Array of linear rings (first is outer boundary)
+    items:
+      type: array
+      items:
+        type: array
+        items:
+          type: number
+        minItems: 2
+        maxItems: 2
+```
+
+---
+
+## MCP Tool Integration
+
+Geographic types are exposed in MCP (Model Context Protocol) tools with Zod schemas, allowing AI agents to work with spatial data:
+
+| Type | MCP Zod Schema |
+|------|---------------|
+| **GeoPoint** | `z.object({ lon: z.number().describe("longitude (-180 to 180)"), lat: z.number().describe("latitude (-90 to 90)") })` |
+| **GeoRoute** | `z.object({ type: z.literal("LineString"), coordinates: z.array(z.tuple([z.number(), z.number()])).min(2) })` |
+| **GeoArea** | `z.object({ type: z.literal("Polygon"), coordinates: z.array(z.array(z.tuple([z.number(), z.number()]))) })` |
+
+AI agents can create, update, and query geographic data through MCP tools using these schemas.
+
+---
+
+## Frontend Map Support
+
+When any data object in your project has a GeoPoint property, Mindbricks automatically:
+
+1. **Adds map dependencies** — `leaflet` and `react-leaflet` packages are included in the frontend build
+2. **Generates map components** — A `GeoMapPanel` component is created for rendering points on an interactive map
+3. **Enables map view in list pages** — The service page includes a map/list toggle for data objects with GeoPoint properties
+4. **Supports map viewport filtering** — When the map view is active, panning or zooming automatically applies a `$bbox` filter to fetch only records visible in the current viewport
+5. **HTML viewer map rendering** — AI agent responses containing GeoPoint data can be rendered as interactive maps in the chat UI
+
+### Map Viewport Filtering
+
+When users switch to the map view, the frontend automatically sends bounding box filters based on the visible map area:
+
+```
+?location=$bbox-<minLat>,<minLon>,<maxLat>,<maxLon>
+```
+
+As the user pans or zooms, the filter is updated and a new list request is sent, keeping the displayed markers in sync with the visible map area.
+
+---
+
+## API Validation Summary
+
+Mindbricks validates all geographic data at the API layer before it reaches the database:
+
+### GeoPoint Validation
+- Accepts: GeoJSON Point, `{ coordinates }`, `[lon, lat]`, `{ lon, lat }`
+- Validates: lon in [-180, 180], lat in [-90, 90]
+- Normalizes to: `{ type: "Point", coordinates: [lon, lat] }`
+
+### GeoRoute Validation
+- Requires: `{ type: "LineString", coordinates: [[lon, lat], ...] }`
+- Validates: at least 2 coordinate pairs, each with valid lon/lat ranges
+- No auto-coercion from simplified formats
+
+### GeoArea Validation
+- Requires: `{ type: "Polygon", coordinates: [[[lon, lat], ...]] }`
+- Validates: at least one ring with at least 4 coordinate pairs, valid lon/lat ranges
+- Validates: first and last coordinates of each ring must match (closed ring)
+
+### GeoPoint Filter Validation
+- Validates `$bbox-` has exactly 4 numeric values
+- Validates `$circle-` has exactly 3 numeric values with positive radius
+- Validates `$polygon-` has at least 6 values (3 points) with even count
+- All values must be valid numbers
+- Rejects arrays and non-string values for filter parameters
+
+---
+
+## Best Practices
+
+1. **Use GeoPoint for locations** — If you only need to store a single point (address, user location, store position), use GeoPoint. It provides the richest feature set including filtering, automatic routes, and map UI.
+
+2. **Prefer Business API filters over geo routes** — For standard listing with geographic filtering, use the `$bbox`/`$circle`/`$polygon` filter operators on your list Business APIs. Reserve the dedicated geo routes (`/geo/.../circle`, etc.) for specialized spatial queries that need the extra flexibility of the query parameter and distance computation.
+
+3. **Use MScript geo operators for complex queries** — When you need spatial conditions in Business API where clauses or additional clauses (e.g., "find orders within a delivery zone"), use MScript operators like `$geoNear`, `$geoWithin`, and `$geoContains`.
+
+4. **Index geographic properties in Elasticsearch** — If you need geo-distance sorting or proximity-based search across large datasets, ensure your GeoPoint properties are indexed in Elasticsearch.
+
+5. **Remember coordinate order** — GeoJSON (storage/response) uses `[longitude, latitude]`, but filter query strings use `latitude,longitude`. Mindbricks handles the conversion, but keep this in mind when building custom queries.
+
+6. **Keep polygons simple** — For GeoArea properties, avoid extremely complex polygons with thousands of vertices. Simplify shapes when possible for better query performance.
+
+7. **Use GeoRoute and GeoArea for storage and MScript** — While these types don't have dedicated REST routes or filter operators like GeoPoint, they are fully supported in the database layer and MScript query operators for spatial containment and intersection checks.
