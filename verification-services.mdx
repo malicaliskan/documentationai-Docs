@@ -113,7 +113,7 @@ Completes verification using the received code.
 
 ## Mobile Verification
 
-Mobile verification is available when the mobile field is present in the user data model (i.e., when `primaryLoginIdentifier` is `'mobile'` or `'emailOrMobile'`, or when `secondaryIdentifierPresence` is `'optional'` or `'required'` with email as primary).
+Mobile verification is available when the mobile field is present in the user data model (i.e., when `primaryLoginIdentifier` is `'mobile'` or `'emailOrMobile'`, or when `secondaryIdentifierPresence` is `'optional'` or `'required'` with email as primary). All mobile numbers must be in **E.164 format** (`+` followed by country code and subscriber number, e.g. `+905551234567`). The backend normalizes mobile numbers to this format automatically.
 
 In the registration response, check the `mobileVerificationNeeded` property in the response root. If it is `true`, start the mobile verification flow.
 
@@ -299,6 +299,8 @@ Completes the password reset process by validating the secret code and updating 
 ---
 
 ## Password Reset By Mobile Flow
+
+> All mobile parameters in the password reset by mobile flow must be in E.164 format (e.g. `+905551234567`).
 
 1. Call the password reset by mobile verification `start` route of the backend (described below) with the user's primary login identifier (email or mobile). The backend will send a secret code to the user's mobile number. **If a real texting service is configured, the backend sends the SMS. During development, the backend also returns the secret code to the frontend in the&#x20;********`secretCode`********\*\*\*\*\*\*\*\* property.**
 

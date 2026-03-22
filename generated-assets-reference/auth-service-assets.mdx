@@ -44,7 +44,7 @@ The `user` data object is the core entity for user management. It is **always pr
 Architects can add custom properties via `ProjectAuthentication.userProperties` array. These properties follow standard `DataProperty` pattern definitions.
 
 **Initial Data:**
-- **Super Admin User**: Automatically created on deployment with credentials defined in `LoginDefUserSettings.superAdminEmail` and `LoginDefUserSettings.superAdminPassword`
+- **Super Admin User**: Automatically created on deployment with credentials defined in `LoginDefUserSettings.superAdminIdentifier` and `LoginDefUserSettings.superAdminPassword`
 
 ---
 
@@ -836,10 +836,11 @@ For detailed documentation on all database utility functions, see the [Database 
 
 On deployment, Mindbricks automatically creates a Super Admin user with:
 
-- **Email:** Value from `LoginDefUserSettings.superAdminEmail`
+- **Identifier (email or mobile):** Value from `LoginDefUserSettings.superAdminIdentifier`. When `primaryLoginIdentifier` is `'email'` or `'emailOrMobile'`, this is stored as the user's email. When `'mobile'`, it is stored as the mobile number (E.164 format).
 - **Password:** Value from `LoginDefUserSettings.superAdminPassword`
 - **Role:** `superAdmin` (system role)
-- **Email Verified:** `true`
+- **Verified:** The primary identifier is marked as verified (`emailVerified` or `mobileVerified` depending on which field the identifier populates).
+- **Secondary Identifier Placeholder:** When the secondary identifier field is required (`secondaryIdentifierPresence: "required"` or `dualIdentifierRegistration: "both"`), a placeholder value is used (`"noreply@system.local"` for email, `"+10000000000"` for mobile) so the NOT NULL constraint is satisfied.
 - **Full Access:** Complete system access across all services and tenants
 
 ### Root Tenant (Multi-Tenant Only)

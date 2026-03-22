@@ -60,7 +60,7 @@ In some way, frontend should provide a simple and practical way to the user to t
 
 ### Sample Store Tenant
 
-The applcation backend also includes a sample tenant created with a sample tenant owner, who has the same email and password of the superadmin. This sample is created in the backend to be able to test the multi-tenant behaviour of the frontend at the beginning.
+The applcation backend also includes a sample tenant created with a sample tenant owner, who has the same login identifier and password as the superadmin. This sample is created in the backend to be able to test the multi-tenant behaviour of the frontend at the beginning.
 
 The sample store has a codename `babil` and can be targetd by attaching this codename to the API calls. So whwn the front end home page is built, homepages both for the SaaS and tenant shoul be created and ready to be tested.
 
@@ -220,7 +220,7 @@ The `registerStoreOwner` api has got 7 request parameters
 **email** : The email/login identifier of the user being registered. Required when `primaryLoginIdentifier` is `'email'` or `'emailOrMobile'`. Also required when `primaryLoginIdentifier` is `'mobile'` and `secondaryIdentifierPresence` is `'required'`.
 **store** : The store informatiion for the tenant that the created user will own.
 **fullname** : The full name defined by the the user that is being registered.
-**mobile** : The mobile number of the user being registered. Required when `primaryLoginIdentifier` is `'mobile'` or `'emailOrMobile'`. Also required when `primaryLoginIdentifier` is `'email'` and `secondaryIdentifierPresence` is `'required'`.
+**mobile** : The mobile number of the user being registered, in E.164 format (e.g. `+905551234567`). The backend normalizes mobile numbers to this format automatically. Required when `primaryLoginIdentifier` is `'mobile'` or `'emailOrMobile'`. Also required when `primaryLoginIdentifier` is `'email'` and `secondaryIdentifierPresence` is `'required'`.
 
 **REST Request**
 To access the api you can use the **REST** controller with the path **POST /v1/registerstoreowner**
@@ -322,7 +322,7 @@ The `registerStoreUser` api has got 6 request parameters
 **password** : The password defined by the the user that is being registered.
 **email** : The email/login identifier of the user being registered. Required when `primaryLoginIdentifier` is `'email'` or `'emailOrMobile'`. Also required when `primaryLoginIdentifier` is `'mobile'` and `secondaryIdentifierPresence` is `'required'`.
 **fullname** : The full name defined by the the user that is being registered.
-**mobile** : The mobile number of the user being registered. Required when `primaryLoginIdentifier` is `'mobile'` or `'emailOrMobile'`. Also required when `primaryLoginIdentifier` is `'email'` and `secondaryIdentifierPresence` is `'required'`.
+**mobile** : The mobile number of the user being registered, in E.164 format (e.g. `+905551234567`). The backend normalizes mobile numbers to this format automatically. Required when `primaryLoginIdentifier` is `'mobile'` or `'emailOrMobile'`. Also required when `primaryLoginIdentifier` is `'email'` and `secondaryIdentifierPresence` is `'required'`.
 **avatar** : The avatar url of the user. A random avatar will be generated if not provided
 
 **REST Request**
@@ -423,7 +423,7 @@ Verifies user credentials and creates an authenticated session with a JWT access
 
 - Adds the same token in response headers.
 
-- Accepts either `username` or `email` fields (if both exist, `username` is prioritized). When `primaryLoginIdentifier` is `'mobile'`, pass the mobile number as `username`.
+- Accepts either `username` or `email` fields (if both exist, `username` is prioritized). When `primaryLoginIdentifier` is `'mobile'`, pass the mobile number in E.164 format as `username`.
 
 #### Example
 

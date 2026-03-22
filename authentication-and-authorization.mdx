@@ -195,7 +195,7 @@ Mindbricks automatically generates the following system properties for the `user
    - When `usersHaveMultipleRoles` is enabled, `roleId` is treated as an array.
 
 8. **`mobile`** *(conditional)*
-   Represents the user's mobile phone number. The mobile field is present in the user data model when:
+   Represents the user's mobile phone number, stored in **E.164 format** (e.g. `+905551234567`). The backend automatically normalizes mobile numbers to E.164 format (+ followed by country code and subscriber number, no spaces or dashes) before storing. The mobile field is present in the user data model when:
    - `primaryLoginIdentifier` is `'mobile'` (mobile is the primary login field), or
    - `primaryLoginIdentifier` is `'emailOrMobile'` (both identifiers are supported), or
    - `primaryLoginIdentifier` is `'email'` and `secondaryIdentifierPresence` is `'optional'` or `'required'`
@@ -334,7 +334,7 @@ The Super Admin role is internally recognized as `superAdmin`. The credentials a
   "authentication": {
     "loginDefinition": {
       "userSettings": {
-        "superAdminEmail": "super.admin@myproject.com",
+        "superAdminIdentifier": "super.admin@myproject.com",
         "superAdminPassword": "yourPassword"
       }
     }
@@ -342,7 +342,9 @@ The Super Admin role is internally recognized as `superAdmin`. The credentials a
 }
 ```
 
-If you omit `superAdminEmail`, the default is `"admin@admin.com"`. The default password is `"superadmin"`, as defined in the pattern defaults.
+If you omit `superAdminIdentifier`, the default is `"admin@admin.com"`. When `primaryLoginIdentifier` is `"mobile"`, this should be a mobile number in E.164 format (e.g. `"+905551234567"`). The default password is `"superadmin"`, as defined in the pattern defaults.
+
+When the secondary identifier field is required (i.e. `secondaryIdentifierPresence` is `"required"` or `dualIdentifierRegistration` is `"both"`), the Super Admin is seeded with a placeholder value for the secondary field: `"noreply@system.local"` for email, `"+10000000000"` for mobile. These placeholders satisfy the NOT NULL constraint and should be replaced by the administrator after first login.
 
 #### Setting Custom Data for Super Admin
 
@@ -531,7 +533,7 @@ Each login method ultimately integrates with the same authentication flow, issui
 The `primaryLoginIdentifier` setting in `LoginDefUserSettings` determines which field users provide to log in:
 
 - **`email`** (default) — Users log in with email and password.
-- **`mobile`** — Users log in with mobile number and password (WhatsApp-style).
+- **`mobile`** — Users log in with mobile number and password (WhatsApp-style). Mobile numbers are stored and matched in E.164 format.
 - **`emailOrMobile`** — Users can log in with either email or mobile, plus password. Both fields exist in the data model.
 
 When the primary identifier is `email` or `mobile`, the non-primary identifier (the "secondary") is controlled by `secondaryIdentifierPresence`:
@@ -589,7 +591,7 @@ Authorization: Bearer <token>
 
 ### Email and Mobile Verification During Login
 
-Mindbricks allows email and/or mobile number verification as prerequisites for login. This ensures users have verified contact information before gaining access.
+Mindbricks allows email and/or mobile number verification as prerequisites for login. This ensures users have verified contact information before gaining access. All mobile numbers are normalized to E.164 format (`+countryCode` followed by subscriber number) before storage and comparison.
 
 The user model includes:
 

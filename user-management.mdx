@@ -257,7 +257,7 @@ The `createUser` api has got 5 request parameters
 **email** : A string value to represent the user's email. Required when the email field exists in the user data model (depends on `primaryLoginIdentifier` and `secondaryIdentifierPresence`).
 **password** : A string value to represent the user's password. It will be stored as hashed.
 **fullname** : A string value to represent the fullname of the user.
-**mobile** : A string value to represent the user's mobile number. Required when the mobile field exists in the user data model (depends on `primaryLoginIdentifier` and `secondaryIdentifierPresence`).
+**mobile** : A string value to represent the user's mobile number in E.164 format (e.g. `+905551234567`). The backend normalizes mobile numbers to this format automatically. Required when the mobile field exists in the user data model (depends on `primaryLoginIdentifier` and `secondaryIdentifierPresence`).
 
 **REST Request**
 To access the api you can use the **REST** controller with the path **POST /v1/users**
@@ -351,7 +351,7 @@ The `updateUser` api has got 4 request parameters
 **userId** : This id paremeter is used to select the required data object that will be updated
 **fullname** : A string value to represent the fullname of the user
 **avatar** : The avatar url of the user. A random avatar will be generated if not provided
-**mobile** : A string value to represent the user's mobile number.
+**mobile** : A string value to represent the user's mobile number in E.164 format (e.g. `+905551234567`).
 
 **REST Request**
 To access the api you can use the **REST** controller with the path **PATCH /v1/users/:userId**

@@ -119,7 +119,7 @@ The `updateProfile` api has got 4 request parameters
 **userId** : This id paremeter is used to select the required data object that will be updated
 **fullname** : A string value to represent the fullname of the user
 **avatar** : The avatar url of the user. A random avatar will be generated if not provided
-**mobile** : A string value to represent the user's mobile number. This field is only available when the mobile field exists in the user data model (depends on `primaryLoginIdentifier` and `secondaryIdentifierPresence`). When mobile is the primary login identifier, it cannot be updated through the profile.
+**mobile** : A string value to represent the user's mobile number in E.164 format (e.g. `+905551234567`). The backend normalizes mobile numbers to this format automatically. This field is only available when the mobile field exists in the user data model (depends on `primaryLoginIdentifier` and `secondaryIdentifierPresence`). When mobile is the primary login identifier, it cannot be updated through the profile.
 
 **REST Request**
 To access the api you can use the **REST** controller with the path **PATCH /v1/profile/:userId**
