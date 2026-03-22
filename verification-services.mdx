@@ -26,13 +26,13 @@ In the registration response, check the `emailVerificationNeeded` property in th
 
 After the login process, if you receive an HTTP error and the response contains an `errCode` with the value `EmailVerificationNeeded`, start the email verification flow.
 
-1. Call the email verification `start` route of the backend (described below) with the user’s email. The backend will send a secret code to the provided email address. **The backend can send the email if the architect has configured a real mail service or SMTP server. During development, the backend also returns the secret code to the frontend. You can read this code from the&#x20;********`secretCode`********\*\*\*\*\*\*\*\* property of the response.**
+1. Call the email verification `start` route of the backend (described below) with the user's email. The backend will send a secret code to the provided email address. **The backend can send the email if the architect has configured a real mail service or SMTP server. During development, the backend also returns the secret code to the frontend. You can read this code from the&#x20;********`secretCode`********\*\*\*\*\*\*\*\* property of the response.**
 
 2. The secret code in the email will be a 6-digit code. Provide an input page so the user can paste this code into the frontend application. Navigate to this input page after starting the verification process. **If the&#x20;********`secretCode`********\*\*\*\*\*\*\*\* is sent to the frontend for testing, display it on the input page so the user can copy and paste it.**
 
 3. The `start` response includes a `codeIndex` property. Display its value on the input page so the user can match the index in the message with the one on the screen.
 
-4. When the user submits the code, complete the email verification using the `complete` route of the backend (described below) with the user’s email and the secret code.
+4. When the user submits the code, complete the email verification using the `complete` route of the backend (described below) with the user's email and the secret code.
 
 5. After a successful email verification response, please check the response object to have the property 'mobileVerificationNeeded' as `true`, if so navigate to the mobile verification flow as described below.
    **If no mobile verification is needed then just navigate the login page.**
@@ -46,7 +46,7 @@ Starts email verification by generating and sending a secret code.
 
 | Parameter | Type   | Required | Description                    |
 | --------- | ------ | -------- | ------------------------------ |
-| `email`   | String | Yes      | User’s email address to verify |
+| `email`   | String | Yes      | User's email address to verify |
 
 **Example Request**
 
@@ -88,7 +88,7 @@ Completes verification using the received code.
 
 | Parameter    | Type   | Required | Description       |
 | ------------ | ------ | -------- | ----------------- |
-| `email`      | String | Yes      | User’s email      |
+| `email`      | String | Yes      | User's email      |
 | `secretCode` | String | Yes      | Verification code |
 
 **Success Response**
@@ -113,15 +113,17 @@ Completes verification using the received code.
 
 ## Mobile Verification
 
+Mobile verification is available when the mobile field is present in the user data model (i.e., when `primaryLoginIdentifier` is `'mobile'` or `'emailOrMobile'`, or when `secondaryIdentifierPresence` is `'optional'` or `'required'` with email as primary).
+
 In the registration response, check the `mobileVerificationNeeded` property in the response root. If it is `true`, start the mobile verification flow.
 
 After the login process, if you receive a 403 error and the response contains an `errCode` with the value `MobileVerificationNeeded`, start the mobile verification flow.
 
-1. Call the mobile verification `start` route of the backend (described below) with the user’s email. The backend will send a secret code to the user’s mobile number. **If a real texting service is configured, the backend sends the SMS. During development, the backend also returns the secret code to the frontend in the&#x20;********`secretCode`********\*\*\*\*\*\*\*\* property.**
+1. Call the mobile verification `start` route of the backend (described below) with the user's primary login identifier (email or mobile, depending on `primaryLoginIdentifier`). The backend will send a secret code to the user's mobile number. **If a real texting service is configured, the backend sends the SMS. During development, the backend also returns the secret code to the frontend in the&#x20;********`secretCode`********\*\*\*\*\*\*\*\* property.**
 
 2. The secret code in the SMS will be a 6-digit code. Provide an input page so the user can paste this code. Navigate to this input page after starting the verification process. **If the&#x20;********`secretCode`********\*\*\*\*\*\*\*\* is returned for testing, display it on the input page for easy copy/paste.**
 
-3. When the user submits the code, complete mobile verification using the `complete` route of the backend (described below) with the user’s email and the secret code.
+3. When the user submits the code, complete mobile verification using the `complete` route of the backend (described below) with the user's primary login identifier (email or mobile) and the secret code.
 
 4. The `start` response includes a `codeIndex` property. Display its value on the input page so the user can match the index shown in the message with the one on the screen.
 
@@ -136,7 +138,7 @@ Below are the `start` and `complete` routes for mobile verification. These are s
 
 | Parameter | Type   | Required | Description                          |
 | --------- | ------ | -------- | ------------------------------------ |
-| `email`   | String | Yes      | User’s email to locate mobile record |
+| `email` or `mobile` | String | Yes | User's primary login identifier (email or mobile depending on `primaryLoginIdentifier`) |
 
 **Success Response**
 
@@ -169,7 +171,7 @@ Below are the `start` and `complete` routes for mobile verification. These are s
 
 | Parameter    | Type   | Required | Description           |
 | ------------ | ------ | -------- | --------------------- |
-| `email`      | String | Yes      | Associated email      |
+| `email` or `mobile` | String | Yes | User's primary login identifier |
 | `secretCode` | String | Yes      | Code received via SMS |
 
 **Success Response**
@@ -191,11 +193,11 @@ Below are the `start` and `complete` routes for mobile verification. These are s
 Users can reset their forgotten passwords without a login required, through email and mobile verification.
 To be able to start a password reset flow, users will click on the "Reset Password" link in the login page.
 
-Since there are two verification methods, by email or by mobile, for password reset, when the reset password link is clicked, frontend should ask user if they want to make the verification through email of mobile. According to the users selection the frontend shoudl start the related flow as explaned below step by step.
+Since there are two verification methods (by email or by mobile), when the reset password link is clicked, the frontend should determine which options are available based on the `primaryLoginIdentifier` and `secondaryIdentifierPresence` settings. If both email and mobile fields exist in the user model, the frontend should let the user choose which method to use. According to the user's selection, the frontend should start the related flow as explained below step by step.
 
 ## Password Reset By Email Flow
 
-1. Call the password reset by email verification `start` route of the backend (described below) with the user’s email. The backend will send a secret code to the provided email address. **The backend can send the email if the architect has configured a real mail service or SMTP server. During development, the backend also returns the secret code to the frontend. You can read this code from the&#x20;********`secretCode`********\*\*\*\*\*\*\*\* property of the response.**
+1. Call the password reset by email verification `start` route of the backend (described below) with the user's email. The backend will send a secret code to the provided email address. **The backend can send the email if the architect has configured a real mail service or SMTP server. During development, the backend also returns the secret code to the frontend. You can read this code from the&#x20;********`secretCode`********\*\*\*\*\*\*\*\* property of the response.**
 
 2. The secret code in the email will be a 6-digit code. Provide an input page so the user can paste this code into the frontend application. Navigate to this input page after starting the verification process. **If the&#x20;********`secretCode`********\*\*\*\*\*\*\*\* is sent to the frontend for testing, display it on the input page so the user can copy and paste it.**
 
@@ -203,7 +205,7 @@ Since there are two verification methods, by email or by mobile, for password re
 
 4. The input page should also include a double input area for the user to enter and confirm their new password.
 
-5. When the user submits the code and the new password, complete the password reset by email using the `complete` route of the backend (described below) with the user’s email , the secret code and new password.
+5. When the user submits the code and the new password, complete the password reset by email using the `complete` route of the backend (described below) with the user's email , the secret code and new password.
 
 6. After a successful verification response, navigate to the login page.
 
@@ -298,7 +300,7 @@ Completes the password reset process by validating the secret code and updating 
 
 ## Password Reset By Mobile Flow
 
-1. Call the password reset by mobile verification `start` route of the backend (described below) with the user’s email. The backend will send a secret code to the user’s mobile number. **If a real texting service is configured, the backend sends the SMS. During development, the backend also returns the secret code to the frontend in the&#x20;********`secretCode`********\*\*\*\*\*\*\*\* property.**
+1. Call the password reset by mobile verification `start` route of the backend (described below) with the user's primary login identifier (email or mobile). The backend will send a secret code to the user's mobile number. **If a real texting service is configured, the backend sends the SMS. During development, the backend also returns the secret code to the frontend in the&#x20;********`secretCode`********\*\*\*\*\*\*\*\* property.**
 
 2. The secret code in the SMS will be a 6-digit code. Provide an input page so the user can paste this code. Navigate to this input page after starting the verification process. **If the&#x20;********`secretCode`********\*\*\*\*\*\*\*\* is returned for testing, display it on the input page for easy copy/paste.**
 
@@ -306,7 +308,7 @@ Completes the password reset process by validating the secret code and updating 
 
 4. The input page should also include a double input area for the user to enter and confirm their new password.
 
-5. When the user submits the code, complete mobile verification using the `complete` route of the backend (described below) with the user’s email and the secret code.
+5. When the user submits the code, complete mobile verification using the `complete` route of the backend (described below) with the user's primary login identifier (email or mobile) and the secret code.
 
 6. After a successful mobile verification response, navigate to the login page.
 
@@ -321,7 +323,7 @@ Initiates the mobile-based password reset by sending a verification code to the 
 
 | Parameter | Type   | Required | Description                                   |
 | --------- | ------ | -------- | --------------------------------------------- |
-| email     | String | Yes      | The email of the user that resets the pssword |
+| email or mobile | String | Yes | The primary login identifier of the user resetting the password |
 
 ```json
 {
@@ -361,13 +363,13 @@ Returns the verification context (code returned only in development):
 #### POST `/verification-services/password-reset-by-mobile/complete`
 
 **Purpose**:\
-Finalizes the password reset process by validating the received verification code and updating the user’s password.
+Finalizes the password reset process by validating the received verification code and updating the user's password.
 
 #### Request Body
 
 | Parameter  | Type   | Required | Description                   |
 | ---------- | ------ | -------- | ----------------------------- |
-| email      | String | Yes      | The email address of the user |
+| email or mobile | String | Yes | The primary login identifier of the user |
 | secretCode | String | Yes      | The code received via SMS     |
 | password   | String | Yes      | The new password to assign    |
 

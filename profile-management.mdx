@@ -8,7 +8,7 @@ description: >-
 ---
 ## Profile Page
 
-Design a profile page to manage (view and edit) user information. The profile page should also be able to upload the user avatar to the user’s public bucket. For bucket information, see the Bucket Management section above.
+Design a profile page to manage (view and edit) user information. The profile page should also be able to upload the user avatar to the user's public bucket. For bucket information, see the Bucket Management section above.
 
 On the profile page, you will need 4 business APIs: `getUser` , `updateProfile`, `updateUserPassword` and `archiveProfile`. Do not rely on the `/currentuser` response for profile data, because it contains session information. The most recent user data is in the user database and should be accessed via the `getUser` business API.
 
@@ -18,7 +18,7 @@ The avatar upload component should include an image-cropping component with zoom
 
 Do not implement your own cropping component; instead, use the library component `react-easy-crop` by installing it.
 
-**Note that the user cannot change/update their&#x20;********`email`********\*\*\*\* or&#x20;********`roleId`********\*\*\*\*.**
+**Note that the user cannot change/update their primary login identifier (`email` when email is primary, `mobile` when mobile is primary, or both when using `emailOrMobile`) or `roleId`.**
 
 For password update you should make a separate block in the UI, so that user can enter old password, new password and confirm new password before calling the `updateUserPassword`.
 
@@ -119,7 +119,7 @@ The `updateProfile` api has got 4 request parameters
 **userId** : This id paremeter is used to select the required data object that will be updated
 **fullname** : A string value to represent the fullname of the user
 **avatar** : The avatar url of the user. A random avatar will be generated if not provided
-**mobile** : A string value to represent the user's mobile number.
+**mobile** : A string value to represent the user's mobile number. This field is only available when the mobile field exists in the user data model (depends on `primaryLoginIdentifier` and `secondaryIdentifierPresence`). When mobile is the primary login identifier, it cannot be updated through the profile.
 
 **REST Request**
 To access the api you can use the **REST** controller with the path **PATCH /v1/profile/:userId**
@@ -256,7 +256,7 @@ axios({
 
 A user may want to archive their profile. So the profile page should include an archive section for the users to archive their accounts.
 When an account is archived, it is marked as archived and an aarchiveDate is atteched to the profile. All user data is kept in the database for 1 month after user archived.
-If user tries to login or register with the same email, the account will be activated again. But if no login or register occures in 1 month after archiving, the profile and its related data will be deleted permanenetly.
+If the user tries to login or register with the same login identifier (email or mobile, depending on `primaryLoginIdentifier`), the account will be activated again. But if no login or register occures in 1 month after archiving, the profile and its related data will be deleted permanenetly.
 So in the profile page,
 
 1. The arcihve options should be accepted after user writes a text like ("ARCHİVE MY ACCOUNT") to a confirmation dialog, so that frontend UX can ensure this is not an unconscious request.
@@ -347,5 +347,5 @@ After you complete this step, please ensure you have not made the following comm
 
 4. On the profile page, fetch the latest user data from the service using `getUser`. The `/currentuser` API is session-stored data; the latest data is in the database.
 
-5. When you upload the avatar image on the profile page, use the returned download URL as the user’s `avatar` property and update the user record when the Save button is clicked.
+5. When you upload the avatar image on the profile page, use the returned download URL as the user's `avatar` property and update the user record when the Save button is clicked.
 

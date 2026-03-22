@@ -209,18 +209,18 @@ The `registerStoreOwner` api has got 7 request parameters
 | avatar     | String | false    | request.body?.avatar     |
 | socialCode | String | false    | request.body?.socialCode |
 | password   | String | true     | request.body?.password   |
-| email      | String | true     | request.body?.email      |
+| email      | String | conditional | request.body?.email      |
 | store      | Object | true     | request.body?.store      |
 | fullname   | String | true     | request.body?.fullname   |
-| mobile     | String | false    | request.body?.mobile     |
+| mobile     | String | conditional | request.body?.mobile     |
 
 **avatar** : The avatar url of the user. If not sent, a default random one will be generated.
 **socialCode** : Send this social code if it is sent to you after a social login authetication of an unregistred user. The users profile data will be complemented from the autheticated social profile using this code. If you provide the social code there is no need to give full profile data of the user, just give the ones that are not included in social profiles.
 **password** : The password defined by the the user that is being registered.
-**email** : The email defined by the the user that is being registered.
+**email** : The email/login identifier of the user being registered. Required when `primaryLoginIdentifier` is `'email'` or `'emailOrMobile'`. Also required when `primaryLoginIdentifier` is `'mobile'` and `secondaryIdentifierPresence` is `'required'`.
 **store** : The store informatiion for the tenant that the created user will own.
 **fullname** : The full name defined by the the user that is being registered.
-**mobile** : The mobile number defined by the the user that is being registered.
+**mobile** : The mobile number of the user being registered. Required when `primaryLoginIdentifier` is `'mobile'` or `'emailOrMobile'`. Also required when `primaryLoginIdentifier` is `'email'` and `secondaryIdentifierPresence` is `'required'`.
 
 **REST Request**
 To access the api you can use the **REST** controller with the path **POST /v1/registerstoreowner**
@@ -313,16 +313,16 @@ The `registerStoreUser` api has got 6 request parameters
 | ---------- | ------ | -------- | ------------------------ |
 | socialCode | String | false    | request.body?.socialCode |
 | password   | String | true     | request.body?.password   |
-| email      | String | true     | request.body?.email      |
+| email      | String | conditional | request.body?.email      |
 | fullname   | String | true     | request.body?.fullname   |
-| mobile     | String | false    | request.body?.mobile     |
+| mobile     | String | conditional | request.body?.mobile     |
 | avatar     | String | false    | request.body?.avatar     |
 
 **socialCode** : Send this social code if it is sent to you after a social login authetication of an unregistred user. The users profile data will be complemented from the autheticated social profile using this code. If you provide the social code there is no need to give full profile data of the user, just give the ones that are not included in social profiles.
 **password** : The password defined by the the user that is being registered.
-**email** : The email defined by the the user that is being registered.
+**email** : The email/login identifier of the user being registered. Required when `primaryLoginIdentifier` is `'email'` or `'emailOrMobile'`. Also required when `primaryLoginIdentifier` is `'mobile'` and `secondaryIdentifierPresence` is `'required'`.
 **fullname** : The full name defined by the the user that is being registered.
-**mobile** : The mobile number defined by the the user that is being registered.
+**mobile** : The mobile number of the user being registered. Required when `primaryLoginIdentifier` is `'mobile'` or `'emailOrMobile'`. Also required when `primaryLoginIdentifier` is `'email'` and `secondaryIdentifierPresence` is `'required'`.
 **avatar** : The avatar url of the user. A random avatar will be generated if not provided
 
 **REST Request**
@@ -386,11 +386,11 @@ After a successful registration, the frontend code should handle any verificatio
 
 ## Login Management
 
-After successful registration and completing any required verifications, the user can log in. Please create a minimal, polished login page where the user can enter email and password. Note that this page should respect the deployment (environment) selection option made in the home page to set the base URL. If the user reaches this page directly skipping home page, the default `production`deployment will be used.
+After successful registration and completing any required verifications, the user can log in. Please create a minimal, polished login page where the user can enter their login identifier and password. The login identifier depends on the `primaryLoginIdentifier` setting: it can be email (default), mobile number, or either (when set to `emailOrMobile`). Note that this page should respect the deployment (environment) selection option made in the home page to set the base URL. If the user reaches this page directly skipping home page, the default `production` deployment will be used.
 
 The login API returns a created session. This session can be retrieved later with the access token using the `/currentuser` system route.
 
-Any request that requires login must include a valid token. When a user logs in successfully, the response JSON includes a JWT access token in the `accessToken` field. Under normal conditions, this token is also set as a cookie and consumed automatically. However, since AI coding agents’ preview options may fail to use cookies, ensure that each request includes the access token in the Bearer authorization header.
+Any request that requires login must include a valid token. When a user logs in successfully, the response JSON includes a JWT access token in the `accessToken` field. Under normal conditions, this token is also set as a cookie and consumed automatically. However, since AI coding agents' preview options may fail to use cookies, ensure that each request includes the access token in the Bearer authorization header.
 
 If the login fails due to verification requirements, the response JSON includes an `errCode`. If it is `EmailVerificationNeeded`, start the email verification flow; if it is `MobileVerificationNeeded`, start the mobile verification flow.
 
@@ -411,24 +411,32 @@ Verifies user credentials and creates an authenticated session with a JWT access
 
 | Parameter  | Type   | Required | Source                  |
 | ---------- | ------ | -------- | ----------------------- |
-| `username` | String | Yes      | `request.body.username` |
+| `username` | String | Yes      | `request.body.username` (email or mobile, depending on `primaryLoginIdentifier`) |
 | `password` | String | Yes      | `request.body.password` |
 
 #### Behavior
 
+- The `username` field accepts the user's primary login identifier: email when `primaryLoginIdentifier` is `'email'`, mobile when `'mobile'`, or either when `'emailOrMobile'`.
 - Authenticates credentials and returns a session object.
 
 - Sets cookie: `projectname-access-token[-tenantCodename]`
 
 - Adds the same token in response headers.
 
-- Accepts either `username` or `email` fields (if both exist, `username` is prioritized).
+- Accepts either `username` or `email` fields (if both exist, `username` is prioritized). When `primaryLoginIdentifier` is `'mobile'`, pass the mobile number as `username`.
 
 #### Example
 
 ```js
+// When primaryLoginIdentifier is 'email' (default):
 axios.post("/login", {
   username: "user@example.com",
+  password: "securePassword",
+});
+
+// When primaryLoginIdentifier is 'mobile':
+axios.post("/login", {
+  username: "+905551234567",
   password: "securePassword",
 });
 ```
@@ -497,7 +505,7 @@ axios.post(
 ### `GET /currentuser` — Current Session
 
 **Purpose**
-Returns the currently authenticated user’s session.
+Returns the currently authenticated user's session.
 
 **Route Type**
 `sessionInfo`

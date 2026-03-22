@@ -26,7 +26,7 @@
       },
       "userSettings": {
         "userNameType": "asFullname",
-        "userMobileIsActive": false,
+        "secondaryIdentifierPresence": "none",
         "userRegisterIsPublic": true,
         "emailVerificationRequiredForLogin": false,
         "mobileVerificationRequiredForLogin": false,

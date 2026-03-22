@@ -20,9 +20,9 @@ interface VerificationServices = {
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | verificationSettings  | General options for all verifications. You can change the verification mode (test/live) here.                                 |
 | passwordResetByEmail  | Configures email-based password reset functionality. Includes template, expiration, and verification strategy (link or code). |
-| passwordResetByMobile | Configures SMS-based password reset functionality. Requires active mobile field in user schema.                               |
+| passwordResetByMobile | Configures SMS-based password reset functionality. Requires the mobile field to be present in the user data model (based on `primaryLoginIdentifier` and `secondaryIdentifierPresence`). |
 | email2Factor          | Enables and configures two-factor authentication via email. Typically used during login or sensitive actions.                 |
-| mobile2Factor         | Enables and configures two-factor authentication via SMS. Requires mobile phone to be active in user schema.                  |
+| mobile2Factor         | Enables and configures two-factor authentication via SMS. Requires the mobile field to be present in the user data model (based on `primaryLoginIdentifier` and `secondaryIdentifierPresence`). |
 | emailVerification     | Configures email verification flow, including delivery method (link or code), expiration, and resend timing.                  |
 | mobileVerification    | Configures mobile verification flow via SMS, with support for link-based or code-based confirmation.                          |
 

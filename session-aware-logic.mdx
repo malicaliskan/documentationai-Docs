@@ -19,7 +19,7 @@ At runtime:
 
 - Session is retrieved from the **authentication token** (e.g., JWT) or via **remote session** configuration.
 
-- Once resolved, it’s attached to the Business API manager as:
+- Once resolved, it's attached to the Business API manager as:
 
 ```js
 this.session
@@ -169,7 +169,7 @@ Used when session data lives in **external session service** (not Mindbricks).
 
 ### 2.4 Cookie Settings – `CookieSettings`
 
-Defines allowed domains for cookies. It doesn’t change the shape of `this.session`, but it controls **how session tokens are transported** to the auth service.
+Defines allowed domains for cookies. It doesn't change the shape of `this.session`, but it controls **how session tokens are transported** to the auth service.
 
 ---
 
@@ -191,13 +191,13 @@ Common identity fields in session:
 
 - `userId`, `_USERID` – main user identifier
 
-- `email`, `fullname`, `avatar`
+- `email`, `fullname`, `avatar` – `email` is present when the email field exists in the user data model
 
-- `roleId` – user’s role(s) (RBAC)
+- `roleId` – user's role(s) (RBAC)
 
-- `mobile`, `mobileVerified`, `emailVerified`
+- `mobile`, `mobileVerified`, `emailVerified` – `mobile` and `mobileVerified` are present only when the mobile field exists in the user data model; `emailVerified` is present only when the email field exists
 
-These fields are derived from the **user DataObject** (configured by `LoginDefinition` and `userProperties`).
+The presence of `email` and `mobile` fields in the session depends on the `primaryLoginIdentifier` and `secondaryIdentifierPresence` settings in `LoginDefUserSettings`. These fields are derived from the **user DataObject** (configured by `LoginDefinition` and `userProperties`).
 
 ### 3.2 Tenant Fields (Multi-Tenant)
 
@@ -343,7 +343,7 @@ Key fields:
 
 `this.session` is implicitly used to:
 
-- Determine user’s `roleId` for `checkRoles` and `absoluteRoles`.
+- Determine user's `roleId` for `checkRoles` and `absoluteRoles`.
 
 - Determine `tenantId` for `apiInSaasLevel` or tenant-specific logic.
 
@@ -568,7 +568,7 @@ To use session effectively:
 
 7. **Remember remote session options** when you integrate with existing auth stacks.
 
-   - `RemoteServiceAuthentication` and `RemoteSession` make it possible to plug into corporate identity systems while still using `this.session` as Mindbricks’ unified interface.
+   - `RemoteServiceAuthentication` and `RemoteSession` make it possible to plug into corporate identity systems while still using `this.session` as Mindbricks' unified interface.
 
 ---
 

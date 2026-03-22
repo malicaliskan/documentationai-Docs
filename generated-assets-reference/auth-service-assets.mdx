@@ -28,7 +28,7 @@ The `user` data object is the core entity for user management. It is **always pr
 | Property Name | Type | Required | Description |
 |--------------|------|----------|-------------|
 | `id` | UUID | Yes | Unique identifier for the user |
-| `email` | String | Yes | User's email address (unique, used for login) |
+| `email` | String | Conditional | User's email address. Present when `primaryLoginIdentifier` is `'email'` or `'emailOrMobile'`, or when `secondaryIdentifierPresence` is `'optional'`/`'required'` with mobile as primary |
 | `password` | String | Yes | Hashed password (never stored in plain text) |
 | `emailVerified` | Boolean | Yes | Whether email has been verified |
 | `name` | String | Conditional | First name (when `userNameType` is `"asNamePair"`) |
@@ -36,8 +36,8 @@ The `user` data object is the core entity for user management. It is **always pr
 | `fullname` | String | Conditional | Full name (when `userNameType` is `"asFullname"`) |
 | `avatar` | String | No | URL to user's avatar image |
 | `roleId` | Any/Array | Conditional | User's role(s) (when RBAC is active) |
-| `mobile` | String | Conditional | Mobile phone number (when `userMobileIsActive` is true) |
-| `mobileVerified` | Boolean | Conditional | Whether mobile is verified (when `userMobileIsActive` is true) |
+| `mobile` | String | Conditional | Mobile phone number (when mobile field is present based on `primaryLoginIdentifier` and `secondaryIdentifierPresence`) |
+| `mobileVerified` | Boolean | Conditional | Whether mobile is verified (when mobile field is present in the user data model) |
 | `{tenantName}Id` | UUID | Conditional | Tenant ID (when multi-tenancy is active, e.g., `clientId`, `storeId`) |
 
 **Custom Properties:**

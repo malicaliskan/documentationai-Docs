@@ -44,6 +44,15 @@ Each user may have only one role, and it is given in `/login` , `/currentuser` o
 }
 ```
 
+## User Data Model Field Availability
+
+The presence of `email`, `mobile`, `emailVerified`, and `mobileVerified` fields in user objects depends on the authentication configuration:
+
+- **`email` and `emailVerified`**: Present when `primaryLoginIdentifier` is `'email'` or `'emailOrMobile'`, or when `primaryLoginIdentifier` is `'mobile'` and `secondaryIdentifierPresence` is `'optional'` or `'required'`.
+- **`mobile` and `mobileVerified`**: Present when `primaryLoginIdentifier` is `'mobile'` or `'emailOrMobile'`, or when `primaryLoginIdentifier` is `'email'` and `secondaryIdentifierPresence` is `'optional'` or `'required'`.
+
+All user listing, creation, editing, and search operations in the admin dashboard should adapt to show only the fields that exist in the user data model.
+
 ## Listing Users
 
 You can list users using the `listUsers` api.
@@ -220,7 +229,7 @@ When you list the users please use pagination. To be able to use pagination you 
 
 ## Creating Users
 
-The user management console in the admin dashboard should provide UX components for user creating by admins. When creating users, it should also be possible to upload user avatar. Note that when creating, updating users , admins can not set emailVerified (or mobileVerified if exists) as true, since it is a logical mechanism and should be verified only through verification processes.
+The user management console in the admin dashboard should provide UX components for user creating by admins. When creating users, it should also be possible to upload user avatar. Note that when creating or updating users, admins cannot set `emailVerified` (or `mobileVerified` if the mobile field exists) as true, since verification is a logical mechanism and should be completed only through verification processes.
 
 ### `Create User` API
 
@@ -239,16 +248,16 @@ The `createUser` api has got 5 request parameters
 | Parameter | Type   | Required | Population             |
 | --------- | ------ | -------- | ---------------------- |
 | avatar    | String | false    | request.body?.avatar   |
-| email     | String | true     | request.body?.email    |
+| email     | String | conditional | request.body?.email    |
 | password  | String | true     | request.body?.password |
 | fullname  | String | true     | request.body?.fullname |
-| mobile    | String | true     | request.body?.mobile   |
+| mobile    | String | conditional | request.body?.mobile   |
 
 **avatar** : The avatar url of the user. If not sent, a default random one will be generated.
-**email** : A string value to represent the user's email.
+**email** : A string value to represent the user's email. Required when the email field exists in the user data model (depends on `primaryLoginIdentifier` and `secondaryIdentifierPresence`).
 **password** : A string value to represent the user's password. It will be stored as hashed.
-**fullname** : A string value to represent the fullname of the user
-**mobile** : A string value to represent the user's mobile number.
+**fullname** : A string value to represent the fullname of the user.
+**mobile** : A string value to represent the user's mobile number. Required when the mobile field exists in the user data model (depends on `primaryLoginIdentifier` and `secondaryIdentifierPresence`).
 
 **REST Request**
 To access the api you can use the **REST** controller with the path **POST /v1/users**

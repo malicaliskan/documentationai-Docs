@@ -13,24 +13,26 @@ interface LoginDefinition = {
 
 | Field          | Description                                                                                                                                                                                                                                                                                                                                                                                                      |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| userSettings   | Defines how the built-in user object is configured and authenticated within the project. While the user data model is fully managed by Mindbricks, this setting allows you to control aspects such as super admin credentials, registration behavior, user group support, and whether mobile-based features are enabled. These settings shape how authentication flows and access are handled at the user level. |
+| userSettings   | Defines how the built-in user object is configured and authenticated within the project. While the user data model is fully managed by Mindbricks, this setting allows you to control the primary login identifier (email, mobile, or both), secondary identifier presence, super admin credentials, registration behavior, user group support, and verification requirements. These settings shape how authentication flows and access are handled at the user level. |
 | tenantSettings | Configuration for multi-tenant applications, including tenant object definitions and their relationship to users and user groups. When enabled, this isolates resources by tenant and supports tenant-scoped access control. Omit this section for single-tenant projects.                                                                                                                                       |
 
 ## LoginDefUserSettings
 
 **MPO Version:** 1.3.0
 
-Defines how users are stored, managed, and authenticated within the project. This includes super admin credentials, login identifiers, optional mobile and email verification settings, public registration policies, and whether user groups are active. This structure governs the behavior and structure of the user service's primary data model.
+Defines how users are stored, managed, and authenticated within the project. This includes the primary login identifier configuration (email, mobile, or dual), secondary identifier presence rules, super admin credentials, email and mobile verification settings, public registration policies, and whether user groups are active. This structure governs the behavior and structure of the user service's primary data model.
 
 ```typescript
 interface LoginDefUserSettings = {
+  primaryLoginIdentifier : PrimaryLoginIdentifier;
   superAdminEmail : String;
   superAdminPassword : String;
   userNameType : UserNameType;
   superAdminData : DataMapItem[];
   userGroupsActive : Boolean;
   userGroupsInTenantLevel : Boolean;
-  userMobileIsActive : Boolean;
+  secondaryIdentifierPresence : SecondaryIdentifierPresence;
+  dualIdentifierRegistration : DualIdentifierRegistration;
   emailVerificationRequiredForLogin : Boolean;
   mobileVerificationRequiredForLogin : Boolean;
   mobile2FARequiredForLogin : Boolean;
@@ -41,22 +43,76 @@ interface LoginDefUserSettings = {
 }
 ```
 
-| Field                              | Description                                                                                                                                                                                                                                                                       |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| superAdminEmail                    | The login email of the super admin user. This user has full permissions across the project and is not tenant-scoped. If not defined, the project owner's email is used. This email must be unique and valid to support email-based features like verification and password reset. |
-| superAdminPassword                 | The password of the super admin user. This preset password is used to access the system after initial deployment and should be changed in production environments.                                                                                                                |
-| userNameType                       | Specifies whether the user's name will be stored as a single 'fullname' or as separate 'name' and 'surname' fields.                                                                                                                                                               |
-| superAdminData                     | Preset values for the super admin user. Required only for custom properties beyond the standard fields (email, name, password, etc.).                                                                                                                                             |
-| userGroupsActive                   | Indicates whether user group functionality is enabled. When active, a 'userGroup' data object is added to the user service with fixed fields (id, name, description), optionally scoped by tenant.                                                                                |
-| userGroupsInTenantLevel            | If true, user groups are defined per tenant; otherwise, they are defined globally across the SaaS. Applies only when user groups are enabled.                                                                                                                                     |
-| userMobileIsActive                 | Indicates whether mobile numbers are stored in the user data model. Required for enabling mobile-based authentication features such as 2FA.                                                                                                                                       |
-| emailVerificationRequiredForLogin  | Indicates whether users must verify their email address before they can log in. Related verification flows must be enabled in VerificationServices.                                                                                                                               |
-| mobileVerificationRequiredForLogin | Indicates whether users must verify their mobile number before logging in. This applies only when 'userMobileIsActive' is true.                                                                                                                                                   |
-| mobile2FARequiredForLogin          | Indicates whether two-factor authentication via mobile is required during login. This applies only when 'userMobileIsActive' is true.                                                                                                                                             |
-| email2FARequiredForLogin           | Indicates whether two-factor authentication via email is required during login. Related verification flows must be enabled in VerificationServices.                                                                                                                               |
-| userRegisterIsPublic               | Determines if users can self-register. If false, only administrators can create users.                                                                                                                                                                                            |
-| userAutoAvatarScript               | An MScript expression that generates a default avatar for the user. This is used when no avatar is provided in the request.                                                                                                                                                       |
-| userGroupAutoAvatarScript          | An MScript expression that generates a default avatar for the user group. This is used when no avatar is provided in the request.                                                                                                                                                 |
+| Field                              | Description                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| primaryLoginIdentifier             | Specifies which field is used as the primary login identifier. When set to `'mobile'`, users register and log in with a phone number instead of email. When set to `'emailOrMobile'`, both are supported. Defaults to `'email'` for backward compatibility.                                                                                                                                                    |
+| superAdminEmail                    | The login email of the super admin user. This user has full permissions across the project and is not tenant-scoped. If not defined, the project owner's email is used. This email must be unique and valid to support email-based features like verification and password reset.                                                                                                                                |
+| superAdminPassword                 | The password of the super admin user. This preset password is used to access the system after initial deployment and should be changed in production environments.                                                                                                                                                                                                                                              |
+| userNameType                       | Specifies whether the user's name will be stored as a single 'fullname' or as separate 'name' and 'surname' fields.                                                                                                                                                                                                                                                                                            |
+| superAdminData                     | Preset values for the super admin user. Required only for custom properties beyond the standard fields (email, name, password, etc.).                                                                                                                                                                                                                                                                           |
+| userGroupsActive                   | Indicates whether user group functionality is enabled. When active, a 'userGroup' data object is added to the user service with fixed fields (id, name, description), optionally scoped by tenant.                                                                                                                                                                                                              |
+| userGroupsInTenantLevel            | If true, user groups are defined per tenant; otherwise, they are defined globally across the SaaS. Applies only when user groups are enabled.                                                                                                                                                                                                                                                                   |
+| secondaryIdentifierPresence        | Controls whether the non-primary identifier field (mobile when email is primary, email when mobile is primary) is stored in the user data model. When set to `'none'`, the field is omitted entirely. When `'optional'`, the field exists but is not required. When `'required'`, the field must be provided during registration. Ignored when `primaryLoginIdentifier` is `'emailOrMobile'` (both always exist). |
+| dualIdentifierRegistration         | Only applies when `primaryLoginIdentifier` is `'emailOrMobile'`. Controls whether users must provide both email and mobile during registration (`'both'`), or just one of them (`'atLeastOne'`).                                                                                                                                                                                                                |
+| emailVerificationRequiredForLogin  | Indicates whether users must verify their email address before they can log in. Related verification flows must be enabled in VerificationServices.                                                                                                                                                                                                                                                             |
+| mobileVerificationRequiredForLogin | Indicates whether users must verify their mobile number before logging in. This applies only when the mobile field is present in the user data model.                                                                                                                                                                                                                                                           |
+| mobile2FARequiredForLogin          | Indicates whether two-factor authentication via mobile is required during login. This applies only when the mobile field is present in the user data model.                                                                                                                                                                                                                                                     |
+| email2FARequiredForLogin           | Indicates whether two-factor authentication via email is required during login. Related verification flows must be enabled in VerificationServices.                                                                                                                                                                                                                                                             |
+| userRegisterIsPublic               | Determines if users can self-register. If false, only administrators can create users.                                                                                                                                                                                                                                                                                                                          |
+| userAutoAvatarScript               | An MScript expression that generates a default avatar for the user. This is used when no avatar is provided in the request.                                                                                                                                                                                                                                                                                     |
+| userGroupAutoAvatarScript          | An MScript expression that generates a default avatar for the user group. This is used when no avatar is provided in the request.                                                                                                                                                                                                                                                                               |
+
+### PrimaryLoginIdentifier
+
+Specifies which field is used as the primary login identifier for user accounts.
+
+```js
+const PrimaryLoginIdentifier = {
+  email: "email",
+  mobile: "mobile",
+  emailOrMobile: "emailOrMobile",
+};
+```
+
+| Enum          | Description                                                                                                                              |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| email         | Email is the primary login identifier. Users must register and log in with an email address. This is the default behavior.               |
+| mobile        | Mobile number is the primary login identifier. Users register and log in with a phone number (WhatsApp-style). Email becomes optional.   |
+| emailOrMobile | Both email and mobile are supported as login identifiers. Users can register and log in with either an email address or a mobile number. |
+
+### SecondaryIdentifierPresence
+
+Controls the presence and requirement level of the non-primary identifier field in the user data model.
+
+```js
+const SecondaryIdentifierPresence = {
+  none: "none",
+  optional: "optional",
+  required: "required",
+};
+```
+
+| Enum     | Description                                                                                                                                                     |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| none     | The secondary identifier field is not stored in the user data model at all. When email is primary, mobile is omitted. When mobile is primary, email is omitted. |
+| optional | The secondary identifier field exists in the user data model but is not required during registration. Users may optionally provide it.                           |
+| required | The secondary identifier field exists in the user data model and must be provided during registration.                                                          |
+
+### DualIdentifierRegistration
+
+Controls registration behavior when `primaryLoginIdentifier` is `'emailOrMobile'`. Ignored for other values.
+
+```js
+const DualIdentifierRegistration = {
+  atLeastOne: "atLeastOne",
+  both: "both",
+};
+```
+
+| Enum       | Description                                                                                                                     |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| atLeastOne | Users must provide at least one identifier (email or mobile) during registration. They can log in with whichever they provided. |
+| both       | Users must provide both email and mobile during registration. Both fields are required and both can be used for login.           |
 
 ### UserNameType
 
