@@ -416,14 +416,15 @@ Verifies user credentials and creates an authenticated session with a JWT access
 
 #### Behavior
 
-- The `username` field accepts the user's primary login identifier: email when `primaryLoginIdentifier` is `'email'`, mobile when `'mobile'`, or either when `'emailOrMobile'`.
+- The `username` field accepts the user's primary login identifier: email when `primaryLoginIdentifier` is `'email'`, mobile (E.164 format) when `'mobile'`, or either when `'emailOrMobile'`.
+- **The lookup is always performed against the primary identifier column only.** When `primaryLoginIdentifier` is `'email'`, only the `email` column is queried. When `'mobile'`, only the `mobile` column is queried. When `'emailOrMobile'`, the system detects the format (email vs. phone number) and queries the matching column. Passing an email address when mobile is the primary identifier will **not** match any user, even if that user has an email stored in the database.
 - Authenticates credentials and returns a session object.
 
 - Sets cookie: `projectname-access-token[-tenantCodename]`
 
 - Adds the same token in response headers.
 
-- Accepts either `username` or `email` fields (if both exist, `username` is prioritized). When `primaryLoginIdentifier` is `'mobile'`, pass the mobile number in E.164 format as `username`.
+- The `email` body parameter is accepted as a legacy alias for `username`. If both `username` and `email` are present in the request body, `username` takes priority.
 
 #### Example
 

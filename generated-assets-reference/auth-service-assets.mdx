@@ -837,10 +837,12 @@ For detailed documentation on all database utility functions, see the [Database 
 On deployment, Mindbricks automatically creates a Super Admin user with:
 
 - **Identifier (email or mobile):** Value from `LoginDefUserSettings.superAdminIdentifier`. When `primaryLoginIdentifier` is `'email'` or `'emailOrMobile'`, this is stored as the user's email. When `'mobile'`, it is stored as the mobile number (E.164 format).
+- **Automatic Correction:** When `primaryLoginIdentifier` is `'mobile'` and `superAdminIdentifier` is the default `"admin@admin.com"`, Mindbricks automatically replaces it with `"+10000000001"` during configuration validation. A custom email address (other than the default) produces a validation error requiring a proper mobile number.
 - **Password:** Value from `LoginDefUserSettings.superAdminPassword`
 - **Role:** `superAdmin` (system role)
 - **Verified:** The primary identifier is marked as verified (`emailVerified` or `mobileVerified` depending on which field the identifier populates).
 - **Secondary Identifier Placeholder:** When the secondary identifier field is required (`secondaryIdentifierPresence: "required"` or `dualIdentifierRegistration: "both"`), a placeholder value is used (`"noreply@system.local"` for email, `"+10000000000"` for mobile) so the NOT NULL constraint is satisfied.
+- **Login Lookup:** The login endpoint queries only the primary identifier column. When mobile is primary, only the `mobile` column is searched — an email address will not match.
 - **Full Access:** Complete system access across all services and tenants
 
 ### Root Tenant (Multi-Tenant Only)

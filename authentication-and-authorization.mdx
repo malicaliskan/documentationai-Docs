@@ -346,6 +346,26 @@ If you omit `superAdminIdentifier`, the default is `"admin@admin.com"`. When `pr
 
 When the secondary identifier field is required (i.e. `secondaryIdentifierPresence` is `"required"` or `dualIdentifierRegistration` is `"both"`), the Super Admin is seeded with a placeholder value for the secondary field: `"noreply@system.local"` for email, `"+10000000000"` for mobile. These placeholders satisfy the NOT NULL constraint and should be replaced by the administrator after first login.
 
+#### Automatic Correction for Mobile-Primary Projects
+
+When `primaryLoginIdentifier` is `"mobile"` and `superAdminIdentifier` is still the default value `"admin@admin.com"`, Mindbricks **automatically replaces** it with `"+10000000001"` during configuration validation. This prevents a broken first-login experience, since the login system only queries the `mobile` column when mobile is the primary identifier — an email address stored in the mobile field would never match.
+
+If a custom email address (anything other than `"admin@admin.com"`) is provided as `superAdminIdentifier` when `primaryLoginIdentifier` is `"mobile"`, Mindbricks raises a **validation error** and requires you to set a proper mobile number in E.164 format.
+
+#### First Login After Deployment
+
+The login endpoint (`POST /login`) accepts a `username` field. **The lookup is always performed against the primary identifier column only**: the `email` column when email is primary, the `mobile` column when mobile is primary, or auto-detected based on input format when `emailOrMobile`. Passing an email address as `username` when mobile is the primary identifier will **not** match any user, even if the user has an email stored in the database.
+
+The following table shows the default Super Admin credentials for each configuration:
+
+| `primaryLoginIdentifier` | Default `superAdminIdentifier` | Login `username` value | How it is stored |
+|---|---|---|---|
+| `"email"` (default) | `"admin@admin.com"` | `admin@admin.com` | `email` field |
+| `"mobile"` | Auto-corrected to `"+10000000001"` | `+10000000001` | `mobile` field |
+| `"emailOrMobile"` | `"admin@admin.com"` | `admin@admin.com` | `email` field (email preferred in dual mode) |
+
+The default password is always `"superadmin"` unless overridden via `superAdminPassword`.
+
 #### Setting Custom Data for Super Admin
 
 If your project defines additional custom user properties, Mindbricks allows you to prepopulate these fields for the Super Admin account as well.
