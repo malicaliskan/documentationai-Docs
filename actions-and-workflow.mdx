@@ -94,7 +94,7 @@ All concrete action types extend this base and therefore include:
 
 - **`writeToResponse`** *(Boolean)* → also copy result into API response
 
-- **`onActionError`** *(enum:&#x20;*``*&#x20;|&#x20;*``*)* → error policy
+- **`onActionError`** *(enum:&#x20;*``*&#x20;|&#x20;*``*)* → error policy. `throwError` (default) aborts the API. `completeApi` catches the error, stores it as `this.<actionName>Error` on the context, and continues execution.
 
 - **`extendClassName`** *(String)* → concrete type (e.g., `FetchObjectAction`)
 
@@ -333,7 +333,7 @@ These are the **milestone arrays** you’ll populate with **action IDs**, in **e
 
 - Use **`condition`** for cheap short-circuits.
 
-- Default **`onActionError: throwError`**; use `completeApi` only for non-critical enrichment.
+- Default **`onActionError: throwError`**; use `completeApi` only for non-critical enrichment. When `completeApi` is used, the error is stored as `this.<actionName>Error` so subsequent actions can inspect it.
 
 - Keep **context clean**: choose descriptive `contextPropertyName` keys and avoid collisions.
 
@@ -708,7 +708,7 @@ These recipes show *where* to place actions and *why*. Each is CRUD-type agnosti
 }
 ```
 
-**Notes:** Keep enrichment failures non-fatal with `onActionError: "completeApi"`.
+**Notes:** Keep enrichment failures non-fatal with `onActionError: "completeApi"`. The error is available as `this.<actionName>Error` in later actions.
 
 ---
 

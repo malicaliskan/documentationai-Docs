@@ -35,4 +35,4 @@ Iterate over an array computed by MScript; for each item, execute a list of **ac
 
 * Nested `ParallelAction`/`LoopAction` is supported.
 * Be mindful of resource contention (DB limits, external rate limits).
-* Combine with `onActionError: completeApi` for non-critical branches.
+* Combine with `onActionError: completeApi` for non-critical branches. Errors are stored as `this.<actionName>Error` on the context.

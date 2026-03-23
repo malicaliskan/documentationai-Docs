@@ -780,7 +780,7 @@ Since Mindbricks APIs are designed for single operations, the recommended approa
 
 ### 3. Handle Errors Gracefully
 
-✅ **Do**: Use `onActionError: "completeApi"` for non-critical bulk operations.
+✅ **Do**: Use `onActionError: "completeApi"` for non-critical bulk operations. The error is stored as `this.<actionName>Error` so follow-up actions can check and handle it.
 
 ```json
 {

@@ -250,7 +250,7 @@ The test mode can be `connection` (basic connectivity check) or `full` (runs all
 | `parameters` | IntegrationParameter[] | Array of parameter name/value pairs. Values are MScript expressions. |
 | `contextPropertyName` | String | Where the method's return value is stored in the workflow context. |
 | `condition` | MScript | Optional condition — action only executes when this evaluates to truthy. |
-| `onActionError` | String | Error handling strategy: `"ignore"`, `"throw"`, or `"addToContext"`. |
+| `onActionError` | String | Error handling strategy: `"throwError"` (default, aborts the API) or `"completeApi"` (catches the error, stores it as `this.<actionName>Error`, continues). |
 | `writeToResponse` | Boolean | If true, writes the result directly to the API response. |
 
 ### Attaching to a Workflow Milestone
@@ -618,7 +618,7 @@ The upload result is stored in `context.s3Result` and can be referenced by subse
 - **Test connections early**: After configuring credentials, test the connection before building your workflows.
 - **Use IntegrationAction for simple calls**: When you just need to call one method with parameters, IntegrationAction is simpler than writing custom code.
 - **Use service library for complex flows**: When you need conditional logic, loops, or multiple integration calls in sequence, a service library function gives you full JavaScript power.
-- **Error handling matters**: Set `onActionError` on your IntegrationAction to control what happens when an external call fails (`"throw"` for critical operations, `"ignore"` or `"addToContext"` for optional ones).
+- **Error handling matters**: Set `onActionError` on your IntegrationAction to control what happens when an external call fails (`"throwError"` for critical operations, `"completeApi"` for optional ones — the error is stored as `this.<actionName>Error`).
 - **Keep credentials out of code**: Always configure credentials through the Integrations panel or MCP tools, never hardcode them in MScript or service library code.
 - **Leverage MScript globals**: For quick one-liners in action parameters, `_providerKey.method(params)` is concise and readable.
 - **AI agents should use MCP tools**: AI agents should always prefer the dedicated integration MCP tools (`searchIntegrations`, `addIntegrationToProject`, etc.) over manual JSON editing for reliable integration management.
