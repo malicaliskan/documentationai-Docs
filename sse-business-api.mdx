@@ -200,7 +200,7 @@ async function* streamReportData(ctx) {
 
 #### `iteratorAction`
 
-Uses a declared action from the action store (either `AiCallAction` or `IteratorAction`). The action must be an async generator.
+Uses a declared action from the action store (either `AiCallAction` or `IteratorAction`).
 
 ```json
 {
@@ -301,7 +301,7 @@ In REST mode, this action is a no-op.
 
 **In SSE context:** The action calls the AI provider's streaming API, yielding tokens one-by-one. Each token becomes an SSE `chunk` event to the client.
 
-**In REST context:** Tokens are collected internally and joined into the full response text. Post-processing (JSON parsing, `aiFetchProperty` extraction, `isArray` handling) is applied to the collected result.
+**In REST context:** The action calls the AI provider's non-streaming API directly and returns the full response. Post-processing (JSON parsing, `isArray` handling) is applied to the result.
 
 ```json
 {
@@ -340,27 +340,9 @@ event: complete → { "totalChunks": 3, "totalRows": 3 }
 
 `AiCallAction` can also be used as a **workflow step** (not a stream source). When placed in a workflow milestone:
 - SSE mode: tokens stream to the client via `_outputChannel`
-- REST mode: tokens are collected into a string and stored in `this.context["actionName"]`
+- REST mode: the AI provider is called directly (non-streaming) and the result is stored in `this.<contextPropertyName>`
 
 **Supported providers:** OpenAI (and all OpenAI-compatible APIs: Ollama, Together, Groq) and Anthropic. The provider is determined from the `model` field.
-
-### `RefineByAiAction` — Auto-Streaming Text Refinement
-
-Like `AiCallAction`, `RefineByAiAction` auto-streams in SSE context. It sends the input text to an AI provider for refinement (grammar correction, summarization, tone adjustment) and yields tokens incrementally.
-
-```json
-{
-  "actions": {
-    "refineByAiActions": [{
-      "name": "polishDescription",
-      "provider": "openai",
-      "inputData": "this.data.description",
-      "systemPrompt": "You are a professional editor. Improve clarity.",
-      "mode": "rewrite"
-    }]
-  }
-}
-```
 
 ### `IteratorAction` — Generic Streaming
 
@@ -586,7 +568,6 @@ The SSE connection includes:
 | Action Type | SSE Behavior | Configuration |
 |-------------|-------------|---------------|
 | **AiCallAction** | Auto-streams AI tokens as chunks | Automatic — no flag needed |
-| **RefineByAiAction** | Auto-streams refined text tokens | Automatic — no flag needed |
 | **IteratorAction** | Streams any async iterable | `sourceScript` MScript expression |
 | **EmitSseEventAction** | Emits custom named events | `eventName` + `data` MScript |
 | **LoopAction** | Per-iteration progress (`step/total`) | `emitProgressInSSEContext: true` |

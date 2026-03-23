@@ -58,7 +58,7 @@ Examples of per-type arrays (non-exhaustive):
   `collateListsActions: [CollateListsAction]`
 
 - **Compute & transform**
-  `functionCallActions`, `addToContextActions`, `createObjectActions`, `renderDataActions`, `dataToFileActions`, `refineByAiActions`
+  `functionCallActions`, `addToContextActions`, `createObjectActions`, `renderDataActions`, `dataToFileActions`
 
 - **CRUD orchestration**
   `createCrudActions`, `updateCrudActions`, `deleteCrudActions`
@@ -386,19 +386,14 @@ Often used for generating dynamic email bodies, PDF content, or previews.
 Converts context data into a downloadable file (CSV, JSON, PDF, etc.).
 Can either send the file to the client or keep it internal for later use (e.g., archive, mail attachment).
 
-### **10. RefineByAiAction**
-
-Refines or transforms text using an AI provider (e.g., OpenAI, Anthropic).
-Commonly used to summarize, rephrase, or tone-adjust text generated during workflow.
-
-### **11. CreateCrudAction**
+### **10. CreateCrudAction**
 
 Creates related (child or dependent) records inside another Data Object as part of the current API execution.
 Used for cascading inserts such as creating audit logs, attachments, or dependent tasks when a parent record is created or updated.
 
 **Inter-Service Support:** The `childObject` can be a local data object (same service) or a remote data object (different service). For remote objects, the action automatically routes to the target service's M2M edge function (`m2mCreate{ObjectName}`) using secure machine-to-machine authentication. The tenant codename is automatically propagated for multi-tenant scenarios.
 
-### **12. UpdateCrudAction**
+### **11. UpdateCrudAction**
 
 Updates related or child records based on a query. Used for propagating state changes or syncing dependent records after the main record is updated.
 
@@ -406,29 +401,29 @@ Updates related or child records based on a query. Used for propagating state ch
 
 **Array field updates:** When update payloads target array fields, prefer mutation operators (`$add`, `$rem`, `$addIf`) in `dataClause`. See [Array Mutation Syntax Guide](./array-mutation-syntax-guide).
 
-### **13. DeleteCrudAction**
+### **12. DeleteCrudAction**
 
 Deletes or soft-deletes related child entities conditionally.
 Used for clean-ups (e.g., remove orphaned records) or enforcing cascading deletions.
 
 **Inter-Service Support:** The `childObject` can be a local data object (same service) or a remote data object (different service). For remote objects, the action automatically routes to the target service's M2M edge function (`m2mDelete{ObjectName}ByQuery`) using secure machine-to-machine authentication. The tenant codename is automatically propagated for multi-tenant scenarios.
 
-### **14. InterserviceCallAction**
+### **13. InterserviceCallAction**
 
 Calls another **Business API** defined in a different Mindbricks microservice.
 This enables inter-service orchestration (e.g., create order → update inventory service).
 
-### **15. ApiCallAction**
+### **14. ApiCallAction**
 
 Makes an **HTTP request** to an external or internal endpoint.
 Used for webhooks, REST integrations, or third-party APIs.
 
-### **16. IntegrationAction**
+### **15. IntegrationAction**
 
 Triggers a **native integration** provided by Mindbricks (e.g., AWS S3 file upload, Airtable record creation, Stripe charge).
 Integrations are pre-coded, so you only supply parameters.
 
-### **17. PaymentAction**
+### **16. PaymentAction**
 
 Handles a **payment lifecycle** using a native gateway integration (currently Stripe).
 It can start, complete, refresh, or accept webhooks for payment sessions.
@@ -438,17 +433,12 @@ Use idempotent post-payment logic for any operation that may be retried by provi
 
 **Note:** **Payment** refers to processing payment through a gateway (Stripe, etc.) using `PaymentAction` and `PaymentManager`. This is distinct from **Checkout**, which refers to converting a shopping cart into an order using `CartCheckoutAction` and the shopping cart's `checkoutSettings`.
 
-### **18. AiCallAction**
+### **17. AiCallAction**
 
 Call an LLM (OpenAI, Anthropic, …) with a structured prompt to get **text** or **JSON**.
 Use it to generate labels, summaries, entity extraction, validation suggestions, or decision scaffolds used by later actions.
 
-### **19. RefineByAiAction**
-
-Refine or transform a single text value (rephrase, correct tone/grammar, summarize).
-This is a **simplified specialization** for quick, deterministic text polish.
-
-### **20. ValidationAction**
+### **18. ValidationAction**
 
 **Purpose**
 Perform a **domain-specific** boolean check via MScript (quotas, object states, feature flags, plan limits, etc.).
@@ -514,7 +504,7 @@ Perform a **domain-specific** boolean check via MScript (quotas, object states, 
 
 ---
 
-### **21. PermissionCheckAction**
+### **19. PermissionCheckAction**
 
 **Purpose**
 Check a **global/service-level** permission not tied to a specific object instance (e.g., `canExportData`, `canAccessAdminPanel`).
@@ -552,7 +542,7 @@ Check a **global/service-level** permission not tied to a specific object instan
 
 ---
 
-### **22. MembershipCheckAction**
+### **20. MembershipCheckAction**
 
 **Purpose**
 Validate whether the current user is a **member** of a related object (organization, team, project) based on that object’s membership rules.
@@ -599,7 +589,7 @@ Validate whether the current user is a **member** of a related object (organizat
 
 ---
 
-### **23. ObjectPermissionCheckAction**
+### **21. ObjectPermissionCheckAction**
 
 **Purpose**
 Verify that the user has a **specific permission on a concrete object instance** (object-scoped permission).
@@ -639,49 +629,49 @@ Verify that the user has a **specific permission on a concrete object instance**
 
 ---
 
-### **24. ReadJwtTokenAction**
+### **22. ReadJwtTokenAction**
 
 Read and **validate a JWT**, then write its **payload** to context (`contextPropertyName`).
 Used for shared links, limited-access flows, or token-based gating without full login.
 
-### **25. ReadFromRedisAction**
+### **23. ReadFromRedisAction**
 
 Read a value from Redis (key computed via MScript) and put it into context. Usefull for to keep temporary states and share them between following API calls, use with WriteToRedisAction.
 
-### **26. WriteToRedisAction**
+### **24. WriteToRedisAction**
 
 Write a value to a Redis key; value is an MScript expression (object serialized if needed).Usefull for to keep temporary states and share them between following API calls, use with ReadFromRedisAction.
 
-### **27. PublishEventAction**
+### **25. PublishEventAction**
 
 Publish a domain event to a topic/queue (e.g., Kafka).
 Use for decoupled orchestration beyond the built-in **API events**.
 
-### **28. CreateJWTTokenAction**
+### **26. CreateJWTTokenAction**
 
 Create a signed JWT (HMAC) from a payload; store in context or response.
 
-### **29. CreateBucketTokenAction**
+### **27. CreateBucketTokenAction**
 
 Create a JWT **bucket token** to access Mindbricks Bucket Service with scoped permissions.
 
-### **30. AddToResponseAction**
+### **28. AddToResponseAction**
 
 Copy selected context values into the final response.
 
-### **31. RemoveFromResponseAction**
+### **29. RemoveFromResponseAction**
 
 Strip properties from the response before sending (privacy, cleanup).
 
-### **32. RedirectAction**
+### **30. RedirectAction**
 
 Redirect the client to a URL (OAuth flows, post-login navigation, hand-off flows).
 
-### **33. LoopAction**
+### **31. LoopAction**
 
 Iterate over an array computed by MScript; for each item, execute a list of **action IDs**.
 
-### **34. ParallelAction**
+### **32. ParallelAction**
 
 Run several **independent actions** concurrently, sharing the same input context.
 

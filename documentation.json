@@ -745,10 +745,6 @@
                     "path": "references/actions/redirectaction"
                   },
                   {
-                    "title": "RefineByAiAction",
-                    "path": "references/actions/refinebyaiaction"
-                  },
-                  {
                     "title": "RemoveFromResponseAction",
                     "path": "references/actions/removefromresponseaction"
                   },

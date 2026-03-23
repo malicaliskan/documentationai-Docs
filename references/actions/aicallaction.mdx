@@ -26,7 +26,6 @@ Use it to generate labels, summaries, entity extraction, validation suggestions,
 | `promptTemplate`      | `AIPromptTemplate` | Defines **system** and **user** parts; user supports MScript. |
 | `model`               | `String`           | Provider’s model ID (e.g., `"gpt-4o"`, `"claude-3-opus"`).    |
 | `responseFormat`      | `String`           | `"text"` or `"json"` — guide downstream handling.             |
-| `aiFetchProperty`     | `String`           | If model returns an object and you want a single property.    |
 | `isArray`             | `Boolean`          | Set `true` if you expect a list of items.                     |
 | `contextPropertyName` | `String`           | Where result is stored (`this.<name>`).                       |
 
@@ -34,7 +33,11 @@ Use it to generate labels, summaries, entity extraction, validation suggestions,
 
 - Composes the prompt at runtime using `AIPromptTemplate`.
 
-- Awaits response; if `responseFormat:"json"`, the runtime expects valid JSON (handle errors with `onActionError` or pre-validate with another step).
+- **In SSE mode:** streams tokens to the client via `_outputChannel`, then joins and parses the full result.
+
+- **In REST mode:** calls the AI provider directly (non-streaming) and returns the parsed result.
+
+- If `responseFormat:"json"`, the runtime parses the response as JSON (handle errors with `onActionError` or pre-validate with another step).
 
 - Writes result to `this.<contextPropertyName>`; set `writeToResponse:true` to expose it.
 
@@ -51,7 +54,6 @@ Use it to generate labels, summaries, entity extraction, validation suggestions,
     "systemPrompt": "You are a tagging engine that outputs strict JSON.",
     "userPrompt": "`{ name: ${this.product.name}, desc: ${this.product.description} }`"
   },
-  "aiFetchProperty": null,
   "isArray": false,
   "contextPropertyName": "extractedTags",
   "writeToResponse": false

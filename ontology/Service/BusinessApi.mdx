@@ -904,7 +904,6 @@ interface BusinessApiActionStore = {
   sendMailActions : SendMailAction[];
   sendSmsActions : SendSmsAction[];
   sendPushNotificationActions : SendPushNotificationAction[];
-  refineByAiActions : RefineByAiAction[];
   paymentActions : PaymentAction[];
   verifyWebhookActions : VerifyWebhookAction[];
   integrationActions : IntegrationAction[];
@@ -956,7 +955,6 @@ interface BusinessApiActionStore = {
 | sendMailActions             | Actions that send an email using a configured provider, with dynamic subject/body/to fields.                                                                                                                                                                                                                                                               |
 | sendSmsActions              | Actions that send an SMS message to a target phone number with a given body and sender info.                                                                                                                                                                                                                                                               |
 | sendPushNotificationActions | Actions that send push notifications to mobile or web clients with title and content.                                                                                                                                                                                                                                                                      |
-| refineByAiActions           | Actions that refine or transform a plain text value using an AI model. Common use cases include phrasing suggestions, tone adjustment, or summarization.                                                                                                                                                                                                   |
 | paymentActions              | Actions to start, to complete or to refresh a payment operation using the native integrated payment systems. Currently `Stripe` is supported. For other payment gateways use integration actions.                                                                                                                                                          |
 | verifyWebhookActions        | Actions to verify a webhook call of a provider using the webhook secret signature key. Currently `Stripe` is supported.                                                                                                                                                                                                                                    |
 | integrationActions          | Actions that call native API provider integrations (e.g., AWS S3, Airtable, Salesforce). These integrations are pre-coded inside Mindbricks and abstract provider-specific logic.                                                                                                                                                                          |
@@ -1370,13 +1368,12 @@ interface HTTPRequestParameters = {
 
 **MPO Version:** 1.3.0
 
-Invokes an AI model such as OpenAI or Anthropic to perform text generation, refinement, classification, or summarization. The prompt is composed from a template and context, and the result is stored in the context and optionally exposed in the response.
+Invokes an AI model such as OpenAI or Anthropic to perform text generation, refinement, classification, or summarization. The prompt is composed from a template and context, and the result is returned to the workflow and stored in `this.<contextPropertyName>`. In SSE mode, tokens are streamed to the client automatically; in REST mode, the AI provider is called directly (non-streaming).
 
 ```typescript
 interface AiCallAction extends BusinessApiAction = {
   promptTemplate : AIPromptTemplate;
   isArray : Boolean;
-  aiFetchProperty : String;
   responseFormat : String;
   model : String;
 }
@@ -1386,7 +1383,6 @@ interface AiCallAction extends BusinessApiAction = {
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | promptTemplate  | Defines both the static system message and dynamic user message. These are passed to the AI model to guide its behavior. Supports MScript in the user prompt. |
 | isArray         | If true, the response is expected to contain a list of results. Use when the model is expected to return multiple items.                                      |
-| aiFetchProperty | Optional: If the model returns a structured object and only one property is needed, specify it here to extract just that portion.                             |
 | responseFormat  | Indicates the expected format of the AI's output—either `json` for structured responses or `text` for plain text.                                             |
 | model           | The identifier of the LLM model to be used, such as `gpt-4`, `claude-3`, or any provider-accessible variant.                                                  |
 
@@ -1951,30 +1947,6 @@ interface SendPushNotificationAction extends BusinessApiAction = {
 | body     | The body text of the notification, defined via MScript. Should be concise and actionable.                                                  |
 | to       | The recipient device ID or user identifier, evaluated from context. Format depends on the configured provider.                             |
 | from     | Optional sender or topic ID. Used to label or route notifications by source when supported by the provider.                                |
-
-### RefineByAiAction
-
-**MPO Version:** 1.3.0
-
-Refines or transforms a given text using an AI provider such as OpenAI or Anthropic. The action supports adjustable refinement depth via temperature and mode, and allows instruction control through a system prompt. The result is stored in the context and can be reused in rendering, messaging, or responses. Use this for rephrasing, summarizing, tone-shifting, or grammar correction.
-
-```typescript
-interface RefineByAiAction extends BusinessApiAction = {
-  provider : String;
-  inputData : MScript;
-  systemPrompt : String;
-  temperature : Double;
-  mode : String;
-}
-```
-
-| Field        | Description                                                                                                                                                                                                                 |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| provider     | The name of the AI provider to use (e.g., `openai`, `anthropic`). Must be configured in the service's AI settings.                                                                                                          |
-| inputData    | An MScript expression that evaluates to the input string to be refined. This should be a plain text value from the context, parameters, or a prior action.                                                                  |
-| systemPrompt | An optional system-level instruction string to guide the AI's tone or intent. Example: 'You are a professional editor. Keep meaning intact, improve clarity and grammar.'. Leave it null if you want to use default prompt. |
-| temperature  | A value between 0 and 1 indicating how much variation the model should apply. Use low values (~0.2) for subtle fixes, and higher values (~0.7) for more creative rewrites.                                                  |
-| mode         | Optional label representing the level or style of refinement. Common values might include `preserve`, `light`, `reword`, `rewrite`, `summarize`. This can be interpreted by your backend to choose a prompt template.       |
 
 ### PaymentAction
 
