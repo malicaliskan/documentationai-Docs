@@ -307,6 +307,78 @@ Example:
 this.customer.countryId
 ```
 
+#### 📋 How To Access The Created, Updated, or Deleted Data Object in the API Context
+
+After the main CRUD operation executes, the resulting data object is available in the API context through multiple aliases. Understanding which reference to use is critical for writing correct post-operation actions (e.g., updating related records, triggering events, or returning enriched data).
+
+**All API types (Create, Get, Update, Delete):**
+
+| Reference | Description |
+|-----------|-------------|
+| `this.dbResult` | The raw database result. For single-record operations (create/get/update/delete), this is the full record object. For list operations, this is `{ items: [...], count: N }`. |
+| `this.result` | Alias for `this.dbResult` — identical reference. |
+| `this.{objectName}` | The record accessed by the data object name (e.g., `this.customer`, `this.taskAttachment`). For list APIs, this is the array of items (plural: `this.customers`). |
+| `this.data` | Same as `this.{objectName}` — a generic alias that works regardless of the object name. |
+
+**Create API — accessing the created record:**
+
+After a record is created, it contains all auto-generated fields (id, createdAt, etc.):
+
+```javascript
+// All of these return the same created record:
+this.dbResult.id           // ✅ the created record's ID
+this.result.id             // ✅ alias for dbResult
+this.customer.id           // ✅ by object name (e.g., this.taskAttachment.id)
+this.data.id               // ✅ generic alias
+
+// Common use in UpdateCrudAction after create:
+// matchValue: "this.dbResult.id"    ← correct
+// matchValue: "this.result.id"      ← also correct (alias)
+// matchValue: "this.customer.id"    ← also correct (by object name)
+```
+
+**Update & Delete APIs — accessing the fetched instance (before main operation):**
+
+For update and delete APIs, the record is first fetched from the database before the main operation runs. This fetched record (the "instance") is available in all pre-operation actions (validation, permission checks, etc.) via:
+
+| Reference | Description |
+|-----------|-------------|
+| `this.instance` | The fetched record from the database, available after `fetchInstance` and before `mainOperation`. |
+| `this.{objectName}` | Same record, accessed by data object name (e.g., `this.customer`). Before `mainOperation`, this holds the current DB values. |
+
+```javascript
+// In pre-operation actions (validation, afterFetchInstance, afterCheckInstance):
+this.instance.id           // ✅ the fetched record's ID
+this.instance.status       // ✅ the current value from DB before update/delete
+this.customer.status       // ✅ same record, by object name
+```
+
+**Update & Delete APIs — accessing the result (after main operation):**
+
+After the main operation executes, `this.dbResult` / `this.result` hold the updated or deleted record, and `this.{objectName}` is also refreshed:
+
+```javascript
+// In post-operation actions (afterMainUpdateOperation, afterMainDeleteOperation):
+this.dbResult.status       // ✅ the updated value after the update
+this.result.status         // ✅ alias for dbResult
+this.customer.status       // ✅ also updated to the new value
+```
+
+**List API — accessing the result set:**
+
+```javascript
+this.dbResult.items        // array of records
+this.customers             // same array (plural name)
+this.data                  // same array
+this.dbResult.count        // total row count
+```
+
+**Auto-updated references after UpdateCrudAction:**
+
+If an `UpdateCrudAction` in a post-operation step updates the same data object, the existing references (`this.dbResult`, `this.result`, `this.{objectName}`) are automatically updated in-place with the new values. You do not need to re-fetch the record — subsequent actions and the API response will reflect the updated data.
+
+**Important:** These references are only available **after** the main operation has executed. In pre-operation actions (like validation), only `this.params` (request parameters) and previously fetched data are available.
+
 #### 🛠 LIB Functions
 
 Global library functions are accessible via the `LIB` global object. You **do not** need to use `this`.
