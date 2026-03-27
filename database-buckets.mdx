@@ -1,34 +1,35 @@
 ---
 title: Database Buckets (dbBuckets)
-description: Store small files directly in the database — icons, avatars, secret documents — without external storage infrastructure.
+description: >-
+  Store small files directly in the database — icons, avatars, secret documents
+  — without external storage infrastructure.
 ---
-
 # Database Buckets (dbBuckets)
 
 Database Buckets store files directly in the service's database (BYTEA in PostgreSQL, Buffer in MongoDB) instead of using an external storage service. They are ideal for small files like icons, avatars, secret documents, and configuration files where simplicity and data locality matter more than scalability.
 
 ## When to Use
 
-| Use Case | Use dbBucket | Use External Bucket Service |
-|----------|-------------|----------------------------|
-| User avatars, icons | Yes | |
-| Tenant logos | Yes | |
-| Secret/signed documents | Yes | |
-| Small config files (&lt;10 MB) | Yes | |
-| Product images (many, large) | | Yes |
-| User uploads (videos, PDFs) | | Yes |
-| Public CDN assets | | Yes |
+| Use Case                     | Use dbBucket | Use External Bucket Service |
+| ---------------------------- | ------------ | --------------------------- |
+| User avatars, icons          | Yes          |                             |
+| Tenant logos                 | Yes          |                             |
+| Secret/signed documents      | Yes          |                             |
+| Small config files (\<10 MB) | Yes          |                             |
+| Product images (many, large) |              | Yes                         |
+| User uploads (videos, PDFs)  |              | Yes                         |
+| Public CDN assets            |              | Yes                         |
 
 **Key differences:**
 
-| Feature | Database Bucket | External Bucket Service |
-|---------|----------------|------------------------|
-| Storage | PostgreSQL BYTEA / MongoDB Buffer | S3, MinIO, or local filesystem |
-| Max file size | Configurable (default 10 MB) | Configurable (default 10 MB) |
-| Authentication | Regular access token (same as all APIs) | Bucket-specific JWT tokens |
+| Feature        | Database Bucket                             | External Bucket Service                     |
+| -------------- | ------------------------------------------- | ------------------------------------------- |
+| Storage        | PostgreSQL BYTEA / MongoDB Buffer           | S3, MinIO, or local filesystem              |
+| Max file size  | Configurable (default 10 MB)                | Configurable (default 10 MB)                |
+| Authentication | Regular access token (same as all APIs)     | Bucket-specific JWT tokens                  |
 | Infrastructure | None — uses the service's existing database | Requires separate bucket service deployment |
-| CDN support | No | Yes (S3 + CloudFront) |
-| Scalability | Limited by database size | Highly scalable |
+| CDN support    | No                                          | Yes (S3 + CloudFront)                       |
+| Scalability    | Limited by database size                    | Highly scalable                             |
 
 ## Adding a dbBucket to a Service
 
@@ -69,18 +70,18 @@ When you add a dbBucket to a service, the system automatically generates:
 
 A database table with these properties:
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `id` | ID | Auto-generated unique identifier |
-| `fileName` | String | Original file name as uploaded |
-| `mimeType` | String | MIME type (e.g., image/png) |
-| `fileSize` | Integer | File size in bytes |
-| `fileData` | Blob | Binary file content (BYTEA in PostgreSQL, Buffer in MongoDB) |
-| `accessKey` | String | 12-character random key for shareable access (unique, indexed) |
-| `userId` | ID | ID of the user who uploaded the file (from session) |
-| `metadata` | Object | Optional JSON metadata (tags, alt text, etc.) |
-| `createdAt` | Date | Upload timestamp |
-| `updatedAt` | Date | Last update timestamp |
+| Property    | Type    | Description                                                    |
+| ----------- | ------- | -------------------------------------------------------------- |
+| `id`        | ID      | Auto-generated unique identifier                               |
+| `fileName`  | String  | Original file name as uploaded                                 |
+| `mimeType`  | String  | MIME type (e.g., image/png)                                    |
+| `fileSize`  | Integer | File size in bytes                                             |
+| `fileData`  | Blob    | Binary file content (BYTEA in PostgreSQL, Buffer in MongoDB)   |
+| `accessKey` | String  | 12-character random key for shareable access (unique, indexed) |
+| `userId`    | ID      | ID of the user who uploaded the file (from session)            |
+| `metadata`  | Object  | Optional JSON metadata (tags, alt text, etc.)                  |
+| `createdAt` | Date    | Upload timestamp                                               |
+| `updatedAt` | Date    | Last update timestamp                                          |
 
 If an **owner data object** is configured, an additional relation property is added (e.g., `productId` as ID with a foreign key to the product table).
 
@@ -96,11 +97,11 @@ Content-Type: multipart/form-data
 Authorization: Bearer {accessToken}
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `file` | File | The file to upload (single file, in the `file` field) |
-| `metadata` | JSON string | Optional metadata object |
-| `{ownerRelationProperty}` | string | Optional: ID of the owner record (e.g., `productId`) |
+| Field                     | Type        | Description                                           |
+| ------------------------- | ----------- | ----------------------------------------------------- |
+| `file`                    | File        | The file to upload (single file, in the `file` field) |
+| `metadata`                | JSON string | Optional metadata object                              |
+| `{ownerRelationProperty}` | string      | Optional: ID of the owner record (e.g., `productId`)  |
 
 **Response (201):**
 
@@ -131,8 +132,11 @@ GET /bucket/{bucketName}/download/{fileId}
 ```
 
 Authorization depends on the bucket's `readAccess` setting:
+
 - **public**: No auth required
+
 - **authenticated**: Requires valid access token
+
 - **private**: Requires access token, and user must be the file owner or an admin
 
 Returns the binary file with appropriate `Content-Type` and `Content-Disposition` headers.
@@ -149,10 +153,10 @@ When `enableKeyAccess` is true, anyone with the 12-character access key can down
 
 Standard CRUD APIs for querying file metadata (without the binary data):
 
-| API Name | Method | Path | Description |
-|----------|--------|------|-------------|
-| `get{BucketName}File` | GET | `/v1/sys_{bucketName}Files/:id` | Get file metadata by ID |
-| `list{BucketName}Files` | GET | `/v1/sys_{bucketName}Files` | List files with filtering |
+| API Name                 | Method | Path                            | Description                     |
+| ------------------------ | ------ | ------------------------------- | ------------------------------- |
+| `get{BucketName}File`    | GET    | `/v1/sys_{bucketName}Files/:id` | Get file metadata by ID         |
+| `list{BucketName}Files`  | GET    | `/v1/sys_{bucketName}Files`     | List files with filtering       |
 | `delete{BucketName}File` | DELETE | `/v1/sys_{bucketName}Files/:id` | Delete file (metadata + binary) |
 
 These APIs follow the standard Mindbricks Business API patterns — they support pagination, filtering by `mimeType`, `userId`, owner relation property, etc. The `fileData` (Blob) column is excluded from responses.
@@ -161,24 +165,25 @@ These APIs follow the standard Mindbricks Business API patterns — they support
 
 ### Read Access (`readAccess`)
 
-| Value | Behavior |
-|-------|----------|
-| `public` | Anyone can download. No authentication needed. |
-| `authenticated` | Any authenticated user can download. Requires valid access token. |
-| `private` | Only the file owner (`userId` matches session) and admin roles can download. |
+| Value           | Behavior                                                                     |
+| --------------- | ---------------------------------------------------------------------------- |
+| `public`        | Anyone can download. No authentication needed.                               |
+| `authenticated` | Any authenticated user can download. Requires valid access token.            |
+| `private`       | Only the file owner (`userId` matches session) and admin roles can download. |
 
 ### Write Access (`writeAccess`)
 
-| Value | Behavior |
-|-------|----------|
-| `authenticated` | Any authenticated user can upload. |
-| `adminOnly` | Only users with admin roles (admin, superAdmin) can upload. |
+| Value           | Behavior                                                    |
+| --------------- | ----------------------------------------------------------- |
+| `authenticated` | Any authenticated user can upload.                          |
+| `adminOnly`     | Only users with admin roles (admin, superAdmin) can upload. |
 
 ### Role-Based Access
 
 For finer control, configure role arrays:
 
 - `readAbsoluteRoles` / `writeAbsoluteRoles` — Roles that bypass all authorization checks
+
 - `readCheckRoles` / `writeCheckRoles` — Roles required for access
 
 ### Custom Auth Scripts
@@ -197,7 +202,9 @@ For complex authorization logic, use MScript expressions:
 When `enableKeyAccess` is true (default), every uploaded file receives a 12-character random access key. Anyone with this key can download the file via `/bucket/{name}/download/key/{accessKey}`, regardless of other authorization settings. This enables:
 
 - Public avatar URLs in `<img>` tags (no auth headers needed)
+
 - Shareable file links
+
 - Email-embedded image URLs
 
 ## Owner Data Object
@@ -219,7 +226,9 @@ Pair a bucket with a data object to create a parent-child relationship:
 This adds a `productId` property to the bucket's data object with a foreign key relation. Benefits:
 
 - **Filter by owner**: `GET /v1/sys_productImagesFiles?productId={id}` lists only that product's images
+
 - **Cascading deletes**: When the owner record is deleted, associated files are also removed
+
 - **Upload with owner**: Pass `productId` in the upload form data to link the file
 
 ## Auth Service Auto-Generated Buckets
@@ -227,15 +236,21 @@ This adds a `productId` property to the bucket's data object with a foreign key 
 The authentication service automatically includes database buckets for avatars — you don't need to configure these manually:
 
 - **`userAvatars`** — Always present. Public read, authenticated write, images only (png/jpeg/webp/gif), 5 MB max. Paired with the `user` data object.
+
 - **`{tenantName}Avatars`** — Only in multi-tenant projects. Same config, paired with the tenant data object.
 
 ### Avatar Upload Workflow
 
 1. User selects an image
+
 2. Crop with `react-easy-crop` (zoom, pan, crop)
+
 3. Upload cropped blob: `POST {authBaseUrl}/bucket/userAvatars/upload`
+
 4. Get back `accessKey` from the response
+
 5. Build public URL: `{authBaseUrl}/bucket/userAvatars/download/key/{accessKey}`
+
 6. Save URL to user profile: `updateProfile({ avatar: downloadUrl })`
 
 Since `readAccess` is `public`, avatar URLs work directly in `<img>` tags without authentication.
@@ -287,7 +302,7 @@ Since `readAccess` is `public`, avatar URLs work directly in `<img>` tags withou
 
 ### Frontend Upload Example
 
-```js
+```javascript
 // Upload a file to a dbBucket
 async function uploadToBucket(serviceBaseUrl, bucketName, file, accessToken, metadata = {}) {
   const formData = new FormData();
@@ -316,3 +331,4 @@ const file = await uploadToBucket(authBaseUrl, 'userAvatars', croppedBlob, token
 const avatarUrl = getPublicUrl(authBaseUrl, 'userAvatars', file.accessKey);
 await updateProfile({ avatar: avatarUrl });
 ```
+
