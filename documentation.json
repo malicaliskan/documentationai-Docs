@@ -332,6 +332,10 @@
                 "path": "bucket-service"
               },
               {
+                "title": "Database Buckets (dbBuckets)",
+                "path": "database-buckets"
+              },
+              {
                 "title": "Multi Tennancy Guide",
                 "path": "mut-tennancy-guide"
               },
