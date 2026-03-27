@@ -245,3 +245,54 @@ Errors are normalized as:
 
 6. Delete via `/delete/{fileId}` when needed.
 
+# Database Buckets (dbBuckets) — For Avatars
+
+In addition to the external bucket service described above, Mindbricks applications support **database buckets (dbBuckets)** for storing small files like avatars directly in the auth service database. dbBuckets are simpler to use because they do not require separate bucket tokens — they use the regular access token.
+
+**When to use dbBuckets vs. the external bucket service:**
+
+| Use Case | Storage | Token |
+|----------|---------|-------|
+| User avatars | dbBucket (`userAvatars`) | Regular access token |
+| Tenant avatars (multi-tenant) | dbBucket (`{tenantName}Avatars`) | Regular access token |
+| Product images, documents, attachments | External bucket service | Bucket-specific token (`userBucketToken`, `applicationBucketToken`, etc.) |
+
+## User Avatar Upload (dbBucket)
+
+Upload a user avatar to the auth service's built-in database bucket:
+
+`POST {authBaseUrl}/bucket/userAvatars/upload`
+
+- **Authentication:** Regular access token in the Bearer header
+- **Content-Type:** `multipart/form-data`
+- **Body:** the image file in the `files` field
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "accessKey": "abc123def456..."
+  }
+}
+```
+
+Use the returned `accessKey` to build the public download URL:
+
+`GET {authBaseUrl}/bucket/userAvatars/download/key/{accessKey}`
+
+This download URL is **public** — no authentication is required. Store this URL as the user's `avatar` property via the `updateProfile` or `updateUser` API.
+
+## Tenant Avatar Upload (dbBucket — Multi-Tenant)
+
+For multi-tenant applications, tenant avatars follow the same pattern with a tenant-specific bucket name:
+
+`POST {authBaseUrl}/bucket/{tenantName}Avatars/upload`
+
+Download (public, no auth):
+
+`GET {authBaseUrl}/bucket/{tenantName}Avatars/download/key/{accessKey}`
+
+For example, if the tenant entity is called `store`, the bucket name would be `storeAvatars`.
+

@@ -456,6 +456,8 @@ axios.post("/login", {
 }
 ```
 
+> **Note on bucket tokens:** The `userBucketToken` is for the **external bucket service** (general file uploads like documents and product images). **User avatars do not use the external bucket service** — they are uploaded via database buckets (dbBuckets) built into the auth service using the regular `accessToken`. Upload to `POST {authBaseUrl}/bucket/userAvatars/upload` and download publicly from `GET {authBaseUrl}/bucket/userAvatars/download/key/{accessKey}`.
+
 ### Error Responses
 
 - `401 Unauthorized`: Invalid credentials

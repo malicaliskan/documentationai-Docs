@@ -8,7 +8,7 @@ description: >-
 ---
 ## Profile Page
 
-Design a profile page to manage (view and edit) user information. The profile page should also be able to upload the user avatar to the user's public bucket. For bucket information, see the Bucket Management section above.
+Design a profile page to manage (view and edit) user information. The profile page should upload the user avatar using the auth service's **database bucket (dbBucket)** — upload to `POST {authBaseUrl}/bucket/userAvatars/upload` with the regular access token (multipart form-data), then use the returned `accessKey` to build the public download URL: `GET {authBaseUrl}/bucket/userAvatars/download/key/{accessKey}`. Store this URL as the user's `avatar` property. For other file storage needs, see the Bucket Management section above.
 
 On the profile page, you will need 4 business APIs: `getUser` , `updateProfile`, `updateUserPassword` and `archiveProfile`. Do not rely on the `/currentuser` response for profile data, because it contains session information. The most recent user data is in the user database and should be accessed via the `getUser` business API.
 
@@ -339,13 +339,11 @@ axios({
 
 After you complete this step, please ensure you have not made the following common mistakes:
 
-1. The auth API and bucket API are different services, and both URLs should be set according to the selected environment (production, staging, preview).
+1. Note that any api call to the application backend is based on a service base url, in this propmpt all auth apis should be called by `/auth-api` prefix after application's base url, and bucket apis should be called by `/bucket` prefix after base url.
 
-2. Note that any api call to the application backend is based on a service base url, in this propmpt all auth apis should be called by `/auth-api` prefix after application's base url, and bucket apis should be called by `/bucket` prefix after base url.
+2. **Avatar uploads use dbBuckets (database buckets) in the auth service**, not the external bucket service. Upload to `POST {authBaseUrl}/bucket/userAvatars/upload` using the regular access token. The external bucket service and its tokens (`userBucketToken`, `applicationBucketToken`) are for non-avatar files like documents and product images.
 
-3. The auth API and bucket API use different tokens. The auth API requires the `accessToken` in the Bearer header; the bucket API requires bucket-specific tokens such as `userBucketToken` or other application-specific bucket tokens. You may need two separate Axios clients: one for auth (always using the access token) and one for bucket operations (using the relevant bucket token).
+3. On the profile page, fetch the latest user data from the service using `getUser`. The `/currentuser` API is session-stored data; the latest data is in the database.
 
-4. On the profile page, fetch the latest user data from the service using `getUser`. The `/currentuser` API is session-stored data; the latest data is in the database.
-
-5. When you upload the avatar image on the profile page, use the returned download URL as the user's `avatar` property and update the user record when the Save button is clicked.
+4. When you upload the avatar image on the profile page, use the returned download URL (built from the `accessKey`) as the user's `avatar` property and update the user record when the Save button is clicked.
 

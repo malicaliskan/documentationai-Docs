@@ -317,8 +317,21 @@ axios({
 
 ### Avatar Upload
 
-Normally when user registers by his own, the avatar is uploaded to the logged in user's public bucket, however in this user admin panel, if any avatar upload is needed, it should be uploaded to the application public bucket. To access this application bucket, the `applicationBucketToken` should be used in the bearer header, and the bucketId in the payload should be given as
-`"tickatme-public-common-bucket"` .
+User avatars are uploaded using the auth service's **database bucket (dbBucket)**. Both regular users (from the profile page) and admins (from the user management panel) upload avatars the same way:
+
+`POST {authBaseUrl}/bucket/userAvatars/upload`
+
+- **Authentication:** Regular access token in the Bearer header (no bucket token needed)
+- **Content-Type:** `multipart/form-data`
+- **Body:** the image file in the `files` field
+
+The response returns an `accessKey`. Build the public download URL as:
+
+`GET {authBaseUrl}/bucket/userAvatars/download/key/{accessKey}`
+
+This URL is public (no auth required). Store it as the user's `avatar` property.
+
+> **Note:** The external bucket service and `applicationBucketToken` are still used for non-avatar file uploads (product images, documents, etc.) to the application public bucket (`"tickatme-public-common-bucket"`).
 
 Before the avatar upload, a specific componenet from `react-easy-crop` lib should be used for zoom, pan and crop. This component also requested in the PART 1 prompt for profile page, so ensure taht you reuse the previous code if exists.
 
