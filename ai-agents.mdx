@@ -692,6 +692,117 @@ curl -X POST /agents/productAnalyzer \
 
 ---
 
+## Kafka Controllers
+
+AI Agents can be triggered automatically by Kafka events. Each agent can have one or more **Kafka controllers** — listeners that subscribe to a Kafka topic, map the incoming message to the agent's input format, and execute the agent.
+
+This enables event-driven AI workflows: for example, an agent that automatically summarizes a document when it's uploaded, or classifies incoming support tickets as they're created.
+
+### Configuration
+
+Kafka controllers are defined in the `kafkaControllers` array inside an AI Agent:
+
+```json
+{
+  "agentBasics": {
+    "name": "ticketClassifier",
+    "executionMode": "task",
+    "modality": "text"
+  },
+  "kafkaControllers": [
+    {
+      "name": "onTicketCreated",
+      "topic": "myapp-support-service-ticket-created",
+      "groupId": null,
+      "dataMapping": "{ prompt: `Classify this support ticket: ${message.title} - ${message.description}`, metadata: { ticketId: message.id } }",
+      "enabled": true
+    }
+  ]
+}
+```
+
+### Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | String | Yes | Unique controller identifier within the agent (codeName format) |
+| `topic` | String | Yes | Kafka topic to subscribe to |
+| `groupId` | String | No | Consumer group ID. If null, auto-generated as `{serviceCodename}-agent-{agentName}-{controllerName}` |
+| `dataMapping` | MScript | Yes | Expression that transforms the Kafka message into the agent's expected input. Has access to `message` (parsed JSON payload), `session`, `topic`, and `headers`. |
+| `enabled` | Boolean | No | Default: `true`. Set to `false` to disable the listener without removing the configuration. |
+
+### How It Works
+
+1. When the service starts, a Kafka consumer is created for each enabled controller.
+2. When a message arrives on the subscribed topic, the `dataMapping` expression is evaluated to transform the raw message into the agent's input format.
+3. The agent executes with the mapped input (same as a REST call).
+4. The result is published to a Kafka result topic: `{serviceCodename}-agent-{agentName}-result`.
+
+### Result Event Format
+
+When an agent completes (from any trigger — REST, SSE, or Kafka), a result event is published:
+
+```json
+{
+  "_eventType": "agent-result",
+  "_agent": "ticketClassifier",
+  "_source": "kafka",
+  "_sourceController": "onTicketCreated",
+  "_timestamp": "2026-03-27T10:30:00.000Z",
+  "session": { ... },
+  "result": { "classification": "billing", "confidence": 0.95 }
+}
+```
+
+### Example: Auto-Summarize Uploaded Documents
+
+```json
+{
+  "agentBasics": {
+    "name": "docSummarizer",
+    "executionMode": "task",
+    "modality": "text",
+    "description": "Automatically summarizes documents when uploaded"
+  },
+  "modelSettings": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-5-20250514",
+    "systemPrompt": "You are a document summarizer. Given a document's content, produce a concise 2-3 sentence summary."
+  },
+  "kafkaControllers": [
+    {
+      "name": "onDocumentUploaded",
+      "topic": "myapp-documents-service-document-created",
+      "dataMapping": "{ prompt: `Summarize this document: Title: ${message.title}. Content: ${message.content}` }",
+      "enabled": true
+    }
+  ]
+}
+```
+
+### Multiple Controllers
+
+An agent can listen to multiple topics with different data mappings:
+
+```json
+"kafkaControllers": [
+  {
+    "name": "fromEmail",
+    "topic": "myapp-notification-service-email-received",
+    "dataMapping": "{ prompt: `Classify: ${message.subject} - ${message.body}` }",
+    "enabled": true
+  },
+  {
+    "name": "fromChat",
+    "topic": "myapp-chat-service-message-sent",
+    "dataMapping": "{ prompt: `Classify: ${message.text}`, metadata: { chatId: message.chatId } }",
+    "enabled": true
+  }
+]
+```
+
+---
+
 ## Best Practices
 
 1. **Start with task mode.** Only use chat mode when you genuinely need multi-turn conversations. Task mode is simpler and cheaper.

@@ -2,7 +2,7 @@
 
 **MPO Version:** 1.3.0
 
-Defines a standalone AI agent at the service level. Each agent encapsulates a model configuration, system prompt, input/output pipeline, optional tool access, and conversation management. Agents support multiple execution modes (task, chat, orchestrator) and modalities (text, image, audio, video, vision). They are exposed as dedicated REST and/or SSE endpoints and can be invoked by other agents as tools.
+Defines a standalone AI agent at the service level. Each agent encapsulates a model configuration, system prompt, input/output pipeline, optional tool access, and conversation management. Agents support multiple execution modes (task, chat, orchestrator) and modalities (text, image, audio, video, vision). They are exposed as dedicated REST and/or SSE endpoints, can be invoked by other agents as tools, and can be triggered by Kafka events via Kafka controllers.
 
 ```typescript
 interface AIAgent = {
@@ -19,6 +19,7 @@ interface AIAgent = {
   customEndpoint : AgentCustomEndpoint;
   endpointSettings : AgentEndpointSettings;
   guardrails : AgentGuardrails;
+  kafkaControllers : AgentKafkaController[];
 }
 ```
 
@@ -37,6 +38,7 @@ interface AIAgent = {
 | customEndpoint        | Custom provider endpoint configuration. Only applicable when provider is 'custom'.                                                                                                                                     |
 | endpointSettings      | Controls how the agent is exposed as an API endpoint, including REST/SSE toggles, path customization, and authentication.                                                                                              |
 | guardrails            | Safety limits and cost controls including token budgets, timeouts, file size limits, and input/output validation.                                                                                                      |
+| kafkaControllers      | Optional array of Kafka controllers that trigger agent execution from Kafka events. Each controller subscribes to a topic, maps the message payload to the agent's input format, and executes the agent automatically. |
 
 ## AgentBasics
 
