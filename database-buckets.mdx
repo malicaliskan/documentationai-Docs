@@ -66,7 +66,7 @@ Add a `dbBuckets` entry to any service in your project configuration:
 
 When you add a dbBucket to a service, the system automatically generates:
 
-### 1. Data Object: `sys_{bucketName}File`
+### 1. Data Object: `{bucketName}File`
 
 A database table with these properties:
 
@@ -153,11 +153,11 @@ When `enableKeyAccess` is true, anyone with the 12-character access key can down
 
 Standard CRUD APIs for querying file metadata (without the binary data):
 
-| API Name                 | Method | Path                            | Description                     |
-| ------------------------ | ------ | ------------------------------- | ------------------------------- |
-| `get{BucketName}File`    | GET    | `/v1/sys_{bucketName}Files/:id` | Get file metadata by ID         |
-| `list{BucketName}Files`  | GET    | `/v1/sys_{bucketName}Files`     | List files with filtering       |
-| `delete{BucketName}File` | DELETE | `/v1/sys_{bucketName}Files/:id` | Delete file (metadata + binary) |
+| API Name                 | Method | Path                        | Description                     |
+| ------------------------ | ------ | --------------------------- | ------------------------------- |
+| `get{BucketName}File`    | GET    | `/v1/{bucketName}Files/:id` | Get file metadata by ID         |
+| `list{BucketName}Files`  | GET    | `/v1/{bucketName}Files`     | List files with filtering       |
+| `delete{BucketName}File` | DELETE | `/v1/{bucketName}Files/:id` | Delete file (metadata + binary) |
 
 These APIs follow the standard Mindbricks Business API patterns — they support pagination, filtering by `mimeType`, `userId`, owner relation property, etc. The `fileData` (Blob) column is excluded from responses.
 
@@ -225,8 +225,12 @@ Pair a bucket with a data object to create a parent-child relationship:
 
 This adds a `productId` property to the bucket's data object with a foreign key relation. Benefits:
 
+<<<<<<< HEAD
 - **Filter by owner**: `GET /v1/sys_productImagesFiles?productId={id}` lists only that product's images
 
+=======
+- **Filter by owner**: `GET /v1/productImagesFiles?productId={id}` lists only that product's images
+>>>>>>> af14125 (Update database-buckets.mdx: rename sys_{name}File to {name}File)
 - **Cascading deletes**: When the owner record is deleted, associated files are also removed
 
 - **Upload with owner**: Pass `productId` in the upload form data to link the file
