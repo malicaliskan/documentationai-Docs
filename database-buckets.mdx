@@ -225,12 +225,7 @@ Pair a bucket with a data object to create a parent-child relationship:
 
 This adds a `productId` property to the bucket's data object with a foreign key relation. Benefits:
 
-<<<<<<< HEAD
-- **Filter by owner**: `GET /v1/sys_productImagesFiles?productId={id}` lists only that product's images
-
-=======
 - **Filter by owner**: `GET /v1/productImagesFiles?productId={id}` lists only that product's images
->>>>>>> af14125 (Update database-buckets.mdx: rename sys_{name}File to {name}File)
 - **Cascading deletes**: When the owner record is deleted, associated files are also removed
 
 - **Upload with owner**: Pass `productId` in the upload form data to link the file
