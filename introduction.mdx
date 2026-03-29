@@ -114,9 +114,9 @@ Each pattern is designed to be intuitive yet precise. For instance:
 
 - Attach `BusinessApi` patterns to specify how it's accessed
 
-- Apply `Validations`, `Permissions`, or `AggregatedData` to shape logic
+- Apply `ValidationAction`, `PermissionCheckAction`, or `ApiAggregateData` to shape logic
 
-- Add `FetchOptions` or `ResponseSettings` to extend it
+- Configure behavior with `ApiOptions`, `GetOptions`, or `ListOptions`
 
 The AI agent creates and orchestrates these patterns based on your natural language input, producing a **pattern graph** that fully describes your backend. You can then review, refine, or extend the patterns manually if needed.
 
@@ -141,7 +141,7 @@ Every pattern in Mindbricks belongs to a **pattern class**. These classes carry 
    Genesis maps each pattern class to deterministic, production-grade **code templates**—ranging from database models and controllers to service logic and deployment files. These templates are not static; they are smartly parameterized and context-aware.
 
 3. **Compositional Logic**
-   It resolves pattern interactions. For example, if a `RouteValidation` pattern depends on a `FunctionCall`, which in turn accesses a `ForeignFetch`, Genesis wires them together correctly. It ensures all logic flows match the semantic structure defined in the pattern graph.
+   It resolves pattern interactions. For example, if a `ValidationAction` depends on a `FunctionCallAction`, which in turn uses a `FetchObjectAction`, Genesis wires them together correctly. It ensures all logic flows match the semantic structure defined in the pattern graph.
 
 The result? Genesis compiles your service into a fully structured, modular microservice—including:
 
@@ -227,15 +227,24 @@ The AI agent generates fully functional REST routes for each data object. These 
 
 Each route is automatically wired to the data object and exposed through the service's public API.
 
-### Enriched Logic with Patterns
+### Enriched Logic with Business API Actions
 
-The AI agent applies advanced patterns as needed based on your requirements:
+Every `BusinessApi` in Mindbricks is powered by a composable action workflow. The AI agent selects and orchestrates actions based on your requirements. There are **48 action types** available, organized into categories:
 
-- **ForeignFetch** or **FunctionCall** for fetching external data before writing
-- **Validation**, **MScript**, or **HookFunction** for input validation and transformation
-- **AggregatedCrud** for updating child records alongside a parent object
+- **Data Fetching** — `FetchObjectAction`, `SearchObjectAction`, `FetchStatsAction`, `FetchParentAction` for retrieving data from any data object or Elasticsearch
+- **Logic & Computation** — `FunctionCallAction`, `ArrowFunctionAction`, `ListMapAction` for custom business logic using MScript and library functions
+- **CRUD Operations** — `CreateCrudAction`, `UpdateCrudAction`, `DeleteCrudAction`, `CreateBulkCrudAction` for modifying related objects, including cross-service writes via M2M authentication
+- **Inter-Service Communication** — `InterserviceCallAction` for calling APIs in other microservices, `ApiCallAction` for external HTTP endpoints
+- **AI & Agent Integration** — `AiCallAction` for invoking LLMs (OpenAI, Anthropic, etc.) with structured output, `AgentCallAction` for running AI agents defined in the project
+- **Validation & Access Control** — `ValidationAction`, `PermissionCheckAction`, `ObjectPermissionCheckAction`, `MembershipCheckAction` for business rules and authorization
+- **Events & Messaging** — `PublishEventAction`, `SendMailAction`, `SendSmsAction`, `SendPushNotificationAction` for event-driven communication
+- **Workflow Control** — `LoopAction` and `ParallelAction` for iterating over data or running actions concurrently
+- **Context & Response** — `AddToContextAction`, `AddToResponseAction`, `CreateObjectAction` for shaping the API output
+- **Payments & E-Commerce** — `PaymentAction` (Stripe), `CartCheckoutAction`, `CartValidationAction`, `CouponValidationAction` for commerce workflows
+- **Third-Party Integrations** — `IntegrationAction` for calling catalog integrations (AWS S3, Google Maps, Stripe, and more)
+- **Data Export** — `DataToFileAction` for generating files in 14 formats (JSON, CSV, PDF, XML, and more)
 
-Everything follows a pattern-first design so the **Genesis compiler** can generate precise code and keep the structure maintainable.
+Actions are composable—each API can chain multiple actions in sequence, with shared context flowing between them. Everything follows a pattern-first design so the **Genesis compiler** can generate precise code and keep the structure maintainable.
 
 ### Connected, Secure, Scalable
 
@@ -259,7 +268,7 @@ In a modern backend architecture, services rarely operate in isolation. They mus
 
 ### Service-to-Service Communication Made Simple
 
-Mindbricks allows microservices to communicate securely and declaratively. Using the `InterserviceCalls` pattern, one service can invoke logic exposed by another—without worrying about low-level request handling, token management, or error propagation. Authentication is handled transparently, and service-level permissions are enforced automatically based on your configuration.
+Mindbricks allows microservices to communicate securely and declaratively. Using the `InterserviceCallAction` within a Business API workflow, one service can invoke logic exposed by another—without worrying about low-level request handling, token management, or error propagation. Authentication is handled transparently via machine-to-machine (M2M) tokens, and service-level permissions are enforced automatically based on your configuration.
 
 This makes cross-service orchestration seamless and consistent, even in complex workflows.
 
@@ -549,7 +558,7 @@ Mindbricks doesn't just offer security as a checkbox—it deeply embeds it into 
 
 ## Extending with Custom Logic
 
-While Mindbricks provides an extensive set of patterns and configuration options, real-world projects often require custom behaviors that go beyond declarative design. Mindbricks allows you to seamlessly extend your backend using **JavaScript-based modules**, executed at defined hook points or custom controllers — without breaking the generated architecture.
+While Mindbricks provides an extensive set of patterns and configuration options, real-world projects often require custom behaviors that go beyond declarative design. Mindbricks allows you to seamlessly extend your backend using **JavaScript-based modules** defined as `LibModule` patterns — reusable functions, edge controllers, templates, and assets — without breaking the generated architecture.
 
 ---
 
@@ -557,9 +566,9 @@ While Mindbricks provides an extensive set of patterns and configuration options
 
 You can define **Lib functions** as standalone JavaScript modules that are:
 
-- Injected into validation scripts, computed fields, fetches, and hooks
+- Injected into validation actions, computed fields, Business API actions, and MScript expressions
 
-- Automatically available across all services (Project Library) or scoped to individual services (Service Library)
+- Automatically available across all services (Project Library) or scoped to individual services (`ServiceLibrary`)
 
 - Fully testable, versioned, and managed within the platform
 
@@ -582,7 +591,7 @@ this.formattedName = capitalizeFirstLetter(this.name);
 
 ### Edge Functions: Full Control with Custom Controllers
 
-When you need **total freedom**, use **Edge Controllers**:
+When you need **total freedom**, use **Edge Functions** (defined as `LibModule` entries in the `edgeFunctions` section of your `ServiceLibrary`):
 
 - Define your own REST endpoint (`/custom/report`)
 
@@ -618,9 +627,9 @@ All custom logic is integrated into the Mindbricks ontology:
 
 - Your functions appear in autocomplete suggestions
 
-- AI agents can reason about your logic and include it in validations or fetches
+- AI agents can reason about your logic and include it in validation actions or `FunctionCallAction` steps
 
-- Hooks and edge controllers are versioned and safely recompiled with each deployment
+- Edge functions and library modules are versioned and safely recompiled with each deployment
 
 ---
 
@@ -638,7 +647,7 @@ Need to send a PDF, generate HTML, or include custom files?
 
 ### Seamless Deployment
 
-Whether you're adding a hook or a full edge function, all custom modules are:
+Whether you're adding a library function or a full edge function, all custom modules are:
 
 - Automatically bundled into the deployment package
 
@@ -652,7 +661,32 @@ You get the power of full-stack extensibility without sacrificing structure, sec
 
 ### Summary
 
-Mindbricks gives you the best of both worlds: a powerful AI-driven design system to build scalable services, and an escape hatch to write code when you need it. Whether you're embedding custom validators, transforming queries, or building high-performance endpoints — your logic fits naturally into the system.
+Mindbricks gives you the best of both worlds: a powerful AI-driven design system to build scalable services, and an escape hatch to write code when you need it. Whether you're embedding custom validators, transforming queries, building high-performance endpoints, or wiring up third-party integrations via `IntegrationAction` — your logic fits naturally into the system.
+
+## AI Agents and the AgentHub
+
+Mindbricks goes beyond traditional backend generation by offering **native AI agent capabilities** as first-class patterns in your architecture.
+
+### AI-Powered Business APIs
+
+Any Business API can include AI actions directly in its workflow:
+
+- **`AiCallAction`** — Call LLM models (OpenAI, Anthropic, Google, etc.) with prompt templates, structured output schemas, and dynamic context from your data. Use this to add intelligent processing, content generation, classification, or summarization to any API endpoint.
+
+- **`AgentCallAction`** — Invoke AI agents defined in your project. Agents have access to tools, can make decisions, and execute multi-step workflows autonomously.
+
+### AgentHub: Centralized Agent Management
+
+For projects that need dedicated AI agent infrastructure, Mindbricks provides the **AgentHub** — a centralized service that hosts AI agents with:
+
+- **Cross-service tool access** — Agents can call tools and APIs from any service in your project
+- **Runtime reconfiguration** — Update agent behavior without redeployment
+- **Dynamic agent creation** — Allow end-users to create and configure their own agents
+- **Built-in conversation management** — Session history, context windows, and memory are handled automatically
+
+The AgentHub is defined as a top-level pattern in your project alongside your services, and Genesis compiles it into a fully operational agent hosting service.
+
+---
 
 ## From Vision to Production
 
@@ -670,7 +704,9 @@ By placing AI at the center of the development process and combining it with sem
 
 - **Scale securely** — isolated multi-service environments with built-in auth, RBAC, and compliance
 
-- **Extend freely** — hooks, edge controllers, and fully customizable libraries when you need custom code
+- **Integrate AI natively** — embed LLM calls, AI agents, and the AgentHub directly into your backend architecture
+
+- **Extend freely** — edge functions, custom libraries, and third-party integrations when you need custom code
 
 - **Monitor continuously** — built-in API testing and observability tools
 
