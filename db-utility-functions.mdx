@@ -206,7 +206,9 @@ const order = await getOrderAggById("order-123");
 
 ---
 
-### `get${ModelName}ListByQuery(query)`
+### `get${ModelName}ListByQuery(query)` *(deprecated)*
+
+> **Deprecated:** Use `get${ModelName}ListByMQuery` instead, which accepts the database-agnostic MScript Query format.
 
 Retrieves multiple records matching a query.
 
@@ -261,7 +263,9 @@ const orders = await getOrderListByQuery({
 
 ---
 
-### `get${ModelName}ByQuery(query)`
+### `get${ModelName}ByQuery(query)` *(deprecated)*
+
+> **Deprecated:** Use `get${ModelName}ByMQuery` instead, which accepts the database-agnostic MScript Query format.
 
 Retrieves a single record matching a query. Returns the most recently created record if multiple matches exist.
 
@@ -292,7 +296,9 @@ const latestOrder = await getOrderByQuery({ userId: "user-123" });
 
 ---
 
-### `get${ModelName}StatsByQuery(query, stats)`
+### `get${ModelName}StatsByQuery(query, stats)` *(deprecated)*
+
+> **Deprecated:** Use `get${ModelName}StatsByMQuery` instead, which accepts the database-agnostic MScript Query format.
 
 Calculates statistics (count, sum, avg, min, max) on records matching a query.
 
@@ -345,6 +351,140 @@ const stats = await getOrderStatsByQuery(
 //   "min-totalAmount": 100,
 //   "max-totalAmount": 10000
 // }
+```
+
+---
+
+### `get${ModelName}ListByMQuery(mQuery)`
+
+Retrieves multiple records matching an MScript Query. This is the recommended replacement for `get${ModelName}ListByQuery`.
+
+**Signature:**
+```typescript
+get${ModelName}ListByMQuery(mQuery: Object): Promise<Array<Object>>
+```
+
+**Parameters:**
+- `mQuery` (Object) — MScript Query object (database-agnostic format, see [MScript Query Operators Reference](./mscript-query-reference))
+
+**Returns:**
+- Array — Array of matching records (empty array if none found)
+
+**Behavior:**
+- Automatically converts MScript Query to the native database format (Sequelize or MongoDB)
+- Respects soft delete settings (automatically filters `isActive: true` if soft delete is enabled)
+- Returns normalized data via `getData()`
+- Returns empty array if no matches found (does not throw error)
+
+**Example:**
+```js
+const { getOrderListByMQuery } = require("dbLayer");
+
+// Simple query
+const orders = await getOrderListByMQuery({ status: "paid" });
+
+// Complex query — works the same regardless of database type
+const orders = await getOrderListByMQuery({
+  status: "paid",
+  totalAmount: { $gte: 1000 },
+  createdAt: { $between: [startDate, endDate] }
+});
+
+// Logical operators
+const orders = await getOrderListByMQuery({
+  $or: [
+    { status: "pending" },
+    { status: "processing" }
+  ]
+});
+```
+
+---
+
+### `get${ModelName}ByMQuery(mQuery)`
+
+Retrieves a single record matching an MScript Query. Returns the most recently created record if multiple matches exist. This is the recommended replacement for `get${ModelName}ByQuery`.
+
+**Signature:**
+```typescript
+get${ModelName}ByMQuery(mQuery: Object): Promise<Object | null>
+```
+
+**Parameters:**
+- `mQuery` (Object) — MScript Query object (database-agnostic format, see [MScript Query Operators Reference](./mscript-query-reference))
+
+**Returns:**
+- Object — First matching record (ordered by `createdAt DESC`) or null if not found
+
+**Behavior:**
+- Automatically converts MScript Query to the native database format
+- Respects soft delete settings
+- Orders results by `createdAt DESC` to get the most recent match
+- Returns null if no match found (does not throw error)
+- Returns normalized data via `getData()`
+
+**Example:**
+```js
+const { getOrderByMQuery } = require("dbLayer");
+
+// Get the most recent order for a user
+const latestOrder = await getOrderByMQuery({ userId: "user-123" });
+
+// With operators
+const latestPaidOrder = await getOrderByMQuery({
+  userId: "user-123",
+  status: { $eq: "paid" }
+});
+```
+
+---
+
+### `get${ModelName}StatsByMQuery(mQuery, stats)`
+
+Calculates statistics (count, sum, avg, min, max) on records matching an MScript Query. This is the recommended replacement for `get${ModelName}StatsByQuery`.
+
+**Signature:**
+```typescript
+get${ModelName}StatsByMQuery(
+  mQuery: Object,
+  stats: string | Array<string>
+): Promise<number | Object>
+```
+
+**Parameters:**
+- `mQuery` (Object) — MScript Query object (database-agnostic format, see [MScript Query Operators Reference](./mscript-query-reference))
+- `stats` (String|Array) — Stat operation(s) to perform:
+  - `"count"` — Count of matching records
+  - `"sum(fieldName)"` — Sum of a numeric field
+  - `"avg(fieldName)"` — Average of a numeric field
+  - `"min(fieldName)"` — Minimum value of a field
+  - `"max(fieldName)"` — Maximum value of a field
+
+**Returns:**
+- Number — If single stat is requested
+- Object — If multiple stats are requested, with keys like `"count"`, `"sum-fieldName"`, `"avg-fieldName"`, etc.
+
+**Behavior:**
+- Automatically converts MScript Query to the native database format
+- Respects soft delete settings
+- Executes all stats in parallel for performance
+- Returns single value if one stat requested, object with labeled keys if multiple
+
+**Example:**
+```js
+const { getOrderStatsByMQuery } = require("dbLayer");
+
+// Single stat
+const count = await getOrderStatsByMQuery(
+  { status: "paid" },
+  "count"
+);
+
+// Multiple stats with complex query
+const stats = await getOrderStatsByMQuery(
+  { status: "paid", totalAmount: { $gte: 100 } },
+  ["count", "sum(totalAmount)", "avg(totalAmount)"]
+);
 ```
 
 ---
@@ -503,7 +643,9 @@ const updatedIds = await updateOrderByIdList(
 
 ---
 
-### `update${ModelName}ByQuery(query, dataClause, context)`
+### `update${ModelName}ByQuery(query, dataClause, context)` *(deprecated)*
+
+> **Deprecated:** Use `update${ModelName}ByMQuery` instead, which accepts the database-agnostic MScript Query format.
 
 Updates all records matching a query.
 
@@ -565,6 +707,68 @@ const expired = await updateOrderByQuery(
 
 ---
 
+### `update${ModelName}ByMQuery(dataClause, mQuery, context)`
+
+Updates all records matching an MScript Query. This is the recommended replacement for `update${ModelName}ByQuery`.
+
+**Signature:**
+```typescript
+update${ModelName}ByMQuery(
+  dataClause: Object,
+  mQuery: Object,
+  context?: Object
+): Promise<Array<Object>>
+```
+
+**Parameters:**
+- `dataClause` (Object) — Fields to update
+- `mQuery` (Object) — MScript Query object (database-agnostic format, see [MScript Query Operators Reference](./mscript-query-reference))
+- `context` (Object, optional) — Context object containing `session` and `requestId` for event tracking. When called from Business API actions, pass `this`.
+
+**Returns:**
+- Array — Array of updated record data (normalized via `getData()`)
+
+**Behavior:**
+- Automatically converts MScript Query to the native database format (Sequelize or MongoDB)
+- Updates all records matching the query
+- Respects soft delete settings (only updates active records)
+- Automatically indexes all updated records in Elasticsearch
+- Publishes Kafka events for each update (includes session and requestId from context if provided)
+- Returns empty array if no records match
+- Supports array mutation syntax in `dataClause` via `$add`, `$rem`, `$addIf` (see [Array Mutation Syntax Guide](./array-mutation-syntax-guide))
+
+**Example:**
+```js
+const { updateOrderByMQuery } = require("dbLayer");
+
+// Mark all pending orders older than 7 days as expired
+const expired = await updateOrderByMQuery(
+  {
+    status: "expired",
+    expiredAt: new Date()
+  },
+  {
+    status: "pending",
+    createdAt: { $lt: sevenDaysAgo }
+  }
+);
+
+// With context (from Business API action)
+const expired = await updateOrderByMQuery(
+  {
+    status: "expired",
+    expiredAt: new Date()
+  },
+  {
+    status: "pending",
+    createdAt: { $lt: sevenDaysAgo }
+  },
+  this
+);
+```
+
+---
+
 ## Delete Functions
 
 ### `delete${ModelName}ById(id, context)`
@@ -603,7 +807,9 @@ const deleted = await deleteOrderById("order-123", this); // Pass 'this' to incl
 
 ---
 
-### `delete${ModelName}ByQuery(query, context)`
+### `delete${ModelName}ByQuery(query, context)` *(deprecated)*
+
+> **Deprecated:** Use `delete${ModelName}ByMQuery` instead, which accepts the database-agnostic MScript Query format.
 
 Deletes all records matching a query. Uses soft delete if enabled, otherwise hard delete.
 
@@ -647,9 +853,87 @@ const deleted = await deleteOrderByQuery({
 
 ---
 
+### `delete${ModelName}ByMQuery(mQuery, context)`
+
+Deletes all records matching an MScript Query. Uses soft delete if enabled, otherwise hard delete. This is the recommended replacement for `delete${ModelName}ByQuery`.
+
+**Signature:**
+```typescript
+delete${ModelName}ByMQuery(mQuery: Object, context?: Object): Promise<Array<Object>>
+```
+
+**Parameters:**
+- `mQuery` (Object) — MScript Query object (database-agnostic format, see [MScript Query Operators Reference](./mscript-query-reference))
+- `context` (Object, optional) — Context object containing `session` and `requestId` for event tracking. When called from Business API actions, pass `this`.
+
+**Returns:**
+- Array — Array of deleted record data (normalized via `getData()`)
+
+**Behavior:**
+- Automatically converts MScript Query to the native database format (Sequelize or MongoDB)
+- Deletes all records matching the query
+- If soft delete is enabled: sets `isActive: false` and `_archivedAt: timestamp` for all matching records
+- If soft delete is disabled: permanently deletes all matching records
+- Automatically removes all records from Elasticsearch
+- Publishes Kafka events for each deletion (includes session and requestId from context if provided)
+- Returns empty array if no records match
+
+**Example:**
+```js
+const { deleteOrderByMQuery } = require("dbLayer");
+
+// Delete all expired orders
+const deleted = await deleteOrderByMQuery({
+  status: "expired",
+  expiredAt: { $lt: oneYearAgo }
+});
+
+// With context (from Business API action)
+const deleted = await deleteOrderByMQuery({
+  status: "expired",
+  expiredAt: { $lt: oneYearAgo }
+}, this);
+```
+
+---
+
 ## Query Format Reference
 
-All functions that accept a `query` parameter use the same format as your selected database type.
+### MScript Query Format (Recommended)
+
+The `ByMQuery` functions accept the unified MScript Query format, which works identically regardless of the underlying database type. See the [MScript Query Operators Reference](./mscript-query-reference) for the full list of supported operators.
+
+```js
+// Simple equality
+{ status: "active" }
+
+// Comparison operators
+{ age: { $gte: 18 } }
+{ price: { $between: [100, 500] } }
+{ createdAt: { $lt: new Date() } }
+
+// Array operators
+{ id: { $in: ["id1", "id2", "id3"] } }
+{ tags: { $contains: ["urgent"] } }
+
+// Logical operators
+{
+  $and: [
+    { status: "active" },
+    { age: { $gte: 18 } }
+  ]
+}
+{
+  $or: [
+    { status: "pending" },
+    { status: "processing" }
+  ]
+}
+```
+
+### Native Query Formats (for deprecated ByQuery functions)
+
+All deprecated `ByQuery` functions accept a `query` parameter in the native format of your selected database type.
 
 ### Sequelize (PostgreSQL, MySQL, SQLite, etc.)
 
@@ -919,15 +1203,20 @@ When using `CreateCrudAction`, `CreateBulkCrudAction`, `UpdateCrudAction`, or `D
 | `createBulk${ModelName}` | Create multiple records | Array |
 | `get${ModelName}ById` | Get by ID | Object\|Array\|null |
 | `get${ModelName}AggById` | Get by ID with joins | Object\|Array\|null |
-| `get${ModelName}ListByQuery` | Get multiple by query | Array |
-| `get${ModelName}ByQuery` | Get single by query | Object\|null |
-| `get${ModelName}StatsByQuery` | Calculate statistics | Number\|Object |
+| `get${ModelName}ListByMQuery` | Get multiple by MScript Query | Array |
+| `get${ModelName}ByMQuery` | Get single by MScript Query | Object\|null |
+| `get${ModelName}StatsByMQuery` | Calculate statistics by MScript Query | Number\|Object |
 | `getIdListOf${ModelName}ByField` | Get IDs by field | Array |
 | `update${ModelName}ById` | Update by ID | Object |
 | `update${ModelName}ByIdList` | Update multiple by IDs | Array (IDs) |
-| `update${ModelName}ByQuery` | Update by query | Array |
+| `update${ModelName}ByMQuery` | Update by MScript Query | Array |
 | `delete${ModelName}ById` | Delete by ID | Object |
-| `delete${ModelName}ByQuery` | Delete by query | Array |
+| `delete${ModelName}ByMQuery` | Delete by MScript Query | Array |
+| `get${ModelName}ListByQuery` | *(deprecated)* Get multiple by native query | Array |
+| `get${ModelName}ByQuery` | *(deprecated)* Get single by native query | Object\|null |
+| `get${ModelName}StatsByQuery` | *(deprecated)* Calculate statistics by native query | Number\|Object |
+| `update${ModelName}ByQuery` | *(deprecated)* Update by native query | Array |
+| `delete${ModelName}ByQuery` | *(deprecated)* Delete by native query | Array |
 
-All functions automatically handle Elasticsearch indexing, Kafka event publishing, and soft delete logic. Always prefer these utility functions over direct model access to maintain data consistency across your system.
+All functions automatically handle Elasticsearch indexing, Kafka event publishing, and soft delete logic. Always prefer the `ByMQuery` variants for new code — they use the database-agnostic [MScript Query format](./mscript-query-reference) and work identically across all supported database types.
 

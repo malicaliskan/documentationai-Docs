@@ -863,22 +863,31 @@ For each data object in your service, Mindbricks automatically generates the fol
     - For **remote relations** (other services): Fetches related data from Elasticsearch indices
     - Automatically populates all defined relations on the data object, whether local or remote
 
-- **`get${ModelName}ListByQuery(query)`** — Retrieves multiple records matching a query
-  - **Parameters:** `query` (Object) — Sequelize or MongoDB query object (depending on your DB type)
+- **`get${ModelName}ListByMQuery(mQuery)`** — Retrieves multiple records matching an MScript Query
+  - **Parameters:** `mQuery` (Object) — MScript Query object (database-agnostic format, see [MScript Query Operators Reference](./mscript-query-reference))
   - **Returns:** Array — Array of matching records (empty array if none found)
   - **Respects:** Soft delete settings
 
-- **`get${ModelName}ByQuery(query)`** — Retrieves a single record matching a query
-  - **Parameters:** `query` (Object) — Sequelize or MongoDB query object
+- **`get${ModelName}ByMQuery(mQuery)`** — Retrieves a single record matching an MScript Query
+  - **Parameters:** `mQuery` (Object) — MScript Query object (database-agnostic format)
   - **Returns:** Object|null — First matching record (ordered by createdAt DESC) or null
   - **Respects:** Soft delete settings
 
-- **`get${ModelName}StatsByQuery(query, stats)`** — Calculates statistics on matching records
-  - **Parameters:** 
-    - `query` (Object) — Sequelize or MongoDB query object
+- **`get${ModelName}StatsByMQuery(mQuery, stats)`** — Calculates statistics on matching records
+  - **Parameters:**
+    - `mQuery` (Object) — MScript Query object (database-agnostic format)
     - `stats` (Array|String) — Array of stat operations (e.g., `["count", "sum(amount)", "avg(price)", "min(price)", "max(price)"]`) or single stat string
   - **Returns:** Number|Object — Single stat value or object with stat labels as keys
-  - **Example:** `await DB.getOrderStatsByQuery({ status: "paid" }, ["count", "sum(totalAmount)"])` returns `{ count: 10, "sum-totalAmount": 5000 }`
+  - **Example:** `await DB.getOrderStatsByMQuery({ status: "paid" }, ["count", "sum(totalAmount)"])` returns `{ count: 10, "sum-totalAmount": 5000 }`
+
+- **`get${ModelName}ListByQuery(query)`** *(deprecated)* — Use `get${ModelName}ListByMQuery` instead
+  - **Parameters:** `query` (Object) — Sequelize or MongoDB query object (depending on your DB type)
+
+- **`get${ModelName}ByQuery(query)`** *(deprecated)* — Use `get${ModelName}ByMQuery` instead
+  - **Parameters:** `query` (Object) — Sequelize or MongoDB query object
+
+- **`get${ModelName}StatsByQuery(query, stats)`** *(deprecated)* — Use `get${ModelName}StatsByMQuery` instead
+  - **Parameters:** `query` (Object) — Sequelize or MongoDB query object, `stats` (Array|String)
 
 - **`getIdListOf${ModelName}ByField(fieldName, fieldValue, isArray)`** — Gets list of IDs matching a field value
   - **Parameters:**
@@ -906,13 +915,16 @@ For each data object in your service, Mindbricks automatically generates the fol
   - **Returns:** Array — Array of updated record IDs
   - **Auto-handles:** Elasticsearch indexing for all updated records
 
-- **`update${ModelName}ByQuery(query, dataClause, context)`** — Updates all records matching a query
+- **`update${ModelName}ByMQuery(dataClause, mQuery, context)`** — Updates all records matching an MScript Query
   - **Parameters:**
-    - `query` (Object) — Sequelize or MongoDB query object
     - `dataClause` (Object) — Fields to update
+    - `mQuery` (Object) — MScript Query object (database-agnostic format, see [MScript Query Operators Reference](./mscript-query-reference))
     - `context` (Object, optional) — Context object with `session` and `requestId`. When called from Business API actions, pass `this`.
   - **Returns:** Array — Array of updated record data
   - **Auto-handles:** Elasticsearch indexing for all updated records
+
+- **`update${ModelName}ByQuery(query, dataClause, context)`** *(deprecated)* — Use `update${ModelName}ByMQuery` instead
+  - **Parameters:** `query` (Object) — Sequelize or MongoDB query object, `dataClause` (Object), `context` (Object, optional)
 
 Array field mutation in update functions is supported with `dataClause` operators (`$add`, `$rem`, `$addIf`). See [Array Mutation Syntax Guide](./array-mutation-syntax-guide).
 
@@ -925,16 +937,35 @@ Array field mutation in update functions is supported with `dataClause` operator
   - **Returns:** Object — Deleted record data
   - **Auto-handles:** Soft delete (if enabled), Elasticsearch deletion, Kafka events
 
-- **`delete${ModelName}ByQuery(query, context)`** — Deletes all records matching a query
-  - **Parameters:** 
-    - `query` (Object) — Sequelize or MongoDB query object
+- **`delete${ModelName}ByMQuery(mQuery, context)`** — Deletes all records matching an MScript Query
+  - **Parameters:**
+    - `mQuery` (Object) — MScript Query object (database-agnostic format, see [MScript Query Operators Reference](./mscript-query-reference))
     - `context` (Object, optional) — Context object with `session` and `requestId`. When called from Business API actions, pass `this`.
   - **Returns:** Array — Array of deleted record data
   - **Auto-handles:** Soft delete (if enabled), Elasticsearch deletion for all records
 
+- **`delete${ModelName}ByQuery(query, context)`** *(deprecated)* — Use `delete${ModelName}ByMQuery` instead
+  - **Parameters:** `query` (Object) — Sequelize or MongoDB query object, `context` (Object, optional)
+
 #### **Query Format**
 
-All functions that accept a `query` parameter use the same format as your selected database type:
+The `ByMQuery` functions accept the unified **MScript Query format**, which works identically regardless of the underlying database type:
+
+```js
+// Simple equality
+{ status: "active" }
+
+// Comparison operators
+{ age: { $gte: 18 } }
+{ price: { $between: [100, 500] } }
+
+// Logical operators
+{ $or: [{ status: "pending" }, { status: "processing" }] }
+```
+
+See the [MScript Query Operators Reference](./mscript-query-reference) for the full list of supported operators.
+
+The deprecated `ByQuery` functions accept native Sequelize or MongoDB query format:
 
 - **Sequelize (PostgreSQL, MySQL, etc.):** Standard Sequelize query syntax
   ```js
@@ -960,26 +991,26 @@ These functions provide a **safe, typed, generated repository layer** that:
 **Example usage in a library function:**
 
 ```js
-const { getOrderAggById, updateOrderById, getItemListByQuery, getOrderStatsByQuery } = require("dbLayer");
+const { getOrderAggById, updateOrderById, getItemListByMQuery, getOrderStatsByMQuery } = require("dbLayer");
 
 // If called from Business API action, receive context and pass it through
 module.exports = async function processOrder(orderId, context = null) {
   // Get order with aggregated data
   const order = await getOrderAggById(orderId);
   if (!order) throw new Error("Order not found");
-  
+
   // Update order status (pass context for event tracking)
   await updateOrderById(orderId, { status: "processed" }, context);
-  
-  // Get related items
-  const items = await getItemListByQuery({ orderId: orderId });
-  
-  // Calculate total
-  const stats = await getOrderStatsByQuery(
+
+  // Get related items using MScript Query (database-agnostic)
+  const items = await getItemListByMQuery({ orderId: orderId });
+
+  // Calculate total using MScript Query
+  const stats = await getOrderStatsByMQuery(
     { orderId: orderId },
     ["sum(amount)"]
   );
-  
+
   return { order, items, total: stats["sum-amount"] };
 };
 
