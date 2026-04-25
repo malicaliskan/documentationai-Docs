@@ -1,3 +1,8 @@
+---
+title: "Business Api"
+description: "Defines a Business API, a high-level abstraction representing a specific business operation on a primary data object. It encapsulates intent (e.g., get, create, delete), parameters, trigger mechanisms"
+---
+
 # BusinessApi
 
 **MPO Version:** 1.3.0
@@ -884,6 +889,7 @@ interface BusinessApiActionStore = {
   updateCrudActions : UpdateCrudAction[];
   apiCallActions : ApiCallAction[];
   aiCallActions : AiCallAction[];
+  agentCallActions : AgentCallAction[];
   membershipCheckActions : MembershipCheckAction[];
   permissionCheckActions : PermissionCheckAction[];
   objectPermissionActions : ObjectPermissionCheckAction[];
@@ -935,6 +941,7 @@ interface BusinessApiActionStore = {
 | updateCrudActions           | Actions that update properties of related objects using a conditional query. Used for post-processing or child updates.                                                                                                                                                                                                                                    |
 | apiCallActions              | Actions that make external or internal HTTP API requests. Often used to integrate with third-party systems or auxiliary internal services.                                                                                                                                                                                                                 |
 | aiCallActions               | Actions that call an LLM (e.g., OpenAI or Anthropic) with structured prompts and fetch textual or JSON responses. Used for generation, enrichment, or inference.                                                                                                                                                                                           |
+| agentCallActions            | Actions that invoke a configured AI Agent defined in the service's aiAgents section. The agent is executed internally with a data payload built from the current API context via MScript. The result is stored in the workflow context and optionally written to the response.                                                                             |
 | membershipCheckActions      | Actions that validate whether a user is a member of a related object (e.g., organization, team) using configured membership rules.                                                                                                                                                                                                                         |
 | permissionCheckActions      | Actions that verify whether the current user has a global (non-object-scoped) permission before continuing workflow logic.                                                                                                                                                                                                                                 |
 | objectPermissionActions     | Actions that check object-scoped permissions, validating whether a user has specific rights on an instance loaded into the context.                                                                                                                                                                                                                        |
@@ -957,7 +964,7 @@ interface BusinessApiActionStore = {
 | sendPushNotificationActions | Actions that send push notifications to mobile or web clients with title and content.                                                                                                                                                                                                                                                                      |
 | paymentActions              | Actions to start, to complete or to refresh a payment operation using the native integrated payment systems. Currently `Stripe` is supported. For other payment gateways use integration actions.                                                                                                                                                          |
 | verifyWebhookActions        | Actions to verify a webhook call of a provider using the webhook secret signature key. Currently `Stripe` is supported.                                                                                                                                                                                                                                    |
-| integrationActions          | Actions that call native API provider integrations (e.g., AWS S3, Airtable, Salesforce). These integrations are pre-coded inside Mindbricks and abstract provider-specific logic.                                                                                                                                                                          |
+| integrationActions          | Actions that call third-party API integrations managed in the Mindbricks integration catalog (e.g., AWS S3, Stripe, Google Maps). Each integration exposes predefined actions and is selected by its provider key.                                                                                                                                         |
 | loopActions                 | Actions that repeat a sequence of workflow steps for each item in a list (defined by an MScript expression).                                                                                                                                                                                                                                               |
 | parallelActions             | Actions that execute multiple child actions in parallel without waiting for each to finish sequentially. Ideal for non-dependent logic flows.                                                                                                                                                                                                              |
 | cartValidationActions       | Actions that validate a shopping cart before checkout. Checks for item existence, stock availability, price validity, and minimum order requirements.                                                                                                                                                                                                      |
@@ -965,6 +972,52 @@ interface BusinessApiActionStore = {
 | couponValidationActions     | Actions that validate coupon codes. Checks eligibility, usage limits, expiration, and calculates discount amounts.                                                                                                                                                                                                                                         |
 | emitSseEventActions         | Actions that emit custom SSE events to the client during the workflow. No-op when called via REST.                                                                                                                                                                                                                                                         |
 | iteratorActions             | Generic streaming actions whose methods return async iterables. Used for custom streaming logic that isn't covered by AiCallAction. Can be referenced in streamSource.iteratorAction or used inline in the workflow.                                                                                                                                       |
+
+### BusinessApiAction
+
+**MPO Version:** 1.3.0
+
+Abstract base class for all Business API actions. Every action in a Business API workflow inherits from this type. It defines shared fields such as name, execution condition, and response behavior. This class is never instantiated directly—subclasses implement specific logic units like fetch, validation, or API calls. Any subclass is distinguished from the array (in actions property of the business api) it is inserted
+
+```typescript
+interface BusinessApiAction = {
+  id : String;
+  name : String;
+  description : Text;
+  condition : MScript;
+  contextPropertyName : String;
+  writeToResponse : Boolean;
+  onActionError : BusinessApiActionErrorOption;
+  emitProgressInSSEContext : Boolean;
+}
+```
+
+| Field                    | Description                                                                                                                                                                                                                                                                              |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| id                       | The unique identifier of the action, used to reference this action from within a Business API workflow step.                                                                                                                                                                             |
+| name                     | A unique human readable camle case name for the action , will also be used as the method name of the api context class.                                                                                                                                                                  |
+| description              | An optional text to describe the purpose and logic of the action, what it does and why it does.                                                                                                                                                                                          |
+| condition                | An MScript boolean expression. If provided, the action will only run when this condition evaluates to true.                                                                                                                                                                              |
+| contextPropertyName      | The name of the property under which the result of the action will be written to the context. The result of an business api action can be accessed by other actions using `this.<contextPropertyName>`. Leave this field null if your action result will not be used by further actions. |
+| writeToResponse          | If true, the result of the action will be written to the API response directly, typically under the property matching the contextPropertyName.                                                                                                                                           |
+| onActionError            | Defines what happens when the action throws an error. `throwError` (default) re-throws and aborts the API. `completeApi` catches the error, stores it as `this.<actionName>Error` on the context so subsequent actions can inspect the failure, and lets the API continue.               |
+| emitProgressInSSEContext | When true and the API is running in SSE context, this action automatically emits a progress event before and after execution. When false (default) or when called via REST, no progress is emitted.                                                                                      |
+
+#### BusinessApiActionErrorOption
+
+The option that defines what to do if a specific action causes an error.
+
+```js
+const BusinessApiActionErrorOption = {
+  throwError: "throwError",
+  completeApi: "completeApi",
+};
+```
+
+| Enum        | Description                                                                               |
+| ----------- | ----------------------------------------------------------------------------------------- |
+| throwError  | Use this option if you want to fail the compile api in case of this specific action fails |
+| completeApi | Use this option if you want your api to be completed even this specific action fails.     |
 
 ### FetchObjectAction
 
@@ -1368,7 +1421,7 @@ interface HTTPRequestParameters = {
 
 **MPO Version:** 1.3.0
 
-Invokes an AI model such as OpenAI or Anthropic to perform text generation, refinement, classification, or summarization. The prompt is composed from a template and context, and the result is returned to the workflow and stored in `this.<contextPropertyName>`. In SSE mode, tokens are streamed to the client automatically; in REST mode, the AI provider is called directly (non-streaming).
+Invokes an AI model such as OpenAI or Anthropic to perform text generation, refinement, classification, or summarization. The prompt is composed from a template and context, and the result is stored in the context and optionally exposed in the response.
 
 ```typescript
 interface AiCallAction extends BusinessApiAction = {
@@ -1379,12 +1432,12 @@ interface AiCallAction extends BusinessApiAction = {
 }
 ```
 
-| Field           | Description                                                                                                                                                   |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| promptTemplate  | Defines both the static system message and dynamic user message. These are passed to the AI model to guide its behavior. Supports MScript in the user prompt. |
-| isArray         | If true, the response is expected to contain a list of results. Use when the model is expected to return multiple items.                                      |
-| responseFormat  | Indicates the expected format of the AI's output—either `json` for structured responses or `text` for plain text.                                             |
-| model           | The identifier of the LLM model to be used, such as `gpt-4`, `claude-3`, or any provider-accessible variant.                                                  |
+| Field          | Description                                                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| promptTemplate | Defines both the static system message and dynamic user message. These are passed to the AI model to guide its behavior. Supports MScript in the user prompt. |
+| isArray        | If true, the response is expected to contain a list of results. Use when the model is expected to return multiple items.                                      |
+| responseFormat | Indicates the expected format of the AI's output—either `json` for structured responses or `text` for plain text.                                             |
+| model          | The identifier of the LLM model to be used, such as `gpt-4`, `claude-3`, or any provider-accessible variant.                                                  |
 
 #### AIPromptTemplate
 
@@ -1403,6 +1456,24 @@ interface AIPromptTemplate = {
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | systemPrompt | A fixed instruction string that sets the tone or role for the AI model. Examples include guidance like 'You are a helpful assistant' or 'You are a strict validator'.                                                                      |
 | userPrompt   | A dynamic MScript expression that generates the user-facing part of the prompt. This often references contextual variables such as `this.username`, `this.itemName`, or `this.description` to personalize or situate the model's response. |
+
+### AgentCallAction
+
+**MPO Version:** 1.3.0
+
+Invokes an AI Agent defined in the service's aiAgents section from within a Business API workflow. The agent is executed internally using a data payload constructed from the current API context via an MScript expression. The agent result is stored in the workflow context and can be used by subsequent actions or written to the response. This enables tight integration between structured API logic and AI agent capabilities.
+
+```typescript
+interface AgentCallAction extends BusinessApiAction = {
+  agentName : String;
+  inputData : MScript;
+}
+```
+
+| Field     | Description                                                                                                                                                                                                                                                                                                                                                          |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| agentName | The name of the AI Agent to invoke. Must match the `agentBasics.name` of an agent defined in the service's `aiAgents` array. Example: 'contentAnalyzer', 'summarizer'.                                                                                                                                                                                               |
+| inputData | An MScript expression that builds the data object to pass to the agent as its request body. Has access to `this` (the API context), including `this.data`, `this.session`, and any context properties set by previous actions. Example: `{ message: this.data.description, context: this.fetchedProfile.bio }`. If null, the current `this.data` is forwarded as-is. |
 
 ### MembershipCheckAction
 
@@ -2010,21 +2081,21 @@ interface VerifyWebhookAction extends BusinessApiAction = {
 
 **MPO Version:** 1.3.0
 
-Calls a native API integration provided by Mindbricks (e.g., AWS S3, Airtable, Stripe, Asana). Each integration exposes a set of predefined actions, and this object triggers one of them with dynamically computed parameters. The result is stored in the context and can be used in follow-up steps. This allows low-code access to third-party systems using structured inputs.
+Calls a third-party API integration from the Mindbricks integration catalog (e.g., AWS S3, Stripe, Google Maps). The provider is identified by its string key matching an integration picked for the project. Each integration exposes a set of predefined actions, and this object triggers one of them with dynamically computed parameters. The result is stored in the context and can be used in follow-up steps.
 
 ```typescript
 interface IntegrationAction extends BusinessApiAction = {
-  provider : IntegrationProvider;
+  provider : String;
   action : String;
   parameters : IntegrationParameter[];
 }
 ```
 
-| Field      | Description                                                                                                                                                                                                     |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| provider   | The identifier of the external service provider to call (e.g., `aws`, `asana`, `salesforce`). Must match a supported integration configured within Mindbricks.                                                  |
-| action     | The specific action or operation to invoke on the provider. For example: `uploadFile`, `createRecord`, `deleteObject`, `listItems`. Action names must match those exposed by the selected integration provider. |
-| parameters | An array of parameter objects that define the inputs to pass to the integration action. Each parameter includes a name and a dynamically evaluated value from context.                                          |
+| Field      | Description                                                                                                                                                                                                             |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| provider   | The provider key identifying the integration to call (e.g., `amazonS3`, `Stripe`, `googleMaps`). Must match the providerKey of an integration that has been picked for the current project.                             |
+| action     | The specific action or method to invoke on the integration provider. For example: `uploadFile`, `createRecord`, `deleteObject`, `listItems`. Action names must match the methods exposed by the integration class code. |
+| parameters | An array of parameter objects that define the inputs to pass to the integration action. Each parameter includes a name and a dynamically evaluated value from context.                                                  |
 
 #### IntegrationParameter
 

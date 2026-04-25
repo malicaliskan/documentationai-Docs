@@ -1,0 +1,66 @@
+---
+title: "Agent Hub Settings"
+description: "Hub settings chapter containing the basic configuration and tool source definitions for the Agent Hub service."
+---
+
+# AgentHubSettings
+
+**MPO Version:** 1.3.0
+
+Hub settings chapter containing the basic configuration and tool source definitions for the Agent Hub service.
+
+```typescript
+interface AgentHubSettings = {
+  hubBasics : AgentHubBasics;
+  toolSources : AgentHubToolSource[];
+}
+```
+
+| Field       | Description |
+| ----------- | ----------- |
+| hubBasics   | undefined   |
+| toolSources | undefined   |
+
+## AgentHubBasics
+
+**MPO Version:** 1.3.0
+
+Core settings for the Agent Hub service including dynamic agent creation controls and tool discovery configuration.
+
+```typescript
+interface AgentHubBasics = {
+  description : Text;
+  enableDynamicAgents : Boolean;
+  dynamicAgentRoles : String[];
+  maxDynamicAgents : Integer;
+  toolRefreshIntervalMinutes : Integer;
+}
+```
+
+| Field                      | Description                                                                                                                                                                                     |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| description                | Human-readable description of the Agent Hub service.                                                                                                                                            |
+| enableDynamicAgents        | When true, end-users with the appropriate roles can create, configure, and run their own AI agents at runtime. When false, only design-time agents defined in this configuration are available. |
+| dynamicAgentRoles          | Roles allowed to create and manage dynamic agents at runtime. Default: superAdmin and admin. Add additional roles as needed (e.g., 'tenantOwner').                                              |
+| maxDynamicAgents           | Maximum number of dynamic agents that can be created at runtime. Prevents unbounded growth. Default: 50.                                                                                        |
+| toolRefreshIntervalMinutes | How often (in minutes) the hub re-discovers tools from project services. Tools can also be refreshed manually via the refresh API. Default: 5 minutes.                                          |
+
+## AgentHubToolSource
+
+**MPO Version:** 1.3.0
+
+Defines a service from which the Agent Hub discovers tools. Each tool source maps to a project service whose Business APIs become available as agent tools. Use serviceName '\*' to discover from all services.
+
+```typescript
+interface AgentHubToolSource = {
+  serviceName : String;
+  includeApis : String;
+  excludeApis : String;
+}
+```
+
+| Field       | Description                                                                                                                                                               |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| serviceName | The service to discover tools from. Use '\*' to discover from all project services. Use a specific service name (e.g., 'taskManagement') to target a single service.      |
+| includeApis | Comma-separated list of API names to include as tools. Use '\*' for all APIs. If null, all APIs from the service are included.                                            |
+| excludeApis | Comma-separated list of API names to exclude from tools. Applied after includeApis filtering. Useful when includeApis is '\*' but you want to hide certain internal APIs. |

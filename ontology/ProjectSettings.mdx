@@ -1,8 +1,13 @@
+---
+title: "Project Settings"
+description: "Defines the core configuration of your Mindbricks project, including metadata, environment preferences, and infrastructure settings. Use this section to set up the project name, description, Stripe pa"
+---
+
 # ProjectSettings
 
 **MPO Version:** 1.3.0
 
-Defines the core configuration of your Mindbricks project, including metadata, environment preferences, and infrastructure integrations. Use this section to set up the project name, description, and optionally override managed infrastructure services with your own. While Mindbricks provides managed services by default to ensure a reliable, production-ready architecture, you may choose to integrate custom services for Redis, PostgreSQL, Kafka, and others as needed.
+Defines the core configuration of your Mindbricks project, including metadata, environment preferences, and infrastructure settings. Use this section to set up the project name, description, Stripe payment settings, AI provider settings, CORS configuration, and custom CI/CD pipeline templates.
 
 ```typescript
 interface ProjectSettings = {
@@ -11,7 +16,6 @@ interface ProjectSettings = {
   aiSettings : AiSettings;
   corsSettings : CorsSettings;
   pipelineTemplates : PipelineTemplate[];
-  integrations : IntegrationConfiguration[];
 }
 ```
 
@@ -22,7 +26,6 @@ interface ProjectSettings = {
 | aiSettings        | Settings for connecting to external AI services such as OpenAI. Use this section to input API keys and model preferences for AI-based features in your application.                                                                                                                                                                                            |
 | corsSettings      | Defines CORS settings for service accesses. When enabled Cross Origins will be accepted according to the settings.                                                                                                                                                                                                                                             |
 | pipelineTemplates | A list of ejs templates that renders custom CI-CD files for your services. Each file will be created in the root of your microservices after rendered using the templates with service configuration. Use these templates if you will take out your project to ypur own deployment environment and you want Mindbricks to generate your deploy pipeline files. |
-| integrations      | An array of 3rd party integration configurations which will be used through out the services. When an integration is activated in the project with its cclient configurations, it will be visible in the business api design to add integration actions which call an integration client's method with in the business logic                                   |
 
 ## BasicProjectSettings
 
@@ -207,91 +210,3 @@ interface PipelineTemplate = {
 | -------- | ------------------------------------------------------------------------ |
 | filename | The name of the pipeline file that will be generated like .gitlab-ci.yml |
 | template | The ejs source code of the template that renders the pipeline file.      |
-
-## IntegrationConfiguration
-
-**MPO Version:** 1.3.0
-
-A configuration class to define client parameters to use a remote API like AWS S3, Twillio or any other 3rd part api provider.
-
-```typescript
-interface IntegrationConfiguration = {
-  provider : IntegrationProvider;
-  configuration : DataMapItem[];
-}
-```
-
-| Field         | Description                                                                                                                                                                                                                                                                                             |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| provider      | A specific name for the api client that want to be connected and used in the business logic. The name must match the names of the supported provider list of Mindbricks.                                                                                                                                |
-| configuration | The client parameters to create a client to the pre-registered provider. Mostly credentials like CLientId, ClientSecret, ApiKey or initila options like region select in AWS. The confuration parameter list must match with the definition of the provider configuration in the integrations document. |
-
-## IntegrationProvider
-
-An Enum value to store the names of the integration providers
-
-```js
-const IntegrationProvider = {
-  amazonS3: "amazonS3",
-  amazonSES: "amazonSES",
-  googleGemini: "googleGemini",
-  googleMaps: "googleMaps",
-  googleAnalytics: "googleAnalytics",
-  Telegram: "Telegram",
-  jiraServiceManagement: "jiraServiceManagement",
-  Amplitude: "Amplitude",
-  Mailgun: "Mailgun",
-  Pusher: "Pusher",
-  Slack: "Slack",
-  Stripe: "Stripe",
-  intercom: "intercom",
-};
-```
-
-| Enum                  | Description                                                |
-| --------------------- | ---------------------------------------------------------- |
-| amazonS3              | A popular object storage service by AWS                    |
-| amazonSES             | AWS Simple Email Service                                   |
-| googleGemini          | An AI model API provided by Google                         |
-| googleMaps            | A geolocation and mapping API provided by Google           |
-| googleAnalytics       | Google’s analytics tracking and reporting API              |
-| Telegram              | Messaging API based on the Telegram platform               |
-| jiraServiceManagement | A service desk and ITSM API by Atlassian                   |
-| Amplitude             | A product and behavior analytics API                       |
-| Mailgun               | A transactional email delivery API                         |
-| Pusher                | A real-time communication API for websockets and channels  |
-| Slack                 | The Slack API for workspace messaging and automation       |
-| Stripe                | A payment processing and billing API                       |
-| intercom              | A customer messaging, support, and engagement platform API |
-
-### DataMapItem
-
-**MPO Version:** 1.3.0
-
-Represents a single key-value pair used in most context. The value can be defined dynamically using an MScript.
-
-```typescript
-interface DataMapItem = {
-  name : String;
-  value : MScript;
-}
-```
-
-| Field | Description                                                                                 |
-| ----- | ------------------------------------------------------------------------------------------- |
-| name  | The key name for the data item (e.g., a header name or parameter name).                     |
-| value | The value of the data item, defined using MScript to allow dynamic expressions or literals. |
-
-#### MScript
-
-**MPO Version:** 1.3.0
-
-Represents a Mindbricks JavaScript expression used for logic, validation, or configuration. An MScript is stored as a string in the JSON schema but is expected to conform to a valid JavaScript ExpressionStatement. Acceptable forms include literals, identifiers, expressions, function calls, or a module.exports assignment returning a valid object. Although stored as plain text, MScripts are parsed and analyzed using a specialized override class that allows static checks and evaluation.
-
-```typescript
-interface MScript = {
-}
-```
-
-| Field | Description |
-| ----- | ----------- |

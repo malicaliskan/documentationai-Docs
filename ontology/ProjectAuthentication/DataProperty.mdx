@@ -1,3 +1,8 @@
+---
+title: "Data Property"
+description: "The definition of a data property within a data object. A data property is not just a storage field—it encapsulates the logic, behavior, and metadata associated with a specific piece of data. Through"
+---
+
 # DataProperty
 
 **MPO Version:** 1.3.0
@@ -90,6 +95,7 @@ const DataTypes = {
   GeoPoint: "GeoPoint",
   GeoRoute: "GeoRoute",
   GeoArea: "GeoArea",
+  Blob: "Blob",
 };
 ```
 
@@ -109,6 +115,7 @@ const DataTypes = {
 | GeoPoint | Repesents a geography point on the earth. It is a POINT GeoJson object storing lon and lat values.                                                                                                                                                |
 | GeoRoute | Represents a geography route on the earth. It is a LINESTRING GeoJson object, with an array of lon and lat pairs.                                                                                                                                 |
 | GeoArea  | Represents a geography area on the earth. It is a POLYGON GeoJson object, with an array of lon and lat pairs. It hsould be closed as the last and first points should be equal. If not first point will be added automaticall as last point also. |
+| Blob     | Represents binary large object data. Stored as BYTEA in PostgreSQL or Buffer in MongoDB. Used for file content in database buckets.                                                                                                               |
 
 ### PropertyDefaults
 
@@ -162,7 +169,7 @@ interface PropertyIndexSettings = {
 
 **MPO Version:** 1.3.0
 
-Enum configuration for the data property, applicable when the property type is set to Enum. While enum values are stored as integers in the database, defining the enum options here allows Mindbricks to enrich API responses with human-readable labels, easing interpretation and UI integration. If not defined, only the numeric value will be returned.
+Enum configuration for the data property, applicable when the property type is set to Enum. Enum values are stored as strings in the database. When the property type is Enum, hasEnumOptions must be true and at least 2 enum options must be defined.
 
 ```typescript
 interface PropertyEnumSettings = {

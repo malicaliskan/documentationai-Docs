@@ -1,3 +1,8 @@
+---
+title: "Realtime Hub"
+description: "Defines a bidirectional realtime communication hub powered by Socket.IO. Each hub provides room-based messaging with built-in message types (text, image, video, audio, document, sticker, contact, loca"
+---
+
 # RealtimeHub
 
 **MPO Version:** 1.3.0
@@ -17,16 +22,16 @@ interface RealtimeHub = {
 }
 ```
 
-| Field           | Description |
-| --------------- | ----------- |
-| hubBasics       | undefined   |
-| roomSettings    | undefined   |
-| hubRoles        | undefined   |
-| messageSettings | undefined   |
-| eventSettings   | undefined   |
-| historySettings | undefined   |
-| guardrails      | undefined   |
-| hubLogic        | undefined   |
+| Field           | Description                                                                                                                                                                                                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| hubBasics       | Core identity of the realtime hub including its name and description. The name determines the Socket.IO namespace path (/hub/\{name\}) and REST endpoint prefix.                                                                                                                      |
+| roomSettings    | Configures room management, join authorization, and role assignment. Defines which DataObject represents rooms, eligibility conditions, and a layered authorization flow (absoluteRoles → checkRoles → checkScript → authSources → authScripts) that determines each user's hub role. |
+| hubRoles        | Named permission sets that control what users can do inside a room. Each role specifies read, send, moderate, delete, and manage permissions. Roles are assigned to users by the room authorization flow defined in roomSettings.                                                     |
+| messageSettings | Controls message structure, built-in message types (text, image, video, audio, etc.), cross-cutting features (reply threading, reactions, forwarded flag), and custom app-specific message types. An auto-generated Message DataObject persists all messages.                         |
+| eventSettings   | Configures standard events (typing, presence, read/delivery receipts), auto-bridged DataObject CRUD events via Kafka, and custom or external Kafka events. Standard events are toggleable and the framework generates the socket handlers automatically.                              |
+| historySettings | Controls whether message history is sent to clients when they join a room and how many recent messages to include.                                                                                                                                                                    |
+| guardrails      | Safety limits, rate controls, moderation settings, and auth caching for the hub. Includes max users per room, message rate limits, payload size limits, connection timeouts, and moderation modes.                                                                                    |
+| hubLogic        | Server-side logic hooks for intercepting custom messages with MScript, providing room state on join, and running scheduled interval actions. Enables game loops, collaborative editing, auction countdowns, and other stateful hub behaviors.                                         |
 
 ## HubBasics
 

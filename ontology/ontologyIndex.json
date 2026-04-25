@@ -79,6 +79,23 @@
     },
     {
       "type": "folder",
+      "title": "Agent Hub Config",
+      "content": [
+        {
+          "type": "file",
+          "title": "Agent Hub Config",
+          "path": "AgentHubConfig.mdx"
+        },
+        {
+          "type": "file",
+          "title": "Agent Hub Settings",
+          "path": "AgentHubSettings.mdx"
+        },
+        { "type": "file", "title": "AI Agent", "path": "AIAgent.mdx" }
+      ]
+    },
+    {
+      "type": "folder",
       "title": "Service",
       "content": [
         { "type": "file", "title": "Service", "path": "Service.mdx" },
@@ -103,13 +120,13 @@
           "title": "Edge Controller",
           "path": "EdgeController.mdx"
         },
-        { "type": "file", "title": "AI Agent", "path": "AIAgent.mdx" },
         { "type": "file", "title": "Realtime Hub", "path": "RealtimeHub.mdx" },
         {
           "type": "file",
           "title": "Event Subscription",
           "path": "EventSubscription.mdx"
-        }
+        },
+        { "type": "file", "title": "Db Bucket", "path": "DbBucket.mdx" }
       ]
     }
   ]

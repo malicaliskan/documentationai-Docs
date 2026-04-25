@@ -1,3 +1,8 @@
+---
+title: "Verification Services"
+description: "Defines user-related verification features such as password resets and two-factor authentication (2FA). Mindbricks generates backend support code for these features automatically, based on this config"
+---
+
 # VerificationServices
 
 **MPO Version:** 1.3.0
@@ -20,9 +25,9 @@ interface VerificationServices = {
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | verificationSettings  | General options for all verifications. You can change the verification mode (test/live) here.                                 |
 | passwordResetByEmail  | Configures email-based password reset functionality. Includes template, expiration, and verification strategy (link or code). |
-| passwordResetByMobile | Configures SMS-based password reset functionality. Requires the mobile field to be present in the user data model (based on `primaryLoginIdentifier` and `secondaryIdentifierPresence`). |
+| passwordResetByMobile | Configures SMS-based password reset functionality. Requires active mobile field in user schema.                               |
 | email2Factor          | Enables and configures two-factor authentication via email. Typically used during login or sensitive actions.                 |
-| mobile2Factor         | Enables and configures two-factor authentication via SMS. Requires the mobile field to be present in the user data model (based on `primaryLoginIdentifier` and `secondaryIdentifierPresence`). |
+| mobile2Factor         | Enables and configures two-factor authentication via SMS. Requires mobile phone to be active in user schema.                  |
 | emailVerification     | Configures email verification flow, including delivery method (link or code), expiration, and resend timing.                  |
 | mobileVerification    | Configures mobile verification flow via SMS, with support for link-based or code-based confirmation.                          |
 

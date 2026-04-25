@@ -1,0 +1,148 @@
+---
+title: "Db Bucket"
+description: "A database-backed file storage bucket. Stores files as BYTEA in PostgreSQL — ideal for small files like icons, avatars, and secret documents (up to 10 MB by default). Each bucket auto-generates a data"
+---
+
+# DbBucket
+
+**MPO Version:** 1.3.0
+
+A database-backed file storage bucket. Stores files as BYTEA in PostgreSQL — ideal for small files like icons, avatars, and secret documents (up to 10 MB by default). Each bucket auto-generates a data object (\{name\}File) with metadata properties and a BYTEA column, system upload/download routes at /bucket/\{name\}/, and metadata CRUD APIs. Supports configurable authorization (public/private/authenticated read, role-based access, custom auth scripts) and optional pairing with an owner data object for relational file management.
+
+```typescript
+interface DbBucket = {
+  bucketBasics : DbBucketBasics;
+  bucketAuthorization : DbBucketAuthorization;
+  ownerDataObject : DbBucketOwnerConfig;
+}
+```
+
+| Field               | Description |
+| ------------------- | ----------- |
+| bucketBasics        | undefined   |
+| bucketAuthorization | undefined   |
+| ownerDataObject     | undefined   |
+
+## DbBucketBasics
+
+**MPO Version:** 1.3.0
+
+Core settings for the database bucket including its name, description, size limits, and allowed file types.
+
+```typescript
+interface DbBucketBasics = {
+  name : String;
+  description : Text;
+  maxFileSizeMb : Integer;
+  allowedMimeTypes : String;
+}
+```
+
+| Field            | Description                                                                                                                                                |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name             | Unique bucket identifier within the service. Used in route paths (/bucket/\{name\}/), table names (\{name\}File), and API names. Must be a valid codeName. |
+| description      | Human-readable description of what this bucket stores (e.g., 'User avatar images', 'Product photos', 'Signed contracts').                                  |
+| maxFileSizeMb    | Maximum allowed file size in megabytes. Files exceeding this limit are rejected at upload time. Default: 10 MB.                                            |
+| allowedMimeTypes | Comma-separated list of allowed MIME types (e.g., 'image/png,image/jpeg,application/pdf'). If null, all MIME types are accepted.                           |
+
+## DbBucketAuthorization
+
+**MPO Version:** 1.3.0
+
+Authorization settings for read and write access to the bucket. Controls who can upload and download files, with support for role-based access, access keys, and custom authorization scripts.
+
+```typescript
+interface DbBucketAuthorization = {
+  readAccess : DbBucketAccessLevel;
+  writeAccess : DbBucketWriteLevel;
+  enableKeyAccess : Boolean;
+  readAbsoluteRoles : String[];
+  readCheckRoles : String[];
+  writeAbsoluteRoles : String[];
+  writeCheckRoles : String[];
+  readAuthScript : MScript;
+  writeAuthScript : MScript;
+}
+```
+
+| Field              | Description                                                                                                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| readAccess         | Controls who can download files from this bucket. 'public' = anyone (including via access key), 'private' = only the file owner and admins, 'authenticated' = any authenticated user. |
+| writeAccess        | Controls who can upload files to this bucket. 'authenticated' = any authenticated user, 'adminOnly' = only admin roles.                                                               |
+| enableKeyAccess    | When true, files can be accessed by anyone who has the file's 12-character random access key, regardless of other authorization settings. Useful for shareable links.                 |
+| readAbsoluteRoles  | Roles that bypass all read authorization checks. Users with any of these roles can always download files.                                                                             |
+| readCheckRoles     | Roles required for read access. If specified, the user must have at least one of these roles to download files.                                                                       |
+| writeAbsoluteRoles | Roles that bypass all write authorization checks. Users with any of these roles can always upload files.                                                                              |
+| writeCheckRoles    | Roles required for write access. If specified, the user must have at least one of these roles to upload files.                                                                        |
+| readAuthScript     | Custom MScript expression for read authorization. Receives the request context (session, file record) and must return true to allow access. Evaluated after role checks.              |
+| writeAuthScript    | Custom MScript expression for write authorization. Receives the request context (session, upload metadata) and must return true to allow upload. Evaluated after role checks.         |
+
+### DbBucketAccessLevel
+
+Read access levels for database buckets.
+
+```js
+const DbBucketAccessLevel = {
+  public: "public",
+  private: "private",
+  authenticated: "authenticated",
+};
+```
+
+| Enum          | Description                                             |
+| ------------- | ------------------------------------------------------- |
+| public        | Anyone can download files — no authentication required. |
+| private       | Only the file owner and admin roles can download.       |
+| authenticated | Any authenticated user can download.                    |
+
+### DbBucketWriteLevel
+
+Write access levels for database buckets.
+
+```js
+const DbBucketWriteLevel = {
+  authenticated: "authenticated",
+  adminOnly: "adminOnly",
+};
+```
+
+| Enum          | Description                                                 |
+| ------------- | ----------------------------------------------------------- |
+| authenticated | Any authenticated user can upload files.                    |
+| adminOnly     | Only users with admin roles (admin, superAdmin) can upload. |
+
+## DbBucketOwnerConfig
+
+**MPO Version:** 1.3.0
+
+Optional pairing with another data object. When configured, each file in the bucket has a foreign key relation to the owner data object (e.g., a product's images, a user's documents). This enables filtering files by owner and cascading deletes.
+
+```typescript
+interface DbBucketOwnerConfig = {
+  hasOwnerDataObject : Boolean;
+  configuration : DbBucketOwnerConfigSettings;
+}
+```
+
+| Field              | Description                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| hasOwnerDataObject | Enable pairing this bucket with a data object. When true, each file record includes a foreign key to the specified data object. |
+| configuration      | undefined                                                                                                                       |
+
+### DbBucketOwnerConfigSettings
+
+**MPO Version:** 1.3.0
+
+Configuration for the owner data object pairing.
+
+```typescript
+interface DbBucketOwnerConfigSettings = {
+  dataObjectName : LocalDataObjectName;
+  relationProperty : String;
+}
+```
+
+| Field            | Description                                                                                                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| dataObjectName   | The data object to pair with (e.g., 'user', 'product'). Files in this bucket will have a relation ID pointing to records in this data object.                 |
+| relationProperty | Property name for the relation ID on the bucket file record. If null, auto-generated as '\{dataObjectName\}Id' (e.g., 'productId'). Must be a valid codeName. |

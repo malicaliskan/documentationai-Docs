@@ -1,3 +1,8 @@
+---
+title: "Event Subscription"
+description: "Defines a client-facing Kafka event subscription channel. Clients connect via WebSocket (Socket.IO namespace at /events/name) or SSE (GET /events/name/stream) and subscribe to a subset of the configur"
+---
+
 # EventSubscription
 
 **MPO Version:** 1.3.0
@@ -12,11 +17,11 @@ interface EventSubscription = {
 }
 ```
 
-| Field  | Description |
-| ------ | ----------- |
-| basics | undefined   |
-| topics | undefined   |
-| auth   | undefined   |
+| Field  | Description                                                                                                                                                                                                                                                                                          |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| basics | Core identity of the event subscription including its name, description, and transport protocol (WebSocket or SSE). The name determines the Socket.IO namespace (/events/\{name\}) or SSE endpoint (/events/\{name\}/stream).                                                                        |
+| topics | An array of Kafka topics exposed through this subscription. Each topic is linked to a DataObject whose authorization config drives default access control. Topics can override access levels, transform payloads, and exclude sensitive fields before delivery to clients.                           |
+| auth   | Authorization configuration for the subscription. Default auth derives from each topic's DataObject access level (public/protected/private). Supports absoluteRoles to bypass all checks, checkRoles to gate access, and custom MScript auth/filter logic for per-topic and per-event authorization. |
 
 ## EventSubBasics
 

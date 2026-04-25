@@ -1,0 +1,22 @@
+---
+title: "Agent Hub Config"
+description: "Configuration for the AgentHub service — a centralized AI agent management platform. The hub hosts design-time agents (with runtime reconfiguration), discovers tools from all project services, and opt"
+---
+
+# AgentHubConfig
+
+**MPO Version:** 1.3.0
+
+Configuration for the AgentHub service — a centralized AI agent management platform. The hub hosts design-time agents (with runtime reconfiguration), discovers tools from all project services, and optionally allows end-users to create and manage their own agents at runtime.
+
+```typescript
+interface AgentHubConfig = {
+  hubSettings : AgentHubSettings;
+  aiAgents : AIAgent[];
+}
+```
+
+| Field       | Description |
+| ----------- | ----------- |
+| hubSettings | undefined   |
+| aiAgents    | undefined   |

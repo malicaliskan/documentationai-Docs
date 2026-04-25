@@ -542,6 +542,23 @@
                 ]
               },
               {
+                "group": "Agent Hub Config",
+                "pages": [
+                  {
+                    "title": "Agent Hub Config",
+                    "path": "ontology/AgentHubConfig/AgentHubConfig"
+                  },
+                  {
+                    "title": "Agent Hub Settings",
+                    "path": "ontology/AgentHubConfig/AgentHubSettings"
+                  },
+                  {
+                    "title": "AI Agent",
+                    "path": "ontology/AgentHubConfig/AIAgent"
+                  }
+                ]
+              },
+              {
                 "group": "Service",
                 "pages": [
                   {
@@ -563,6 +580,10 @@
                   {
                     "title": "Business Api",
                     "path": "ontology/Service/BusinessApi"
+                  },
+                  {
+                    "title": "Db Bucket",
+                    "path": "ontology/Service/DbBucket"
                   },
                   {
                     "title": "Service Library",
