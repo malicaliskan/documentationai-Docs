@@ -235,7 +235,7 @@ interface ApiRestSettings = {
 
 **MPO Version:** 1.3.0
 
-Customizes the REST endpoint path for a Business API. If omitted or set to `$default`, Mindbricks auto-generates the path based on the API name, crudType, and selector configuration. For single-record APIs (`get`, `update`, `delete`), the default path includes `/:objectId` only as a fallback; when `selectBy` specifies a non-ID field, the path uses that field instead (e.g., `/:slug`).
+Per-API REST endpoint settings — primarily a custom routePath override. If `routePath` is omitted or set to `$default`, Mindbricks auto-generates the path from the API name, crudType, dataObjectName, and selector configuration. The default-route calculator always includes a path parameter on single-record APIs (`get`, `update`, `delete`) so each route addresses a specific record — see \_\_routePath.doc below for the full algorithm. The designer should set an explicit `routePath` when the auto-calculated route doesn't match their intent (e.g. nested resources, verb-style endpoints like `/getActiveBasket`, non-id selectors with multiple parts).
 
 ```typescript
 interface ApiRestSettingsConfig = {
@@ -244,10 +244,48 @@ interface ApiRestSettingsConfig = {
 }
 ```
 
-| Field           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| routePath       | Custom REST path override. Leave as `$default` to auto-generate from the API name and selector. Auto-generated paths use `/:objectId` only when no `selectBy` or `fullWhereClause` is configured; otherwise, a single-field `selectBy` like `slug` produces `/:slug`. If you provide a custom path with a non-ID parameter (e.g., `/orders/:invoiceNbr`) and no `selectBy` is set, the parameter is automatically inferred as `selectBy`. The ID parameter is not created when the route does not contain `/:objectId`. If a custom path contains parameters that conflict with the configured `selectBy`, an ambiguity warning is raised during generation. |
-| forcePOSTMethod | The http method will ve set according to the crud type, use this setting if you want to force the HttpMethod to POST. Not recommended if you dont have a specific reason.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Field     | Description                                                      |
+| --------- | ---------------------------------------------------------------- |
+| routePath | Custom REST path override. Leave as `$default` to auto-generate. |
+
+## Default-route calculation
+
+Given the API's crudType, name, dataObjectName, and whereClause.selectBy, the calculator produces:
+
+create / list → /&lt;resourcePath>
+get / update / delete → /&lt;resourcePath>/:&lt;param> (always gets a path param)
+
+The `<param>` segment is chosen in this order:
+
+1. If `whereClause.selectBy` has exactly one entry and that entry is NOT `id`,
+   the param uses that field name. Example: selectBy=['slug'] → /&lt;resource>/:slug.
+2. Otherwise the param is the data-object's natural id, formatted as `<dataObjectName>Id`.
+   Example: dataObject=`User` → /&lt;resource>/:userId.
+
+`<resourcePath>` is derived from the API name + dataObjectName, ALWAYS lowercased:
+
+- Default-shape APIs (e.g. getUser/listUsers/createUser/updateUser/deleteUser on the User
+  object) collapse to the plural object name: `/users`.
+- Non-default APIs (custom verbs like `archiveUser`, `closeOrder`) concatenate verb + singular
+  object name (no plural): `/archiveuser`, `/closeorder`.
+
+The path parameter follows the standard Mindbricks naming convention — `dataObject.objectName` is lowercase camelCase (e.g. `user`, `orderItem`), and the param appends `Id`: `:userId`, `:orderItemId`. (The resource segment is additionally lowercased; the param name passes the input case through.)
+
+## fullWhereClause no longer removes the path parameter
+
+Deliberate change from earlier behavior. Previously, setting `whereClause.fullWhereClause` on a get/update/delete API would drop the `/:id` segment and collapse the route onto the bare resource path — which collided with the list/create endpoint at `GET /<resource>`. The default calculator now keeps the path parameter regardless of fullWhereClause. If you intentionally want a parameter-less single-record route (verb-style endpoint that resolves the record from auth context, fullWhereClause, etc.), set `routePath` explicitly.
+
+## Custom routePath rules
+
+- Always start with `/`.
+- If your custom path includes a parameter (`:something`) AND `selectBy` is unset, the parameter name is inferred as the selectBy field. Example: `routePath: '/orders/:invoiceNbr'` with no selectBy → effective selectBy is `invoiceNbr`.
+- If your custom path's parameter name conflicts with the configured `selectBy`, an ambiguity warning is raised at validation.
+- A custom routePath without any `:`-style parameter IS allowed for single-record get/update/delete APIs — useful for verb-style endpoints (e.g. `/getActiveBasket`, `/closeMyOrder`) where the record is resolved from auth context or `fullWhereClause` rather than the URL. Just be aware the route cannot vary per record, so it must not collide with the list/create path on the same resource.
+
+## Verifying the calculated route
+
+After writing your business APIs, the apply worker can call `getServiceBusinessApiList(serviceName)` to get the structured list of `{name, crudType, method, routePath, source}` for every API in the service — useful to confirm the auto-calculator produced the route shape you expected before triggering a build.
+forcePOSTMethod | The http method will ve set according to the crud type, use this setting if you want to force the HttpMethod to POST. Not recommended if you dont have a specific reason.
 
 ## ApiGrpcSettings
 
