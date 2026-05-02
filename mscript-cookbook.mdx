@@ -78,7 +78,7 @@ You can typically access:
 
 ### 3.1 Ownership Check (Simple)
 
-Use in `ValidationAction.validationScript`, `ExtendedClause.doWhen`, or `BusinessApiAction.condition`:
+Use in `ValidationAction.validationScript`, `ExtendedClause.condition`, or `BusinessApiAction.condition`:
 
 ```json
 {
@@ -114,11 +114,11 @@ Allow operation only when the object’s tenant matches the session:
 }
 ```
 
-Or as an `ExtendedClause.doWhen` to conditionally add filters:
+Or as an `ExtendedClause.condition` to conditionally add filters:
 
 ```json
 {
-  "doWhen": "!!this.session.tenantId",
+  "condition": "!!this.session.tenantId",
   "whereClause": "({ clientId: { \"$eq\": this.session.tenantId } })"
 }
 ```
@@ -227,20 +227,29 @@ This keeps complex query logic in **real JS**, while the API pattern stays clean
 
 ---
 
-## 5. Cookbook: Formulas & Derived Fields
+## 5. Cookbook: Server-computed / Derived Fields (`source: 'customData'`)
 
-Pattern: `PropertyFormulaSettings` and `PropertyFormulaSettingsConfig.formula`
+Property-level formulas have been folded into the per-API customData mechanism. Set the property's `basicSettings.source` to `'customData'` and add a matching entry to every create/update API on the parent data object via `apiOptions.dataClauseSettings.customData[]`. The entry's `value` is an MScript expression — a literal, a property reference, or an IIFE for multi-step logic.
 
 ### 5.1 Simple Derived Field
 
-`lineTotal = unitPrice * quantity`:
+`lineTotal = unitPrice * quantity`. On the property:
 
 ```json
 {
-  "formulaSettings": {
-    "isCalculated": true,
-    "configuration": {
-      "formula": "this.unitPrice * this.quantity"
+  "basicSettings": { "name": "lineTotal", "type": "Double", "source": "customData" }
+}
+```
+
+On every create/update API of the parent data object:
+
+```json
+{
+  "apiOptions": {
+    "dataClauseSettings": {
+      "customData": [
+        { "name": "lineTotal", "value": "this.unitPrice * this.quantity" }
+      ]
     }
   }
 }
@@ -250,16 +259,12 @@ Pattern: `PropertyFormulaSettings` and `PropertyFormulaSettingsConfig.formula`
 
 ```json
 {
-  "formulaSettings": {
-    "isCalculated": true,
-    "configuration": {
-      "formula": "(() => { const net = this.grossAmount - this.discountAmount; return Math.max(net, 0); })()"
-    }
-  }
+  "name": "netAmount",
+  "value": "(() => { const net = this.grossAmount - this.discountAmount; return Math.max(net, 0); })()"
 }
 ```
 
-This uses your inline arrow function trick for multi-step logic.
+This uses the inline arrow function trick for multi-step logic.
 
 ### 5.3 Tax Calculation with Shared Helper (Library)
 
@@ -272,41 +277,25 @@ module.exports = function calcVat(netAmount, vatRate) {
 };
 ```
 
-Property formula:
+CustomData entry:
 
 ```json
-{
-  "formulaSettings": {
-    "isCalculated": true,
-    "configuration": {
-      "formula": "LIB.calcVat(this.netAmount, this.vatRate)"
-    }
-  }
-}
+{ "name": "vatAmount", "value": "LIB.calcVat(this.netAmount, this.vatRate)" }
 ```
 
-### 5.4 One Formula for Create and Separate Update Formula
+### 5.4 Different Value on Create vs Update
 
-For `totalPoints` property:
+When the value differs across APIs, the per-API customData form already expresses it directly — no separate `updateFormula`, just two different APIs:
 
 ```json
-{
-  "formulaSettings": {
-    "isCalculated": true,
-    "configuration": {
-      "formula": "this.purchasePoints + (this.bonusPoints || 0)",
-      "updateFormula": "this.purchasePoints + (this.bonusPoints || 0) + (this.extraPoints || 0)",
-      "calculateWhenInputHas": ["purchasePoints", "bonusPoints", "extraPoints"]
-    }
-  }
-}
+// createOrder API
+{ "name": "totalPoints", "value": "this.purchasePoints + (this.bonusPoints || 0)" }
+
+// updateOrderPoints API
+{ "name": "totalPoints", "value": "this.purchasePoints + (this.bonusPoints || 0) + (this.extraPoints || 0)" }
 ```
 
-- `formula` used on create.
-
-- `updateFormula` used on update.
-
-- `calculateWhenInputHas` tells Mindbricks when to re-evaluate.
+This is the main reason `source: 'customData'` replaced the old property-wide formula: per-API variation is the norm, not the exception.
 
 ---
 

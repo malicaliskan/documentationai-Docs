@@ -1852,7 +1852,7 @@ These operators are primarily designed for MongoDB but may have limited support 
 
 ### `$exists` - Field Exists
 
-**Description:** Matches documents that have the specified field (MongoDB-specific).
+**Description:** Matches records where the specified field is present and non-null. Cross-backend: emits the native existence check on each platform (Mongo `$exists`, ES `exists` query, Sequelize `IS NOT NULL`). The boolean value is conventionally `true` and is ignored — for the inverse, use `$nexists`, not `$exists: false`.
 
 **MScript Query:**
 
@@ -1906,7 +1906,7 @@ These operators are primarily designed for MongoDB but may have limited support 
 
 ### `$nexists` - Field Does Not Exist
 
-**Description:** Matches documents that do not have the specified field (MongoDB-specific).
+**Description:** Matches records where the specified field is missing or null. Cross-backend: emits the native is-null check on each platform (Mongo `$exists: false`, ES `must_not.exists`, Sequelize `IS NULL`). The boolean value is conventionally `true` and is ignored.
 
 **MScript Query:**
 

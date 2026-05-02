@@ -261,9 +261,7 @@ You can use `this.session` in:
 
 - `ListJointFilter.condition` or `whereClause`
 
-- `PropertyFormulaSettingsConfig.formula` / `updateFormula`
-
-- `PropertyContextSettingsConfig.contextParam` (if you write code that copies from `this.session`)
+- Per-API customData entries (`apiOptions.dataClauseSettings.customData[].value`) — including session-derived values like `"this.session.preferredLocale"` for properties whose `basicSettings.source` is `customData`
 
 - Notification `fromUser`, `condition`, etc.
 
@@ -277,19 +275,19 @@ Example MScript snippet:
 
 ---
 
-## 5. Session-Driven Property Mapping – `PropertySessionSettings`
+## 5. Session-Driven Property Mapping – `source: 'session'`
 
-Pattern: `PropertySessionSettings` + `PropertySessionSettingsConfig`.
+Pattern: `basicSettings.source: 'session'` + flat `PropertySessionSettings` block.
 
 These are used to **automatically populate DataObject fields from session** at create/update time.
 
 ### 5.1 Fields
 
-- `isSessionData` – toggle
+- `basicSettings.source: 'session'` – declares the property as session-sourced (the runtime drops it from input parameters and reads it from the session)
 
-- `sessionParam` – name of the session field
+- `sessionSettings.sessionParam` – name of the session field to read (defaults to the property name if omitted)
 
-- `isOwnerField` – marks property as **owner field** for access checks
+- `sessionSettings.isOwnerField` – marks property as **owner field** for access checks
 
 Example (in a `task` DataObject):
 
@@ -297,14 +295,13 @@ Example (in a `task` DataObject):
 {
   "basicSettings": {
     "name": "ownerId",
-    "type": "ID"
+    "type": "ID",
+    "source": "session",
+    "isRequired": true
   },
   "sessionSettings": {
-    "isSessionData": true,
-    "configuration": {
-      "sessionParam": "userId",
-      "isOwnerField": true
-    }
+    "sessionParam": "userId",
+    "isOwnerField": true
   }
 }
 ```
@@ -504,7 +501,7 @@ DataViews and BFF can also reference `this.session` in MScript (for dynamic view
 
 Any MScript formula or context param can use `this.session`:
 
-- Property formulas (`PropertyFormulaSettings`) can compute values based on session: e.g., initial timezone, language code, default currency.
+- Per-API customData entries (`apiOptions.dataClauseSettings.customData[].value`) on properties with `source: 'customData'` can compute values based on session: e.g., initial timezone, language code, default currency. Each create/update API declares its own MScript expression — e.g., `{ "name": "preferredCurrency", "value": "this.session.tenant.defaultCurrency ?? 'USD'" }`.
 
 - Context actions (`AddToContextAction`, `CreateObjectAction`) can copy fields from `this.session` into the context or response.
 

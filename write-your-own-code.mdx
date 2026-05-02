@@ -95,13 +95,11 @@ In the Mindbricks ontology, `MScript` is a special **string-based type** that st
 
 MScript is used across many patterns:
 
-- `DataMapItem.value`
-
-- `PropertyFormulaSettingsConfig.formula` & `updateFormula`
+- `DataMapItem.value` — including every entry in `apiOptions.dataClauseSettings.customData[]` (the source for properties with `basicSettings.source: 'customData'`)
 
 - `WhereClauseSettings.fullWhereClause`
 
-- `ExtendedClause.doWhen`, `excludeWhen`, `whereClause`
+- `ExtendedClause.condition`, `whereClause`
 
 - `VerificationConfig.verificationTemplate` (rendering context)
 
@@ -204,35 +202,40 @@ Used in:
 
 - `ValidationAction.validationScript`
 
-- `ExtendedClause.doWhen`
+- `ExtendedClause.condition`
 
 - `MembershipCheckAction.checkFor`
 
-#### 2.4.2 Dynamic Formula
+#### 2.4.2 Server-computed Field via `source: 'customData'`
 
-A `totalPrice` property as `unitPrice * quantity`:
+A `totalPrice` property derived as `unitPrice * quantity`. On the property:
 
 ```json
 {
-  "formulaSettings": {
-    "isCalculated": true,
-    "configuration": {
-      "formula": "this.unitPrice * this.quantity"
+  "basicSettings": { "name": "totalPrice", "type": "Double", "source": "customData" }
+}
+```
+
+On every create/update API of the parent data object:
+
+```json
+{
+  "apiOptions": {
+    "dataClauseSettings": {
+      "customData": [
+        { "name": "totalPrice", "value": "this.unitPrice * this.quantity" }
+      ]
     }
   }
 }
 ```
 
-This is placed under a `DataProperty`’s `formulaSettings` for that field.
-
 #### 2.4.3 Inline Arrow Function for Complex Logic
 
-Sometimes you need a few steps:
+Sometimes you need a few steps — the `value` is still MScript:
 
 ```json
-{
-  "formula": "(() => { const net = this.grossAmount - this.discountAmount; return Math.max(net, 0); })()"
-}
+{ "name": "netAmount", "value": "(() => { const net = this.grossAmount - this.discountAmount; return Math.max(net, 0); })()" }
 ```
 
 #### 2.4.4 MScript Query (Where Clause)
@@ -374,20 +377,33 @@ Or use it to compute derived data in a `FunctionCallAction` or `AddToContextActi
 }
 ```
 
-Then in a `DataProperty` formula for `shippingFee`:
+Then declare `shippingFee` as a `customData`-sourced property:
 
 ```json
 {
-  "formulaSettings": {
-    "isCalculated": true,
-    "configuration": {
-      "formula": "LIB.calculateShippingFee(this.order)"
+  "basicSettings": {
+    "name": "shippingFee",
+    "type": "Double",
+    "source": "customData"
+  }
+}
+```
+
+…and on each create/update API of the parent data object, add a customData entry that calls the library:
+
+```json
+{
+  "apiOptions": {
+    "dataClauseSettings": {
+      "customData": [
+        { "name": "shippingFee", "value": "LIB.calculateShippingFee(this.order)" }
+      ]
     }
   }
 }
 ```
 
-Best of both worlds: pattern-driven property + custom calculation logic.
+Best of both worlds: explicit per-API source + custom calculation logic.
 
 #### Passing Business API Context into Library Functions
 

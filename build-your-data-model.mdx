@@ -683,27 +683,21 @@ To configure a relation:
 
 ---
 
-## 🧾 Session Settings
+## 🧾 Session-Sourced Properties
 
-The `sessionSettings` section of a `DataProperty` allows you to **automatically populate a property using values from the active user session**, such as `userId`, `tenantId`, or `clientId`. These settings are essential for establishing **ownership**, enforcing **access boundaries**, and maintaining a **secure multi-tenant architecture** without requiring sensitive data to be passed explicitly from the client.
+When you want a property's value to come from the **active user session** rather than the request body — `userId`, `tenantId`, `clientId`, etc. — set `basicSettings.source: 'session'` on the property and configure `sessionSettings`. The runtime populates the value automatically on **create** and **update**, the client cannot tamper with it, and you get **ownership**, **access boundaries**, and **multi-tenant separation** for free.
 
 ---
 
-### ⚙️ Session-Driven Properties
+### ⚙️ Session settings fields
 
-#### `isSessionData`
+#### `sessionSettings.sessionParam`
 
-When `true`, this property will be filled automatically using the session, during **create** and **update** operations.
-This prevents tampering, as the client cannot override the session-bound value.
+The session field to read. Defaults to the property name. Common values: `"userId"`, `"tenantId"`, `"organizationId"`.
 
-#### `sessionParam`
+#### `sessionSettings.isOwnerField`
 
-Optionally specifies which key to use from the session (e.g., `"userId"`, `"tenantId"`).
-If left blank, the property name will be used by default.
-
-#### `isOwnerField`
-
-When `true`, this property identifies the **owner of the record**. Mindbricks uses this to automatically:
+When `true`, this property identifies the **owner of the record**. Mindbricks uses it to automatically:
 
 - Restrict **get**, **update**, and **delete** operations to the owner.
 
@@ -717,31 +711,32 @@ Only one property per DataObject should be marked as the `isOwnerField`.
 
 Imagine you're building a **personal todo application**. Each user creates and manages their own tasks, but should not see or modify tasks created by others.
 
-Here’s how to model this:
+Here's how to model this:
 
 ```json
 {
   "basicSettings": {
     "name": "userId",
-    "type": "ID"
+    "type": "ID",
+    "source": "session",
+    "isRequired": true
   },
   "sessionSettings": {
-    "isSessionData": true,
-    "configuration": {
-      "sessionParam": "userId",
-      "isOwnerField": true
-    }
+    "sessionParam": "userId",
+    "isOwnerField": true
   }
 }
 ```
 
 #### What This Does:
 
-- When a task is **created**, the `userId` is **automatically set** from the session. The client can’t override it.
+- When a task is **created**, the `userId` is **automatically set** from the session. The client can't override it.
 
 - When fetching or updating a task, Mindbricks **automatically enforces ownership** using this field.
 
 - This setup ensures that a user can only see, modify, or delete **their own tasks**.
+
+`isRequired: true` makes the DB column NOT NULL — pair with `authOptions.loginRequired: true` so an unauthenticated caller gets a `LoginRequired` error rather than a body-validation failure.
 
 ---
 
@@ -765,11 +760,11 @@ To set session bindings for a field:
 
 2. Add a property (e.g., `userId`) and set its type to `ID`
 
-3. Open the **Session Settings** section
+3. In **Basic Settings**, set **Source** = `session`
 
-4. Toggle **Session Data** = ✅
+4. Open the **Session Settings** section
 
-5. Set **Session Param** = `"userId"` (optional)
+5. Set **Session Param** = `"userId"` (optional — defaults to the property name)
 
 6. Toggle **Is Owner Field** = ✅
 
@@ -797,93 +792,81 @@ In the UI:
 
 ---
 
-## 🧮 Formula Settings
+## 🧮 Computed Properties — `source: 'customData'`
 
-The `formulaSettings` section of a `DataProperty` in Mindbricks allows you to **compute a property's value dynamically using MScript** instead of requiring it from the client. This makes your data model smarter, more declarative, and safer by shifting logic into a centralized, predictable layer.
+When a property's value should be **computed by the server** instead of supplied by the client — totals derived from other fields, server-stamped timestamps, forced literals like `status: 'pending'` — set `basicSettings.source: 'customData'` on the property. The runtime then **drops the property from every input parameter list** (so the client cannot supply it) and reads its value from a per-API entry on `apiOptions.dataClauseSettings.customData[]`.
 
----
-
-### ⚙️ isCalculated
-
-```json
-"isCalculated": true
-```
-
-- Set this to `true` when the property should be **calculated instead of submitted** in the request payload.
-
-- When enabled, Mindbricks will evaluate the formula to determine the value during creation or update.
+Each create / update API on the parent data object declares the value separately. This makes per-action variation trivial: `createDraft` writes `status: 'draft'`, `createSubmitted` writes `status: 'submitted'`, both legitimate without touching the property's source.
 
 ---
 
-### 🧾 formula
+### ⚙️ Property declaration
 
 ```json
-"formula": "this.unitPrice * this.quantity"
-```
-
-- The primary MScript formula used during creation (and update, unless `updateFormula` is provided).
-
-- You can reference other input values using `this.{fieldName}`.
-
-- Session variables (e.g., `this.session.userId`) and fetch results are also accessible.
-
-```json
-"formula": "this.unitPrice * this.quantity"
-```
-
----
-
-### 🔁 updateFormula *(Optional)*
-
-```json
-"updateFormula": "this.unitPrice * this.quantity"
-```
-
-- If provided, this is used **only during update** operations.
-
-- If omitted, the primary `formula` is used for both create and update.
-
----
-
-### 🔄 calculateWhenInputHas *(Optional)*
-
-```json
-"calculateWhenInputHas": ["quantity", "unitPrice"]
-```
-
-- A list of field names. If any of these appear in the update request, the formula will be **re-evaluated**.
-
-- Ensures formulas are recalculated **only when needed**, avoiding performance issues or unintended overrides.
-
----
-
-### 🕓 calculateAfterInstance *(Optional)*
-
-```json
-"calculateAfterInstance": true
-```
-
-- If `true`, the formula is calculated **after** the full data instance has been constructed.
-
-- Required when your formula depends on **computed fields**, **foreign fetches**, or **contextual values** not present in the raw input.
-
----
-
-### ✅ Example
-
-A real-world example for `discountRate`:
-
-```json
-"formulaSettings": {
-  "isCalculated": true,
-  "formula": `
-    (this.customerType === "vip") ?  0.2
-    : ((this.customerType === "regular") ? 0.1 : 0)
-    : 0
-  `,
-  "calculateWhenInputHas": ["customerType"]
+{
+  "basicSettings": {
+    "name": "discountRate",
+    "type": "Double",
+    "source": "customData"
+  }
 }
 ```
+
+That's the entire property side. The actual MScript expression lives on each create/update API.
+
+---
+
+### 🧾 Per-API customData entry
+
+On every create or update API of the parent data object, add a matching entry:
+
+```json
+{
+  "apiOptions": {
+    "dataClauseSettings": {
+      "customData": [
+        {
+          "name": "discountRate",
+          "value": "(this.customerType === 'vip') ? 0.2 : ((this.customerType === 'regular') ? 0.1 : 0)"
+        }
+      ]
+    }
+  }
+}
+```
+
+- `value` is an **MScript expression** — reference other input values via `this.{fieldName}`, session via `this.session.{field}`, and fetch results via `this.{fetchedObject}`.
+- Different APIs can write different expressions for the same property.
+- A literal value is also valid: `"value": "'pending'"` (string) or `"value": "0"` (number).
+
+> Validation enforces coverage: every create API on the data object must contain a matching customData entry, or you get a build-time error. Update APIs warn rather than error, since they're often partial-update.
+
+---
+
+### 🔁 Update vs create variation
+
+Need a different expression on update? Just write it on the update API:
+
+```json
+// createOrder API
+{ "name": "totalAmount", "value": "this.subtotal + this.tax" }
+
+// applyOrderDiscount API (update)
+{ "name": "totalAmount", "value": "(this.subtotal + this.tax) * (1 - this.discountRate)" }
+```
+
+No separate `updateFormula` field — per-API expressions ARE the variation.
+
+---
+
+### 🕓 Reading values that aren't in the request input
+
+The customData expression evaluates after request parameters and any **fetch actions** in the API's `validationActions` / `fetchActions` have populated the context. So you can read:
+
+- Caller input: `this.customerId`
+- Session: `this.session.userId`
+- Fetched objects: `this.customer.tier` (after a `FetchObjectAction` named `customer`)
+- Static-join values: `this.product` (when another property has `source: 'joined'` against `product`)
 
 ---
 
@@ -891,13 +874,13 @@ A real-world example for `discountRate`:
 
 In the UI:
 
-- Go to the DataObject → Fields section → Open the field's detail pane
+- Go to the **Data Object** → **Fields** → open the field's detail pane
 
-- Expand the **Formula Settings** section
+- In **Basic Settings**, set **Source** = `customData`
 
-- Toggle **"Calculated Field"** to enable formula logic
+- Switch to the **Business APIs** section
 
-- Enter formulas using the embedded MScript editor
+- For each create / update API on this data object, open **API Options → Data Clause → Custom Data** and add an entry: `name` = the property name, `value` = the MScript expression
 
 ---
 
@@ -994,117 +977,21 @@ To enable filtering for a field:
 
 ## 🔄 Context Settings
 
-The `contextSettings` configuration allows you to assign a property’s value dynamically at runtime using values available in the **request context**. Unlike formulas that use an MScript expression, context-based values are **directly copied** from a named context property.
-
-This is especially useful for:
-
-- Assigning the result of a **fetch operation**
-
-- Using **data from AI inferences**, API lookups, or internal aggregations
-
-- Passing **computed or injected values** into the record without relying on client input
+**Note:** Earlier Mindbricks versions had a separate `contextSettings` block with an `isContextData` flag for assigning property values from the request context (e.g., `company.name` after a fetch). That block has been folded into the `customData` mechanism described above. To copy a value from a fetched object or session into a property, set `basicSettings.source: 'customData'` and use a per-API customData entry like `{ "name": "positionTitle", "value": "this.position.title" }` on each create/update API. The expression form is the same MScript you'd have written in `contextParam` (with `this.` prefixed), so migration is mechanical: `"contextParam": "company.name"` becomes `"value": "this.company.name"`.
 
 ---
 
-### ✅ `isContextData`
-
-```json
-"isContextData": true
-```
-
-- Enables the property to **auto-fill from the context**
-
-- Skips client-supplied values during create or update
-
-- Ensures this property always reflects the **runtime-computed value**
-
----
-
-### 🔑 `contextParam`
-
-```json
-"contextParam": "company.name"
-```
-
-- Points to the **exact key in the runtime context** from which the property will draw its value
-
-- Supports **dot notation** for nested values
-
-- Works with data populated by:
-
-  - `fetchForeigns`, `apiFetches`, `interserviceCalls`
-
-  - Shared `context` values like `this.session`, `this.stats`, or `this.company`
-
-```json
-"contextSettings": {
-  "isContextData": true,
-  "contextParam": "company.name"
-}
-```
-
----
-
-### 🔍 Real-World Example
-
-Suppose you’re creating a `JobApplication` object, and you want to capture the **positionTitle** from a related fetch:
-
-1. You define a fetch named `position` that retrieves the position object
-
-2. It’s stored in context as `this.position`
-
-3. You map the field:
-
-```json
-"contextSettings": {
-  "isContextData": true,
-  "contextParam": "position.title"
-}
-```
-
-This ensures the application record always includes the correct position title, **regardless of what the client sends**.
-
----
-
-### 🧭 UI Navigation Hint
-
-To map a property from context:
-
-1. Open the **DataObject**
-
-2. Select the desired **property**
-
-3. Expand the **Context Settings** section
-
-4. Enable **“Fill from Context”**
-
-5. Specify the **context path**, like `company.name` or `stats.salesCount`
-
----
-
-## 🔗 Static Join Settings
+## 🔗 Joined Properties — `source: 'joined'`
 
 Mindbricks supports **static joins** to populate a property by fetching data from a related object at the time of **creation** or **update**. This pattern is especially useful when you need to **denormalize** frequently queried data into the current object, avoiding runtime joins and improving query performance.
 
----
-
-### ⚙️ `isStaticJoin`
-
-```json
-"isStaticJoin": true
-```
-
-- Enables static join behavior
-
-- The value for this property is **copied from another object** at create/update time
-
-- Client-supplied values for this property are ignored unless the join fails
+Set `basicSettings.source: 'joined'` and configure `staticJoin`. The runtime drops the property from input parameters (the client cannot supply it), runs the join at create/update time, and persists the resolved value.
 
 ---
 
 ### 🧭 How It Works
 
-When enabled, Mindbricks:
+When `source: 'joined'`, Mindbricks:
 
 1. Reads the **foreign key** value from the current object
 
@@ -1120,16 +1007,17 @@ When enabled, Mindbricks:
 
 | Field             | Purpose                                                                                              |
 | ----------------- | ---------------------------------------------------------------------------------------------------- |
-| `jointSource`     | Name of the source DataObject (e.g. `"company"` or `"company@billing"` if it's from another service) |
-| `jointRead`       | Name of the property to read from the source (default = this property’s name)                        |
+| `jointSource`     | Name of the source DataObject (e.g. `"company"` or `"billing:company"` if it's from another service) |
+| `jointRead`       | Name of the property to read from the source (default = this property's name)                        |
 | `jointSourceKey`  | Key in the source used to identify the record (e.g., `"id"`)                                         |
 | `jointForeignKey` | Local property that acts as the foreign key (e.g., `"companyId"`)                                    |
+| `defaultValue`   | Optional MScript fallback when the join fails or the read value is null                              |
 
 ---
 
 ### 🧠 Real-World Example
 
-Let’s say you have:
+Let's say you have:
 
 - A `Customer` object with a `companyId`
 
@@ -1140,12 +1028,18 @@ You want to **store the cityId directly** in the `Customer` object to support ge
 In the `Customer` object, you define a new property `cityId` like this:
 
 ```json
-"staticJoinSettings": {
-  "isStaticJoin": true,
-  "jointSource": "company",
-  "jointRead": "cityId",
-  "jointSourceKey": "id",
-  "jointForeignKey": "companyId"
+{
+  "basicSettings": {
+    "name": "cityId",
+    "type": "ID",
+    "source": "joined"
+  },
+  "staticJoin": {
+    "jointSource": "company",
+    "jointRead": "cityId",
+    "jointSourceKey": "id",
+    "jointForeignKey": "companyId"
+  }
 }
 ```
 

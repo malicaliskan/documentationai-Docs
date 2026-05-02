@@ -86,51 +86,38 @@ In Mindbricks, you often use:
 
 ## 3. Pattern Structure
 
-From the ontology:
+A property opts into static-join sourcing by setting `basicSettings.source: 'joined'` and configuring the flat `staticJoin` block:
 
 ```json
-"PropertyStaticJoin": {
-  "__isStaticJoin.doc": "...",
-  "__configuration.doc": "The configuration object that defines the static join settings...",
-  "__isStaticJoin.default": false,
-  "__activation": "isStaticJoin",
-  "isStaticJoin": "Boolean",
-  "configuration": "PropertyStaticJoinConfig",
-  "__nullables": ["configuration"]
-}
-```
-
-```json
-"PropertyStaticJoinConfig": {
-  "__jointSource.doc": "The name and optionally the service of the source object...",
-  "__jointRead.doc": "The name of the property in the source object whose value will be copied...",
-  "__jointSourceKey.doc": "The key in the source object used to identify the matching record...",
-  "__jointForeignKey.doc": "The property in the current object used as a reference to the source object...",
-  "jointSource": "DataObjectName",
-  "jointRead": "PropRefer",
-  "jointSourceKey": "PropRefer",
-  "jointForeignKey": "PropRefer",
-  "__jointRead.loadfrom": "jointSource",
-  "__jointSourceKey.loadfrom": "jointSource",
-  "__jointForeignKey.loadfrom": "currentDataObject"
+{
+  "basicSettings": {
+    "name": "clientId",
+    "type": "ID",
+    "source": "joined"
+  },
+  "staticJoin": {
+    "jointSource": "user",
+    "jointRead": "clientId",
+    "jointSourceKey": "id",
+    "jointForeignKey": "userId",
+    "defaultValue": null
+  }
 }
 ```
 
 ### 3.1 Fields Explained
 
-- **`isStaticJoin`** (Boolean)
+- **`basicSettings.source: 'joined'`**
 
-  - Enables/disables static join for this property.
+  - Declares that this property's value is sourced by a static join. The runtime drops the property from input parameters (the client cannot supply it) and fills it from the configured join.
 
-  - When `true`, the `configuration` must be provided.
-
-- **`configuration.jointSource`** (`DataObjectName`)
+- **`staticJoin.jointSource`** (`DataObjectName`)
 
   - The source object to join from.
 
   - Can be local or remote, e.g. `"user"`, `"auth:user"`, `"billing:customer"`.
 
-- **`configuration.jointRead`** (`PropRefer`)
+- **`staticJoin.jointRead`** (`PropRefer`)
 
   - The property in the source object whose value you want to copy.
 
@@ -138,7 +125,7 @@ From the ontology:
 
   - If not specified, it defaults to using the **same property name as the target property** (via UI `loadfrom` hints).
 
-- **`configuration.jointSourceKey`** (`PropRefer`)
+- **`staticJoin.jointSourceKey`** (`PropRefer`)
 
   - The key in the source object used to locate the record.
 
@@ -146,7 +133,7 @@ From the ontology:
 
   - Usually `id` is the primary field of the source object.
 
-- **`configuration.jointForeignKey`** (`PropRefer`)
+- **`staticJoin.jointForeignKey`** (`PropRefer`)
 
   - The field in the current object that refers to `jointSourceKey`.
 
@@ -156,19 +143,21 @@ From the ontology:
 
     - `jointSourceKey  = "id"`
 
+- **`staticJoin.defaultValue`** (`MScript`, optional)
+
+  - Fallback MScript expression used when the join cannot find a source record, or when the joined read value resolves to `null` / `undefined`.
+
 These fields tell Mindbricks *how to navigate from the current record to the source object* and *which value to copy*.
 
 ---
 
-## 4. Execution Lifecycle & Formula Integration
-
-The docs specify an important detail:
+## 4. Execution Lifecycle & customData Integration
 
 ### 4.1 Order of Operations in a Create/Update API
 
 For a given property:
 
-1. **Static join runs first** (if `isStaticJoin = true`).
+1. **Static join runs first** (when `source: 'joined'`).
 
    - Mindbricks:
 
@@ -178,15 +167,15 @@ For a given property:
 
      - Extracts `jointRead` value (e.g. `clientId`).
 
-     - Writes that value into the property’s field (or into the context under a join name).
+     - Writes that value into the property's field, and exposes the full fetched record under a join-named context key (e.g. `this.user`).
 
-2. **Formula-based calculations (****`PropertyFormulaSettings`****) run afterwards.**
+2. **Per-API customData entries run afterwards** for any property with `source: 'customData'`.
 
-   - These formulas can access:
+   - These MScript expressions can access:
 
-     - The property itself (now filled with static join value).
+     - The property itself (now filled with the static join value).
 
-     - Any context objects created by the static join.
+     - The fetched object via `this.<jointSource>` (e.g. `this.user.tenantId`).
 
 This layered design lets you chain logic:
 
@@ -217,6 +206,7 @@ This layered design lets you chain logic:
   "basicSettings": {
     "name": "clientId",
     "type": "ID",
+    "source": "joined",
     "isRequired": true,
     "allowUpdate": false
   },
@@ -224,13 +214,10 @@ This layered design lets you chain logic:
     "hasRelation": false
   },
   "staticJoin": {
-    "isStaticJoin": true,
-    "configuration": {
-      "jointSource": "auth:user",
-      "jointRead": "clientId",
-      "jointSourceKey": "id",
-      "jointForeignKey": "userId"
-    }
+    "jointSource": "auth:user",
+    "jointRead": "clientId",
+    "jointSourceKey": "id",
+    "jointForeignKey": "userId"
   }
 }
 ```
@@ -267,16 +254,14 @@ Now you can:
 {
   "basicSettings": {
     "name": "categoryName",
-    "type": "String"
+    "type": "String",
+    "source": "joined"
   },
   "staticJoin": {
-    "isStaticJoin": true,
-    "configuration": {
-      "jointSource": "productCategory",
-      "jointRead": "name",
-      "jointSourceKey": "id",
-      "jointForeignKey": "categoryId"
-    }
+    "jointSource": "productCategory",
+    "jointRead": "name",
+    "jointSourceKey": "id",
+    "jointForeignKey": "categoryId"
   }
 }
 ```
@@ -315,9 +300,9 @@ In the **Data Property** editor:
 
 2. Open the **Static Join** section.
 
-3. Enable **“This property is a static join”** (`isStaticJoin = true`).
+3. In **Basic Settings**, set **Source** = `joined`.
 
-4. Select:
+4. Open the **Static Join** section and fill in:
 
    - **Source object** (`jointSource`)
 
@@ -333,9 +318,9 @@ Hints from `__jointRead.loadfrom` and `__jointForeignKey.loadfrom` make this eas
 
 Ensure you set:
 
-- `staticJoin.isStaticJoin = true`
+- `basicSettings.source = "joined"`
 
-- `staticJoin.configuration` with valid `jointSource`, `jointSourceKey`, `jointForeignKey`, and `jointRead` (or let some defaults apply).
+- `staticJoin` (flat — no `configuration` wrapper) with valid `jointSource`, `jointSourceKey`, `jointForeignKey`, and `jointRead` (or let some defaults apply).
 
 ---
 

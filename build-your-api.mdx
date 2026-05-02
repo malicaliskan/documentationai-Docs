@@ -623,13 +623,12 @@ All properties except **calculated ones** are exposed as API parameters in `crea
 If a parameter’s **`httpLocation`** is set to `session`, its value is read directly from the **session context** rather than from the client request.
 Session parameters are typically hidden from API tools such as Swagger or MCP since they are populated automatically by the system.
 
-When a Data Property is marked as `isSessionData`, its value is fetched from the session using the configured `dataPath`.
-For example, a property like `userId` can automatically take its value from the logged-in user’s session data during record creation.
+When a Data Property has `basicSettings.source: 'session'`, its value is fetched from the session using the `sessionSettings.sessionParam` field. For example, a property like `userId` can automatically take its value from the logged-in user's session data during record creation.
 
-Unlike calculated properties, **session parameters are still considered API parameters**, because their values are initialized **at the very beginning** of the API execution.
+Unlike `customData`-sourced or `joined`-sourced properties, **session parameters are still considered API parameters**, because their values are initialized **at the very beginning** of the API execution.
 They are written directly into the context (e.g., `this.userId = this.session.userId`) and are accessible to the **entire workflow**, including validations, access checks, and business actions — not just to the data clause.
 
-In contrast, **calculated properties** (such as formula, context, or static join properties) are evaluated **later**, right after the data clause is built and just before the database operation.
+In contrast, **`customData`-sourced and `joined`-sourced properties** are evaluated **later**, right after the data clause is built and just before the database operation.
 
 ---
 
@@ -1476,11 +1475,11 @@ Example:
 }
 ```
 
-- Automatically adds all non-calculated properties to the create payload.
+- Automatically adds all `request`-sourced properties to the create payload.
 
-- Custom data entries **override** any automatically generated fields.
+- `session`-sourced and `joined`-sourced properties are excluded from the input parameter list (the runtime fills them) and inlined into the data clause directly.
 
-- Properties marked as `alwaysCreateWithDefaultValue` are **never read from parameters** — their default values are always applied directly.
+- Custom data entries **override** any automatically generated fields. For properties whose `basicSettings.source` is `customData`, the customData entry IS the value source — every create API on this Data Object must declare one.
 
 ---
 
@@ -1505,7 +1504,7 @@ When designing focused update APIs (like `setUserRole` or `approveRequest`), dis
 
 - If a parameter is explicitly set to `null`, it is **included** in the data clause as `null`; if allowed, the database value is updated to null.
 
-- Automatically created fields (e.g., default statuses like `"started"`) remain governed by their data design rules (`alwaysCreateWithDefaultValue`).
+- Forced-on-create fields (e.g., default statuses like `"started"`) are expressed via `basicSettings.source: 'customData'` on the property, with each create API providing the literal in `apiOptions.dataClauseSettings.customData[]`.
 
 ---
 
