@@ -36,22 +36,12 @@ Key properties of SelectJoin:
 
 Before we talk about SelectJoin, we need the foundation: **Property Relations**.
 
-A relation is defined on a **property** of a DataObject (the “foreign key” field), via `hasRelation = true` and `PropertyRelationConfig`.
+A relation is declared on a **property** of a DataObject (the "foreign key" field) by setting `basicSettings.hasRelation: true` and providing the flat `PropertyRelation` block at `relationSettings`. The activation flag lives on `basicSettings` (parallel to `source`); the `relationSettings` block has no `configuration` wrapper.
 
 From patterns.json:
 
 ```json
 "PropertyRelation": {
-  "__hasRelation.doc": "...",
-  "hasRelation": "Boolean",
-  "configuration": "PropertyRelationConfig",
-  "__activation": "hasRelation",
-  "__nullables": ["configuration"]
-}
-```
-
-```json
-"PropertyRelationConfig": {
   "relationName": "String",
   "relationTargetObject": "DataObjectName",
   "relationTargetKey": "PropRefer",
@@ -60,9 +50,11 @@ From patterns.json:
 }
 ```
 
+(`hasRelation` lives on `PropertyBasicSettings` — populate `relationSettings` only when it is `true`.)
+
 ### 2.1 What This Means
 
-When you set `hasRelation = true` on a property, you’re saying:
+When you set `basicSettings.hasRelation: true` on a property, you're saying:
 
 > “This property is a foreign key that points to a row in another DataObject.”
 
@@ -122,17 +114,14 @@ In `order` DataObject, property `userId`:
 
 ```json
 {
-  "basicSettings": { "name": "userId", "type": "ID" },
+  "basicSettings": { "name": "userId", "type": "ID", "hasRelation": true },
   "relationSettings": {
-    "hasRelation": true,
-    "configuration": {
       "relationName": "orderUser",
       "relationTargetObject": "auth:user",
       "relationTargetKey": "id",
       "onDeleteAction": "setNull",
       "relationIsRequired": true
     }
-  }
 }
 ```
 
@@ -150,17 +139,14 @@ In `project` DataObject, property `ownerId`:
 
 ```json
 {
-  "basicSettings": { "name": "ownerId", "type": "ID" },
+  "basicSettings": { "name": "ownerId", "type": "ID", "hasRelation": true },
   "relationSettings": {
-    "hasRelation": true,
-    "configuration": {
       "relationName": "projectOwner",
       "relationTargetObject": "auth:user",
       "relationTargetKey": "id",
       "onDeleteAction": "setNull",
       "relationIsRequired": true
     }
-  }
 }
 ```
 
@@ -172,17 +158,14 @@ In `task` DataObject, property `projectId`:
 
 ```json
 {
-  "basicSettings": { "name": "projectId", "type": "ID" },
+  "basicSettings": { "name": "projectId", "type": "ID", "hasRelation": true },
   "relationSettings": {
-    "hasRelation": true,
-    "configuration": {
       "relationName": "taskProject",
       "relationTargetObject": "project",
       "relationTargetKey": "id",
       "onDeleteAction": "doDelete",
       "relationIsRequired": true
     }
-  }
 }
 ```
 
@@ -411,15 +394,13 @@ These are syntactic sugar; **for readability**, it’s best to use a **complete&
 // In project DataObject
 {
   "name": "ownerId",
+  "basicSettings": { "name": "ownerId", "type": "ID", "hasRelation": true },
   "relationSettings": {
-    "hasRelation": true,
-    "configuration": {
-      "relationName": "projectOwner",
-      "relationTargetObject": "auth:user",
-      "relationTargetKey": "id",
-      "onDeleteAction": "setNull",
-      "relationIsRequired": true
-    }
+    "relationName": "projectOwner",
+    "relationTargetObject": "auth:user",
+    "relationTargetKey": "id",
+    "onDeleteAction": "setNull",
+    "relationIsRequired": true
   }
 }
 ```
@@ -480,16 +461,13 @@ These are syntactic sugar; **for readability**, it’s best to use a **complete&
 ```json
 // In order DataObject
 {
-  "name": "userId",
+  "basicSettings": { "name": "userId", "type": "ID", "hasRelation": true },
   "relationSettings": {
-    "hasRelation": true,
-    "configuration": {
-      "relationName": "orderUser",
-      "relationTargetObject": "auth:user",
-      "relationTargetKey": "id",
-      "onDeleteAction": "setNull",
-      "relationIsRequired": true
-    }
+    "relationName": "orderUser",
+    "relationTargetObject": "auth:user",
+    "relationTargetKey": "id",
+    "onDeleteAction": "setNull",
+    "relationIsRequired": true
   }
 }
 ```
@@ -621,28 +599,23 @@ In `project` DataObject:
 ```json
 {
   "name": "ownerId",
+  "basicSettings": { "name": "ownerId", "type": "ID", "hasRelation": true },
   "relationSettings": {
-    "hasRelation": true,
-    "configuration": {
-      "relationName": "projectOwner",
-      "relationTargetObject": "auth:user",
-      "relationTargetKey": "id",
-      "onDeleteAction": "setNull",
-      "relationIsRequired": true
-    }
+    "relationName": "projectOwner",
+    "relationTargetObject": "auth:user",
+    "relationTargetKey": "id",
+    "onDeleteAction": "setNull",
+    "relationIsRequired": true
   }
 },
 {
-  "name": "lastUpdateUserId",
+  "basicSettings": { "name": "lastUpdateUserId", "type": "ID", "hasRelation": true },
   "relationSettings": {
-    "hasRelation": true,
-    "configuration": {
-      "relationName": "projectLastUpdater",
-      "relationTargetObject": "auth:user",
-      "relationTargetKey": "id",
-      "onDeleteAction": "setNull",
-      "relationIsRequired": false
-    }
+    "relationName": "projectLastUpdater",
+    "relationTargetObject": "auth:user",
+    "relationTargetKey": "id",
+    "onDeleteAction": "setNull",
+    "relationIsRequired": false
   }
 }
 ```
@@ -958,17 +931,14 @@ List only users that have **at least one order** with:
 
 ```json
 {
-  "basicSettings": { "name": "userId", "type": "ID" },
+  "basicSettings": { "name": "userId", "type": "ID", "hasRelation": true },
   "relationSettings": {
-    "hasRelation": true,
-    "configuration": {
       "relationName": "orderUser",
       "relationTargetObject": "auth:user",
       "relationTargetKey": "id",
       "onDeleteAction": "setNull",
       "relationIsRequired": true
     }
-  }
 }
 ```
 

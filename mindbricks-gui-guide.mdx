@@ -869,12 +869,10 @@ Service.dataObjects[] : DataObject
 | GUI Page / Section              | Pattern Node                                                                                |
 | ------------------------------- | ------------------------------------------------------------------------------------------- |
 | Properties Page (Property list) | `DataObject.properties[]` (`DataProperty`)                                                  |
-| Property → Basic Settings       | `DataProperty.basicSettings` (`PropertyBasicSettings`) — includes the `source` enum (`request` / `session` / `customData` / `joined`) |
+| Property → Basic Settings       | `DataProperty.basicSettings` (`PropertyBasicSettings`) — carries `source`, `hasRelation`, `isFilterParameter`, `enumOptions` (when `type === 'Enum'`), and the rest of the per-property flags |
 | Property → Index Settings       | `DataProperty.indexSettings` (`PropertyIndexSettings`)                                      |
-| Property → Enum Settings        | `DataProperty.enumSettings` (`PropertyEnumSettings`, `PropertyEnumSettingsConfig`)          |
-| Property → Relation Settings    | `DataProperty.relationSettings` (`PropertyRelation`, `PropertyRelationConfig`)              |
+| Property → Relation Settings    | `DataProperty.relationSettings` (`PropertyRelation`) — populated when `basicSettings.hasRelation: true`, flat (no `configuration` wrapper) |
 | Property → Session Settings     | `DataProperty.sessionSettings` (`PropertySessionSettings`) — populated when `source: 'session'` |
-| Property → Filter Settings      | `DataProperty.filterSettings` (`PropertyFilterSettings`, `PropertyFilterSettingsConfig`)    |
 | Property → Static Join          | `DataProperty.staticJoin` (`PropertyStaticJoin`) — populated when `source: 'joined'`         |
 | (per-API custom data)           | When `source: 'customData'`, the value lives on each create/update BusinessApi's `apiOptions.dataClauseSettings.customData[]` (a `DataClauseSettings`) |
 

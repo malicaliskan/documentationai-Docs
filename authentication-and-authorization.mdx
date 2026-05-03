@@ -293,6 +293,7 @@ In the ontology, `ProjectAuthentication.userProperties` is an array of `DataProp
           "allowAutoUpdate": true,
           "autoIncrement": false,
           "hashed": false,
+          "enumOptions": ["male", "female"],
           "defaultValues": {
             "default": "male",
             "defaultInUpdate": null
@@ -306,12 +307,6 @@ In the ontology, `ProjectAuthentication.userProperties` is an array of `DataProp
           "cacheSelect": false,
           "isSecondaryKey": false,
           "fulltextSearch": false
-        },
-        "enumSettings": {
-          "hasEnumOptions": true,
-          "configuration": {
-            "enumOptions": ["male", "female"]
-          }
         }
       }
     ]
@@ -1683,6 +1678,8 @@ You can define additional tenant properties using `ProjectAuthentication.tenantP
           "allowAutoUpdate": false,
           "autoIncrement": false,
           "hashed": false,
+          "isFilterParameter": true,
+          "enumOptions": ["Free", "Pro", "Enterprise"],
           "defaultValues": {
             "default": "Free",
             "defaultInUpdate": null
@@ -1696,21 +1693,6 @@ You can define additional tenant properties using `ProjectAuthentication.tenantP
           "cacheSelect": false,
           "isSecondaryKey": false,
           "fulltextSearch": false
-        },
-        "enumSettings": {
-          "hasEnumOptions": true,
-          "configuration": {
-            "enumOptions": ["Free", "Pro", "Enterprise"]
-          }
-        },
-        "relationSettings": {
-          "hasRelation": false
-        },
-        "filterSettings": {
-          "isFilterParameter": true,
-          "configuration": {
-            "filterName": "subscriptionLevel"
-          }
         }
       }
     ]

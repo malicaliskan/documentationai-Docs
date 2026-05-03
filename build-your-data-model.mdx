@@ -123,7 +123,7 @@ The `type` field must use a value from the MPO `DataTypes` enum, such as `String
 
 ### Relationships between Data Objects
 
-Relationships are defined using the `relationSettings` field in a property. For example, a foreign key to a `category` object:
+Relationships are declared by setting `basicSettings.hasRelation: true` and providing a flat `relationSettings` block. For example, a foreign key to a `category` object:
 
 ```json
 {
@@ -138,10 +138,10 @@ Relationships are defined using the `relationSettings` field in a property. For 
     "allowAutoUpdate": false,
     "autoIncrement": false,
     "hashed": false,
+    "hasRelation": true,
     "defaultValues": {}
   },
   "relationSettings": {
-    "hasRelation": true,
     "relationName": "category",
     "relationTargetObject": { "name": "category" },
     "relationTargetKey": "id",
@@ -152,7 +152,7 @@ Relationships are defined using the `relationSettings` field in a property. For 
 }
 ```
 
-- **One-to-One**: Use a property with `hasRelation: true` and `isArray: false`.
+- **One-to-One**: Use a property with `basicSettings.hasRelation: true` and `isArray: false`.
 
 - **One-to-Many**: The related object has a property referencing the parent (e.g., many products reference one category).
 
@@ -483,13 +483,12 @@ Unlike typical enum implementations that store numeric indices, **Mindbricks sto
 ```json
 "basicSettings": {
   "name": "userType",
-  "type": "Enum"
-},
-"enumSettings": {
-  "hasEnumOptions": true,
+  "type": "Enum",
   "enumOptions": ["guest", "free", "premium", "admin"]
 }
 ```
+
+`enumOptions` lives directly on `basicSettings` — there is no separate `enumSettings` block. The presence of `type: "Enum"` is what tells the validator to require `enumOptions` (with at least 2 entries).
 
 #### Behavior in Runtime
 
@@ -514,8 +513,8 @@ Unlike typical enum implementations that store numeric indices, **Mindbricks sto
 
 | Field            | Description                                                                                                                                            |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `hasEnumOptions` | Enables enum validation and indexing. Must be `true` for `enumOptions` to apply.                                                                       |
-| `enumOptions`    | An ordered list of valid string values. Input is validated against this list. The index is computed from this order and provided via `<property>_idx`. |
+| `basicSettings.type` | Must be `"Enum"`. Drives whether `enumOptions` is required.                                                                                        |
+| `basicSettings.enumOptions` | An ordered list of valid string values (≥ 2). Input is validated against this list. The index is computed from this order and provided via `<property>_idx`. |
 
 ---
 
@@ -599,10 +598,10 @@ Acts as the **join object**, capturing the many-to-many relationship:
 {
   "basicSettings": {
     "name": "studentId",
-    "type": "ID"
+    "type": "ID",
+    "hasRelation": true
   },
   "relationSettings": {
-    "hasRelation": true,
     "relationName": "student",
     "relationTargetObject": { "name": "student" },
     "relationTargetKey": "id",
@@ -619,10 +618,10 @@ Acts as the **join object**, capturing the many-to-many relationship:
 {
   "basicSettings": {
     "name": "courseId",
-    "type": "ID"
+    "type": "ID",
+    "hasRelation": true
   },
   "relationSettings": {
-    "hasRelation": true,
     "relationName": "course",
     "relationTargetObject": { "name": "course" },
     "relationTargetKey": "id",
@@ -884,35 +883,21 @@ In the UI:
 
 ---
 
-## 🔍 Filter Settings
+## 🔍 Filter Parameter — `basicSettings.isFilterParameter`
 
-The `filterSettings` of a data property define whether and how it can be used to **filter records** in automatically generated `getList` API routes. These settings help architects control the public filtering interface exposed by each service.
-
----
-
-### ✅ `isFilterParameter`
+When `basicSettings.isFilterParameter: true`, the property is exposed as a query-string filter on every auto-generated `getList` API of its data object. The filter name is the property name itself — there is no separate alias.
 
 ```json
-"isFilterParameter": true
+"basicSettings": {
+  "name": "category",
+  "type": "String",
+  "isFilterParameter": true
+}
 ```
 
-- Enables the property to be used as a **query parameter** in list endpoints like `/products/getList`.
+- If `true`, Mindbricks generates filtering logic based on the property's type and indexing status.
 
-- If `true`, Mindbricks will automatically generate filtering logic based on the property’s type and indexing status.
-
-- If `false`, the property will be excluded from filterable fields.
-
----
-
-### 🏷️ `filterName` (Optional)
-
-```json
-"filterName": "category"
-```
-
-- Overrides the query string parameter name used for filtering.
-
-- If not provided, the property’s name will be used by default.
+- If `false` (the default), the property is excluded from filterable fields.
 
 ---
 
@@ -940,22 +925,23 @@ When `isFilterParameter` is enabled, Mindbricks:
 
 ### 📌 Real-World Example
 
-For a `Product` object:
+For a `Product` object with a `category` property:
 
 ```json
-"filterSettings": {
-  "isFilterParameter": true,
-  "filterName": "category"
+"basicSettings": {
+  "name": "category",
+  "type": "String",
+  "isFilterParameter": true
 }
 ```
 
-Clients can now filter the list with:
+Clients can filter the list with:
 
 ```
 GET /product/getList?category=shoes
 ```
 
-And internally, this will map to filtering by the `categoryId` or `category` property in the object.
+The query parameter name matches the property name verbatim.
 
 ---
 
