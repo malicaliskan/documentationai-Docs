@@ -11,10 +11,12 @@ Configuration settings for the BFF (Backend-for-Frontend) service in the project
 
 ```typescript
 interface BFFService = {
+  serviceSettings : BffServiceSettings;
   dataViews : DataView[];
 }
 ```
 
-| Field     | Description                                                                                                                                                                                                                                                |
-| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| dataViews | A list of DataView definitions that describe how data should be aggregated and exposed by the BFF service. These views can be optionally persisted in Elasticsearch for efficient querying, or resolved dynamically depending on performance and use case. |
+| Field           | Description                                                                                                                                                                                                                                                |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| serviceSettings | Module-level settings chapter for the BFF service — currently holds the documentation section that MindUI reads when wiring DataView consumers in pages.                                                                                                   |
+| dataViews       | A list of DataView definitions that describe how data should be aggregated and exposed by the BFF service. These views can be optionally persisted in Elasticsearch for efficient querying, or resolved dynamically depending on performance and use case. |

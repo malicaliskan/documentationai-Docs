@@ -53,6 +53,11 @@
       "title": "BFF Service",
       "content": [
         { "type": "file", "title": "BFF Service", "path": "BFFService.mdx" },
+        {
+          "type": "file",
+          "title": "Bff Service Settings",
+          "path": "BffServiceSettings.mdx"
+        },
         { "type": "file", "title": "Data View", "path": "DataView.mdx" }
       ]
     },

@@ -11,6 +11,7 @@ Defines the basic notification configuration for the project. This includes the 
 
 ```typescript
 interface NotificationServiceSettings = {
+  documentation : ModuleDocumentation;
   serviceOptions : NotificationServiceOptions;
   smtpSettings : SmtpSettings;
   amazonSNSSettings : AmazonSNSSettings;
@@ -25,6 +26,7 @@ interface NotificationServiceSettings = {
 
 | Field             | Description                                                                                                                                                                                                 |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| documentation     | Module-level UX prompt for MindUI's in-app notification UI generation (notification center, bell icon, toast layer, realtime delivery, read/unread states, categorisation, email template style).           |
 | serviceOptions    | Defines the global notification configuration for the project. This includes providers for different notification channels and the list of event-driven notification behaviors triggered by Kafka messages. |
 | smtpSettings      | Settings for using a custom SMTP server to send emails. Mindbricks includes a managed SMTP server by default. Override this setting if you want to use your own provider.                                   |
 | amazonSNSSettings | Settings for integrating Amazon SNS for messaging and notifications. Mindbricks does not provide a managed SNS setup, so you must supply your own credentials if you choose to use this service.            |

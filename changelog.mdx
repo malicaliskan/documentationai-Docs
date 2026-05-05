@@ -4,6 +4,68 @@ description: Release history and updates for Mindbricks
 ---
 ## Release History
 
+<Update label="2026-05" description="Pattern simplification (explicit-mode)" tags={["Major Pattern Change","Breaking for new projects","Backward compatible"]}>
+  ## Pattern simplification — explicit-mode for new projects
+
+  All projects created from May 2026 onwards use a simplified pattern shape that
+  removes the implicit `autoParams` lifting and the property-level `source` enum
+  in favor of a fully-explicit per-API declaration. Beta projects created before
+  this change continue to work unchanged on the legacy implicit-mode codepath.
+
+  ### What changed for new projects
+
+  - **`apiOptions.autoParams` is gone.** BusinessApi declares its full request
+    shape via a new `requestParameters[]` array and its full dataClause map via
+    a new top-level `dataClauseItems[]` array. The framework binds parameters
+    only from what the API explicitly declares.
+
+  - **DataProperty's `source` enum is gone.** A property carries DB-shape concerns
+    plus two framework auto-bind hooks: `sessionSettings` (auto-inject from session)
+    and `staticJoin` (auto-inject from cross-object lookup). Both activate by
+    block presence — no more `hasRelation` / `isSession` / `isStaticJoin` boolean
+    flags. The two are mutually exclusive on a single property.
+
+  - **`basicSettings.defaultValue`** (scalar literal) replaces the broader
+    `defaultValues` block as the DB-level fallback. Computed defaults like
+    `now()` move to per-API `dataClauseItems` MScript on each BusinessApi.
+
+  - **Project flag** — `projectSettings.basicSettings.explicitMode: true` is set
+    automatically on every newly-created project. Old projects load with the flag
+    absent / false and stay on the legacy codepath.
+
+  ### Why
+
+  Real projects under the previous pattern produced configurations that couldn't
+  be reliably reasoned about by AI agents. Examples: `source: 'request' +
+  isRequired: true` combined with a customData literal default created a build-
+  time pass / runtime 400 trap (body validator rejected before customData
+  merge); the customParameters override pattern silently shadowed property-level
+  source declarations leading to "designer wrote one shape, framework ran
+  another" debugging cycles. Explicit declarations eliminate the surface area
+  where these conflicts form.
+
+  ### Auditor coverage
+
+  Several legacy-mode-only audits (`customdata-literal-override-on-required-request`,
+  `customdata-self-ref-no-customparameter`) become irrelevant for new projects
+  but stay active for beta projects. New explicit-mode audits replace them
+  (`auto-injected-property-also-as-request-param`, future `missing-dataClauseItem-for-property`).
+
+  ### Migration
+
+  No automatic migration tool. Beta projects keep working as-is; owners migrate
+  by hand if they want the new shape. New projects ship explicit-mode by
+  default.
+
+  ### Documentation
+
+  See the [Building Your API guide](/build-your-api) and
+  [Designing Your Data Model guide](/build-your-data-model) for the
+  explicit-mode quick references at the top of each page. Legacy reference
+  content for beta projects is preserved in the same documents under the
+  "Legacy implicit-mode reference" delimiter.
+</Update>
+
 <Update label="2026-02-26" description="v2.0.0" tags={["Major Release","AI Agents","Realtime","SSE","MCP","API Keys"]}>
   ## Mindbricks Genesis v2.0.0 — Realtime & Intelligence
 

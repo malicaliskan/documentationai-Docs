@@ -30,6 +30,7 @@ Core settings for the Agent Hub service including dynamic agent creation control
 ```typescript
 interface AgentHubBasics = {
   description : Text;
+  frontendDocument : Text;
   enableDynamicAgents : Boolean;
   dynamicAgentRoles : String[];
   maxDynamicAgents : Integer;
@@ -37,13 +38,14 @@ interface AgentHubBasics = {
 }
 ```
 
-| Field                      | Description                                                                                                                                                                                     |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| description                | Human-readable description of the Agent Hub service.                                                                                                                                            |
-| enableDynamicAgents        | When true, end-users with the appropriate roles can create, configure, and run their own AI agents at runtime. When false, only design-time agents defined in this configuration are available. |
-| dynamicAgentRoles          | Roles allowed to create and manage dynamic agents at runtime. Default: superAdmin and admin. Add additional roles as needed (e.g., 'tenantOwner').                                              |
-| maxDynamicAgents           | Maximum number of dynamic agents that can be created at runtime. Prevents unbounded growth. Default: 50.                                                                                        |
-| toolRefreshIntervalMinutes | How often (in minutes) the hub re-discovers tools from project services. Tools can also be refreshed manually via the refresh API. Default: 5 minutes.                                          |
+| Field                      | Description                                                                                                                                                                                                                                                                          |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| description                | Human-readable description of the Agent Hub service.                                                                                                                                                                                                                                 |
+| frontendDocument           | Module-level UX prompt for MindUI. Describes how the agent-chat surface should be presented (chat placement, agent personalities, tool-call visibility, history, streaming, dynamic-agent UX). MindUI reads this when generating agent pages; empty falls back to a basic chat list. |
+| enableDynamicAgents        | When true, end-users with the appropriate roles can create, configure, and run their own AI agents at runtime. When false, only design-time agents defined in this configuration are available.                                                                                      |
+| dynamicAgentRoles          | Roles allowed to create and manage dynamic agents at runtime. Default: superAdmin and admin. Add additional roles as needed (e.g., 'tenantOwner').                                                                                                                                   |
+| maxDynamicAgents           | Maximum number of dynamic agents that can be created at runtime. Prevents unbounded growth. Default: 50.                                                                                                                                                                             |
+| toolRefreshIntervalMinutes | How often (in minutes) the hub re-discovers tools from project services. Tools can also be refreshed manually via the refresh API. Default: 5 minutes.                                                                                                                               |
 
 ## AgentHubToolSource
 

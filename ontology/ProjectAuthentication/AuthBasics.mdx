@@ -11,6 +11,7 @@ Defines the fundamental authentication configuration for the project. These sett
 
 ```typescript
 interface AuthBasics = {
+  documentation : ModuleDocumentation;
   JWTAuthentication : JWTAuth;
   ssoAuthentication : SSOAuth;
   apiKeyAuthentication : APIKeyAuth;
@@ -21,11 +22,28 @@ interface AuthBasics = {
 
 | Field                | Description                                                                                                                                                                                                                                                               |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| documentation        | Module-level UX prompt + freeform description of the auth service. Read by MindUI for login / register / verification / password-reset page generation.                                                                                                                   |
 | JWTAuthentication    | Configuration for JWT-based authentication, where the project issues and verifies its own JSON Web Tokens. This is the recommended authentication method in Mindbricks for secure, scalable identity management.                                                          |
 | ssoAuthentication    | Settings for enabling Single Sign-On (SSO) integration with external identity providers, typically used by enterprise users. Mindbricks does not generate an SSO server but supports integration with your organization's existing SSO infrastructure.                    |
 | apiKeyAuthentication | Enables API key-based authentication for accessing the project's services. This method can be used either as the primary authentication mechanism or as a secondary option alongside others.                                                                              |
 | httpSettings         | Defines the HTTP configuration of the auth service. Primarily includes the port on which the auth service will accept HTTP requests.                                                                                                                                      |
 | cookieSettings       | Use this settings to arrange the allowed domains of your applications cookie. Note thar a mindbricks service cookie is set as secure:true, httpOnly:true, sameSite:none, but domain is set according to the login requesrt hos if it is in. the allowed list or defaults. |
+
+## ModuleDocumentation
+
+**MPO Version:** 1.3.0
+
+Holds the module-level frontendDocument UX prompt. Reused across auth / bff / notification modules for consistency. MindUI reads frontendDocument to generate page UX; the section exists so module-level primitives stay in proper sections rather than at module/chapter root.
+
+```typescript
+interface ModuleDocumentation = {
+  frontendDocument : Text;
+}
+```
+
+| Field            | Description                                                                                                                                                                                           |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| frontendDocument | Module-level UX prompt for MindUI. Describes intended page placement, navigation patterns, empty/error states, and any role-specific landing rules. Empty = MindUI works from technical schema alone. |
 
 ## JWTAuth
 

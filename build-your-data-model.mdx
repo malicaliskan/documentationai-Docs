@@ -8,6 +8,75 @@ description: >-
   define how information is stored, validated, accessed, and transformed across
   your microservices.
 ---
+
+> **Pattern shape — explicit-mode is the default for all new projects (Q2 2026 onwards).**
+> A data property carries DB-shape concerns (`type`, `isRequired`, `isArray`,
+> `enumOptions`, `defaultValue`, `relationSettings`, `indexSettings`) plus two
+> framework auto-binding hooks (`sessionSettings`, `staticJoin`). Source-of-value
+> for the API is decided per-API on the BusinessApi (via `requestParameters` +
+> `dataClauseItems`), not at the property level. The explicit-mode property
+> shape is the slim form below; the legacy `source` enum / `defaultValues`
+> block / `allowAutoUpdate` / `requiredInUpdate` / `hasRelation` boolean
+> machinery is still valid for beta projects but is not used in new project
+> design.
+
+## Explicit-mode property shape (new projects)
+
+```json
+{
+  "basicSettings": {
+    "name": "title",
+    "type": "String",
+    "isArray": false,
+    "isRequired": true,
+    "isFilterParameter": false,
+    "enumOptions": null,
+    "defaultValue": null
+  },
+  "relationSettings": null,
+  "sessionSettings": null,
+  "staticJoin": null,
+  "indexSettings": { "indexedInDb": true, "indexedInElastic": true, "unique": false }
+}
+```
+
+**Activation by block presence.** No more `hasRelation: true` boolean — the
+`relationSettings` block is either populated (the property is a foreign key)
+or absent. Same for `sessionSettings` (session-bound when populated) and
+`staticJoin` (join-bound when populated). `sessionSettings` and `staticJoin`
+are mutually exclusive on a single property; the auditor enforces this.
+
+**`isRequired` is DB NOT-NULL only.** Whether the API caller has to supply
+the field is decided per-API via `requestParameters[].isRequired` on each
+BusinessApi. Property-level `isRequired` is purely the database column
+constraint.
+
+**`defaultValue` (DB-level scalar default).** The database fills this when no
+write supplies a value. Most useful for `NOT NULL` columns where you want a
+sensible system default without forcing every write path to think about it.
+Only scalar literals here — computed defaults like `now()` or `LIB.<fn>(...)`
+belong in per-API `dataClauseItems` MScript on the BusinessApi.
+
+**`sessionSettings` (auto-bind to session).** When set, the framework
+auto-injects the value from `session[sessionParam]` at write time. Properties
+with sessionSettings are NOT declared in `requestParameters` (callers can't
+supply session values) and NOT in `dataClauseItems` (the framework writes
+them). `sessionSettings.isOwnerField: true` marks the data object's
+ownership field — used by ownership-based access-control checks.
+
+**`staticJoin` (auto-bind via cross-object lookup).** When set, the framework
+runs a join with another data object at write time and stores the joined
+value on this record. Optional `staticJoin.contextParameterName` exposes the
+joined value as `this.<contextParameterName>` so per-API `dataClauseItems`
+can compose with it. As with sessionSettings, these properties don't appear
+in requestParameters or dataClauseItems — the framework handles them.
+
+For the per-API decision tree (which properties to declare in
+`requestParameters` vs `dataClauseItems` vs skip), see the
+[Building Your API guide's explicit-mode quick reference](/build-your-api).
+
+---
+
 ## What is a Data Model in Mindbricks
 
 In the Mindbricks ecosystem, a data model is defined through `DataObject` patterns within your service definition. Each `DataObject` represents a distinct entity in your business domain—whether that's a User, Product, Order, or any other concept central to your application. These objects are defined semantically in your service JSON, following the Mindbricks Pattern Ontology (MPO). Human architects can create and modify these data models through the visual design interface, while AI agents can work directly with the JSON representation—both approaches produce the same structured outcome.
@@ -209,6 +278,18 @@ Understanding these core concepts provides the foundation for creating effective
 Great! You've already structured the introduction and core concepts very clearly. For the next section, here’s a refined continuation that explains the `basicSettings` section of a property in detail using the provided pattern reference:
 
 ---
+
+---
+
+# Legacy implicit-mode reference
+
+> Everything below describes the **implicit-mode** property settings used by
+> beta projects (where `projectSettings.basicSettings.explicitMode` is `false`
+> or absent). New projects use the slim explicit-mode shape at the top of
+> this page. The legacy fields documented below — `requiredInUpdate`,
+> `allowAutoUpdate`, `hasRelation` boolean, the full `defaultValues` block,
+> and the property-level `source` enum — are preserved for back-compat but
+> are not part of new project design.
 
 ## Configuring Property Basic Settings
 

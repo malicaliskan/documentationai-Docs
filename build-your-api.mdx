@@ -1,6 +1,81 @@
 ---
 title: Building Your API in Mindbricks
 ---
+
+> **Pattern shape — explicit-mode is the default for all new projects (Q2 2026 onwards).**
+> Every BusinessApi declares its full request shape via `requestParameters` and its full
+> dataClause map via `dataClauseItems`. The framework auto-injects values from
+> `sessionSettings` and `staticJoin` blocks on data properties; everything else is the
+> designer's explicit declaration. The explicit-mode quick reference below covers the
+> 80% case. The legacy `autoParams` / `customParameters` / `customData` machinery is
+> still valid for beta projects where `projectSettings.basicSettings.explicitMode` is
+> false or absent — full reference further down this page.
+
+## Explicit-mode quick reference (new projects)
+
+For each create / update API, walk the data object's properties and decide per-property:
+
+| Property's hook block | requestParameters? | dataClauseItems? | Source of value |
+|---|---|---|---|
+| `sessionSettings` set | NO | NO | `session[sessionParam]` (auto-injected) |
+| `staticJoin` set | NO | NO | static-join lookup result (auto-injected) |
+| Caller-supplied value | YES (with `httpLocation`) | YES, `value: 'this.<paramName>'` | request body / query / path / header |
+| System-managed forced value | NO | YES, `value: "'<literal>'"` (or MScript) | the literal / MScript |
+| Caller-controlled with default | YES, `isRequired: false` | YES, `value: "this.<paramName> \|\| '<default>'"` | request body or fallback |
+
+URL placeholders in `restSettings.routePath` (e.g. `:teamId`) auto-promote into
+`requestParameters` with `httpLocation: 'urlpath'` if not declared explicitly.
+
+`requestParameters[]` shape:
+```json
+{
+  "name": "title",
+  "type": "String",
+  "isArray": false,
+  "isRequired": true,
+  "httpLocation": "body",
+  "defaultValue": null,
+  "transform": null,
+  "description": "..."
+}
+```
+
+`dataClauseItems[]` shape — name + value MScript:
+```json
+[
+  { "name": "title",  "value": "this.title" },
+  { "name": "status", "value": "'pending'" },
+  { "name": "score",  "value": "this.score || 0" }
+]
+```
+
+Read / list / fetch APIs declare `requestParameters` (for filters, query strings,
+path placeholders) and `whereClause`. They have no `dataClauseItems` (no write
+payload).
+
+`basicSettings.defaultValue` on a data property is a DB-level scalar default —
+load-bearing for `NOT NULL` columns where you want the database to fill the
+default for inserts that don't carry the column. Computed defaults (`now()`,
+`LIB.<fn>(...)`) belong in per-API `dataClauseItems` MScript, not on the
+property.
+
+### Anti-patterns (explicit-mode)
+
+- **Declaring a `requestParameter` for a property with `sessionSettings` or
+  `staticJoin`.** The framework's auto-inject is silently suppressed in favor
+  of the caller's value. Auditor flags this as
+  `auto-injected-property-also-as-request-param` (warning).
+- **Declaring a `dataClauseItem` for an auto-injected property.** Same — the
+  framework handles those at write time.
+- **Forgetting a `dataClauseItem` for a non-auto-inject property.** The DB
+  column ends up unset (NULL or NOT-NULL violation). Auditor catches this as
+  `missing-dataClauseItem-for-property`.
+- **Hard literal in a dataClauseItem when the API contract should expose the
+  field.** `value: "this.X || '<default>'"` is the pattern for caller-with-
+  fallback; hard literals silently override caller input.
+
+---
+
 ## **Overview**
 
 Mindbricks operates around two fundamental architectural concepts — **Data Objects** and **Business APIs**.
@@ -580,6 +655,21 @@ They can originate from any request source — REST (`body`, `query`, or `sessio
 Here’s your refined version of the new section — keeping every detail intact, but with professional language, smoother flow, and consistent formatting aligned with the rest of your documentation:
 
 ---
+
+---
+
+# Legacy implicit-mode reference
+
+> Everything below this divider describes Mindbricks' **implicit-mode** API design
+> — the pattern shape used by beta projects created before the Q2 2026
+> explicit-mode shift, identifiable by `projectSettings.basicSettings.explicitMode`
+> being `false` or absent in the project config. New projects do NOT use these
+> mechanics; the explicit-mode quick reference at the top of this page covers them.
+>
+> The implicit-mode machinery is preserved for back-compat with existing
+> deployments. Reading this section is necessary only when working on a beta
+> project; new project design should ignore everything below and stay with
+> `requestParameters` + `dataClauseItems`.
 
 ## **Automatic Parameter Generation with \`autoParams\`**
 

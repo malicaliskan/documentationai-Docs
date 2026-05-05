@@ -1,8 +1,47 @@
+---
+title: "Business Api"
+description: "Defines a Business API, a high-level abstraction representing a specific business operation on a primary data object. It encapsulates intent (e.g., get, create, delete), parameters, trigger mechanisms"
+---
+
 # BusinessApi
 
 **MPO Version:** 1.3.0
 
 Defines a Business API, a high-level abstraction representing a specific business operation on a primary data object. It encapsulates intent (e.g., get, create, delete), parameters, trigger mechanisms, and a structured workflow composed of modular actions. Each Business API offers more expressive and decoupled control over behavior and access.
+
+## Field applicability by `apiOptions.crudType`
+
+Most option blocks apply to every crudType, but the data-shaping clauses and the `*Options` blocks are restricted. Populating a block on a crudType that ignores it is a design-time mistake: the codegen silently drops the configuration. The validator emits a `BUSINESSAPI_BLOCK_IGNORED` warning when this happens.
+
+| Block               | create | get | list | update | delete |
+| ------------------- | :----: | :-: | :--: | :----: | :----: |
+| `apiOptions`        |   ✓    |  ✓  |  ✓   |   ✓    |   ✓    |
+| `authOptions`       |   ✓    |  ✓  |  ✓   |   ✓    |   ✓    |
+| `customParameters`  |   ✓    |  ✓  |  ✓   |   ✓    |   ✓    |
+| `redisParameters`   |   ✓    |  ✓  |  ✓   |   ✓    |   ✓    |
+| `restSettings`      |   ✓    |  ✓  |  ✓   |   ✓    |   ✓    |
+| `grpcSettings`      |   ✓    |  ✓  |  ✓   |   ✓    |   ✓    |
+| `kafkaSettings`     |   ✓    |  ✓  |  ✓   |   ✓    |   ✓    |
+| `sseSettings`       |   ✓    |  ✓  |  ✓   |   ✓    |   ✓    |
+| `cronSettings`      |   ✓    |  ✓  |  ✓   |   ✓    |   ✓    |
+| `actions`           |   ✓    |  ✓  |  ✓   |   ✓    |   ✓    |
+| `workflow`          |   ✓    |  ✓  |  ✓   |   ✓    |   ✓    |
+| `selectClause`      |   —    |  ✓  |  ✓   |   —    |   —    |
+| `whereClause`       |   —    |  ✓  |  ✓   |   ✓    |   ✓    |
+| `dataClause`        |   ✓    |  —  |  —   |   ✓    |   —    |
+| `getOptions`        |   —    |  ✓  |  —   |   —    |   —    |
+| `listOptions`       |   —    |  —  |  ✓   |   —    |   —    |
+| `paginationOptions` |   —    |  —  |  ✓   |   —    |   —    |
+| `deleteOptions`     |   —    |  —  |  —   |   —    |   ✓    |
+
+Reader's guide:
+
+- `selectClause` shapes the read projection — only meaningful when the API actually returns records (`get`, `list`).
+- `whereClause` locates the target record(s). It applies to every read or mutation that has to identify what to operate on; `create` is excluded because it makes a new record.
+- `dataClause` carries the write payload (custom data, forced literals via `customData`). Only `create` and `update` mutate fields; `delete` mutates only the soft-delete flag (configured via `deleteOptions`).
+- `getOptions` / `listOptions` / `paginationOptions` / `deleteOptions` are the four crudType-specific knobs. Each is meaningful for exactly one crudType.
+
+When in doubt, consult the per-field doc on each option block — every block whose applicability is restricted repeats the rule in its own `__doc`.
 
 ```typescript
 interface BusinessApi = {
@@ -40,10 +79,10 @@ interface BusinessApi = {
 | cronSettings      | Schedules this Business API for automatic execution at specified intervals. Useful for background tasks, data cleanup, or scheduled jobs. Uses cron expressions to define timing.                                                                                                                                                                                                                                                                                                                   |
 | selectClause      | Specifies which fields will be selected from the main data object during a `get` or `list` operation. Leave blank to select all properties. This applies only to `get` and `list` type APIs.                                                                                                                                                                                                                                                                                                        |
 | dataClause        | Defines custom field-value assignments used to modify or augment the default payload for `create` and `update` operations. These settings override values derived from the session or parameters if explicitly provided.                                                                                                                                                                                                                                                                            |
-| whereClause       | Defines the criteria used to locate the target record(s) for the main operation. This is expressed as a query object and applies to `get`, `list`, `update`, and `delete` APIs. All API types except `list` are expected to target a single record. For `update` and `delete`, the WHERE clause is used to fetch the target instance, and the actual database mutation is performed using the fetched instance's ID to guarantee single-record safety. |
+| whereClause       | Defines the criteria used to locate the target record(s) for the main operation. This is expressed as a query object and applies to `get`, `list`, `update`, and `delete` APIs. All API types except `list` are expected to target a single record. For `update` and `delete`, the WHERE clause is used to fetch the target instance, and the actual database mutation is performed using the fetched instance's ID to guarantee single-record safety.                                              |
 | deleteOptions     | Contains settings specific to `delete` type APIs, such as soft-delete configurations or cascade options.                                                                                                                                                                                                                                                                                                                                                                                            |
 | getOptions        | Contains settings specific to `get` type APIs, such as instance enrichment, fallback behaviors, or object caching.                                                                                                                                                                                                                                                                                                                                                                                  |
-| listOptions       | Defines list-specific options including filtering logic, default sorting, and result customization for APIs that return multiple records.                                                                                                                                                                                                                                                                                                                                                           |
+| listOptions       | Defines list-specific options including filtering logic, default sorting, and result customization for APIs that return multiple records. Applies only to `list` type APIs; ignored on every other crudType.                                                                                                                                                                                                                                                                                        |
 | paginationOptions | Contains settings to configure pagination behavior for `list` APIs. Includes options like page size, offset, cursor support, and total count inclusion.                                                                                                                                                                                                                                                                                                                                             |
 | actions           | Represents the available logic actions that can be referenced by the Business API's workflow. Actions include data fetches, validation, permission checks, interservice calls, transformations, and output shaping.                                                                                                                                                                                                                                                                                 |
 | workflow          | Defines the logical flow of the Business API, composed of sequenced action ids grouped by lifecycle stages. This workflow is generated visually in the architecture UI or programmatically inferred from the API's type.                                                                                                                                                                                                                                                                            |
@@ -62,6 +101,7 @@ interface ApiOptions = {
   name : String;
   apiDescription : Text;
   frontendDocument : Text;
+  testingNotes : Text;
   raiseApiEvent : Boolean;
   raiseDbLevelEvents : Boolean;
   autoParams : Boolean;
@@ -71,20 +111,21 @@ interface ApiOptions = {
 }
 ```
 
-| Field               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| dataObjectName      | Specifies the primary data object that this Business API interacts with. This object is the core target of the API's operation, such as reading, updating, or deleting records. Required even when dataViewName is set — the DataView's mainObject must match this dataObject.                                                                                                                                                                                                                                                                                 |
-| dataViewName        | Optional. Specifies the name of a DataView defined in the BFF service whose mainObject matches this API's dataObject. When set, all read/fetch operations (get, list, and fetchInstance for update/delete) use ElasticIndexer to query the DataView's Elasticsearch index. Write operations (create, update, delete) still execute against the database. For create, the result is enriched from the DataView after the DB insert. The dataObjectName is always required and must match the DataView's mainObject.                                             |
-| crudType            | Defines the primary operation type for this API. Possible values are `get`, `list`, `create`, `update`, and `delete`. This classification drives the behavior and flow of the API lifecycle.                                                                                                                                                                                                                                                                                                                                                                   |
-| name                | A unique, human-readable name for the API, used for referencing in documentation and the UI. This is not a code-level identifier; instead, generated class and function names are derived from this value. Use camelCase formatting, avoid spaces or special characters, and ensure uniqueness within the same service. If you want the API to behave like a default RESTful endpoint, use a verb-noun combination like `createUser`, `getOrder`, or `deleteItem`, which will enforce expected parameters and URL patterns (e.g., `/users/:userId`).           |
-| apiDescription      | A brief explanation of the API's business purpose or logic. Helps clarify its intent for developers and documentation readers.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| frontendDocument    | A text based information to inform the frontend developer or frontend AI agent about the api specific UX behaviour of the api logic based on user stories and use cases. The format may be either text or markdown(recommended). Write the document as an AI prompt and describe api specific UX behaviours. Note that this document will be given to the AI agent or human developer combined with all technical details that is generated from the business api design,so this document should only focus on data api-specific behavioral UX business logic. |
-| raiseApiEvent       | Indicates whether the Business API should emit an API-level event after successful execution. This is typically used for audit trails, analytics, or external integrations.                                                                                                                                                                                                                                                                                                                                                                                    |
-| raiseDbLevelEvents  | If true, database-level events will be emitted for each affected data object. This is useful for APIs that interact with multiple related objects and need fine-grained event tracking.                                                                                                                                                                                                                                                                                                                                                                        |
-| autoParams          | Determines whether input parameters should be auto-generated from the schema of the associated data object. Set to `false` if you want to define all input parameters manually.                                                                                                                                                                                                                                                                                                                                                                                |
-| readFromEntityCache | If enabled, the API will attempt to read the target object from the Redis entity cache before querying the database. This can improve performance for frequently accessed records.                                                                                                                                                                                                                                                                                                                                                                             |
-| blockMcp            | When true, this Business API will not be exposed as an MCP tool. Use this for APIs that require frontend-specific flows (e.g., payment with credit card input, 3DS verification) and should not be called by AI agents directly.                                                                                                                                                                                                                                                                                                                               |
-| isDefaultApi        | If true, marks this API as the default API for its crudType on the associated data object. Frontend generators and AI agents will use default APIs for standard CRUD operations (create, update, delete, get, list). Only one API per crudType per data object should be marked as default. If no default is set, the frontend generator will auto-discover the most general API for each operation.                                                                                                                                                           |
+| Field               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| dataObjectName      | Specifies the primary data object that this Business API interacts with. This object is the core target of the API's operation, such as reading, updating, or deleting records. Required even when dataViewName is set — the DataView's mainObject must match this dataObject.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| dataViewName        | Optional. Specifies the name of a DataView defined in the BFF service whose mainObject matches this API's dataObject. When set, all read/fetch operations (get, list, and fetchInstance for update/delete) use ElasticIndexer to query the DataView's Elasticsearch index. Write operations (create, update, delete) still execute against the database. For create, the result is enriched from the DataView after the DB insert. The dataObjectName is always required and must match the DataView's mainObject.                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| crudType            | Defines the primary operation type for this API. Possible values are `get`, `list`, `create`, `update`, and `delete`. This classification drives the behavior and flow of the API lifecycle.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| name                | A unique, human-readable name for the API, used for referencing in documentation and the UI. This is not a code-level identifier; instead, generated class and function names are derived from this value. Use camelCase formatting, avoid spaces or special characters, and ensure uniqueness within the same service. If you want the API to behave like a default RESTful endpoint, use a verb-noun combination like `createUser`, `getOrder`, or `deleteItem`, which will enforce expected parameters and URL patterns (e.g., `/users/:userId`).                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| apiDescription      | A brief explanation of the API's business purpose or logic. Helps clarify its intent for developers and documentation readers.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| frontendDocument    | A text based information to inform the frontend developer or frontend AI agent about the api specific UX behaviour of the api logic based on user stories and use cases. The format may be either text or markdown(recommended). Write the document as an AI prompt and describe api specific UX behaviours. Note that this document will be given to the AI agent or human developer combined with all technical details that is generated from the business api design,so this document should only focus on data api-specific behavioral UX business logic.                                                                                                                                                                                                                                                                                                                                                                                                          |
+| testingNotes        | Free-text markdown block written by the designer at apply time, describing how this API's happy path should be tested. Read VERBATIM by the api-test-plan blueprint as the AUTHORITATIVE happy-case source — overrides the planner's role/body-field inference rule when present. Write down only what the planner cannot statically infer from authOptions + the data-object schema + the route doc: custom validateAction rules (e.g. 'rejects 403 when seller.isActive=false'), sequencing prereqs ('must be called after checkout'), side effects worth asserting (kafka events, related-record writes), auto-populated session fields (sellerId, ownerId, tenantId — keep these out of the request body), conditional status codes (200 vs 201 vs 409). Format: short markdown following the template in the apply prompt — Happy path / Side effects / Custom rules / Skip cases. Empty is allowed (planner falls back to inference) but the validator will warn. |
+| raiseApiEvent       | Indicates whether the Business API should emit an API-level event after successful execution. This is typically used for audit trails, analytics, or external integrations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| raiseDbLevelEvents  | If true, database-level events will be emitted for each affected data object. This is useful for APIs that interact with multiple related objects and need fine-grained event tracking.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| autoParams          | Determines whether input parameters should be auto-generated from the schema of the associated data object. Set to `false` if you want to define all input parameters manually.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| readFromEntityCache | If enabled, the API will attempt to read the target object from the Redis entity cache before querying the database. This can improve performance for frequently accessed records.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| blockMcp            | When true, this Business API will not be exposed as an MCP tool. Use this for APIs that require frontend-specific flows (e.g., payment with credit card input, 3DS verification) and should not be called by AI agents directly.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| isDefaultApi        | If true, marks this API as the default API for its crudType on the associated data object. Frontend generators and AI agents will use default APIs for standard CRUD operations (create, update, delete, get, list). Only one API per crudType per data object should be marked as default. If no default is set, the frontend generator will auto-discover the most general API for each operation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ### CrudTypes
 
@@ -212,75 +253,81 @@ interface RedisApiParameter = {
 
 **MPO Version:** 1.3.0
 
-Defines the REST controller configuration for a Business API. REST is the default HTTP interface in Mindbricks. These settings allow enabling/disabling REST access and customizing the endpoint path.
+Defines the REST controller configuration for a Business API. REST is the default HTTP interface in Mindbricks. These settings allow enabling/disabling REST access and customizing the endpoint path. Fields are flat — set `routePath` and `forcePOSTMethod` directly on this block (the legacy `configuration: { ... }` wrapper is still accepted on input but lifted at validate time).
 
 ```typescript
 interface ApiRestSettings = {
   hasRestController : Boolean;
-  configuration : ApiRestSettingsConfig;
+  routePath : String;
+  forcePOSTMethod : Boolean;
 }
 ```
 
 | Field             | Description                                                                                           |
 | ----------------- | ----------------------------------------------------------------------------------------------------- |
 | hasRestController | Controls whether the Business API is exposed as a REST endpoint. Set to false to disable HTTP access. |
-| configuration     | Optional configuration object for customizing the REST path. Leave null to use the default path.      |
+| routePath         | Custom REST path override. Leave as `$default` to auto-generate.                                      |
 
-### ApiRestSettingsConfig
+## Default-route calculation
 
-**MPO Version:** 1.3.0
+Given the API's crudType, name, dataObjectName, and whereClause.selectBy, the calculator produces:
 
-Customizes the REST endpoint path for a Business API. If omitted or set to `$default`, Mindbricks auto-generates the path based on the API name, crudType, and selector configuration. For single-record APIs (`get`, `update`, `delete`), the default path includes `/:objectId` only as a fallback; when `selectBy` specifies a non-ID field, the path uses that field instead (e.g., `/:slug`).
+create / list → /&lt;resourcePath>
+get / update / delete → /&lt;resourcePath>/:&lt;param> (always gets a path param)
 
-```typescript
-interface ApiRestSettingsConfig = {
-  routePath : String;
-  forcePOSTMethod : Boolean;
-}
-```
+The `<param>` segment is chosen in this order:
 
-| Field           | Description                                                                                                                                                               |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| routePath       | Custom REST path override. Leave as `$default` to auto-generate from the API name and selector. Auto-generated paths use `/:objectId` only when no `selectBy` or `fullWhereClause` is configured; otherwise, a single-field `selectBy` like `slug` produces `/:slug`. If you provide a custom path with a non-ID parameter (e.g., `/orders/:invoiceNbr`) and no `selectBy` is set, the parameter is automatically inferred as `selectBy`. The ID parameter is not created when the route does not contain `/:objectId`. If a custom path contains parameters that conflict with the configured `selectBy`, an ambiguity warning is raised during generation. |
-| forcePOSTMethod | The http method will ve set according to the crud type, use this setting if you want to force the HttpMethod to POST. Not recommended if you dont have a specific reason. |
+1. If `whereClause.selectBy` has exactly one entry and that entry is NOT `id`,
+   the param uses that field name. Example: selectBy=['slug'] → /&lt;resource>/:slug.
+2. Otherwise the param is the data-object's natural id, formatted as `<dataObjectName>Id`.
+   Example: dataObject=`User` → /&lt;resource>/:userId.
+
+`<resourcePath>` is derived from the API name + dataObjectName, ALWAYS lowercased:
+
+- Default-shape APIs (e.g. getUser/listUsers/createUser/updateUser/deleteUser on the User
+  object) collapse to the plural object name: `/users`.
+- Non-default APIs (custom verbs like `archiveUser`, `closeOrder`) concatenate verb + singular
+  object name (no plural): `/archiveuser`, `/closeorder`.
+
+The path parameter follows the standard Mindbricks naming convention — `dataObject.objectName` is lowercase camelCase (e.g. `user`, `orderItem`), and the param appends `Id`: `:userId`, `:orderItemId`. (The resource segment is additionally lowercased; the param name passes the input case through.)
+
+## fullWhereClause no longer removes the path parameter
+
+Deliberate change from earlier behavior. Previously, setting `whereClause.fullWhereClause` on a get/update/delete API would drop the `/:id` segment and collapse the route onto the bare resource path — which collided with the list/create endpoint at `GET /<resource>`. The default calculator now keeps the path parameter regardless of fullWhereClause. If you intentionally want a parameter-less single-record route (verb-style endpoint that resolves the record from auth context, fullWhereClause, etc.), set `routePath` explicitly.
+
+## Custom routePath rules
+
+- Always start with `/`.
+- If your custom path includes a parameter (`:something`) AND `selectBy` is unset, the parameter name is inferred as the selectBy field. Example: `routePath: '/orders/:invoiceNbr'` with no selectBy → effective selectBy is `invoiceNbr`.
+- If your custom path's parameter name conflicts with the configured `selectBy`, an ambiguity warning is raised at validation.
+- A custom routePath without any `:`-style parameter IS allowed for single-record get/update/delete APIs — useful for verb-style endpoints (e.g. `/getActiveBasket`, `/closeMyOrder`) where the record is resolved from auth context or `fullWhereClause` rather than the URL. Just be aware the route cannot vary per record, so it must not collide with the list/create path on the same resource.
+
+## Verifying the calculated route
+
+After writing your business APIs, the apply worker can call `getServiceBusinessApiList(serviceName)` to get the structured list of `{name, crudType, method, routePath, source}` for every API in the service — useful to confirm the auto-calculator produced the route shape you expected before triggering a build.
+forcePOSTMethod | The http method will be set according to the crud type, use this setting if you want to force the HttpMethod to POST. Not recommended if you don't have a specific reason.
 
 ## ApiGrpcSettings
 
 **MPO Version:** 1.3.0
 
-Enables gRPC interface for the Business API. Useful for high-performance service-to-service communication.
+Enables gRPC interface for the Business API. Useful for high-performance service-to-service communication. Fields are flat — set `responseFormat` and `responseType` directly (the legacy `configuration: { ... }` wrapper is still accepted on input but lifted at validate time).
 
 ```typescript
 interface ApiGrpcSettings = {
   hasGrpcController : Boolean;
-  configuration : ApiGrpcSettingsConfig;
-}
-```
-
-| Field             | Description                                                                      |
-| ----------------- | -------------------------------------------------------------------------------- |
-| hasGrpcController | Controls whether this API exposes a gRPC method.                                 |
-| configuration     | Optional configuration object for gRPC settings. Leave null if gRPC is disabled. |
-
-### ApiGrpcSettingsConfig
-
-**MPO Version:** 1.3.0
-
-Configuration for gRPC method behavior and response format.
-
-```typescript
-interface ApiGrpcSettingsConfig = {
   responseFormat : GrpcApiResponseFormat;
   responseType : GrpcApiResponseType;
 }
 ```
 
-| Field          | Description                                                                         |
-| -------------- | ----------------------------------------------------------------------------------- |
-| responseFormat | Defines whether the gRPC response returns a single data item or full JSON response. |
-| responseType   | Specifies whether the gRPC method returns a single result or a stream of results.   |
+| Field             | Description                                                                         |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| hasGrpcController | Controls whether this API exposes a gRPC method.                                    |
+| responseFormat    | Defines whether the gRPC response returns a single data item or full JSON response. |
+| responseType      | Specifies whether the gRPC method returns a single result or a stream of results.   |
 
-#### GrpcApiResponseFormat
+### GrpcApiResponseFormat
 
 Controls the structure of the gRPC response.
 
@@ -296,7 +343,7 @@ const GrpcApiResponseFormat = {
 | dataItem     | Returns only the core data item.                                 |
 | fullResponse | Returns the full JSON API response with metadata and pagination. |
 
-#### GrpcApiResponseType
+### GrpcApiResponseType
 
 Controls whether the gRPC method returns a single message or a stream.
 
@@ -316,64 +363,31 @@ const GrpcApiResponseType = {
 
 **MPO Version:** 1.3.0
 
-Configures Kafka as a trigger mechanism for the Business API. This supports both asynchronous processing and integration-based event handling (e.g., storage triggers, audit flows).
+Configures Kafka as a trigger mechanism for the Business API. This supports both asynchronous processing and integration-based event handling (e.g., storage triggers, audit flows). Fields are flat — set `requestTopicName` and `responseTopicName` directly (the legacy `configuration: { ... }` wrapper is still accepted on input but lifted at validate time).
 
 ```typescript
 interface ApiKafkaSettings = {
   hasKafkaController : Boolean;
-  configuration : ApiKafkaSettingsConfig;
+  requestTopicName : String;
+  responseTopicName : String;
 }
 ```
 
 | Field              | Description                                                                                       |
 | ------------------ | ------------------------------------------------------------------------------------------------- |
 | hasKafkaController | Enables the Kafka controller for this API. When true, the API can be triggered by Kafka messages. |
-| configuration      | Kafka configuration details. Leave null if the controller is disabled.                            |
-
-### ApiKafkaSettingsConfig
-
-**MPO Version:** 1.3.0
-
-Configuration object for Kafka topic bindings for triggering the Business API.
-
-```typescript
-interface ApiKafkaSettingsConfig = {
-  requestTopicName : String;
-  responseTopicName : String;
-}
-```
-
-| Field             | Description                                                                              |
-| ----------------- | ---------------------------------------------------------------------------------------- |
-| requestTopicName  | Name of the Kafka topic to listen to. Can be custom or auto-generated from the API name. |
-| responseTopicName | Topic name to which the API response will be published. Optional.                        |
+| requestTopicName   | Name of the Kafka topic to listen to. Can be custom or auto-generated from the API name.          |
+| responseTopicName  | Topic name to which the API response will be published. Optional.                                 |
 
 ## ApiSseSettings
 
 **MPO Version:** 1.3.0
 
-Enables Server-Sent Events (SSE) streaming for a Business API, allowing the API to stream its response as chunks or emit progress events over an SSE connection. The REST endpoint continues to serve single request-response. The SSE endpoint is a companion for responses that are too large or too slow for a single HTTP response.
+Enables Server-Sent Events (SSE) streaming for a Business API, allowing the API to stream its response as chunks or emit progress events over an SSE connection. The REST endpoint continues to serve single request-response. The SSE endpoint is a companion for responses that are too large or too slow for a single HTTP response. Fields are flat — set `responseMode`, `timeout`, `chunkSize`, `streamSource`, and `kafkaProgressListeners` directly (the legacy `configuration: { ... }` wrapper is still accepted on input but lifted at validate time).
 
 ```typescript
 interface ApiSseSettings = {
   hasSseController : Boolean;
-  configuration : ApiSseSettingsConfig;
-}
-```
-
-| Field            | Description                                                                                                                     |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| hasSseController | Enables the SSE controller for this API. When enabled, an additional /stream endpoint is generated alongside the REST endpoint. |
-| configuration    | SSE configuration including response mode, timeout and chunk settings. Leave null if disabled.                                  |
-
-### ApiSseSettingsConfig
-
-**MPO Version:** 1.3.0
-
-SSE connection configuration, including response mode, timeout, chunk size, optional custom stream source, and optional Kafka progress listeners for remote process tracking.
-
-```typescript
-interface ApiSseSettingsConfig = {
   responseMode : SseResponseMode;
   timeout : Integer;
   chunkSize : Integer;
@@ -384,13 +398,14 @@ interface ApiSseSettingsConfig = {
 
 | Field                  | Description                                                                                                                                                                                                                                                                                       |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| hasSseController       | Enables the SSE controller for this API. When enabled, an additional /stream endpoint is generated alongside the REST endpoint.                                                                                                                                                                   |
 | responseMode           | Defines how the SSE endpoint delivers data. 'stream' sends data in chunks (for large datasets, file exports, LLM token streaming). 'events' sends progress updates followed by a final result (for long-running operations).                                                                      |
 | timeout                | Maximum duration in milliseconds for an SSE connection before the server closes it. Defaults to 300000 (5 minutes).                                                                                                                                                                               |
 | chunkSize              | Number of rows per chunk when streaming list results. Defaults to 100.                                                                                                                                                                                                                            |
 | streamSource           | Optional custom stream source configuration. When null, list APIs automatically use cursor-based chunked streaming. Only set this for non-list APIs or when data comes from an external source (lib function, iterator action, SSE/WS relay).                                                     |
 | kafkaProgressListeners | Optional array of Kafka topic listeners for receiving progress updates from remote processes. After the pipeline completes, the SSE connection stays open and listens to configured Kafka topics, relaying filtered messages as SSE events. Works with both 'stream' and 'events' response modes. |
 
-#### SseResponseMode
+### SseResponseMode
 
 Defines how the SSE endpoint delivers data to the client.
 
@@ -406,7 +421,7 @@ const SseResponseMode = {
 | stream | Sends data in sequential chunks. Use for large datasets, file exports, or LLM token streaming where each chunk is a piece of the final result. |
 | events | Sends progress events followed by a final result. Use for long-running operations where the client needs status updates during processing.     |
 
-#### StreamSourceConfig
+### StreamSourceConfig
 
 **MPO Version:** 1.3.0
 
@@ -430,7 +445,7 @@ interface StreamSourceConfig = {
 | relayUrl        | MScript expression that evaluates to the URL of the external SSE or WebSocket endpoint to relay. Required when sourceType is 'sseRelay' or 'wsRelay'. |
 | relayAuth       | MScript expression that evaluates to the authorization header value for the relay connection. Optional.                                               |
 
-##### StreamSourceType
+#### StreamSourceType
 
 Defines the type of custom stream source for SSE streaming. Only needed when the default list-based streaming is not sufficient.
 
@@ -450,7 +465,7 @@ const StreamSourceType = {
 | sseRelay       | Connects to an external SSE endpoint and relays its events as chunks.                   |
 | wsRelay        | Connects to an external WebSocket endpoint and relays its messages as chunks.           |
 
-#### KafkaProgressListener
+### KafkaProgressListener
 
 **MPO Version:** 1.3.0
 
@@ -480,35 +495,19 @@ interface KafkaProgressListener = {
 
 **MPO Version:** 1.3.0
 
-Schedules the Business API for periodic execution using a cron expression. Ideal for background jobs or recurring tasks.
+Schedules the Business API for periodic execution using a cron expression. Ideal for background jobs or recurring tasks. Fields are flat — set `cronExpression` directly (the legacy `configuration: { ... }` wrapper is still accepted on input but lifted at validate time).
 
 ```typescript
 interface ApiCronSettings = {
   hasCronController : Boolean;
-  configuration : ApiCronSettingsConfig;
-}
-```
-
-| Field             | Description                                                                                                      |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------- |
-| hasCronController | Enables or disables the cron controller. If true, the API will run at the interval defined in the configuration. |
-| configuration     | Optional configuration object for customizing the cron scheduling.                                               |
-
-### ApiCronSettingsConfig
-
-**MPO Version:** 1.3.0
-
-Cron configuration for scheduling Business API execution.
-
-```typescript
-interface ApiCronSettingsConfig = {
   cronExpression : String;
 }
 ```
 
-| Field          | Description                                                                         |
-| -------------- | ----------------------------------------------------------------------------------- |
-| cronExpression | Cron expression defining the schedule (e.g., '0 \* \* \* \*' for hourly execution). |
+| Field             | Description                                                                                                     |
+| ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| hasCronController | Enables or disables the cron controller. If true, the API will run at the interval defined by `cronExpression`. |
+| cronExpression    | Cron expression defining the schedule (e.g., '0 \* \* \* \*' for hourly execution).                             |
 
 ## SelectClauseSettings
 
@@ -612,7 +611,7 @@ interface DataClauseSettings = {
 
 **MPO Version:** 1.3.0
 
-Defines how records are filtered in a Business API. This includes:- `selectBy`: strict selection logic based on required field equality. It also drives the default route path and parameter creation for single-record APIs (`get`, `update`, `delete`). When a non-ID field is set as `selectBy`, the route uses that field instead of the object ID, and the ID parameter is suppressed. - `fullWhereClause`: an optional override for complex, flexible query logic. When set, no ID parameter is auto-created and the route path defaults to the resource base path. - `additionalClauses`: optional conditional query fragments that are always appended to the WHERE clause, whether it is derived from `selectBy` or `fullWhereClause`. Use `selectBy` when your selection logic is static and business-critical (e.g., `['slug']`). Use `fullWhereClause` when the WHERE clause needs to be built dynamically using MScript. `additionalClauses` allow context-aware filtering such as role-based visibility or soft-delete exclusion. For `update` and `delete` operations, the actual database mutation always targets the single record fetched by `fetchInstance`, regardless of the WHERE clause breadth.
+Defines how records are filtered in a Business API. This includes:- `selectBy`: strict selection logic based on required field equality. It also drives the default route path and parameter creation for single-record APIs (`get`, `update`, `delete`). When a non-ID field is set as `selectBy`, the route uses that field instead of the object ID, and the ID parameter is suppressed. - `fullWhereClause`: an optional override for complex, flexible query logic. When set, no ID parameter is auto-created and the route path defaults to the resource base path. - `additionalClauses`: optional conditional query fragments that are always appended to the WHERE clause, whether it is derived from `selectBy` or `fullWhereClause`. Use `selectBy` when your selection logic is static and business-critical (e.g., `['slug']`). Use `fullWhereClause` when the WHERE clause needs to be built dynamically using MScript. `additionalClauses` allow context-aware filtering such as role-based visibility or soft-delete exclusion. For `update` and `delete` operations, the actual database mutation always targets the single record fetched by `fetchInstance`, regardless of the WHERE clause breadth. Selector resolution order for `get`/`update`/`delete`: (1) explicit `fullWhereClause`; (2) explicit `selectBy`; (3) inferred `selectBy` from non-id `:` segments in the route path; (4) the standard `:{objectName}Id` (or `:id`) URL parameter; (5) latest-record fallback — when none of the above apply the pipeline sets `fullWhereClause = "{}"` and dbLayer's single-record fetcher returns the most recent record (ordered by `createdAt` DESC). The fallback is intentional support for current-context endpoints (`GET /snapshots/latest`, `DELETE /drafts/current`); when it triggers automatically, validate emits a `LATEST_RECORD_FALLBACK` warning so the designer can confirm intent. Suppress the warning by setting `fullWhereClause: "{}"` explicitly when latest-record semantics is desired.
 
 ```typescript
 interface WhereClauseSettings = {
@@ -622,33 +621,31 @@ interface WhereClauseSettings = {
 }
 ```
 
-| Field             | Description                                                                                                                                                                                                                                                                                                       |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Field             | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | selectBy          | A list of fields that must be matched exactly as part of the WHERE clause. This is not a filter — it is a required selection rule. In single-record APIs (`get`, `update`, `delete`), it defines how a unique record is located. In `list` APIs, it scopes the results to only entries matching the given values. When a single non-ID field is specified (e.g., `['slug']`), the default route path is built as `/:slug` instead of `/:objectId`, and the ID parameter is not auto-created. If a custom route path contains non-ID parameters and no `selectBy` is configured, the route parameters are automatically inferred as `selectBy`. For the `id` field, both `/:objectId` and `/:id` are accepted as valid parameter sources. |
-| fullWhereClause   | An MScript query expression that overrides all default WHERE clause logic. Use this for fully customized queries.                                                                                                                                                                                                 |
-| additionalClauses | A list of conditionally applied MScript query fragments. These clauses are appended only if their conditions evaluate to true.                                                                                                                                                                                    |
+| fullWhereClause   | An MScript query expression that overrides all default WHERE clause logic. Use this for fully customized queries.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| additionalClauses | A list of conditionally applied MScript query fragments. These clauses are appended only if their conditions evaluate to true.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 ### ExtendedClause
 
 **MPO Version:** 1.3.0
 
-Defines an optional filtering clause that is dynamically included in the query when certain conditions are met. Enables route-level filtering to adapt to session, context, or other logic at runtime.
+Defines an optional filtering clause that is dynamically included in the query when a single MScript condition is met. Enables route-level filtering to adapt to session, context, or other logic at runtime.
 
 ```typescript
 interface ExtendedClause = {
   name : String;
-  doWhen : MScript;
-  excludeWhen : MScript;
+  condition : MScript;
   whereClause : MScript;
 }
 ```
 
-| Field       | Description                                                                                                                                                                                                      |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| name        | A descriptive label used for internal documentation or UI purposes. Does not impact runtime behavior.                                                                                                            |
-| doWhen      | An MScript expression that determines whether the whereClause should be added to the query. If true, the clause will be applied.                                                                                 |
-| excludeWhen | An MScript expression that, when false, triggers the inclusion of the whereClause. Acts as an inverse condition to doWhen.                                                                                       |
-| whereClause | The conditional query fragment to include, written as an MScript Query. This clause is merged into the final query if doWhen is true or excludeWhen is false. If both are omitted, the clause is always applied. |
+| Field       | Description                                                                                                                                                                                                                                                                                                             |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name        | A descriptive label used for internal documentation or UI purposes. Does not impact runtime behavior.                                                                                                                                                                                                                   |
+| condition   | An MScript expression that gates whether `whereClause` is merged into the query at runtime. The clause applies when the expression evaluates truthy. Leave null to apply the clause unconditionally. To express an exclusion (apply when X is NOT true), negate the expression yourself, e.g. `!this.session?.isAdmin`. |
+| whereClause | The conditional query fragment to include, written as an MScript Query. The clause is merged into the final query when `condition` is truthy (or when `condition` is null, in which case the clause always applies).                                                                                                    |
 
 ## DeleteOptions
 
@@ -884,6 +881,7 @@ interface BusinessApiActionStore = {
   updateCrudActions : UpdateCrudAction[];
   apiCallActions : ApiCallAction[];
   aiCallActions : AiCallAction[];
+  agentCallActions : AgentCallAction[];
   membershipCheckActions : MembershipCheckAction[];
   permissionCheckActions : PermissionCheckAction[];
   objectPermissionActions : ObjectPermissionCheckAction[];
@@ -935,6 +933,7 @@ interface BusinessApiActionStore = {
 | updateCrudActions           | Actions that update properties of related objects using a conditional query. Used for post-processing or child updates.                                                                                                                                                                                                                                    |
 | apiCallActions              | Actions that make external or internal HTTP API requests. Often used to integrate with third-party systems or auxiliary internal services.                                                                                                                                                                                                                 |
 | aiCallActions               | Actions that call an LLM (e.g., OpenAI or Anthropic) with structured prompts and fetch textual or JSON responses. Used for generation, enrichment, or inference.                                                                                                                                                                                           |
+| agentCallActions            | Actions that invoke a configured AI Agent defined in the service's aiAgents section. The agent is executed internally with a data payload built from the current API context via MScript. The result is stored in the workflow context and optionally written to the response.                                                                             |
 | membershipCheckActions      | Actions that validate whether a user is a member of a related object (e.g., organization, team) using configured membership rules.                                                                                                                                                                                                                         |
 | permissionCheckActions      | Actions that verify whether the current user has a global (non-object-scoped) permission before continuing workflow logic.                                                                                                                                                                                                                                 |
 | objectPermissionActions     | Actions that check object-scoped permissions, validating whether a user has specific rights on an instance loaded into the context.                                                                                                                                                                                                                        |
@@ -957,7 +956,7 @@ interface BusinessApiActionStore = {
 | sendPushNotificationActions | Actions that send push notifications to mobile or web clients with title and content.                                                                                                                                                                                                                                                                      |
 | paymentActions              | Actions to start, to complete or to refresh a payment operation using the native integrated payment systems. Currently `Stripe` is supported. For other payment gateways use integration actions.                                                                                                                                                          |
 | verifyWebhookActions        | Actions to verify a webhook call of a provider using the webhook secret signature key. Currently `Stripe` is supported.                                                                                                                                                                                                                                    |
-| integrationActions          | Actions that call native API provider integrations (e.g., AWS S3, Airtable, Salesforce). These integrations are pre-coded inside Mindbricks and abstract provider-specific logic.                                                                                                                                                                          |
+| integrationActions          | Actions that call third-party API integrations managed in the Mindbricks integration catalog (e.g., AWS S3, Stripe, Google Maps). Each integration exposes predefined actions and is selected by its provider key.                                                                                                                                         |
 | loopActions                 | Actions that repeat a sequence of workflow steps for each item in a list (defined by an MScript expression).                                                                                                                                                                                                                                               |
 | parallelActions             | Actions that execute multiple child actions in parallel without waiting for each to finish sequentially. Ideal for non-dependent logic flows.                                                                                                                                                                                                              |
 | cartValidationActions       | Actions that validate a shopping cart before checkout. Checks for item existence, stock availability, price validity, and minimum order requirements.                                                                                                                                                                                                      |
@@ -965,6 +964,52 @@ interface BusinessApiActionStore = {
 | couponValidationActions     | Actions that validate coupon codes. Checks eligibility, usage limits, expiration, and calculates discount amounts.                                                                                                                                                                                                                                         |
 | emitSseEventActions         | Actions that emit custom SSE events to the client during the workflow. No-op when called via REST.                                                                                                                                                                                                                                                         |
 | iteratorActions             | Generic streaming actions whose methods return async iterables. Used for custom streaming logic that isn't covered by AiCallAction. Can be referenced in streamSource.iteratorAction or used inline in the workflow.                                                                                                                                       |
+
+### BusinessApiAction
+
+**MPO Version:** 1.3.0
+
+Abstract base class for all Business API actions. Every action in a Business API workflow inherits from this type. It defines shared fields such as name, execution condition, and response behavior. This class is never instantiated directly—subclasses implement specific logic units like fetch, validation, or API calls. Any subclass is distinguished from the array (in actions property of the business api) it is inserted
+
+```typescript
+interface BusinessApiAction = {
+  id : String;
+  name : String;
+  description : Text;
+  condition : MScript;
+  contextPropertyName : String;
+  writeToResponse : Boolean;
+  onActionError : BusinessApiActionErrorOption;
+  emitProgressInSSEContext : Boolean;
+}
+```
+
+| Field                    | Description                                                                                                                                                                                                                                                                              |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| id                       | The unique identifier of the action, used to reference this action from within a Business API workflow step.                                                                                                                                                                             |
+| name                     | A unique human readable camle case name for the action , will also be used as the method name of the api context class.                                                                                                                                                                  |
+| description              | An optional text to describe the purpose and logic of the action, what it does and why it does.                                                                                                                                                                                          |
+| condition                | An MScript boolean expression. If provided, the action will only run when this condition evaluates to true.                                                                                                                                                                              |
+| contextPropertyName      | The name of the property under which the result of the action will be written to the context. The result of an business api action can be accessed by other actions using `this.<contextPropertyName>`. Leave this field null if your action result will not be used by further actions. |
+| writeToResponse          | If true, the result of the action will be written to the API response directly, typically under the property matching the contextPropertyName.                                                                                                                                           |
+| onActionError            | Defines what happens when the action throws an error. `throwError` (default) re-throws and aborts the API. `completeApi` catches the error, stores it as `this.<actionName>Error` on the context so subsequent actions can inspect the failure, and lets the API continue.               |
+| emitProgressInSSEContext | When true and the API is running in SSE context, this action automatically emits a progress event before and after execution. When false (default) or when called via REST, no progress is emitted.                                                                                      |
+
+#### BusinessApiActionErrorOption
+
+The option that defines what to do if a specific action causes an error.
+
+```js
+const BusinessApiActionErrorOption = {
+  throwError: "throwError",
+  completeApi: "completeApi",
+};
+```
+
+| Enum        | Description                                                                               |
+| ----------- | ----------------------------------------------------------------------------------------- |
+| throwError  | Use this option if you want to fail the compile api in case of this specific action fails |
+| completeApi | Use this option if you want your api to be completed even this specific action fails.     |
 
 ### FetchObjectAction
 
@@ -1368,7 +1413,7 @@ interface HTTPRequestParameters = {
 
 **MPO Version:** 1.3.0
 
-Invokes an AI model such as OpenAI or Anthropic to perform text generation, refinement, classification, or summarization. The prompt is composed from a template and context, and the result is returned to the workflow and stored in `this.<contextPropertyName>`. In SSE mode, tokens are streamed to the client automatically; in REST mode, the AI provider is called directly (non-streaming).
+Invokes an AI model such as OpenAI or Anthropic to perform text generation, refinement, classification, or summarization. The prompt is composed from a template and context, and the result is stored in the context and optionally exposed in the response.
 
 ```typescript
 interface AiCallAction extends BusinessApiAction = {
@@ -1379,12 +1424,12 @@ interface AiCallAction extends BusinessApiAction = {
 }
 ```
 
-| Field           | Description                                                                                                                                                   |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| promptTemplate  | Defines both the static system message and dynamic user message. These are passed to the AI model to guide its behavior. Supports MScript in the user prompt. |
-| isArray         | If true, the response is expected to contain a list of results. Use when the model is expected to return multiple items.                                      |
-| responseFormat  | Indicates the expected format of the AI's output—either `json` for structured responses or `text` for plain text.                                             |
-| model           | The identifier of the LLM model to be used, such as `gpt-4`, `claude-3`, or any provider-accessible variant.                                                  |
+| Field          | Description                                                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| promptTemplate | Defines both the static system message and dynamic user message. These are passed to the AI model to guide its behavior. Supports MScript in the user prompt. |
+| isArray        | If true, the response is expected to contain a list of results. Use when the model is expected to return multiple items.                                      |
+| responseFormat | Indicates the expected format of the AI's output—either `json` for structured responses or `text` for plain text.                                             |
+| model          | The identifier of the LLM model to be used, such as `gpt-4`, `claude-3`, or any provider-accessible variant.                                                  |
 
 #### AIPromptTemplate
 
@@ -1403,6 +1448,24 @@ interface AIPromptTemplate = {
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | systemPrompt | A fixed instruction string that sets the tone or role for the AI model. Examples include guidance like 'You are a helpful assistant' or 'You are a strict validator'.                                                                      |
 | userPrompt   | A dynamic MScript expression that generates the user-facing part of the prompt. This often references contextual variables such as `this.username`, `this.itemName`, or `this.description` to personalize or situate the model's response. |
+
+### AgentCallAction
+
+**MPO Version:** 1.3.0
+
+Invokes an AI Agent defined in the service's aiAgents section from within a Business API workflow. The agent is executed internally using a data payload constructed from the current API context via an MScript expression. The agent result is stored in the workflow context and can be used by subsequent actions or written to the response. This enables tight integration between structured API logic and AI agent capabilities.
+
+```typescript
+interface AgentCallAction extends BusinessApiAction = {
+  agentName : String;
+  inputData : MScript;
+}
+```
+
+| Field     | Description                                                                                                                                                                                                                                                                                                                                                          |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| agentName | The name of the AI Agent to invoke. Must match the `agentBasics.name` of an agent defined in the service's `aiAgents` array. Example: 'contentAnalyzer', 'summarizer'.                                                                                                                                                                                               |
+| inputData | An MScript expression that builds the data object to pass to the agent as its request body. Has access to `this` (the API context), including `this.data`, `this.session`, and any context properties set by previous actions. Example: `{ message: this.data.description, context: this.fetchedProfile.bio }`. If null, the current `this.data` is forwarded as-is. |
 
 ### MembershipCheckAction
 
@@ -2010,21 +2073,21 @@ interface VerifyWebhookAction extends BusinessApiAction = {
 
 **MPO Version:** 1.3.0
 
-Calls a native API integration provided by Mindbricks (e.g., AWS S3, Airtable, Stripe, Asana). Each integration exposes a set of predefined actions, and this object triggers one of them with dynamically computed parameters. The result is stored in the context and can be used in follow-up steps. This allows low-code access to third-party systems using structured inputs.
+Calls a third-party API integration from the Mindbricks integration catalog (e.g., AWS S3, Stripe, Google Maps). The provider is identified by its string key matching an integration picked for the project. Each integration exposes a set of predefined actions, and this object triggers one of them with dynamically computed parameters. The result is stored in the context and can be used in follow-up steps.
 
 ```typescript
 interface IntegrationAction extends BusinessApiAction = {
-  provider : IntegrationProvider;
+  provider : String;
   action : String;
   parameters : IntegrationParameter[];
 }
 ```
 
-| Field      | Description                                                                                                                                                                                                     |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| provider   | The identifier of the external service provider to call (e.g., `aws`, `asana`, `salesforce`). Must match a supported integration configured within Mindbricks.                                                  |
-| action     | The specific action or operation to invoke on the provider. For example: `uploadFile`, `createRecord`, `deleteObject`, `listItems`. Action names must match those exposed by the selected integration provider. |
-| parameters | An array of parameter objects that define the inputs to pass to the integration action. Each parameter includes a name and a dynamically evaluated value from context.                                          |
+| Field      | Description                                                                                                                                                                                                             |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| provider   | The provider key identifying the integration to call (e.g., `amazonS3`, `Stripe`, `googleMaps`). Must match the providerKey of an integration that has been picked for the current project.                             |
+| action     | The specific action or method to invoke on the integration provider. For example: `uploadFile`, `createRecord`, `deleteObject`, `listItems`. Action names must match the methods exposed by the integration class code. |
+| parameters | An array of parameter objects that define the inputs to pass to the integration action. Each parameter includes a name and a dynamically evaluated value from context.                                                  |
 
 #### IntegrationParameter
 
@@ -2048,7 +2111,7 @@ interface IntegrationParameter = {
 
 **MPO Version:** 1.3.0
 
-Defines a repeated execution block within a Business API workflow. It loops over the result of an MScript expression and executes a list of actions for each item. The current item is exposed as a local variable named by `loopItemName`, directly accessible in MScript. Loop actions can be nested to support multi-level iteration, enabling hierarchical or grid-like data processing patterns.
+Defines a repeated execution block within a Business API workflow. It loops over the result of an MScript expression and executes a list of actions for each item. The current item is exposed as a local variable named by `loopItemName`, directly accessible in MScript. In-actions executed under a loop receive a loop-step signature context (`loopItem`, `stepIndex`, `stepResults`) so step-scoped intermediate values can be referenced safely, especially in parallel loops. Loop actions can be nested to support multi-level iteration, enabling hierarchical or grid-like data processing patterns.
 
 ```typescript
 interface LoopAction extends BusinessApiAction = {
@@ -2059,18 +2122,18 @@ interface LoopAction extends BusinessApiAction = {
 }
 ```
 
-| Field        | Description                                                                                                                                                                                                                                                                                                                                                                                |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| loopFor      | An MScript expression that evaluates to an iterable (such as an array). Each element of the result will be bound to the variable defined by `loopItemName` and processed through the listed actions.                                                                                                                                                                                       |
-| loopItemName | The name of the variable representing the current item in each loop iteration. This variable is directly accessible in MScript without `this.`. For example, if `loopItemName` is `customerItem`, you can reference `customerItem.id` or `customerItem.status` inside any action executed in the loop.                                                                                     |
-| isParallel   | A boolean value to control the non-blockin behaviour of the loop steps. If isParallel set to true, all loop steps will be called as async together, but the loop itself will be awaited. If it is false, all steps are awaited and executed one by one. Use the async option if you are sure that the target source (like db, redis, cpu, disk) will be able manage multiple jobs at once. |
-| actions      | An array of action names (as strings) to execute during each loop iteration. These actions must be previously defined in the Business API's action store.                                                                                                                                                                                                                                  |
+| Field        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| loopFor      | An MScript expression that evaluates to an iterable (such as an array). Each element of the result will be bound to the variable defined by `loopItemName` and processed through the listed actions.                                                                                                                                                                                                                                                                                                    |
+| loopItemName | The name of the variable representing the current item in each loop iteration. This variable is directly accessible in MScript without `this.`. For example, if `loopItemName` is `customerItem`, you can reference `customerItem.id` or `customerItem.status` inside any action executed in the loop.                                                                                                                                                                                                  |
+| isParallel   | A boolean value to control the non-blocking behaviour of the loop steps. If `isParallel` is true, all loop steps are scheduled asynchronously and awaited as a group. If false, steps are awaited and executed one by one. Warning: parallel mode can cause race conditions when actions write to shared context (`this.*`) or perform conflicting read-modify-write updates on the same record. Prefer item-local writes, `stepResults`, or database concurrency controls when enabling parallel mode. |
+| actions      | An array of action names (as strings) to execute during each loop iteration. These actions must be previously defined in the Business API's action store.                                                                                                                                                                                                                                                                                                                                               |
 
 ### ParallelAction
 
 **MPO Version:** 1.3.0
 
-Defines a non-blocking execution group in which multiple actions are executed in parallel. Each action runs independently using the same input context. Parallel actions are useful for concurrent fetches, validations, or other side-effect-free logic. This action can also include nested `ParallelAction` or `LoopAction` steps, enabling concurrent or branched execution across multiple layers of the workflow.
+Defines a non-blocking execution group in which multiple actions are executed in parallel. Each action runs independently using the same input context. Parallel actions are useful for concurrent fetches, validations, or other side-effect-free logic. Warning: avoid parallel branches that mutate the same shared fields or the same database records without concurrency controls, because final state can become non-deterministic. This action can also include nested `ParallelAction` or `LoopAction` steps, enabling concurrent or branched execution across multiple layers of the workflow.
 
 ```typescript
 interface ParallelAction extends BusinessApiAction = {

@@ -2,7 +2,7 @@
 
 **MPO Version:** 1.3.0
 
-Defines a standalone AI agent at the service level. Each agent encapsulates a model configuration, system prompt, input/output pipeline, optional tool access, and conversation management. Agents support multiple execution modes (task, chat, orchestrator) and modalities (text, image, audio, video, vision). They are exposed as dedicated REST and/or SSE endpoints, can be invoked by other agents as tools, and can be triggered by Kafka events via Kafka controllers.
+Defines a standalone AI agent at the service level. Each agent encapsulates a model configuration, system prompt, input/output pipeline, optional tool access, and conversation management. Agents support multiple execution modes (task, chat, orchestrator) and modalities (text, image, audio, video, vision). They are exposed as dedicated REST and/or SSE endpoints and can be invoked by other agents as tools.
 
 ```typescript
 interface AIAgent = {
@@ -23,22 +23,22 @@ interface AIAgent = {
 }
 ```
 
-| Field                 | Description                                                                                                                                                                                                            |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| agentBasics           | Core identity and execution mode of the agent, including its name, description, modality, and how it processes requests.                                                                                               |
-| modelSettings         | AI provider and model configuration, including the system prompt and optional dynamic prompt sources that inject context into the system message.                                                                      |
-| inputSettings         | Defines how incoming request data is transformed into the agent's prompt or input, including file upload support and dynamic context enrichment.                                                                       |
-| outputSettings        | Controls how the AI model's response is transformed before returning to the client, including optional storage of generated media to a bucket.                                                                         |
-| toolSettings          | Configures which tools the agent can call during execution. Only applicable for text and vision modality agents. Includes CRUD tools, API tools, sub-agent tools, library function tools, and custom tool definitions. |
-| chatSettings          | Conversation history management settings. Only applicable when executionMode is 'chat'.                                                                                                                                |
-| orchestrationSettings | Multi-agent orchestration configuration. Only applicable when executionMode is 'orchestrator'. Defines the execution strategy and the steps to coordinate.                                                             |
-| imageSettings         | Image generation parameters. Only applicable when modality is 'image'.                                                                                                                                                 |
-| audioSettings         | Audio generation or transcription parameters. Only applicable when modality is 'audio'.                                                                                                                                |
-| videoSettings         | Video generation parameters. Only applicable when modality is 'video'.                                                                                                                                                 |
-| customEndpoint        | Custom provider endpoint configuration. Only applicable when provider is 'custom'.                                                                                                                                     |
-| endpointSettings      | Controls how the agent is exposed as an API endpoint, including REST/SSE toggles, path customization, and authentication.                                                                                              |
-| guardrails            | Safety limits and cost controls including token budgets, timeouts, file size limits, and input/output validation.                                                                                                      |
-| kafkaControllers      | Optional array of Kafka controllers that trigger agent execution from Kafka events. Each controller subscribes to a topic, maps the message payload to the agent's input format, and executes the agent automatically. |
+| Field                 | Description                                                                                                                                                                                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| agentBasics           | Core identity and execution mode of the agent, including its name, description, modality, and how it processes requests.                                                                                                                                                 |
+| modelSettings         | AI provider and model configuration, including the system prompt and optional dynamic prompt sources that inject context into the system message.                                                                                                                        |
+| inputSettings         | Defines how incoming request data is transformed into the agent's prompt or input, including file upload support and dynamic context enrichment.                                                                                                                         |
+| outputSettings        | Controls how the AI model's response is transformed before returning to the client, including optional storage of generated media to a bucket.                                                                                                                           |
+| toolSettings          | Configures which tools the agent can call during execution. Only applicable for text and vision modality agents. Includes CRUD tools, API tools, sub-agent tools, library function tools, and custom tool definitions.                                                   |
+| chatSettings          | Conversation history management settings. Only applicable when executionMode is 'chat'.                                                                                                                                                                                  |
+| orchestrationSettings | Multi-agent orchestration configuration. Only applicable when executionMode is 'orchestrator'. Defines the execution strategy and the steps to coordinate.                                                                                                               |
+| imageSettings         | Image generation parameters. Only applicable when modality is 'image'.                                                                                                                                                                                                   |
+| audioSettings         | Audio generation or transcription parameters. Only applicable when modality is 'audio'.                                                                                                                                                                                  |
+| videoSettings         | Video generation parameters. Only applicable when modality is 'video'.                                                                                                                                                                                                   |
+| customEndpoint        | Custom provider endpoint configuration. Only applicable when provider is 'custom'.                                                                                                                                                                                       |
+| endpointSettings      | Controls how the agent is exposed as an API endpoint, including REST/SSE toggles, path customization, and authentication.                                                                                                                                                |
+| guardrails            | Safety limits and cost controls including token budgets, timeouts, file size limits, and input/output validation.                                                                                                                                                        |
+| kafkaControllers      | Kafka-triggered controllers for the agent. Each controller listens on a Kafka topic and maps the incoming message payload to the agent's input format before executing the agent. Multiple controllers can be defined for different topics with different data mappings. |
 
 ## AgentBasics
 
@@ -605,3 +605,27 @@ interface AgentGuardrails = {
 | inputValidation  | MScript expression to validate the request input before processing. Return true to allow, false or a string error message to reject. Has access to 'this.request.body'. |
 | outputValidation | MScript expression to validate the model's output before returning to the client. Return true to allow, false or a string to reject. Has access to 'result'.            |
 | allowedMimeTypes | Comma-separated list of allowed MIME types for file uploads. Example: 'image/png,image/jpeg,image/webp' for vision agents. Enforced by the upload manager.              |
+
+## AgentKafkaController
+
+**MPO Version:** 1.3.0
+
+Defines a Kafka-triggered controller for the AI agent. When enabled, a KafkaListener is created that subscribes to the specified topic. Incoming messages are mapped to the agent's request format using the dataMapping expression, then the agent is executed. Optionally, the agent's response can be published to a response topic. Multiple controllers can be defined per agent for different topics with different data mappings.
+
+```typescript
+interface AgentKafkaController = {
+  name : String;
+  topic : String;
+  groupId : String;
+  dataMapping : MScript;
+  enabled : Boolean;
+}
+```
+
+| Field       | Description                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| name        | Unique identifier for this Kafka controller within the agent. Used in generated code and log correlation. Must be camelCase.                                                                                                                                                                                                                                                                                                                              |
+| topic       | Kafka topic to subscribe to. When a message arrives on this topic, the agent is executed with the mapped data. Can use topic aliases (resolved at runtime via resolveTopicAlias).                                                                                                                                                                                                                                                                         |
+| groupId     | Optional Kafka consumer group ID. If not specified, a default group ID is generated from the service codename and controller name. Use a custom group ID for shared consumption across service instances.                                                                                                                                                                                                                                                 |
+| dataMapping | MScript expression that transforms the incoming Kafka message into the agent's request body. Has access to 'message' (parsed JSON payload), 'session' (extracted session object), 'topic' (topic name), and 'headers' (Kafka message headers). Should return an object matching the agent's expected input shape (e.g., \{ message: message.text, context: message.metadata \}). If null, the raw Kafka message payload is forwarded as the request body. |
+| enabled     | Set to true to activate this Kafka controller. When false, the listener is not created during service startup. Default is true.                                                                                                                                                                                                                                                                                                                           |
