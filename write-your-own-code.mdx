@@ -95,7 +95,7 @@ In the Mindbricks ontology, `MScript` is a special **string-based type** that st
 
 MScript is used across many patterns:
 
-- `DataMapItem.value` — including every entry in `apiOptions.dataClauseSettings.customData[]` (the source for properties with `basicSettings.source: 'customData'`)
+- `DataMapItem.value` — every entry in a BusinessApi's `dataClauseItems[]` (the per-API write map for create / update APIs)
 
 - `WhereClauseSettings.fullWhereClause`
 
@@ -206,29 +206,31 @@ Used in:
 
 - `MembershipCheckAction.checkFor`
 
-#### 2.4.2 Server-computed Field via `source: 'customData'`
+#### 2.4.2 Server-computed Field via `dataClauseItems`
 
-A `totalPrice` property derived as `unitPrice * quantity`. On the property:
-
-```json
-{
-  "basicSettings": { "name": "totalPrice", "type": "Double", "source": "customData" }
-}
-```
-
-On every create/update API of the parent data object:
+A `totalPrice` property derived as `unitPrice * quantity`. The property
+declaration carries only DB-shape concerns:
 
 ```json
 {
-  "apiOptions": {
-    "dataClauseSettings": {
-      "customData": [
-        { "name": "totalPrice", "value": "this.unitPrice * this.quantity" }
-      ]
-    }
-  }
+  "basicSettings": { "name": "totalPrice", "type": "Double", "isRequired": true }
 }
 ```
+
+On every create/update API of the parent data object, add an entry to
+`dataClauseItems[]` that supplies the value as MScript:
+
+```json
+{
+  "dataClauseItems": [
+    { "name": "totalPrice", "value": "this.unitPrice * this.quantity" }
+  ]
+}
+```
+
+Callers are not exposed to `totalPrice` in the API contract (no
+matching `requestParameter`), and the value is computed server-side
+on every write.
 
 #### 2.4.3 Inline Arrow Function for Complex Logic
 
@@ -377,33 +379,30 @@ Or use it to compute derived data in a `FunctionCallAction` or `AddToContextActi
 }
 ```
 
-Then declare `shippingFee` as a `customData`-sourced property:
+Then declare `shippingFee` as a system-managed property — DB-shape
+only, no caller-facing surface:
 
 ```json
 {
   "basicSettings": {
     "name": "shippingFee",
-    "type": "Double",
-    "source": "customData"
+    "type": "Double"
   }
 }
 ```
 
-…and on each create/update API of the parent data object, add a customData entry that calls the library:
+…and on each create/update API of the parent data object, add a
+`dataClauseItems` entry that calls the library:
 
 ```json
 {
-  "apiOptions": {
-    "dataClauseSettings": {
-      "customData": [
-        { "name": "shippingFee", "value": "LIB.calculateShippingFee(this.order)" }
-      ]
-    }
-  }
+  "dataClauseItems": [
+    { "name": "shippingFee", "value": "LIB.calculateShippingFee(this.order)" }
+  ]
 }
 ```
 
-Best of both worlds: explicit per-API source + custom calculation logic.
+Best of both worlds: explicit per-API write declaration + custom calculation logic.
 
 #### Passing Business API Context into Library Functions
 

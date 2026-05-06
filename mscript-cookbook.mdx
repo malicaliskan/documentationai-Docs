@@ -227,17 +227,23 @@ This keeps complex query logic in **real JS**, while the API pattern stays clean
 
 ---
 
-## 5. Cookbook: Server-computed / Derived Fields (`source: 'customData'`)
+## 5. Cookbook: Server-computed / Derived Fields via `dataClauseItems`
 
-Property-level formulas have been folded into the per-API customData mechanism. Set the property's `basicSettings.source` to `'customData'` and add a matching entry to every create/update API on the parent data object via `apiOptions.dataClauseSettings.customData[]`. The entry's `value` is an MScript expression — a literal, a property reference, or an IIFE for multi-step logic.
+Per-API write declarations live on each create / update BusinessApi as
+`dataClauseItems[]`. Each entry has a `name` (the property to write)
+and a `value` (an MScript expression — a literal, a property
+reference, or an IIFE for multi-step logic). System-managed
+properties (those whose value is never caller-supplied) carry only
+DB-shape on the property declaration; the per-API entry is the
+source of truth.
 
 ### 5.1 Simple Derived Field
 
-`lineTotal = unitPrice * quantity`. On the property:
+`lineTotal = unitPrice * quantity`. On the property — DB-shape only:
 
 ```json
 {
-  "basicSettings": { "name": "lineTotal", "type": "Double", "source": "customData" }
+  "basicSettings": { "name": "lineTotal", "type": "Double", "isRequired": true }
 }
 ```
 
@@ -245,15 +251,15 @@ On every create/update API of the parent data object:
 
 ```json
 {
-  "apiOptions": {
-    "dataClauseSettings": {
-      "customData": [
-        { "name": "lineTotal", "value": "this.unitPrice * this.quantity" }
-      ]
-    }
-  }
+  "dataClauseItems": [
+    { "name": "lineTotal", "value": "this.unitPrice * this.quantity" }
+  ]
 }
 ```
+
+`unitPrice` and `quantity` arrive via the API's `requestParameters[]`
+(caller-supplied), and the derived `lineTotal` is computed at write
+time without exposing it in the API contract.
 
 ### 5.2 Net Amount with Floor at Zero
 
@@ -277,7 +283,7 @@ module.exports = function calcVat(netAmount, vatRate) {
 };
 ```
 
-CustomData entry:
+`dataClauseItems` entry:
 
 ```json
 { "name": "vatAmount", "value": "LIB.calcVat(this.netAmount, this.vatRate)" }
@@ -285,7 +291,9 @@ CustomData entry:
 
 ### 5.4 Different Value on Create vs Update
 
-When the value differs across APIs, the per-API customData form already expresses it directly — no separate `updateFormula`, just two different APIs:
+When the value differs across APIs, the per-API form already
+expresses it directly — two different APIs, two different
+`dataClauseItems` entries:
 
 ```json
 // createOrder API
@@ -295,7 +303,9 @@ When the value differs across APIs, the per-API customData form already expresse
 { "name": "totalPoints", "value": "this.purchasePoints + (this.bonusPoints || 0) + (this.extraPoints || 0)" }
 ```
 
-This is the main reason `source: 'customData'` replaced the old property-wide formula: per-API variation is the norm, not the exception.
+Per-API variation is the norm, not the exception — declaring write
+behavior on the BusinessApi keeps each API's contract local and
+explicit.
 
 ---
 

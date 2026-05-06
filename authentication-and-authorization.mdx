@@ -289,15 +289,10 @@ In the ontology, `ProjectAuthentication.userProperties` is an array of `DataProp
           "description": "The sex value of the user.",
           "isRequired": true,
           "allowUpdate": true,
-          "requiredInUpdate": false,
-          "allowAutoUpdate": true,
           "autoIncrement": false,
           "hashed": false,
           "enumOptions": ["male", "female"],
-          "defaultValues": {
-            "default": "male",
-            "defaultInUpdate": null
-          }
+          "defaultValue": "male"
         },
         "indexSettings": {
           "indexedInElastic": true,
@@ -1674,16 +1669,11 @@ You can define additional tenant properties using `ProjectAuthentication.tenantP
           "description": "The subscription level of the tenant (e.g., Free, Pro, Enterprise).",
           "isRequired": true,
           "allowUpdate": true,
-          "requiredInUpdate": false,
-          "allowAutoUpdate": false,
           "autoIncrement": false,
           "hashed": false,
           "isFilterParameter": true,
           "enumOptions": ["Free", "Pro", "Enterprise"],
-          "defaultValues": {
-            "default": "Free",
-            "defaultInUpdate": null
-          }
+          "defaultValue": "Free"
         },
         "indexSettings": {
           "indexedInElastic": true,

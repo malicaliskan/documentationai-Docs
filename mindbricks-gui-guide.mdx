@@ -869,12 +869,12 @@ Service.dataObjects[] : DataObject
 | GUI Page / Section              | Pattern Node                                                                                |
 | ------------------------------- | ------------------------------------------------------------------------------------------- |
 | Properties Page (Property list) | `DataObject.properties[]` (`DataProperty`)                                                  |
-| Property → Basic Settings       | `DataProperty.basicSettings` (`PropertyBasicSettings`) — carries `source`, `hasRelation`, `isFilterParameter`, `enumOptions` (when `type === 'Enum'`), and the rest of the per-property flags |
+| Property → Basic Settings       | `DataProperty.basicSettings` (`PropertyBasicSettings`) — carries `type`, `isRequired`, `isArray`, `isFilterParameter`, `enumOptions` (when `type === 'Enum'`), `defaultValue`, and the rest of the per-property flags |
 | Property → Index Settings       | `DataProperty.indexSettings` (`PropertyIndexSettings`)                                      |
-| Property → Relation Settings    | `DataProperty.relationSettings` (`PropertyRelation`) — populated when `basicSettings.hasRelation: true`, flat (no `configuration` wrapper) |
-| Property → Session Settings     | `DataProperty.sessionSettings` (`PropertySessionSettings`) — populated when `source: 'session'` |
-| Property → Static Join          | `DataProperty.staticJoin` (`PropertyStaticJoin`) — populated when `source: 'joined'`         |
-| (per-API custom data)           | When `source: 'customData'`, the value lives on each create/update BusinessApi's `apiOptions.dataClauseSettings.customData[]` (a `DataClauseSettings`) |
+| Property → Relation Settings    | `DataProperty.relationSettings` (`PropertyRelation`) — block presence activates an FK relationship; flat (no `configuration` wrapper) |
+| Property → Session Settings     | `DataProperty.sessionSettings` (`PropertySessionSettings`) — block presence makes the property session-bound; the framework auto-injects `session[sessionParam]` at write time |
+| Property → Static Join          | `DataProperty.staticJoin` (`PropertyStaticJoin`) — block presence makes the property join-bound; the framework runs the join at write time |
+| (per-API write declaration)     | System-managed values land in each create/update BusinessApi's `dataClauseItems[]` (a list of `DataMapItem`) |
 
 ---
 
@@ -903,7 +903,8 @@ Service.businessLogic[] : BusinessApi
 | Cron Settings                            | `BusinessApi.cronSettings` (`ApiCronSettings`, `ApiCronSettingsConfig`)                                                                            |
 | Select Clause                            | `BusinessApi.selectClause` (`SelectClauseSettings`, `SelectJoin[]`)                                                                                |
 | Where Clause                             | `BusinessApi.whereClause` (`WhereClauseSettings`, `ExtendedClause[]`)                                                                              |
-| Data Clause                              | `BusinessApi.dataClause` (`DataClauseSettings`, `DataMapItem[]`)                                                                                   |
+| Request Parameters                       | `BusinessApi.requestParameters[]` (`BusinessApiParameter`) — full input shape declaration                                                          |
+| Data Clause Items                        | `BusinessApi.dataClauseItems[]` (`DataMapItem`) — the per-API write map for create / update APIs                                                   |
 | Delete Options                           | `BusinessApi.deleteOptions` (`DeleteOptions`)                                                                                                      |
 | Get Options                              | `BusinessApi.getOptions` (`GetOptions`)                                                                                                            |
 | List Options                             | `BusinessApi.listOptions` (`ListOptions` with `ListPermissionFilter`, `ListMembershipFilter`, `ListSearchFilter`, `ListJointFilterSettings`, etc.) |

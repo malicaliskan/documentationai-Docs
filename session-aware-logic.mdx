@@ -261,7 +261,7 @@ You can use `this.session` in:
 
 - `ListJointFilter.condition` or `whereClause`
 
-- Per-API customData entries (`apiOptions.dataClauseSettings.customData[].value`) — including session-derived values like `"this.session.preferredLocale"` for properties whose `basicSettings.source` is `customData`
+- Per-API `dataClauseItems[].value` entries on the BusinessApi — including session-derived values like `"this.session.preferredLocale"` for system-managed properties
 
 - Notification `fromUser`, `condition`, etc.
 
@@ -275,15 +275,14 @@ Example MScript snippet:
 
 ---
 
-## 5. Session-Driven Property Mapping – `source: 'session'`
+## 5. Session-Driven Property Mapping – the `sessionSettings` hook
 
-Pattern: `basicSettings.source: 'session'` + flat `PropertySessionSettings` block.
-
-These are used to **automatically populate DataObject fields from session** at create/update time.
+A property auto-binds from the session by populating its
+`sessionSettings` block. Block presence is the activation — the
+runtime drops the property from input parameters and reads its value
+from the session at create / update time.
 
 ### 5.1 Fields
-
-- `basicSettings.source: 'session'` – declares the property as session-sourced (the runtime drops it from input parameters and reads it from the session)
 
 - `sessionSettings.sessionParam` – name of the session field to read (defaults to the property name if omitted)
 
@@ -296,7 +295,6 @@ Example (in a `task` DataObject):
   "basicSettings": {
     "name": "ownerId",
     "type": "ID",
-    "source": "session",
     "isRequired": true
   },
   "sessionSettings": {
@@ -315,6 +313,11 @@ At runtime, create/update APIs:
 - Mark it as an owner field for automatic ownership checks (if used by ObjectAuthorization or ApiAuthOptions).
 
 Combining this with `ObjectAuthorization` and `ApiAuthOptions.ownershipCheck` gives a very powerful *owner-based ACL* mechanism.
+
+> Properties with `sessionSettings` populated should NOT appear in the
+> BusinessApi's `requestParameters` (callers can't supply session
+> values) and NOT in `dataClauseItems` (the framework writes them
+> automatically). The auditor flags both as design conflicts.
 
 ---
 
@@ -501,7 +504,7 @@ DataViews and BFF can also reference `this.session` in MScript (for dynamic view
 
 Any MScript formula or context param can use `this.session`:
 
-- Per-API customData entries (`apiOptions.dataClauseSettings.customData[].value`) on properties with `source: 'customData'` can compute values based on session: e.g., initial timezone, language code, default currency. Each create/update API declares its own MScript expression — e.g., `{ "name": "preferredCurrency", "value": "this.session.tenant.defaultCurrency ?? 'USD'" }`.
+- Per-API `dataClauseItems[].value` entries can compute values based on session: e.g., initial timezone, language code, default currency. Each create/update API declares its own MScript expression — e.g., `{ "name": "preferredCurrency", "value": "this.session.tenant.defaultCurrency ?? 'USD'" }`.
 
 - Context actions (`AddToContextAction`, `CreateObjectAction`) can copy fields from `this.session` into the context or response.
 
