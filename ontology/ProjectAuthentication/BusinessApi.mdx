@@ -1241,7 +1241,7 @@ interface ApiAggregateData = {
 | Field        | Description                                                                                                                                                                                                           |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | dataProperty | The name of the target property on the child object that will be set during the operation. This must match a valid property name defined in the child data object schema.                                             |
-| dataValue    | The MScript expression or static value used to assign a value to the specified property. This can reference current context (`this`), a parameter (`this.input`), or loop item (`crudItem`) if executed in list mode. |
+| dataValue    | The MScript expression or static value used to assign a value to the specified property. This can reference current context (`this`), a parameter (`this.input`), or the loop iteration variable when executed inside a `LoopAction` — by the name configured on `LoopAction.loopItemName` (e.g. if `loopItemName` is `customerItem`, reference `customerItem.id`). The legacy name `crudItem` is also bound as an alias for backward compatibility with older specs. |
 
 ### CreateBulkCrudAction
 
